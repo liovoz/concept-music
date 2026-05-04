@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ✨ 核心升级：Design Tokens 统一主题配置管理 */
+:root {
+  --brand-primary: #2563eb; /* 品牌主色调 (对应之前的 blue-600) */
+  --brand-hover: #1d4ed8;   /* 品牌悬停色 (对应之前的 blue-700) */
+  --brand-light: #eff6ff;   /* 品牌极浅底色 (对应之前的 blue-50) */
+  --brand-border: #bfdbfe;  /* 品牌柔和边框 (对应之前的 blue-200) */
+}
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; 
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+  user-select: none; 
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(203, 213, 225, 0.1); 
+  border-radius: 4px;
+}
+
+:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(203, 213, 225, 0.8);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 1);
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.1); border-radius: 4px; }
+.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.8); }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(148, 163, 184, 1); }
