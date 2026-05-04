@@ -142,6 +142,11 @@ function startLocalServer() {
 function initAutoUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'liovoz',
+    repo: 'concept-music'
+  });
   const sendToWindow = (data) => {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('updater-event', data);
   };

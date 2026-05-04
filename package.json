@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "electron .",
-    "pack": "vite build && electron-builder"
+    "pack": "vite build && electron-builder",
+    "release": "vite build && electron-builder --publish always"
   },
   "dependencies": {
     "axios": "^1.6.8",
@@ -53,8 +54,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "YOUR_GITHUB_USERNAME",
-        "repo": "YOUR_GITHUB_REPO_NAME"
+        "owner": "liovoz",
+        "repo": "concept-music"
       }
     ],
     "win": {

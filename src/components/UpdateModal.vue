@@ -217,7 +217,7 @@ onMounted(() => {
         case 'available':
           updateInfo.value = data.info || {};
           status.value = 'available';
-          if (!isVisible.value) isVisible.value = true;
+          isVisible.value = true;
           break;
         case 'not-available':
           if (data.isManualCheck) status.value = 'not-available';
