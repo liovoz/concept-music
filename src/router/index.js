@@ -13,6 +13,7 @@ import DesktopLyric from '../views/DesktopLyric.vue';
 // ✨ 引入全新的歌手与专辑详情页
 import ArtistDetail from '../views/ArtistDetail.vue';
 import AlbumDetail from '../views/AlbumDetail.vue';
+import PersonalFM from '../views/PersonalFM.vue';
 
 const routes = [
   { path: '/', name: 'Discover', component: Discover },
@@ -25,7 +26,8 @@ const routes = [
   { path: '/desktop-lyric', name: 'DesktopLyric', component: DesktopLyric },
   // ✨ 注册详情页动态路由
   { path: '/artist/:id', name: 'ArtistDetail', component: ArtistDetail },
-  { path: '/album/:id', name: 'AlbumDetail', component: AlbumDetail }
+  { path: '/album/:id', name: 'AlbumDetail', component: AlbumDetail },
+  { path: '/fm', name: 'PersonalFM', component: PersonalFM }
 ];
 
 const router = createRouter({

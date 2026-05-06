@@ -139,10 +139,10 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
     if (!rawSinger) rawSinger = '未知歌手';
 
     // ✨ 核心修复 2：智能推断“单曲”和“现场录音”，消除廉价的“未知专辑”
-    let album = (song.AlbumName || song.album_name || song.album_info?.album_name || song.remark || '').trim();
-    if (!album || album === '未知专辑') {
+    let album = (song.AlbumName || song.album_name || song.albumname || song.album?.name || song.album_info?.album_name || song.albuminfo?.name || song.albuminfo?.album_name || song.relate_goods?.[0]?.albumname || song.remark || '').trim();
+    if (album === '未知专辑') album = '';
+    if (!album) {
         const lowerTitle = rawTitle.toLowerCase();
-        // 如果歌曲标题带现场演出的标志，自动归类为现场录音
         if (lowerTitle.includes('live') || lowerTitle.includes('演唱会') || lowerTitle.includes('音乐会') || lowerTitle.includes('巡回') || lowerTitle.includes('tour')) {
             album = '现场录音';
         } else {
@@ -150,7 +150,7 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
         }
     }
 
-    const albumId = String(song.AlbumID || song.album_id || song.albumid || song.album_info?.album_id || '');
+    const albumId = String(song.AlbumID || song.album_id || song.albumid || song.album?.id || song.album_info?.album_id || song.albuminfo?.id || song.albuminfo?.album_id || '');
     const albumAudioId = String(song.MixSongID || song.mixsongid || song.album_audio_id || song.audio_id || '');
 
     let durationSec = findDeepDuration(song);

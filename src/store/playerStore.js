@@ -13,7 +13,7 @@ const restoreCookies = () => {
     });
   }
 };
-restoreCookies();
+if (typeof document !== 'undefined') restoreCookies();
 
 const audioA = new Audio();
 const audioB = new Audio();
@@ -43,7 +43,7 @@ const getCachedUrl = (hash, quality) => {
 const setCachedUrl = (hash, quality, data) => {
   const key = `${hash}_${quality}`;
   urlCache.set(key, { ...data, time: Date.now() });
-  if (urlCache.size > 20) urlCache.delete(urlCache.keys().next().value);
+  if (urlCache.size > 80) urlCache.delete(urlCache.keys().next().value);
 };
 
 export const QUALITY_CONFIG = [
@@ -75,6 +75,8 @@ const getExpectedDuration = (song) => {
   return 0;
 };
 
+let audioEventsBound = false;
+
 export const usePlayerStore = defineStore('player', {
   state: () => ({
     currentSong: null, 
@@ -101,6 +103,10 @@ export const usePlayerStore = defineStore('player', {
     toastTimeout: null,
 
     isCurrentSongPreview: false,
+
+    peakMode: false,
+    peakStartOffset: 0,
+    peakDuration: 30,
 
     dialogState: {
       visible: false,
@@ -291,10 +297,12 @@ export const usePlayerStore = defineStore('player', {
     initAudio() {
       audioA.volume = this.volume;
       audioB.volume = this.volume;
-      this.bindAudioEvents(audioA);
-      this.bindAudioEvents(audioB);
+      if (!audioEventsBound) {
+        this.bindAudioEvents(audioA);
+        this.bindAudioEvents(audioB);
+        audioEventsBound = true;
+      }
 
-      // ✨ 新增：监听桌面歌词面板发来的底层控制指令
       if (window.lyricAPI) {
         window.lyricAPI.onControl((cmd) => {
           if (cmd === 'togglePlay') this.togglePlay();
@@ -453,30 +461,24 @@ export const usePlayerStore = defineStore('player', {
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
 
-      let attempts = 0;
-      while (attempts < this.playlist.length) {
-        attempts++;
-
-        if (this.playMode === 'random') {
-          if (this.playlist.length > 1) {
-            let rand;
-            do { rand = Math.floor(Math.random() * this.playlist.length); } while (rand === nextIndex);
-            nextIndex = rand;
-          } else {
-            nextIndex = 0;
-          }
-        } else {
-          nextIndex++;
-          if (nextIndex >= this.playlist.length) nextIndex = 0;
-        }
-
-        const candidate = this.playlist[nextIndex];
+      const playableIndices = [];
+      for (let i = 0; i < this.playlist.length; i++) {
+        if (i === nextIndex) continue;
+        const candidate = this.playlist[i];
         const isVipSong = candidate.is_vip || candidate.is_paid;
-        if (isVipSong && !isVipUser) continue; 
-
-        return this.playlist[nextIndex];
+        if (!isVipSong || isVipUser) playableIndices.push(i);
       }
-      return null;
+
+      if (playableIndices.length === 0) return null;
+
+      if (this.playMode === 'random') {
+        const rand = playableIndices[Math.floor(Math.random() * playableIndices.length)];
+        return this.playlist[rand];
+      } else {
+        let sequential = playableIndices.find(i => i > nextIndex);
+        if (sequential === undefined) sequential = playableIndices[0];
+        return this.playlist[sequential];
+      }
     },
 
     async triggerPreload() {
@@ -511,6 +513,15 @@ export const usePlayerStore = defineStore('player', {
         this.isCurrentSongPreview = false;
       }
 
+      if (this.peakMode && songInfo.hash !== this.currentSong?.hash) {
+        const isInPlaylist = this.playlist.some(s => s.hash === songInfo.hash);
+        if (!isInPlaylist) {
+          this.peakMode = false;
+          this.peakStartOffset = 0;
+          this.peakDuration = 30;
+        }
+      }
+
       if (maintainTime === 0 || !this.currentSong || this.currentSong.hash !== songInfo.hash) {
           this.hasReportedCurrentSong = false;
       }
@@ -529,6 +540,14 @@ export const usePlayerStore = defineStore('player', {
           this.currentSong = songInfo;
           this.currentQuality = preloadState.quality;
           this.isCurrentSongPreview = preloadState.isPreview;
+
+          if (activeAudio.duration && isFinite(activeAudio.duration)) {
+            if (this.isCurrentSongPreview && activeAudio.duration > 60) {
+              this.duration = 60;
+            } else {
+              this.duration = activeAudio.duration;
+            }
+          }
 
           if (this.isCurrentSongPreview) this.showToast('正在试听 VIP 歌曲片段，登录解锁完整版');
 
@@ -655,7 +674,6 @@ export const usePlayerStore = defineStore('player', {
            this.showToast(`已为您切换至【${targetQName}】`);
         }
       }
-      this.isLoading = false;
     },
 
     async downgradeForLogout() {
@@ -771,30 +789,55 @@ export const usePlayerStore = defineStore('player', {
          activeAudio.currentTime = 0; activeAudio.play(); return; 
       }
 
+      if (isAuto && this.playMode === 'loop') {
+        activeAudio.currentTime = 0;
+        activeAudio.play();
+        return;
+      }
+
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
 
       let nextIndex = this.playlist.findIndex(s => s.hash === this.currentSong?.hash);
       if (nextIndex === -1) nextIndex = 0;
-      
+
+      if (this.playMode === 'random') {
+        const playableIndices = [];
+        for (let i = 0; i < this.playlist.length; i++) {
+          if (i === nextIndex) continue;
+          const candidate = this.playlist[i];
+          const isVipSong = candidate.is_vip || candidate.is_paid;
+          if (!isVipSong || isVipUser || !isAuto) playableIndices.push(i);
+        }
+
+        if (playableIndices.length === 0) {
+          this.showDialog({
+            title: '播放队列中断',
+            message: '队列中剩余歌曲均为 VIP 专享，自动播放已停止。\n开通 VIP 即可畅听全部内容。',
+            confirmText: '立即开通',
+            cancelText: '知道了',
+            onConfirm: () => { userStore.openLoginModal(); }
+          });
+          this.isPlaying = false;
+          return;
+        }
+
+        const skippedCount = this.playlist.length - 1 - playableIndices.length;
+        if (skippedCount > 0) this.showToast(`已为您自动跳过 ${skippedCount} 首 VIP 专属歌曲`);
+
+        const rand = playableIndices[Math.floor(Math.random() * playableIndices.length)];
+        this.playSong(this.playlist[rand]);
+        return;
+      }
+
       let attempts = 0;
       let skippedCount = 0;
 
       while (attempts < this.playlist.length) {
         attempts++;
 
-        if (this.playMode === 'random') {
-          if (this.playlist.length > 1) {
-            let rand;
-            do { rand = Math.floor(Math.random() * this.playlist.length); } while (rand === nextIndex);
-            nextIndex = rand;
-          } else {
-            nextIndex = 0;
-          }
-        } else {
-          nextIndex++;
-          if (nextIndex >= this.playlist.length) nextIndex = 0;
-        }
+        nextIndex++;
+        if (nextIndex >= this.playlist.length) nextIndex = 0;
 
         const candidate = this.playlist[nextIndex];
         const isVipSong = candidate.is_vip || candidate.is_paid;

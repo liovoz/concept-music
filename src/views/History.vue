@@ -253,7 +253,9 @@ const fetchRecentData = async (isLoadMore = false) => {
      isLoadingMore.value = true;
   }
   isError.value = false;
-  page.value = 1;
+  if (!isLoadMore) {
+    page.value = 1;
+  }
 
   try {
     const params = { timestamp: Date.now() };

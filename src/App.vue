@@ -12,7 +12,11 @@
     <div class="flex flex-1 overflow-hidden relative">
       <Sidebar />
       <main class="flex-1 bg-white relative min-w-0 overflow-hidden">
-        <router-view :key="$route.fullPath"></router-view>
+        <router-view v-slot="{ Component }">
+          <keep-alive include="PersonalFM">
+            <component :is="Component" :key="$route.fullPath" />
+          </keep-alive>
+        </router-view>
       </main>
     </div>
 

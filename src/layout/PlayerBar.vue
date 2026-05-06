@@ -2,7 +2,7 @@
 // 文件：src/layout/PlayerBar.vue
 // ====================
 <template>
-  <footer class="h-20 w-full bg-white/95 backdrop-blur-xl border-t border-gray-100 flex items-center justify-between px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] relative min-w-[850px]">
+  <footer class="h-20 w-full bg-white/95 backdrop-blur-xl border-t border-gray-100 flex items-center justify-between px-4 sm:px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] relative min-w-0">
     
     <transition name="fade">
       <div v-if="store.isError" class="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg shadow-md text-xs font-medium flex items-center z-[60]">
@@ -72,15 +72,15 @@
         <button @click="store.playNext(false)" class="text-gray-500 hover:text-blue-600 transition-colors no-drag"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11.555 5.168A1 1 0 0010 6v2.798l-5.445-3.63A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/></svg></button>
       </div>
       
-      <div class="w-full flex items-center space-x-3 mt-2 text-[11px] text-gray-400 font-medium" :class="{ 'opacity-50 pointer-events-none': !store.currentSong }">
-        <span class="w-8 text-right">{{ formatTime(displayTime) }}</span>
+      <div class="w-full flex items-center space-x-3 mt-2 text-[11px] font-medium" :class="store.peakMode ? 'text-purple-400' : 'text-gray-400', { 'opacity-50 pointer-events-none': !store.currentSong }">
+        <span class="w-8 text-right">{{ formatTime(peakDisplayTime) }}</span>
         <div class="flex-1 relative flex items-center h-4 group no-drag">
-          <input type="range" min="0" :max="store.duration || 100" :value="displayTime" @input="handleDrag" @change="handleDragEnd" class="w-full absolute z-10 opacity-0 cursor-pointer h-full m-0">
-          <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden pointer-events-none transition-all group-hover:h-2">
-            <div class="h-full bg-blue-600 rounded-full pointer-events-none" :style="{ width: progressPercentage + '%' }"></div>
+          <input type="range" min="0" :max="peakMaxDuration" :value="peakDisplayTime" @input="handleDrag" @change="handlePeakDragEnd" class="w-full absolute z-10 opacity-0 cursor-pointer h-full m-0">
+          <div class="w-full h-1.5 rounded-full overflow-hidden pointer-events-none transition-all group-hover:h-2" :class="store.peakMode ? 'bg-purple-100' : 'bg-gray-200'">
+            <div class="h-full rounded-full pointer-events-none" :class="store.peakMode ? 'bg-purple-500' : 'bg-blue-600'" :style="{ width: peakProgressPercentage + '%' }"></div>
           </div>
         </div>
-        <span class="w-8 text-left">{{ formatTime(store.duration) }}</span>
+        <span class="w-8 text-left">{{ formatTime(peakMaxDuration) }}</span>
       </div>
     </div>
 
@@ -90,7 +90,7 @@
          词
        </button>
 
-       <div v-if="store.currentSong" class="relative group flex flex-col items-center justify-center no-drag z-[60]">
+       <div v-if="store.currentSong" ref="qualityMenuRef" class="relative group flex flex-col items-center justify-center no-drag z-[60]">
          <div class="cursor-pointer font-bold tracking-wider uppercase transition-colors flex items-center text-xs px-3 py-1.5 rounded-md border border-transparent group-hover:border-gray-200 group-hover:bg-gray-50 text-gray-400 group-hover:text-blue-600" v-tooltip="'音质选择'">
            {{ qualityDisplayName }}
          </div>
@@ -148,7 +148,7 @@
             <p class="text-xs font-medium">你还没有添加任何歌曲</p>
           </div>
           <div v-else class="space-y-1">
-            <div v-for="(song, index) in store.playlist" :key="song.hash" class="group flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors" :class="{ 'bg-blue-50/60': store.currentSong?.hash === song.hash }" @dblclick="store.playSong(song)">
+            <div v-for="(song, index) in store.playlist" :key="song.hash + '_' + index" class="group flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors" :class="{ 'bg-blue-50/60': store.currentSong?.hash === song.hash }" @dblclick="store.playSong(song)">
               <div class="flex items-center flex-1 overflow-hidden">
                 <div class="w-4 h-4 mr-3 flex items-center justify-center flex-shrink-0">
                   <svg v-if="store.currentSong?.hash === song.hash && store.isPlaying" class="w-4 h-4 text-blue-600 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"/></svg>
@@ -269,6 +269,7 @@ const router = useRouter();
 
 const playlistPanelRef = ref(null);
 const playlistBtnRef = ref(null);
+const qualityMenuRef = ref(null);
 
 const qualityOptions = QUALITY_CONFIG.map(q => ({
   ...q,
@@ -296,7 +297,8 @@ const handleClickOutside = (event) => {
   if (!store.isPlaylistVisible) return;
   const isClickInsidePanel = playlistPanelRef.value?.contains(event.target);
   const isClickOnBtn = playlistBtnRef.value?.contains(event.target);
-  if (!isClickInsidePanel && !isClickOnBtn) {
+  const isClickOnQualityMenu = qualityMenuRef.value?.contains(event.target);
+  if (!isClickInsidePanel && !isClickOnBtn && !isClickOnQualityMenu) {
     store.isPlaylistVisible = false;
   }
 };
@@ -328,9 +330,30 @@ const displayTime = computed(() => {
   return isDragging.value ? dragTime.value : store.currentTime;
 });
 
+const peakDisplayTime = computed(() => {
+  if (!store.peakMode) return displayTime.value;
+  if (isDragging.value) return dragTime.value;
+  const elapsed = store.currentTime - store.peakStartOffset;
+  return Math.max(0, Math.min(elapsed, store.peakDuration));
+});
+
+const peakMaxDuration = computed(() => {
+  if (!store.peakMode) return store.duration || 0;
+  return store.peakDuration || 30;
+});
+
 const progressPercentage = computed(() => {
   if (!store.duration) return 0;
   return (displayTime.value / store.duration) * 100;
+});
+
+const peakProgressPercentage = computed(() => {
+  if (store.peakMode) {
+    const maxD = store.peakDuration || 30;
+    if (maxD <= 0) return 0;
+    return (peakDisplayTime.value / maxD) * 100;
+  }
+  return progressPercentage.value;
 });
 
 const isCurrentLiked = computed(() => {
@@ -351,6 +374,15 @@ const handleDrag = (e) => {
 
 const handleDragEnd = (e) => {
   store.seek(Number(e.target.value));
+  isDragging.value = false;
+};
+
+const handlePeakDragEnd = (e) => {
+  if (store.peakMode) {
+    store.seek(store.peakStartOffset + Number(e.target.value));
+  } else {
+    store.seek(Number(e.target.value));
+  }
   isDragging.value = false;
 };
 
@@ -545,8 +577,10 @@ watch(parsedLyrics, async (newLyrics) => {
 });
 
 const seekToLyric = (time) => {
-  if (time > store.duration && store.isCurrentSongPreview) {
-    store.showToast('试听版时长有限，无法跨越到音频空白区');
+  if (time > store.duration) {
+    if (store.isCurrentSongPreview) {
+      store.showToast('试听版时长有限，无法跨越到音频空白区');
+    }
     return;
   }
   store.seek(time);

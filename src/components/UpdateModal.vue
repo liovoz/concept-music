@@ -24,7 +24,7 @@
 
             <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">概念音乐 Desktop</h2>
             <p class="text-sm text-gray-400 mt-1 font-mono">v{{ appVersion }}</p>
-            <p class="text-xs text-gray-400 mt-2 leading-relaxed">专业级桌面音乐播放器，听见好时光</p>
+            <p class="text-xs text-gray-400 mt-2 leading-relaxed">回归音乐本身，听见好时光</p>
 
             <div class="w-full mt-5 border-t border-gray-100 pt-5">
 

@@ -93,7 +93,8 @@
       <nav class="flex flex-col space-y-1 px-3">
         <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">在线音乐</div>
         <div @click="$router.push('/')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>首页</div>
-        <div @click="$router.push('/rank')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>排行榜</div>
+        <div @click="$router.push('/rank')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>排行榜</div>
+        <div @click="$router.push('/fm')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/fm' ? 'font-medium bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/fm' ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>私人FM</div>
       </nav>
       
       <nav class="flex flex-col space-y-1 px-3 mt-8">
@@ -216,9 +217,7 @@ const formattedCooldown = computed(() => {
 
 const handleClaimOneDayVip = async () => {
   const res = await userStore.claimOneDayVip();
-  if (res.success || !res.success) { 
-     playerStore.showToast(res.msg);
-  }
+  playerStore.showToast(res.msg);
 };
 
 const handleClaimDailyVip = async () => {

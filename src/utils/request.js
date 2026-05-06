@@ -51,7 +51,9 @@ const request = axios.create({
 request.interceptors.request.use(
   (config) => {
     if (config.method.toLowerCase() === 'get') {
-      config.params = { ...config.params, timestamp: Date.now() };
+      if (!config.params || !config.params.hasOwnProperty('timestamp')) {
+        config.params = { ...config.params, timestamp: Date.now() };
+      }
     }
     return config;
   },

@@ -120,7 +120,7 @@ export const useUserStore = defineStore('user', {
       
       const d = new Date();
       const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const currentUid = this.userInfo.nickname || 'unknown_user'; 
+      const currentUid = this.userInfo.userid || this.userInfo.nickname || 'unknown_user'; 
 
       let allStates = {};
       try {
@@ -415,8 +415,10 @@ export const useUserStore = defineStore('user', {
         traverse(res);
 
         if (info) {
-          const isVip = (info.vip_type > 0 || info.m_vip_type > 0 || this.vipExpirationTime);
+          const isVip = (info.vip_type > 0 || info.m_vip_type > 0) || 
+            (this.vipExpirationTime && new Date(this.vipExpirationTime.replace(/-/g, '/')).getTime() > Date.now());
           this.userInfo = {
+            userid: String(info.userid || info.uid || info.id || ''),
             nickname: info.nickname || info.username || '概念版用户',
             avatar: info.pic || info.avatar || info.head_img || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&q=80',
             vip: isVip ? 1 : 0
@@ -477,10 +479,11 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('kg_desktop_local_history');
         localStorage.removeItem('kg_desktop_local_play_counts'); 
         localStorage.removeItem('kg_desktop_has_dfid');
+        localStorage.removeItem('kg_desktop_day_vip_states');
       } catch (e) {}
       
       this.isLoggedIn = false;
-      this.userInfo = { nickname: '', avatar: '', vip: 0 }; 
+      this.userInfo = { userid: '', nickname: '', avatar: '', vip: 0 }; 
       this.likedHashes = [];
       this.likedPlaylistCover = ''; 
       this.vipExpirationTime = '';
