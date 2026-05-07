@@ -29,6 +29,9 @@ Temp/
 # Test screenshots
 test_screenshots/
 
+# Documentation (local only)
+docs/
+
 # Environment files (contain sensitive config)
 # .env.*
 # .env
