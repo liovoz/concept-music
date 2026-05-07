@@ -50,3 +50,15 @@ contextBridge.exposeInMainWorld('lyricAPI', {
 contextBridge.exposeInMainWorld('apiBridge', {
   request: (config) => ipcRenderer.invoke('native-api-request', config)
 });
+
+contextBridge.exposeInMainWorld('trayAPI', {
+  forceQuit: () => ipcRenderer.send('force-quit'),
+  updateTooltip: (songInfo) => ipcRenderer.send('update-tray-tooltip', songInfo),
+  updatePlayState: (isPlaying) => ipcRenderer.send('update-tray-play-state', isPlaying),
+  updatePlayMode: (mode) => ipcRenderer.send('update-tray-play-mode', mode),
+  updateLyricState: (visible) => ipcRenderer.send('update-tray-lyric-state', visible),
+  onTrayAction: (callback) => {
+    ipcRenderer.removeAllListeners('tray-action');
+    ipcRenderer.on('tray-action', (event, action) => callback(action));
+  }
+});

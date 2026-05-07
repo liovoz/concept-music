@@ -49,6 +49,10 @@
           "**/*",
           "!node_modules/.cache"
         ]
+      },
+      {
+        "from": "public/icon.ico",
+        "to": "icon.ico"
       }
     ],
     "publish": [
@@ -76,9 +80,18 @@
       "icon": "public/icon.ico"
     },
     "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "perMachine": false,
       "installerIcon": "public/icon.ico",
       "uninstallerIcon": "public/icon.ico",
-      "installerHeaderIcon": "public/icon.ico"
+      "installerHeaderIcon": "public/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "概念音乐",
+      "deleteAppDataOnUninstall": false,
+      "language": 2052
     },
     "portable": {
       "artifactName": "${productName}-${version}-Portable.${ext}"

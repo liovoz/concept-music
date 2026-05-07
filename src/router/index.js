@@ -14,6 +14,7 @@ import DesktopLyric from '../views/DesktopLyric.vue';
 import ArtistDetail from '../views/ArtistDetail.vue';
 import AlbumDetail from '../views/AlbumDetail.vue';
 import PersonalFM from '../views/PersonalFM.vue';
+import NewSongs from '../views/NewSongs.vue';
 
 const routes = [
   { path: '/', name: 'Discover', component: Discover },
@@ -24,10 +25,10 @@ const routes = [
   { path: '/rank/:id', name: 'RankDetail', component: RankDetail },
   { path: '/history', name: 'History', component: History },
   { path: '/desktop-lyric', name: 'DesktopLyric', component: DesktopLyric },
-  // ✨ 注册详情页动态路由
   { path: '/artist/:id', name: 'ArtistDetail', component: ArtistDetail },
   { path: '/album/:id', name: 'AlbumDetail', component: AlbumDetail },
-  { path: '/fm', name: 'PersonalFM', component: PersonalFM }
+  { path: '/fm', name: 'PersonalFM', component: PersonalFM },
+  { path: '/new-songs', name: 'NewSongs', component: NewSongs }
 ];
 
 const router = createRouter({

@@ -29,7 +29,7 @@
       
       <div class="ml-3 overflow-hidden flex flex-col justify-center">
         <div class="flex items-center">
-          <span class="text-sm font-bold text-gray-800 truncate">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
+          <span class="text-sm font-bold text-gray-800 truncate" v-tooltip="store.currentSong?.name">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
           <span v-if="store.isCurrentSongPreview" class="ml-2 flex-shrink-0 bg-green-50 text-green-600 border border-green-200 px-1 py-0.5 rounded text-[8px] font-black tracking-widest uppercase leading-none mt-0.5 shadow-sm">试听</span>
           <span v-else-if="store.currentSong?.is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
           <span v-else-if="store.currentSong?.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>

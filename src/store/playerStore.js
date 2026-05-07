@@ -200,6 +200,18 @@ export const usePlayerStore = defineStore('player', {
           }
         } else {
           this.currentTime = activeAudio.currentTime; 
+
+          if (this.peakMode && this.peakStartOffset > 0 && this.peakDuration > 0) {
+            const elapsed = this.currentTime - this.peakStartOffset;
+            if (elapsed >= this.peakDuration) {
+              this.peakMode = false;
+              this.peakStartOffset = 0;
+              this.peakDuration = 30;
+              this.currentTime = 0;
+              this.playNext(true);
+              return;
+            }
+          }
           
           if (!this.hasReportedCurrentSong && this.currentTime >= 3 && this.currentSong) {
               this.hasReportedCurrentSong = true;
@@ -262,11 +274,13 @@ export const usePlayerStore = defineStore('player', {
         if (e.target !== activeAudio) return;
         this.isLoading = false; 
         this.isPlaying = true; 
+        this.syncTrayState();
       });
       
       audioInstance.addEventListener('pause', (e) => { 
         if (e.target !== activeAudio) return;
         this.isPlaying = false; 
+        this.syncTrayState();
       });
       
       audioInstance.addEventListener('ended', (e) => {
@@ -349,6 +363,7 @@ export const usePlayerStore = defineStore('player', {
     toggleDesktopLyric() {
       this.isDesktopLyricVisible = !this.isDesktopLyricVisible;
       if (window.lyricAPI) window.lyricAPI.toggle();
+      this.syncTrayState();
     },
 
     togglePlayMode() {
@@ -356,6 +371,7 @@ export const usePlayerStore = defineStore('player', {
       const currentIdx = modes.indexOf(this.playMode);
       this.playMode = modes[(currentIdx + 1) % modes.length];
       this.triggerPreload();
+      this.syncTrayState();
     },
 
     async resolveSongUrl(songInfo, targetQuality = null) {
@@ -566,6 +582,7 @@ export const usePlayerStore = defineStore('player', {
 
           preloadState.hash = null;
           this.triggerPreload();
+          this.syncTrayState();
           return;
       }
 
@@ -610,6 +627,7 @@ export const usePlayerStore = defineStore('player', {
         this.clearError();
 
         this.triggerPreload();
+        this.syncTrayState();
 
       } catch (error) {
         triggerFallback('网络请求异常');
@@ -745,8 +763,14 @@ export const usePlayerStore = defineStore('player', {
 
     togglePlay() {
       if (!this.currentSong) return;
-      if (this.isPlaying) activeAudio.pause();
-      else activeAudio.play();
+      if (this.isPlaying) {
+        activeAudio.pause();
+        this.isPlaying = false;
+      } else {
+        activeAudio.play();
+        this.isPlaying = true;
+      }
+      this.syncTrayState();
     },
 
     seek(time) {
@@ -888,7 +912,24 @@ export const usePlayerStore = defineStore('player', {
       this.isPlaying = false;
       this.currentSong = null;
       this.isPlaylistVisible = false;
+      this.peakMode = false;
+      this.peakStartOffset = 0;
+      this.peakDuration = 30;
       preloadState.hash = null;
+      this.syncTrayState();
+    },
+
+    syncTrayState() {
+      if (!window.trayAPI) return;
+      if (this.currentSong) {
+        window.trayAPI.updateTooltip({
+          name: this.currentSong.name || this.currentSong._title || '',
+          singer: this.currentSong.singer || this.currentSong._singer || ''
+        });
+      }
+      window.trayAPI.updatePlayState(this.isPlaying);
+      window.trayAPI.updatePlayMode(this.playMode);
+      window.trayAPI.updateLyricState(this.isDesktopLyricVisible);
     }
   }
 });

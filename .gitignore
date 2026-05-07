@@ -25,3 +25,14 @@ release
 *.sw?
 
 Temp/
+
+# Test screenshots
+test_screenshots/
+
+# Environment files (contain sensitive config)
+# .env.*
+# .env
+
+# OS generated files
+Thumbs.db
+Desktop.ini

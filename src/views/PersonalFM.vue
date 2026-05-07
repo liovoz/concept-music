@@ -589,18 +589,6 @@ const schedulePeakSeek = (hash) => {
   peakTimerId = setTimeout(doSeek, 400);
 };
 
-const onPeakTimeUpdate = () => {
-  if (fmMode.value !== 'peak' || !playerStore.peakMode) return;
-  if (!playerStore.currentSong || !currentFMSong.value) return;
-  if (playerStore.currentSong.hash !== currentFMSong.value._hash) return;
-
-  const elapsed = playerStore.currentTime - playerStore.peakStartOffset;
-  if (elapsed >= playerStore.peakDuration) {
-    resetPeakState();
-    handleNext();
-  }
-};
-
 watch(() => playerStore.currentSong, (newSong) => {
   if (!newSong) return;
 
@@ -623,10 +611,6 @@ watch(() => playerStore.currentSong, (newSong) => {
       resetPeakState();
     }
   }
-});
-
-watch(() => playerStore.currentTime, () => {
-  onPeakTimeUpdate();
 });
 
 onActivated(() => {

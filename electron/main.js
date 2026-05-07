@@ -8,6 +8,7 @@ import { fork } from 'child_process';
 import fs from 'fs';
 import http from 'http'; 
 import pkg from 'electron-updater';
+import { TrayManager } from './trayManager.js';
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
 app.commandLine.appendSwitch('disable-http-cache');
@@ -18,7 +19,7 @@ const __dirname = path.dirname(__filename);
 
 function getAppIconPath() {
   return app.isPackaged
-    ? path.join(__dirname, '../dist/icon.ico')
+    ? path.join(process.resourcesPath, 'icon.ico')
     : path.join(__dirname, '../public/icon.ico');
 }
 
@@ -32,10 +33,11 @@ let lyricWindow = null;
 let isQuitting = false;
 let isManualCheck = false;
 let downloadCancellationToken = null; 
+let trayManager = null;
 
 // --- 金库与鉴权逻辑 (保持原样) ---
 let vaultMemoryCache = null;
-app.on('before-quit', () => { isQuitting = true; });
+app.on('before-quit', () => { isQuitting = true; if (trayManager) trayManager.setIsQuitting(true); });
 function getVaultPath() { return path.join(app.getPath('userData'), 'kugou_auth_vault.json'); }
 function loadVaultCookies() {
   if (vaultMemoryCache !== null) return vaultMemoryCache; 
@@ -434,7 +436,19 @@ const createWindow = () => {
   mainWindow.once('ready-to-show', () => mainWindow.show());
   ipcMain.on('window-min', () => mainWindow.minimize());
   ipcMain.on('window-max', () => { if (mainWindow.isMaximized()) mainWindow.unmaximize(); else mainWindow.maximize(); });
-  ipcMain.on('window-close', () => mainWindow.close());
+  ipcMain.on('window-close', () => {
+    if (trayManager && !trayManager.getIsQuitting()) {
+      trayManager.handleWindowClose();
+    } else {
+      mainWindow.close();
+    }
+  });
+  mainWindow.on('close', (e) => {
+    if (trayManager && !trayManager.getIsQuitting()) {
+      e.preventDefault();
+      trayManager.handleWindowClose();
+    }
+  });
 };
 
 app.whenReady().then(async () => {
@@ -451,6 +465,13 @@ app.whenReady().then(async () => {
   });
   createWindow();      
   await startLocalServer(); 
+  trayManager = new TrayManager(mainWindow, ipcMain);
+  trayManager.init(getAppIconPath());
+  ipcMain.on('force-quit', () => { if (trayManager) trayManager.forceQuit(); });
+  ipcMain.on('update-tray-tooltip', (event, songInfo) => { if (trayManager) trayManager.updateTooltip(songInfo); });
+  ipcMain.on('update-tray-play-state', (event, isPlaying) => { if (trayManager) trayManager.updatePlayState(isPlaying); });
+  ipcMain.on('update-tray-play-mode', (event, mode) => { if (trayManager) trayManager.updatePlayMode(mode); });
+  ipcMain.on('update-tray-lyric-state', (event, visible) => { if (trayManager) trayManager.updateLyricState(visible); });
   initAutoUpdater();
   if (app.isPackaged) {
     mainWindow.loadURL('app://localhost/');
@@ -459,5 +480,5 @@ app.whenReady().then(async () => {
     mainWindow.loadURL('http://localhost:5173');
   }
 });
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('will-quit', () => { if (serverProcess) serverProcess.kill(); });
+app.on('window-all-closed', () => { if (process.platform !== 'darwin' && (!trayManager || trayManager.getIsQuitting())) app.quit(); });
+app.on('will-quit', () => { if (trayManager) trayManager._unregisterShortcuts(); if (serverProcess) serverProcess.kill(); });
