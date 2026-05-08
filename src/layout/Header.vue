@@ -187,10 +187,56 @@
       <button @click="close" class="hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
     </div>
   </header>
+
+  <Teleport to="body">
+    <transition name="fade-scale">
+      <div v-if="showCloseDialog" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag">
+        <div class="bg-white w-[360px] rounded-2xl shadow-2xl p-6 relative flex flex-col">
+          <h3 class="text-lg font-bold text-gray-800 mb-1">关闭概念音乐？</h3>
+          <p class="text-xs text-gray-400 mb-5">请选择关闭方式</p>
+
+          <div class="flex flex-col space-y-3 mb-5">
+            <div @click="closeChoice = 'minimize'" class="flex items-center p-3.5 rounded-xl border-2 cursor-pointer transition-all no-drag" :class="closeChoice === 'minimize' ? 'border-blue-500 bg-blue-50/50' : 'border-gray-100 hover:border-gray-200'">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mr-3" :class="closeChoice === 'minimize' ? 'bg-blue-100' : 'bg-gray-100'">
+                <svg class="w-5 h-5" :class="closeChoice === 'minimize' ? 'text-blue-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold" :class="closeChoice === 'minimize' ? 'text-blue-700' : 'text-gray-700'">最小化到托盘</p>
+                <p class="text-xs mt-0.5" :class="closeChoice === 'minimize' ? 'text-blue-500' : 'text-gray-400'">继续在后台播放音乐</p>
+              </div>
+              <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" :class="closeChoice === 'minimize' ? 'border-blue-500' : 'border-gray-300'">
+                <div v-if="closeChoice === 'minimize'" class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+              </div>
+            </div>
+
+            <div @click="closeChoice = 'quit'" class="flex items-center p-3.5 rounded-xl border-2 cursor-pointer transition-all no-drag" :class="closeChoice === 'quit' ? 'border-red-500 bg-red-50/50' : 'border-gray-100 hover:border-gray-200'">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mr-3" :class="closeChoice === 'quit' ? 'bg-red-100' : 'bg-gray-100'">
+                <svg class="w-5 h-5" :class="closeChoice === 'quit' ? 'text-red-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold" :class="closeChoice === 'quit' ? 'text-red-700' : 'text-gray-700'">退出软件</p>
+                <p class="text-xs mt-0.5" :class="closeChoice === 'quit' ? 'text-red-500' : 'text-gray-400'">完全关闭概念音乐</p>
+              </div>
+              <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" :class="closeChoice === 'quit' ? 'border-red-500' : 'border-gray-300'">
+                <div v-if="closeChoice === 'quit'" class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex space-x-3">
+            <button @click="showCloseDialog = false" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold transition-colors no-drag">取消</button>
+            <button @click="executeCloseAction" class="flex-1 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95 no-drag" :class="closeChoice === 'quit' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
+              {{ closeChoice === 'quit' ? '退出软件' : '最小化' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import request from '../utils/request';
 import { useSearchHistory } from '../composables/useSearchHistory';
@@ -488,19 +534,57 @@ watch(() => route.path, (newPath) => {
   }
 });
 
+let closeDialogHandler = null;
+
 onMounted(() => {
   if (route.query.keyword) searchKeyword.value = route.query.keyword;
   fetchDefaultPlaceholder();
+  if (window.windowControls?.onCloseDialogTrigger) {
+    closeDialogHandler = () => close();
+    window.windowControls.onCloseDialogTrigger(closeDialogHandler);
+  }
+});
+
+onUnmounted(() => {
+  closeDialogHandler = null;
 });
 
 const minimize = () => { if (window.windowControls) window.windowControls.minimize(); };
 const maximize = () => { if (window.windowControls) window.windowControls.maximize(); };
-const close = () => { if (window.windowControls) window.windowControls.close(); };
+
+const showCloseDialog = ref(false);
+const closeChoice = ref('minimize');
+const closeActionMemory = ref(null);
+
+const close = () => {
+  if (closeActionMemory.value) {
+    executeCloseActionDirect(closeActionMemory.value);
+    return;
+  }
+  closeChoice.value = 'minimize';
+  showCloseDialog.value = true;
+};
+
+const executeCloseAction = () => {
+  closeActionMemory.value = closeChoice.value;
+  showCloseDialog.value = false;
+  executeCloseActionDirect(closeChoice.value);
+};
+
+const executeCloseActionDirect = (action) => {
+  if (action === 'quit') {
+    if (window.trayAPI) window.trayAPI.forceQuit();
+  } else {
+    if (window.windowControls) window.windowControls.close();
+  }
+};
 </script>
 
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-5px); }
+.fade-scale-enter-active, .fade-scale-leave-active { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.fade-scale-enter-from, .fade-scale-leave-to { opacity: 0; transform: scale(0.92); }
 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.3); border-radius: 4px; }

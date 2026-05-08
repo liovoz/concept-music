@@ -57,8 +57,7 @@
                   <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mb-3">
                     <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
                   </div>
-                  <p class="text-sm text-gray-900 font-bold">发现新版本 v{{ updateInfo.version }}</p>
-                  <p class="text-xs text-gray-400 mt-1 mb-4 line-clamp-2">{{ updateInfo.releaseNotes || '带来了新的特性与体验优化' }}</p>
+                  <p class="text-sm text-gray-900 font-bold mb-4">发现新版本 v{{ updateInfo.version }}</p>
                   <div class="w-full flex space-x-3">
                     <button @click="closeModal" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold transition-colors no-drag focus:outline-none">
                       以后再说

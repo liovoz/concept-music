@@ -12,6 +12,7 @@ import History from '../views/History.vue';
 import DesktopLyric from '../views/DesktopLyric.vue';
 // ✨ 引入全新的歌手与专辑详情页
 import ArtistDetail from '../views/ArtistDetail.vue';
+import ArtistList from '../views/ArtistList.vue';
 import AlbumDetail from '../views/AlbumDetail.vue';
 import PersonalFM from '../views/PersonalFM.vue';
 import NewSongs from '../views/NewSongs.vue';
@@ -26,6 +27,7 @@ const routes = [
   { path: '/history', name: 'History', component: History },
   { path: '/desktop-lyric', name: 'DesktopLyric', component: DesktopLyric },
   { path: '/artist/:id', name: 'ArtistDetail', component: ArtistDetail },
+  { path: '/artists', name: 'ArtistList', component: ArtistList },
   { path: '/album/:id', name: 'AlbumDetail', component: AlbumDetail },
   { path: '/fm', name: 'PersonalFM', component: PersonalFM },
   { path: '/new-songs', name: 'NewSongs', component: NewSongs }

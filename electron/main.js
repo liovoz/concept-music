@@ -429,7 +429,7 @@ ipcMain.handle('native-api-request', async (event, config) => {
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 1150, height: 800, minWidth: 1024, minHeight: 700, frame: false, show: false, backgroundColor: '#ffffff',
+    width: 1200, height: 830, minWidth: 1100, minHeight: 740, frame: false, show: false, backgroundColor: '#ffffff',
     icon: getAppIconPath(),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, webSecurity: true }
   });
@@ -446,7 +446,7 @@ const createWindow = () => {
   mainWindow.on('close', (e) => {
     if (trayManager && !trayManager.getIsQuitting()) {
       e.preventDefault();
-      trayManager.handleWindowClose();
+      mainWindow.webContents.send('trigger-close-dialog');
     }
   });
 };

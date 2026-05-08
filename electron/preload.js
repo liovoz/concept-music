@@ -3,7 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('windowControls', {
   minimize: () => ipcRenderer.send('window-min'),
   maximize: () => ipcRenderer.send('window-max'),
-  close: () => ipcRenderer.send('window-close')
+  close: () => ipcRenderer.send('window-close'),
+  onCloseDialogTrigger: (callback) => ipcRenderer.on('trigger-close-dialog', () => callback())
 });
 
 contextBridge.exposeInMainWorld('updaterAPI', {

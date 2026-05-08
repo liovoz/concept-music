@@ -96,10 +96,9 @@
         <div @click="$router.push('/rank')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>排行榜</div>
         <div @click="$router.push('/new-songs')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/new-songs' ? 'font-medium bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/new-songs' ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>新歌速递</div>
         <div @click="$router.push('/fm')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/fm' ? 'font-medium bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/fm' ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>私人FM</div>
-      </nav>
-      
-      <nav class="flex flex-col space-y-1 px-3 mt-8">
-        <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">我的音乐</div>
+        <div @click="$router.push('/artists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/artists' ? 'font-medium bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/artists' ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>歌手</div>
+
+        <div class="px-3 pt-4 pb-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">我的音乐</div>
         <div @click="$router.push('/history')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/history' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/history' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>听歌足迹</div>
         <div @click="goToLikedMusic" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="isLikedMusicActive ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="isLikedMusicActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>我喜欢的音乐</div>
         <div @click="$router.push('/my-playlists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/my-playlists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/my-playlists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>私人歌单</div>
@@ -111,10 +110,6 @@
       <div @click="checkForUpdates" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors text-gray-600 hover:bg-gray-200 group">
         <svg class="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         关于
-      </div>
-      <div @click="handleQuitApp" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors text-gray-600 hover:bg-red-50 hover:text-red-500 group">
-        <svg class="w-4 h-4 mr-3 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-        退出程序
       </div>
     </nav>
 
@@ -128,19 +123,6 @@
             <div class="flex space-x-3 w-full">
               <button @click="showLogoutConfirm = false" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold">取消</button>
               <button @click="executeLogout" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold shadow-md">确认退出</button>
-            </div>
-          </div>
-        </div>
-      </transition>
-      <transition name="fade-scale">
-        <div v-if="showQuitConfirm" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag">
-          <div class="bg-white w-[320px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
-            <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4"><svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg></div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2">退出程序</h3>
-            <p class="text-sm text-gray-500 mb-6">确定要完全退出概念音乐吗？<br/>关闭窗口可最小化到托盘继续播放。</p>
-            <div class="flex space-x-3 w-full">
-              <button @click="showQuitConfirm = false" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold">取消</button>
-              <button @click="executeQuitApp" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold shadow-md">确认退出</button>
             </div>
           </div>
         </div>
@@ -162,7 +144,6 @@ const playerStore = usePlayerStore();
 const updateModalRef = inject('updateModalRef', null);
 
 const showLogoutConfirm = ref(false);
-const showQuitConfirm = ref(false);
 const isVipCardVisible = ref(false);
 let hoverTimer = null; 
 
@@ -257,17 +238,6 @@ const isLikedMusicActive = computed(() => {
 const goToLikedMusic = () => {
   if (!userStore.isLoggedIn) return userStore.openLoginModal();
   if (userStore.likedPlaylistGlobalId) router.push(`/playlist/${userStore.likedPlaylistGlobalId}`);
-};
-
-const handleQuitApp = () => {
-  showQuitConfirm.value = true;
-};
-
-const executeQuitApp = () => {
-  showQuitConfirm.value = false;
-  if (window.trayAPI) {
-    window.trayAPI.forceQuit();
-  }
 };
 </script>
 
