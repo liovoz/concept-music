@@ -104,6 +104,8 @@ export const usePlayerStore = defineStore('player', {
 
     isCurrentSongPreview: false,
 
+    _errorSkipTimer: null,
+
     peakMode: false,
     peakStartOffset: 0,
     peakDuration: 30,
@@ -159,25 +161,45 @@ export const usePlayerStore = defineStore('player', {
       const userStore = useUserStore();
       
       if (this.isCurrentSongPreview) {
-        this.showDialog({
-          title: '试听结束',
-          message: '当前歌曲为付费或VIP专享，试听片段已播放完毕。\n开通 VIP 或购买数字专辑即可畅听完整版及无损音质。',
-          confirmText: '继续下一首',
-          cancelText: '解锁完整版',
-          countdown: 5,
-          onConfirm: () => {
-            this.currentTime = 0;
-            this.playNext(true); 
-          },
-          onCancel: () => {
-            this.currentTime = 0;
-            userStore.openLoginModal(); 
-          }
-        });
+        if (userStore.isLoggedIn) {
+          this.showDialog({
+            title: '试听结束',
+            message: '当前歌曲为VIP专享，试听片段已播放完毕。\n开通 VIP 即可畅听完整版及无损音质。',
+            confirmText: '继续下一首',
+            cancelText: '开通 VIP',
+            countdown: 5,
+            onConfirm: () => {
+              this.currentTime = 0;
+              this.playNext(true); 
+            },
+            onCancel: () => {
+              this.currentTime = 0;
+              userStore.openVipUpgradeModal();
+            }
+          });
+        } else {
+          this.showDialog({
+            title: '试听结束',
+            message: '当前歌曲为付费或VIP专享，试听片段已播放完毕。\n登录并开通 VIP 即可畅听完整版及无损音质。',
+            confirmText: '继续下一首',
+            cancelText: '登录解锁',
+            countdown: 5,
+            onConfirm: () => {
+              this.currentTime = 0;
+              this.playNext(true); 
+            },
+            onCancel: () => {
+              this.currentTime = 0;
+              userStore.openLoginModal();
+            }
+          });
+        }
       } else {
         if (isErrorEnd) {
           this.showToast('音频流发生异常中断，自动为您跳至下一首');
-          setTimeout(() => { 
+          if (this._errorSkipTimer) clearTimeout(this._errorSkipTimer);
+          this._errorSkipTimer = setTimeout(() => { 
+            this._errorSkipTimer = null;
             this.currentTime = 0;
             this.playNext(true); 
           }, 2000);
@@ -520,6 +542,7 @@ export const usePlayerStore = defineStore('player', {
     },
 
     async playSong(songInfo, targetQuality = null, maintainTime = 0, autoPlay = true) {
+      if (this._errorSkipTimer) { clearTimeout(this._errorSkipTimer); this._errorSkipTimer = null; }
       this.isLoading = true;
       this.isError = false;        
       this.errorMessage = '';
@@ -644,13 +667,23 @@ export const usePlayerStore = defineStore('player', {
       const isVipQuality = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(targetQuality);
 
       if (isVipQuality && !isVipUser) {
-        this.showDialog({
-          title: 'VIP 专属音质',
-          message: '【无损 SQ】及以上极高音质为 VIP 专享特权。\n您当前未登录或非会员，无法切换。',
-          confirmText: '去登录 / 领 VIP',
-          cancelText: '继续听标准音质',
-          onConfirm: () => { userStore.openLoginModal(); }
-        });
+        if (userStore.isLoggedIn) {
+          this.showDialog({
+            title: 'VIP 专属音质',
+            message: '【无损 SQ】及以上极高音质为 VIP 专享特权。\n您当前非会员，开通 VIP 即可解锁。',
+            confirmText: '开通 VIP',
+            cancelText: '继续听标准音质',
+            onConfirm: () => { userStore.openVipUpgradeModal(); }
+          });
+        } else {
+          this.showDialog({
+            title: 'VIP 专属音质',
+            message: '【无损 SQ】及以上极高音质为 VIP 专享特权。\n登录并开通 VIP 即可解锁。',
+            confirmText: '去登录',
+            cancelText: '继续听标准音质',
+            onConfirm: () => { userStore.openLoginModal(); }
+          });
+        }
         return;
       }
 
@@ -838,9 +871,9 @@ export const usePlayerStore = defineStore('player', {
           this.showDialog({
             title: '播放队列中断',
             message: '队列中剩余歌曲均为 VIP 专享，自动播放已停止。\n开通 VIP 即可畅听全部内容。',
-            confirmText: '立即开通',
+            confirmText: userStore.isLoggedIn ? '开通 VIP' : '去登录',
             cancelText: '知道了',
-            onConfirm: () => { userStore.openLoginModal(); }
+            onConfirm: () => { userStore.isLoggedIn ? userStore.openVipUpgradeModal() : userStore.openLoginModal(); }
           });
           this.isPlaying = false;
           return;
@@ -880,9 +913,9 @@ export const usePlayerStore = defineStore('player', {
         this.showDialog({
           title: '播放队列中断',
           message: '队列中剩余歌曲均为 VIP 专享，自动播放已停止。\n开通 VIP 即可畅听全部内容。',
-          confirmText: '立即开通',
+          confirmText: userStore.isLoggedIn ? '开通 VIP' : '去登录',
           cancelText: '知道了',
-          onConfirm: () => { userStore.openLoginModal(); }
+          onConfirm: () => { userStore.isLoggedIn ? userStore.openVipUpgradeModal() : userStore.openLoginModal(); }
         });
         this.isPlaying = false;
         return;

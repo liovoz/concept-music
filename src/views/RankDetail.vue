@@ -60,8 +60,8 @@
         <div class="flex items-center px-4 py-2 text-xs text-gray-400 border-b border-gray-100 mb-2 min-w-0">
           <div class="w-10 text-center flex-shrink-0">#</div>
           <div class="flex-1 pl-2 min-w-0">音乐标题</div>
-          <div class="w-[22%] hidden sm:block pr-4 min-w-0">歌手</div>
-          <div class="w-[28%] hidden md:block pr-4 min-w-0">专辑</div>
+          <div class="w-1/4 hidden sm:block pr-4 min-w-0">歌手</div>
+          <div class="w-1/4 hidden md:block pr-4 min-w-0">专辑</div>
           <div class="w-12 sm:w-16 text-right pr-4 flex-shrink-0">时长</div>
         </div>
         
@@ -83,10 +83,10 @@
               <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
             </div>
             
-            <div class="w-[22%] hidden sm:block text-xs truncate pr-4 min-w-0">
+            <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">
               <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" />
             </div>
-            <div class="w-[28%] hidden md:block text-xs text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
+            <div class="w-1/4 hidden md:block text-xs text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
               <span @click.stop="goToAlbum(song._album_id || song.album_id)"
                     class="transition-colors"
                     :class="(song._album_id || song.album_id) ? 'hover:text-blue-600 cursor-pointer' : ''">{{ song._album }}</span>

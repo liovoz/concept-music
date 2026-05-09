@@ -128,6 +128,28 @@
         </div>
       </transition>
     </Teleport>
+
+    <Teleport to="body">
+      <transition name="fade-scale">
+        <div v-if="userStore.showVipUpgradeModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag" @click.self="userStore.closeVipUpgradeModal()">
+          <div class="bg-white w-[340px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">开通 VIP</h3>
+            <p class="text-sm text-gray-500 mb-5">当前歌曲为 VIP 专享，开通 VIP 即可畅听完整版及无损音质。</p>
+            <div class="flex flex-col space-y-2 w-full">
+              <button @click="handleVipUpgradeClaim" class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-sm font-bold shadow-md transition-all">
+                🎁 去领取免费 VIP
+              </button>
+              <button @click="userStore.closeVipUpgradeModal()" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-bold transition-all">
+                稍后再说
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </aside>
 </template>
 
@@ -194,6 +216,7 @@ onMounted(() => {
          userStore.checkVipReset(); 
          userStore.checkDayVipReset();
       }
+      userStore.checkVipExpiration();
     }
   }, 1000);
 });
@@ -223,6 +246,37 @@ const handleClaimOneDayVip = async () => {
 const handleClaimDailyVip = async () => {
   const res = await userStore.claimDailyVip();
   playerStore.showToast(res.msg);
+};
+
+const handleVipUpgradeClaim = async () => {
+  userStore.closeVipUpgradeModal();
+  if (!userStore.dayVipState.claimed) {
+    const res = await userStore.claimOneDayVip();
+    playerStore.showToast(res.msg);
+    if (res.success) {
+      if (playerStore.isCurrentSongPreview && userStore.userInfo.vip > 0) {
+        playerStore.reloadCurrentSongForVip();
+      } else if (!playerStore.isPlaying && playerStore.currentSong) {
+        playerStore.playNext(true);
+      }
+      return;
+    }
+    playerStore.showToast('1天VIP领取失败，请稍后重试');
+    return;
+  }
+  if (userStore.vipState.count < 8 && cooldownRemaining.value <= 0) {
+    const res = await userStore.claimDailyVip();
+    playerStore.showToast(res.msg);
+    if (res.success) {
+      if (playerStore.isCurrentSongPreview && userStore.userInfo.vip > 0) {
+        playerStore.reloadCurrentSongForVip();
+      } else if (!playerStore.isPlaying && playerStore.currentSong) {
+        playerStore.playNext(true);
+      }
+    }
+  } else {
+    playerStore.showToast('VIP 领取冷却中，请稍后再试');
+  }
 };
 
 const executeLogout = () => {

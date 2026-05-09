@@ -543,10 +543,16 @@ onMounted(() => {
     closeDialogHandler = () => close();
     window.windowControls.onCloseDialogTrigger(closeDialogHandler);
   }
+  if (window.windowControls?.onWindowRestored) {
+    window.windowControls.onWindowRestored(() => {
+      showCloseDialog.value = false;
+    });
+  }
 });
 
 onUnmounted(() => {
   closeDialogHandler = null;
+  showCloseDialog.value = false;
 });
 
 const minimize = () => { if (window.windowControls) window.windowControls.minimize(); };

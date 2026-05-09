@@ -4,7 +4,14 @@ contextBridge.exposeInMainWorld('windowControls', {
   minimize: () => ipcRenderer.send('window-min'),
   maximize: () => ipcRenderer.send('window-max'),
   close: () => ipcRenderer.send('window-close'),
-  onCloseDialogTrigger: (callback) => ipcRenderer.on('trigger-close-dialog', () => callback())
+  onCloseDialogTrigger: (callback) => {
+    ipcRenderer.removeAllListeners('trigger-close-dialog');
+    ipcRenderer.on('trigger-close-dialog', () => callback());
+  },
+  onWindowRestored: (callback) => {
+    ipcRenderer.removeAllListeners('window-restored');
+    ipcRenderer.on('window-restored', () => callback());
+  }
 });
 
 contextBridge.exposeInMainWorld('updaterAPI', {
@@ -13,7 +20,10 @@ contextBridge.exposeInMainWorld('updaterAPI', {
   cancelDownload: () => ipcRenderer.send('cancel-download'),
   quitAndInstall: () => ipcRenderer.send('quit-and-install'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
-  onUpdateEvent: (callback) => ipcRenderer.on('updater-event', (_event, data) => callback(data)),
+  onUpdateEvent: (callback) => {
+    ipcRenderer.removeAllListeners('updater-event');
+    ipcRenderer.on('updater-event', (_event, data) => callback(data));
+  },
   clearVault: () => ipcRenderer.send('clear-vault')
 });
 

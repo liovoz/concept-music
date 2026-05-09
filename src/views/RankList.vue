@@ -42,7 +42,7 @@
       </div>
 
       <div v-else class="w-full flex-1 flex flex-col min-w-0 pb-10">
-        <div class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-x-6 gap-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-x-6 gap-y-6">
           <div 
             v-for="rank in ranks" 
             :key="rank._id"
@@ -84,6 +84,8 @@
       </div>
 
     </div>
+
+    <BackToTop targetId="rank-scroll-container" />
   </div>
 </template>
 
@@ -91,6 +93,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import request from '../utils/request';
+import BackToTop from '../components/BackToTop.vue';
 
 const router = useRouter();
 
