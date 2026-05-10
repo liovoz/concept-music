@@ -69,6 +69,10 @@ npm run build
 npm run pack
 ```
 
+## 致谢
+感谢大佬的开源
+https://github.com/MakcRe/KuGouMusicApi
+
 ## 📄 License
 
 [MIT](LICENSE)
