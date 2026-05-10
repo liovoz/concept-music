@@ -22,7 +22,7 @@
 
 ## 📸 界面预览
 
-> （可在此处添加截图）
+> <img width="1488" height="1029" alt="PixPin_2026-05-10_17-57-18" src="https://github.com/user-attachments/assets/ba8addd1-4c1c-4ff9-8aa7-bbfe21a8a389" />
 
 ## 🚀 快速开始
 
