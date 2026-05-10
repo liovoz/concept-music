@@ -2,6 +2,7 @@
 // 文件：src/components/LoginModal.vue
 // ====================
 <template>
+  <Teleport to="body">
   <transition name="fade-scale">
     <div v-if="userStore.showLoginModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag" @keydown.escape="closeModal" @click.self="closeModal">
       
@@ -46,6 +47,7 @@
       </div>
     </div>
   </transition>
+  </Teleport>
 </template>
 
 <script setup>

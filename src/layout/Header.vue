@@ -240,6 +240,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import request from '../utils/request';
 import { useSearchHistory } from '../composables/useSearchHistory';
+import { disclaimerVisible } from '../utils/appState';
 
 const router = useRouter();
 const route = useRoute();
@@ -563,6 +564,10 @@ const closeChoice = ref('minimize');
 const closeActionMemory = ref(null);
 
 const close = () => {
+  if (disclaimerVisible.value) {
+    if (window.trayAPI) window.trayAPI.forceQuit();
+    return;
+  }
   if (closeActionMemory.value) {
     executeCloseActionDirect(closeActionMemory.value);
     return;

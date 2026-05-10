@@ -5,18 +5,6 @@ import { defineStore } from 'pinia';
 import request from '../utils/request';
 import { useUserStore } from './userStore'; 
 
-const restoreCookies = () => {
-  try {
-    const savedCookies = localStorage.getItem('kg_desktop_cookies');
-    if (savedCookies) {
-      savedCookies.split(';').forEach(c => {
-        if (c.trim()) document.cookie = `${c.trim()}; path=/; max-age=31536000`;
-      });
-    }
-  } catch (e) {}
-};
-if (typeof document !== 'undefined') restoreCookies();
-
 const audioA = new Audio();
 const audioB = new Audio();
 audioA.preload = 'auto';
@@ -107,7 +95,7 @@ export const usePlayerStore = defineStore('player', {
     
     hasReportedCurrentSong: false, 
     
-    volume: Number(localStorage.getItem('kg_desktop_volume') ?? 1),
+    volume: (() => { const v = parseFloat(localStorage.getItem('kg_desktop_volume')); return (isNaN(v) || v < 0 || v > 1) ? 1 : v; })(),
     savedVolume: 1,
     currentQuality: 'standard',
     
@@ -117,6 +105,7 @@ export const usePlayerStore = defineStore('player', {
     isCurrentSongPreview: false,
 
     _errorSkipTimer: null,
+    _vipActionTimer: null,
 
     peakMode: false,
     peakStartOffset: 0,

@@ -1,16 +1,42 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+const createListenerManager = (channel) => {
+  let currentCallback = null;
+  const handler = (...args) => { if (currentCallback) currentCallback(...args); };
+  return {
+    set: (callback) => {
+      if (currentCallback) ipcRenderer.removeListener(channel, handler);
+      currentCallback = callback;
+      if (callback) ipcRenderer.on(channel, handler);
+    },
+    clear: () => {
+      if (currentCallback) {
+        ipcRenderer.removeListener(channel, handler);
+        currentCallback = null;
+      }
+    }
+  };
+};
+
+const closeDialogMgr = createListenerManager('trigger-close-dialog');
+const windowRestoredMgr = createListenerManager('window-restored');
+const updaterEventMgr = createListenerManager('updater-event');
+const lyricSyncMgr = createListenerManager('update-lyric');
+const lyricControlMgr = createListenerManager('main-lyric-control');
+const lyricEnterMgr = createListenerManager('lyric-mouse-enter');
+const lyricLeaveMgr = createListenerManager('lyric-mouse-leave');
+const lyricClosedMgr = createListenerManager('lyric-window-closed');
+const trayActionMgr = createListenerManager('tray-action');
+
 contextBridge.exposeInMainWorld('windowControls', {
   minimize: () => ipcRenderer.send('window-min'),
   maximize: () => ipcRenderer.send('window-max'),
   close: () => ipcRenderer.send('window-close'),
   onCloseDialogTrigger: (callback) => {
-    ipcRenderer.removeAllListeners('trigger-close-dialog');
-    ipcRenderer.on('trigger-close-dialog', () => callback());
+    closeDialogMgr.set(callback);
   },
   onWindowRestored: (callback) => {
-    ipcRenderer.removeAllListeners('window-restored');
-    ipcRenderer.on('window-restored', () => callback());
+    windowRestoredMgr.set(callback);
   }
 });
 
@@ -21,8 +47,7 @@ contextBridge.exposeInMainWorld('updaterAPI', {
   quitAndInstall: () => ipcRenderer.send('quit-and-install'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   onUpdateEvent: (callback) => {
-    ipcRenderer.removeAllListeners('updater-event');
-    ipcRenderer.on('updater-event', (_event, data) => callback(data));
+    updaterEventMgr.set((_event, data) => callback(data));
   },
   clearVault: () => ipcRenderer.send('clear-vault')
 });
@@ -31,28 +56,23 @@ contextBridge.exposeInMainWorld('lyricAPI', {
   toggle: () => ipcRenderer.send('toggle-desktop-lyric'),
   sync: (data) => ipcRenderer.send('sync-lyric', data),
   onSync: (callback) => {
-    ipcRenderer.removeAllListeners('update-lyric');
-    ipcRenderer.on('update-lyric', (event, data) => callback(data));
+    lyricSyncMgr.set((event, data) => callback(data));
   },
   sendControl: (cmd) => ipcRenderer.send('lyric-control-cmd', cmd),
   onControl: (callback) => {
-    ipcRenderer.removeAllListeners('main-lyric-control');
-    ipcRenderer.on('main-lyric-control', (event, cmd) => callback(cmd));
+    lyricControlMgr.set((event, cmd) => callback(cmd));
   },
   setIgnoreMouse: (ignore) => ipcRenderer.send('set-ignore-mouse', ignore),
   setMouseAuto: () => ipcRenderer.send('set-mouse-auto'),
   unlockLyric: () => ipcRenderer.send('unlock-lyric'),
   onMouseEnter: (callback) => {
-    ipcRenderer.removeAllListeners('lyric-mouse-enter');
-    ipcRenderer.on('lyric-mouse-enter', () => callback());
+    lyricEnterMgr.set(() => callback());
   },
   onMouseLeave: (callback) => {
-    ipcRenderer.removeAllListeners('lyric-mouse-leave');
-    ipcRenderer.on('lyric-mouse-leave', () => callback());
+    lyricLeaveMgr.set(() => callback());
   },
   onClosed: (callback) => {
-    ipcRenderer.removeAllListeners('lyric-window-closed');
-    ipcRenderer.on('lyric-window-closed', () => callback());
+    lyricClosedMgr.set(() => callback());
   },
   startDrag: () => ipcRenderer.send('lyric-window-drag'),
   stopDrag: () => ipcRenderer.send('lyric-window-drag-stop')
@@ -69,7 +89,6 @@ contextBridge.exposeInMainWorld('trayAPI', {
   updatePlayMode: (mode) => ipcRenderer.send('update-tray-play-mode', mode),
   updateLyricState: (visible) => ipcRenderer.send('update-tray-lyric-state', visible),
   onTrayAction: (callback) => {
-    ipcRenderer.removeAllListeners('tray-action');
-    ipcRenderer.on('tray-action', (event, action) => callback(action));
+    trayActionMgr.set((event, action) => callback(action));
   }
 });

@@ -25,13 +25,14 @@
     <LoginModal />
     <GlobalToast />
     <GlobalDialog />
+    <DisclaimerModal @accepted="onDisclaimerAccepted" />
     <UpdateModal ref="updateModalRef" />
 
     <transition name="fade-tooltip">
       <div 
         v-if="tooltipState.visible"
         :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px' }"
-        class="fixed z-[99999] max-w-md px-4 py-2.5 bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] text-xs text-gray-700 leading-relaxed whitespace-pre-wrap pointer-events-none font-medium"
+        class="fixed z-[99998] max-w-md px-4 py-2.5 bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] text-xs text-gray-700 leading-relaxed whitespace-pre-wrap pointer-events-none font-medium"
         :class="tooltipState.isBottom ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2'"
       >
         {{ tooltipState.text }}
@@ -52,6 +53,7 @@ const cachedComponents = new Set(['PersonalFM', 'PlaylistCategory']);
 const isCached = (Component) => cachedComponents.has(Component?.name); 
 import GlobalDialog from './components/GlobalDialog.vue';
 import UpdateModal from './components/UpdateModal.vue';
+import DisclaimerModal from './components/DisclaimerModal.vue';
 import { useUserStore } from './store/userStore';
 import { usePlayerStore } from './store/playerStore';
 import { tooltipState } from './utils/tooltip';
@@ -59,6 +61,12 @@ import { tooltipState } from './utils/tooltip';
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
 const updateModalRef = ref(null);
+
+const disclaimerAccepted = localStorage.getItem('kg_desktop_disclaimer_accepted') === 'true';
+
+const onDisclaimerAccepted = () => {
+  userStore.verifySession();
+};
 
 provide('updateModalRef', updateModalRef);
 
@@ -87,7 +95,7 @@ const handleTrayAction = (action) => {
 };
 
 onMounted(() => { 
-  userStore.verifySession(); 
+  if (disclaimerAccepted) userStore.verifySession(); 
   if (window.trayAPI) {
     window.trayAPI.onTrayAction(handleTrayAction);
   }

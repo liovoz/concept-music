@@ -218,11 +218,9 @@ const resetToIdle = () => {
 const closeModal = () => {
   if (!canClose.value) return;
   isVisible.value = false;
-  setTimeout(() => {
-    status.value = 'idle';
-    progressInfo.value = { percent: 0, bytesPerSecond: 0 };
-    errorMsg.value = '';
-  }, 300);
+  status.value = 'idle';
+  progressInfo.value = { percent: 0, bytesPerSecond: 0 };
+  errorMsg.value = '';
 };
 
 onMounted(() => {

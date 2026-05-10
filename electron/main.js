@@ -35,6 +35,19 @@ let isManualCheck = false;
 let downloadCancellationToken = null; 
 let trayManager = null;
 
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.exit(0);
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
 // --- 金库与鉴权逻辑 (保持原样) ---
 let vaultMemoryCache = null;
 app.on('before-quit', () => { isQuitting = true; if (trayManager) trayManager.setIsQuitting(true); });
@@ -470,8 +483,8 @@ const createWindow = () => {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, webSecurity: true }
   });
   mainWindow.once('ready-to-show', () => mainWindow.show());
-  ipcMain.on('window-min', () => mainWindow.minimize());
-  ipcMain.on('window-max', () => { if (mainWindow.isMaximized()) mainWindow.unmaximize(); else mainWindow.maximize(); });
+  ipcMain.on('window-min', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize(); });
+  ipcMain.on('window-max', () => { if (mainWindow && !mainWindow.isDestroyed()) { if (mainWindow.isMaximized()) mainWindow.unmaximize(); else mainWindow.maximize(); } });
   ipcMain.on('window-close', () => {
     if (trayManager && !trayManager.getIsQuitting()) {
       trayManager.handleWindowClose();
@@ -518,3 +531,4 @@ app.whenReady().then(async () => {
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin' && (!trayManager || trayManager.getIsQuitting())) app.quit(); });
 app.on('will-quit', () => { if (trayManager) trayManager._unregisterShortcuts(); if (serverProcess) serverProcess.kill(); });
+}

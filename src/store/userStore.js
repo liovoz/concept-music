@@ -509,6 +509,7 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('kg_desktop_day_vip_states');
         localStorage.removeItem('kg_desktop_daily_rec_home');
         localStorage.removeItem('kg_desktop_daily_date');
+        localStorage.removeItem('kg_desktop_cookies');
       } catch (e) {}
       
       this.isLoggedIn = false;
