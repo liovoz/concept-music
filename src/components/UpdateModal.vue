@@ -103,9 +103,17 @@
                   <div class="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mb-3">
                     <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                   </div>
-                  <p class="text-sm text-gray-900 font-bold">检查更新失败</p>
-                  <p class="text-xs text-gray-400 mt-1 mb-4">{{ errorMsg }}</p>
-                  <button @click="resetToIdle" class="text-xs text-blue-500 hover:text-blue-700 font-medium no-drag transition-colors">
+                  <p class="text-sm text-gray-900 font-bold">{{ isDownloadError ? '下载更新失败' : '检查更新失败' }}</p>
+                  <p class="text-xs text-gray-400 mt-1 mb-3">{{ errorMsg }}</p>
+                  <div v-if="isDownloadError && updateInfo.version" class="w-full space-y-2">
+                    <button @click="retryDownload" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag focus:outline-none">
+                      重新下载
+                    </button>
+                    <a :href="'https://github.com/liovoz/concept-music/releases/tag/v' + updateInfo.version" target="_blank" class="block w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold transition-colors no-drag text-center">
+                      手动下载安装包
+                    </a>
+                  </div>
+                  <button v-else @click="resetToIdle" class="text-xs text-blue-500 hover:text-blue-700 font-medium no-drag transition-colors">
                     返回重试
                   </button>
                 </div>
@@ -118,9 +126,14 @@
                   </div>
                   <p class="text-sm text-gray-900 font-bold">下载已取消</p>
                   <p class="text-xs text-gray-400 mt-1 mb-4">更新下载已中断</p>
-                  <button @click="resetToIdle" class="text-xs text-blue-500 hover:text-blue-700 font-medium no-drag transition-colors">
-                    返回
-                  </button>
+                  <div class="w-full space-y-2">
+                    <button @click="retryDownload" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag focus:outline-none">
+                      重新下载
+                    </button>
+                    <a v-if="updateInfo.version" :href="'https://github.com/liovoz/concept-music/releases/tag/v' + updateInfo.version" target="_blank" class="block w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold transition-colors no-drag text-center">
+                      手动下载安装包
+                    </a>
+                  </div>
                 </div>
               </template>
 
@@ -141,6 +154,7 @@ const appVersion = ref('1.0.0');
 const updateInfo = ref({});
 const progressInfo = ref({ percent: 0, bytesPerSecond: 0 });
 const errorMsg = ref('');
+const isDownloadError = ref(false);
 
 const progressSpeed = computed(() => {
   const bytes = progressInfo.value.bytesPerSecond;
@@ -184,6 +198,12 @@ const cancelDownload = () => {
     window.updaterAPI.cancelDownload();
     status.value = 'cancelled';
   }
+};
+
+const retryDownload = () => {
+  isDownloadError.value = false;
+  errorMsg.value = '';
+  startDownload();
 };
 
 const installUpdate = () => {
@@ -232,13 +252,17 @@ onMounted(() => {
               msg = '暂无可用更新，或更新服务器未配置';
             } else if (msg.includes('net::') || msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
               msg = '无法连接到更新服务器，请检查网络';
+            } else if (msg.includes('aborted') || msg.includes('cancel')) {
+              msg = '';
             } else if (msg.length > 60) {
               msg = '网络连接异常，请稍后重试';
             }
             if (status.value === 'downloading') {
-              status.value = 'cancelled';
+              isDownloadError.value = true;
+              errorMsg.value = msg || '下载中断，请检查网络连接';
+              status.value = 'error';
             } else {
-              errorMsg.value = msg;
+              errorMsg.value = msg || '更新检查失败';
               status.value = 'error';
             }
           }

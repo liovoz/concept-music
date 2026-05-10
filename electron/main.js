@@ -149,22 +149,52 @@ function initAutoUpdater() {
     owner: 'liovoz',
     repo: 'concept-music'
   });
+
+  const updaterSession = mainWindow.webContents.session;
+  updaterSession.resolveProxy('https://github.com').then(proxy => {
+    if (proxy && proxy !== 'DIRECT') {
+      autoUpdater.session = updaterSession;
+    }
+  }).catch(() => {});
   const sendToWindow = (data) => {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('updater-event', data);
   };
+  let downloadRetryCount = 0;
+  const MAX_DOWNLOAD_RETRIES = 3;
+
   autoUpdater.on('checking-for-update', () => sendToWindow({ type: 'checking', isManualCheck }));
   autoUpdater.on('update-available', (info) => sendToWindow({ type: 'available', info, isManualCheck }));
   autoUpdater.on('update-not-available', (info) => { sendToWindow({ type: 'not-available', info, isManualCheck }); isManualCheck = false; });
   autoUpdater.on('error', (err) => { sendToWindow({ type: 'error', message: err.message, isManualCheck }); isManualCheck = false; downloadCancellationToken = null; });
-  autoUpdater.on('download-progress', (progressObj) => sendToWindow({ type: 'progress', progressObj }));
-  autoUpdater.on('update-downloaded', (info) => { sendToWindow({ type: 'downloaded', info }); downloadCancellationToken = null; });
+  autoUpdater.on('download-progress', (progressObj) => { downloadRetryCount = 0; sendToWindow({ type: 'progress', progressObj }); });
+  autoUpdater.on('update-downloaded', (info) => { sendToWindow({ type: 'downloaded', info }); downloadCancellationToken = null; downloadRetryCount = 0; });
+
   ipcMain.on('check-for-updates', () => {
     isManualCheck = true; 
     if (!app.isPackaged) { sendToWindow({ type: 'error', message: '开发环境暂不支持自动更新，请打包后体验', isManualCheck }); isManualCheck = false; return; }
     autoUpdater.checkForUpdates().catch(err => { sendToWindow({ type: 'error', message: '检查更新失败，请检查网络', isManualCheck }); isManualCheck = false; });
   });
-  ipcMain.on('download-update', () => { downloadCancellationToken = new AbortController(); autoUpdater.downloadUpdate(downloadCancellationToken.signal).catch(() => {}); });
-  ipcMain.on('cancel-download', () => { if (downloadCancellationToken) { downloadCancellationToken.abort(); downloadCancellationToken = null; } });
+
+  const doDownloadUpdate = () => {
+    downloadCancellationToken = new AbortController();
+    autoUpdater.downloadUpdate(downloadCancellationToken.signal).catch(err => {
+      const errMsg = (err && err.message) || '';
+      if (errMsg.includes('aborted') || errMsg.includes('cancel')) {
+        return;
+      }
+      if (downloadRetryCount < MAX_DOWNLOAD_RETRIES) {
+        downloadRetryCount++;
+        setTimeout(() => { doDownloadUpdate(); }, 3000);
+      } else {
+        sendToWindow({ type: 'error', message: errMsg || '下载失败，请检查网络连接', isManualCheck: true });
+        downloadRetryCount = 0;
+      }
+      downloadCancellationToken = null;
+    });
+  };
+
+  ipcMain.on('download-update', () => { downloadRetryCount = 0; doDownloadUpdate(); });
+  ipcMain.on('cancel-download', () => { if (downloadCancellationToken) { downloadCancellationToken.abort(); downloadCancellationToken = null; downloadRetryCount = 0; } });
   ipcMain.on('quit-and-install', () => autoUpdater.quitAndInstall());
   ipcMain.handle('get-app-version', () => app.getVersion());
 }
@@ -341,8 +371,9 @@ ipcMain.on('lyric-window-drag', (event) => {
   const initialWindowPos = win.getPosition();
   let lastX = initialWindowPos[0];
   let lastY = initialWindowPos[1];
-  const moveHandler = setInterval(() => {
-    if (win.isDestroyed()) { clearInterval(moveHandler); return; }
+  let dragging = true;
+  const onMove = () => {
+    if (!dragging || win.isDestroyed()) { stopDrag(); return; }
     const currentCursorPos = screen.getCursorScreenPoint();
     const newX = initialWindowPos[0] + (currentCursorPos.x - initialCursorPos.x);
     const newY = initialWindowPos[1] + (currentCursorPos.y - initialCursorPos.y);
@@ -351,9 +382,11 @@ ipcMain.on('lyric-window-drag', (event) => {
       lastX = newX;
       lastY = newY;
     }
-  }, 16);
-  ipcMain.once('lyric-window-drag-stop', () => {
-    clearInterval(moveHandler);
+  };
+  const stopDrag = () => {
+    dragging = false;
+    screen.off('display-metrics-changed', onMove);
+    clearInterval(moveInterval);
     if (!win || win.isDestroyed()) return;
     lyricForceInteractive = false;
     lyricInteractive = false;
@@ -372,7 +405,10 @@ ipcMain.on('lyric-window-drag', (event) => {
       win.setIgnoreMouseEvents(true, { forward: true });
       win.webContents.send('lyric-mouse-leave');
     }
-  });
+  };
+  const moveInterval = setInterval(onMove, 16);
+  screen.on('display-metrics-changed', onMove);
+  ipcMain.once('lyric-window-drag-stop', () => { stopDrag(); });
 });
 
 // --- API 请求中心与常规逻辑 (保持原样) ---

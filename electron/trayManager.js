@@ -81,11 +81,19 @@ export class TrayManager {
   _showWindow() {
     if (!this.mainWindow || this.mainWindow.isDestroyed()) return;
     const wasHidden = !this.mainWindow.isVisible() || this.mainWindow.isMinimized();
-    if (this.mainWindow.isMinimized()) this.mainWindow.restore();
-    this.mainWindow.show();
-    this.mainWindow.focus();
     if (wasHidden) {
       this.mainWindow.webContents.send('window-restored');
+    }
+    if (this.mainWindow.isMinimized()) this.mainWindow.restore();
+    if (wasHidden) {
+      setTimeout(() => {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) return;
+        this.mainWindow.show();
+        this.mainWindow.focus();
+      }, 50);
+    } else {
+      this.mainWindow.show();
+      this.mainWindow.focus();
     }
   }
 

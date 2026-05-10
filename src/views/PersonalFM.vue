@@ -245,7 +245,7 @@ const extractFMSongs = (res) => {
   const isRealSong = (item) => !!(item && typeof item === 'object' && getHash(item) && getName(item));
 
   const traverse = (data, depth) => {
-    if (depth > 20 || !data) return;
+    if (depth > 8 || !data) return;
     if (Array.isArray(data)) {
       data.forEach(item => {
         if (isRealSong(item)) {
@@ -266,6 +266,9 @@ const extractFMSongs = (res) => {
 };
 
 const syncToPlaylist = () => {
+  if (playerStore.playlist.length > 0 && !isFMActive.value) {
+    playerStore.showToast('FM 模式已替换当前播放列表');
+  }
   playerStore.playlist = fmQueue.value.map(song => buildPlayPayload(song, defaultImg));
 };
 

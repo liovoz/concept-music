@@ -16,6 +16,7 @@ import ArtistList from '../views/ArtistList.vue';
 import AlbumDetail from '../views/AlbumDetail.vue';
 import PersonalFM from '../views/PersonalFM.vue';
 import NewSongs from '../views/NewSongs.vue';
+import PlaylistCategory from '../views/PlaylistCategory.vue';
 
 const routes = [
   { path: '/', name: 'Discover', component: Discover },
@@ -30,7 +31,9 @@ const routes = [
   { path: '/artists', name: 'ArtistList', component: ArtistList },
   { path: '/album/:id', name: 'AlbumDetail', component: AlbumDetail },
   { path: '/fm', name: 'PersonalFM', component: PersonalFM },
-  { path: '/new-songs', name: 'NewSongs', component: NewSongs }
+  { path: '/new-songs', name: 'NewSongs', component: NewSongs },
+  { path: '/playlist-category', name: 'PlaylistCategory', component: PlaylistCategory },
+  { path: '/:pathMatch(.*)*', redirect: '/' }
 ];
 
 const router = createRouter({

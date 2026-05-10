@@ -3,7 +3,7 @@
 // ====================
 <template>
   <transition name="fade-scale">
-    <div v-if="userStore.showLoginModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag">
+    <div v-if="userStore.showLoginModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag" @keydown.escape="closeModal" @click.self="closeModal">
       
       <div class="bg-white w-[380px] rounded-3xl shadow-2xl p-8 relative flex flex-col items-center">
         <button @click="closeModal" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-1.5 no-drag">
@@ -61,27 +61,33 @@ const qrKey = ref('');
 const qrImageBase64 = ref('');
 const scanStatus = ref(-1);
 let pollingTimer = null;
+let pollingCount = 0;
+const MAX_POLLING_COUNT = 150;
 
 const clearPolling = () => {
   if (pollingTimer) {
     clearInterval(pollingTimer);
     pollingTimer = null;
   }
+  pollingCount = 0;
 };
 
 const extractField = (data, fieldNames) => {
   let found = null;
-  const search = (obj) => {
-    if (found !== null || !obj || typeof obj !== 'object') return;
+  const visited = new WeakSet();
+  const search = (obj, depth) => {
+    if (found !== null || !obj || typeof obj !== 'object' || depth > 8) return;
+    if (visited.has(obj)) return;
+    visited.add(obj);
     for (const name of fieldNames) {
       if (obj[name] !== undefined && obj[name] !== null && obj[name] !== '') {
         found = obj[name];
         return;
       }
     }
-    Object.values(obj).forEach(search);
+    Object.values(obj).forEach(val => search(val, depth + 1));
   };
-  search(data);
+  search(data, 0);
   return found;
 };
 
@@ -120,7 +126,14 @@ const initLoginFlow = async () => {
 };
 
 const startPollingStatus = () => {
+  pollingCount = 0;
   pollingTimer = setInterval(async () => {
+    pollingCount++;
+    if (pollingCount > MAX_POLLING_COUNT) {
+      clearPolling();
+      scanStatus.value = 0;
+      return;
+    }
     try {
       const checkRes = await request.get('/login/qr/check', { 
         params: { key: qrKey.value, timestamp: Date.now() } 

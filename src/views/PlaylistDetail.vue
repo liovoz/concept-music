@@ -344,23 +344,28 @@ watch(() => [...userStore.likedHashes], (newHashes, oldHashes) => {
         return newHashes.includes(h);
       });
     } else {
-      const addedHash = newHashes.find(h => !(oldHashes || []).includes(h));
-      if (addedHash) {
+      const addedHashes = newHashes.filter(h => !(oldHashes || []).includes(h));
+      for (const addedHash of addedHashes) {
         const exists = songs.value.some(s => (s._hash || '').toUpperCase() === addedHash);
         
-        if (!exists && store.currentSong && (store.currentSong.hash || '').toUpperCase() === addedHash) {
-          const newSong = buildPlayPayload({ 
-             ...store.currentSong, 
-             _hash: store.currentSong.hash, 
-             _title: store.currentSong.name,
-             _singer: store.currentSong.singer,
-             _album: store.currentSong.album,
-             _cover: store.currentSong.cover,
-             _is_vip: store.currentSong.is_vip,
-             _is_paid: store.currentSong.is_paid,
-             _qualities: store.currentSong.qualities
-          });
-          songs.value.unshift(newSong);
+        if (!exists) {
+          if (store.currentSong && (store.currentSong.hash || '').toUpperCase() === addedHash) {
+            const newSong = buildPlayPayload({ 
+               ...store.currentSong, 
+               _hash: store.currentSong.hash, 
+               _title: store.currentSong.name,
+               _singer: store.currentSong.singer,
+               _album: store.currentSong.album,
+               _cover: store.currentSong.cover,
+               _is_vip: store.currentSong.is_vip,
+               _is_paid: store.currentSong.is_paid,
+               _qualities: store.currentSong.qualities
+            });
+            songs.value.unshift(newSong);
+          } else {
+            fetchDetail();
+            return;
+          }
         }
       }
     }

@@ -12,7 +12,7 @@
           <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight truncate">
             搜索结果 <span v-if="currentKeyword" class="text-lg text-gray-400 font-normal ml-2">"{{ currentKeyword }}"</span>
           </h2>
-          <p v-if="!isLoading && !isError && songs.length > 0" class="text-xs text-gray-500 mt-2">已为您捕获 {{ totalCount }} 首单曲</p>
+          <p v-if="!isLoading && !isError && songs.length > 0" class="text-xs text-gray-500 mt-2">已为您找到相关单曲</p>
         </div>
         
         <button v-if="songs.length > 0" @click="playAll" class="flex-shrink-0 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag">
@@ -183,7 +183,7 @@ const extractSongs = (res) => {
   };
 
   const traverse = (data, depth) => {
-    if (depth > 20 || !data) return;
+    if (depth > 8 || !data) return;
     if (Array.isArray(data)) {
       data.forEach(item => {
         if (isRealSong(item)) {

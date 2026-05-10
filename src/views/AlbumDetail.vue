@@ -273,8 +273,16 @@ watch(() => route.params.id, (newId, oldId) => {
   }
 });
 
-onMounted(() => { fetchDetail().then(() => { setupObserver(); }); });
-onUnmounted(() => { if (observer) observer.disconnect(); });
+let isComponentMounted = false;
+
+onMounted(() => { 
+  isComponentMounted = true;
+  fetchDetail().then(() => { if (isComponentMounted) setupObserver(); }); 
+});
+onUnmounted(() => { 
+  isComponentMounted = false;
+  if (observer) observer.disconnect(); 
+});
 
 const handlePlay = (song) => {
   if (!song._hash && !song._album_audio_id) return;

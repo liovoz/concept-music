@@ -98,10 +98,10 @@
         </div>
 
         <div v-else-if="playlists.length > 0">
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 lg:gap-5 mb-8">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 lg:gap-5 mb-8">
             <div v-for="playlist in playlists" :key="playlist.global_collection_id || playlist.specialid" @click="goToPlaylist(playlist.global_collection_id || playlist.specialid)" class="flex flex-col group cursor-pointer no-drag">
               <div class="relative w-full aspect-square rounded-2xl overflow-hidden fix-clip shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1 bg-gray-100 border border-gray-50/50">
-                <img :src="formatImg(playlist.imgurl || playlist.flexible_cover || playlist.pic)" :alt="playlist.specialname" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img :src="formatImg(playlist.imgurl || playlist.flexible_cover || playlist.pic)" :alt="playlist.specialname" loading="lazy" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 
                 <div class="absolute top-2 right-2 bg-black/30 backdrop-blur-md text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
                   <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -134,6 +134,11 @@
             </div>
           </div>
         </div>
+
+        <div v-else class="flex flex-col items-center justify-center py-10 text-gray-400">
+          <svg class="w-12 h-12 mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+          <p class="text-sm font-bold">暂无精选歌单</p>
+        </div>
       </div>
     </div>
 
@@ -142,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import request from '../utils/request';
 import { useUserStore } from '../store/userStore';
@@ -165,11 +170,9 @@ const dailySongs = ref([]);
 
 const defaultImg = 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=300&q=80';
 
-const goToArtist = (id) => {
-  if (!id || id === '0') {
-    return store.showToast('暂无该歌手详情信息');
-  }
-  router.push(`/artist/${id}`);
+const getTodayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
 const formatPlayCount = (num) => {
@@ -207,7 +210,7 @@ const fetchDailyRecommend = async () => {
   try {
     const cachedData = localStorage.getItem('kg_desktop_daily_rec_home');
     const cachedDate = localStorage.getItem('kg_desktop_daily_date');
-    const today = new Date().toLocaleDateString('zh-CN');
+    const today = getTodayStr();
     
     if (cachedData && cachedDate === today) {
       const parsed = JSON.parse(cachedData);
@@ -216,7 +219,10 @@ const fetchDailyRecommend = async () => {
         isDailyLoading.value = false; 
       }
     }
-  } catch(e) {}
+  } catch(e) {
+    localStorage.removeItem('kg_desktop_daily_rec_home');
+    localStorage.removeItem('kg_desktop_daily_date');
+  }
 
   if (dailySongs.value.length === 0) {
     isDailyLoading.value = true;
@@ -231,7 +237,7 @@ const fetchDailyRecommend = async () => {
       dailySongs.value = normalized;
       
       localStorage.setItem('kg_desktop_daily_rec_home', JSON.stringify(normalized));
-      localStorage.setItem('kg_desktop_daily_date', new Date().toLocaleDateString('zh-CN'));
+      localStorage.setItem('kg_desktop_daily_date', getTodayStr());
     } else if (res.code !== 1 && res.status !== 1 && dailySongs.value.length === 0) {
       throw new Error('API限流');
     }
@@ -267,11 +273,18 @@ watch(() => userStore.isLoggedIn, (newVal) => {
   else dailySongs.value = [];
 });
 
+let timers = [];
+
 onMounted(() => { 
-  setTimeout(() => { fetchPlaylists(); }, 150);
+  timers.push(setTimeout(() => { fetchPlaylists(); }, 150));
   if (userStore.isLoggedIn) { 
-     setTimeout(() => { fetchDailyRecommend(); }, 300); 
+    timers.push(setTimeout(() => { fetchDailyRecommend(); }, 300)); 
   } 
+});
+
+onUnmounted(() => {
+  timers.forEach(t => clearTimeout(t));
+  timers = [];
 });
 </script>
 

@@ -4,7 +4,7 @@
 <template>
   <Teleport to="body">
     <transition name="dialog-fade">
-      <div v-if="store.dialogState.visible" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/30 backdrop-blur-sm no-drag">
+      <div v-if="store.dialogState.visible" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/30 backdrop-blur-sm no-drag" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
         <div class="bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-[380px] flex flex-col overflow-hidden transform transition-all">
           
           <div class="px-6 py-5 border-b border-gray-50 flex items-center">
@@ -24,7 +24,7 @@
             </button>
             <button @click="store.closeDialog(true)" class="px-6 py-2 rounded-full text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95 flex items-center justify-center min-w-[100px] no-drag focus:outline-none">
               {{ store.dialogState.confirmText }}
-              <span v-if="store.dialogState.countdown > 0" class="ml-1 opacity-90 font-mono">({{ store.dialogState.countdown }}s)</span>
+              <span v-if="store.dialogState.countdown > 0" class="ml-1 opacity-90 font-mono">({{ store.dialogState.countdown }}s后自动执行)</span>
             </button>
           </div>
 

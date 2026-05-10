@@ -154,7 +154,7 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
     const albumAudioId = String(song.MixSongID || song.mixsongid || song.album_audio_id || song.audio_id || '');
 
     let durationSec = findDeepDuration(song);
-    if (durationSec > 10000) durationSec = Math.floor(durationSec / 1000);
+    if (durationSec > 36000) durationSec = Math.floor(durationSec / 1000);
     const mins = Math.floor(durationSec / 60).toString().padStart(2, '0');
     const secs = Math.floor(durationSec % 60).toString().padStart(2, '0');
     const durationFormatted = durationSec > 0 ? `${mins}:${secs}` : '--:--';

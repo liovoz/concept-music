@@ -3,7 +3,7 @@
 module.exports = (params, useAxios) => {
   const dataMap = {
     tag_type: 'collection',
-    tag_id: 0,
+    tag_id: params?.tag_id || 0,
     source: 3,
   };
 

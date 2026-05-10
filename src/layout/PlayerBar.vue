@@ -90,16 +90,16 @@
          词
        </button>
 
-       <div v-if="store.currentSong" ref="qualityMenuRef" class="relative group flex flex-col items-center justify-center no-drag z-[60]">
-         <div class="cursor-pointer font-bold tracking-wider uppercase transition-colors flex items-center text-xs px-3 py-1.5 rounded-md border border-transparent group-hover:border-gray-200 group-hover:bg-gray-50 text-gray-400 group-hover:text-blue-600" v-tooltip="'音质选择'">
+       <div v-if="store.currentSong" ref="qualityMenuRef" @mouseleave="qualityMenuOpen = false" class="relative flex flex-col items-center justify-center no-drag z-[60]">
+         <div @click="qualityMenuOpen = !qualityMenuOpen" @mouseenter="qualityMenuOpen = true" class="cursor-pointer font-bold tracking-wider uppercase transition-colors flex items-center text-xs px-3 py-1.5 rounded-md border border-transparent hover:border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-blue-600" v-tooltip="'音质选择'">
            {{ qualityDisplayName }}
          </div>
          
-         <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 pb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 origin-bottom">
+         <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 pb-2 transition-all duration-300 origin-bottom" :class="qualityMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'">
            <div class="flex flex-col bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden w-32 py-1.5 relative">
              <div class="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none"></div>
              
-             <div v-for="(q, index) in qualityOptions" :key="q.key" @click="store.switchQuality(q.key)" 
+             <div v-for="(q, index) in qualityOptions" :key="q.key" @click="store.switchQuality(q.key); qualityMenuOpen = false" 
                   class="text-xs py-2.5 font-bold cursor-pointer transition-all relative z-10 flex items-center justify-between px-4" 
                   :class="[
                     index !== qualityOptions.length - 1 ? 'border-b border-gray-50/50' : '',
@@ -109,7 +109,7 @@
                  <span v-if="store.currentQuality === q.key" class="absolute left-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm"></span>
                  <span :class="{'ml-1': store.currentQuality === q.key}">{{ q.name }}</span>
                </div>
-               <span v-if="q.isVip" class="bg-yellow-100 text-yellow-600 border border-yellow-200 px-1 py-[1px] rounded text-[7px] font-black tracking-widest uppercase transform scale-90 origin-right ml-2 shadow-sm">VIP</span>
+               <span v-if="q.isVip" class="bg-blue-50 text-blue-600 border border-blue-200 px-1 py-[1px] rounded text-[7px] font-black tracking-widest uppercase transform scale-90 origin-right ml-2 shadow-sm">VIP</span>
              </div>
            </div>
          </div>
@@ -136,7 +136,7 @@
     </div>
 
     <transition name="slide-up">
-      <div v-if="store.isPlaylistVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex flex-col z-50 overflow-hidden text-gray-800">
+      <div v-if="store.isPlaylistVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex flex-col z-50 overflow-hidden text-gray-800" tabindex="-1" @keydown.escape="store.isPlaylistVisible = false">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
           <h3 class="font-bold text-gray-800 text-sm">当前播放队列 <span class="text-gray-400 font-normal ml-1">({{ store.playlist.length }}首)</span></h3>
           <button @click="store.clearPlaylist" class="text-xs text-gray-500 hover:text-blue-600 transition-colors no-drag">清空</button>
@@ -148,7 +148,7 @@
             <p class="text-xs font-medium">你还没有添加任何歌曲</p>
           </div>
           <div v-else class="space-y-1">
-            <div v-for="(song, index) in store.playlist" :key="song.hash + '_' + index" class="group flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors" :class="{ 'bg-blue-50/60': store.currentSong?.hash === song.hash }" @dblclick="store.playSong(song)">
+            <div v-for="(song, index) in store.playlist" :key="song.hash + '_' + index" class="group flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors" :class="{ 'bg-blue-50/60': store.currentSong?.hash === song.hash }">
               <div class="flex items-center flex-1 overflow-hidden">
                 <div class="w-4 h-4 mr-3 flex items-center justify-center flex-shrink-0">
                   <svg v-if="store.currentSong?.hash === song.hash && store.isPlaying" class="w-4 h-4 text-blue-600 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"/></svg>
@@ -182,7 +182,7 @@
 
   <Teleport to="body">
     <transition name="lyric-fade">
-      <div v-if="store.isLyricsVisible" class="fixed top-0 left-0 w-full h-[calc(100vh-80px)] z-[45] flex flex-col no-drag overflow-hidden">
+      <div v-if="store.isLyricsVisible" class="fixed top-0 left-0 w-full h-[calc(100vh-80px)] z-[45] flex flex-col no-drag overflow-hidden" tabindex="-1" @keydown.escape="store.toggleLyrics()">
         <div class="absolute inset-0 bg-[#f8f9fa] -z-30"></div>
         <div class="absolute inset-0 bg-cover bg-center scale-125 transition-all duration-[2s] ease-out opacity-40 blur-[100px] saturate-200 -z-20" :style="{ backgroundImage: `url(${store.currentSong?.cover || defaultImg})` }"></div>
         <div class="absolute inset-0 bg-white/60 backdrop-blur-3xl -z-10"></div>
@@ -270,6 +270,7 @@ const router = useRouter();
 const playlistPanelRef = ref(null);
 const playlistBtnRef = ref(null);
 const qualityMenuRef = ref(null);
+const qualityMenuOpen = ref(false);
 
 const qualityOptions = QUALITY_CONFIG.map(q => ({
   ...q,
@@ -283,23 +284,32 @@ const qualityDisplayName = computed(() => {
 
 const goToArtist = (id) => {
   if (!id || id === '0') return store.showToast('暂无该歌手详情信息');
-  router.push(`/artist/${id}`);
   if (store.isLyricsVisible) store.toggleLyrics();
+  if (store.isPlaylistVisible) store.isPlaylistVisible = false;
+  router.push(`/artist/${id}`);
 };
 
 const goToAlbum = (id) => {
   if (!id || id === '0') return store.showToast('暂无该专辑详情信息');
-  router.push(`/album/${id}`);
   if (store.isLyricsVisible) store.toggleLyrics();
+  if (store.isPlaylistVisible) store.isPlaylistVisible = false;
+  router.push(`/album/${id}`);
 };
 
 const handleClickOutside = (event) => {
-  if (!store.isPlaylistVisible) return;
-  const isClickInsidePanel = playlistPanelRef.value?.contains(event.target);
-  const isClickOnBtn = playlistBtnRef.value?.contains(event.target);
-  const isClickOnQualityMenu = qualityMenuRef.value?.contains(event.target);
-  if (!isClickInsidePanel && !isClickOnBtn && !isClickOnQualityMenu) {
-    store.isPlaylistVisible = false;
+  if (store.isPlaylistVisible) {
+    const isClickInsidePanel = playlistPanelRef.value?.contains(event.target);
+    const isClickOnBtn = playlistBtnRef.value?.contains(event.target);
+    const isClickOnQualityMenu = qualityMenuRef.value?.contains(event.target);
+    if (!isClickInsidePanel && !isClickOnBtn && !isClickOnQualityMenu) {
+      store.isPlaylistVisible = false;
+    }
+  }
+  if (qualityMenuOpen.value) {
+    const isClickOnQualityMenu = qualityMenuRef.value?.contains(event.target);
+    if (!isClickOnQualityMenu) {
+      qualityMenuOpen.value = false;
+    }
   }
 };
 
@@ -372,11 +382,6 @@ const handleDrag = (e) => {
   dragTime.value = Number(e.target.value);
 };
 
-const handleDragEnd = (e) => {
-  store.seek(Number(e.target.value));
-  isDragging.value = false;
-};
-
 const handlePeakDragEnd = (e) => {
   if (store.peakMode) {
     store.seek(store.peakStartOffset + Number(e.target.value));
@@ -387,7 +392,7 @@ const handlePeakDragEnd = (e) => {
 };
 
 const formatTime = (seconds) => {
-  if (!seconds || isNaN(seconds)) return '00:00';
+  if (!seconds || isNaN(seconds) || seconds < 0 || !isFinite(seconds)) return '00:00';
   const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
   const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
   return `${mins}:${secs}`;

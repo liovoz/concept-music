@@ -13,8 +13,8 @@
       <Sidebar />
       <main class="flex-1 bg-white relative min-w-0 overflow-hidden">
         <router-view v-slot="{ Component }">
-          <keep-alive include="PersonalFM">
-            <component :is="Component" :key="$route.fullPath" />
+          <keep-alive :include="['PersonalFM', 'PlaylistCategory']">
+            <component :is="Component" :key="isCached(Component) ? Component.name : $route.fullPath" />
           </keep-alive>
         </router-view>
       </main>
@@ -46,7 +46,10 @@ import Header from './layout/Header.vue';
 import Sidebar from './layout/Sidebar.vue';
 import PlayerBar from './layout/PlayerBar.vue';
 import LoginModal from './components/LoginModal.vue';
-import GlobalToast from './components/GlobalToast.vue'; 
+import GlobalToast from './components/GlobalToast.vue';
+
+const cachedComponents = new Set(['PersonalFM', 'PlaylistCategory']);
+const isCached = (Component) => cachedComponents.has(Component?.name); 
 import GlobalDialog from './components/GlobalDialog.vue';
 import UpdateModal from './components/UpdateModal.vue';
 import { useUserStore } from './store/userStore';

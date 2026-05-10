@@ -5,15 +5,17 @@ const { appid, clientver, signParamsKey } = require('../util');
 
 module.exports = (params, useAxios) => {
   const dateTime = (Date.now() / 1000).toFixed(0);
+  const hasTag = !!params?.tag_id;
   const specialRecommend = {
     withtag: params?.withtag || 1,
     withsong: params?.withsong || 1,
     sort: params?.sort || 1,
     ugc: 1,
-    is_selected: 0,
-    withrecommend: 1,
+    is_selected: hasTag ? 1 : 0,
+    withrecommend: hasTag ? 0 : 1,
     area_code: 1,
     categoryid: params?.category_id || 0,
+    tagids: params?.tag_id ?? '',
   };
 
   const dataMap = {
@@ -29,8 +31,8 @@ module.exports = (params, useAxios) => {
     key: signParamsKey(dateTime.toString()),
     special_recommend: specialRecommend,
     req_multi: 1,
-    retrun_min: 5,
-    return_special_falg: 1,
+    return_min: 5,
+    return_special_flag: 1,
   };
 
   return useAxios({

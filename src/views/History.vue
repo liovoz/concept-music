@@ -211,7 +211,7 @@ const extractSongs = (res) => {
   const isRealSong = (item) => !!(item && typeof item === 'object' && getHash(item) && getName(item));
 
   const traverse = (data, depth) => {
-    if (depth > 20 || !data) return;
+    if (depth > 8 || !data) return;
     if (Array.isArray(data)) {
       data.forEach(item => {
         if (isRealSong(item)) {
@@ -349,10 +349,6 @@ onUnmounted(() => { if (observer) observer.disconnect(); });
 const handlePlay = (song) => {
   if (!song._hash) return;
   store.playSong(buildPlayPayload(song, defaultImg));
-};
-
-const goToArtist = (id) => {
-  if (id) router.push(`/artist/${id}`);
 };
 
 const goToAlbum = (id) => {

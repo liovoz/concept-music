@@ -117,7 +117,7 @@ const normalizeRanks = (list) => {
     let cover = item.img_9 || item.banner_9 || item.base_img || defaultImg;
     if (typeof cover === 'string') cover = cover.replace(/\{size\}/g, '400');
     const playCount = item.play_times || 0;
-    const topSongs = (item.songinfo || []).slice(0, 3).map(song => ({
+    const topSongs = (Array.isArray(item.songinfo) ? item.songinfo : []).slice(0, 3).map(song => ({
       name: song.name || song.songname || '未知歌曲',
       singer: song.author || song.singername || '未知歌手'
     }));

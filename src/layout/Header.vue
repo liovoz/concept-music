@@ -189,8 +189,8 @@
   </header>
 
   <Teleport to="body">
-    <transition name="fade-scale">
-      <div v-if="showCloseDialog" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag">
+    <transition name="fade-scale" :css="false" @enter="onDialogEnter" @leave="onDialogLeave">
+      <div v-if="showCloseDialog" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag" @keydown.escape="showCloseDialog = false" tabindex="-1">
         <div class="bg-white w-[360px] rounded-2xl shadow-2xl p-6 relative flex flex-col">
           <h3 class="text-lg font-bold text-gray-800 mb-1">关闭概念音乐？</h3>
           <p class="text-xs text-gray-400 mb-5">请选择关闭方式</p>
@@ -511,7 +511,7 @@ const handleInput = () => {
 };
 
 const handleBlur = () => {
-  isFocused.value = false;
+  setTimeout(() => { isFocused.value = false; }, 150);
 };
 
 const clearSearch = () => {
@@ -574,7 +574,13 @@ const close = () => {
 const executeCloseAction = () => {
   closeActionMemory.value = closeChoice.value;
   showCloseDialog.value = false;
-  executeCloseActionDirect(closeChoice.value);
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        executeCloseActionDirect(closeChoice.value);
+      });
+    });
+  });
 };
 
 const executeCloseActionDirect = (action) => {
@@ -583,6 +589,22 @@ const executeCloseActionDirect = (action) => {
   } else {
     if (window.windowControls) window.windowControls.close();
   }
+};
+
+const onDialogEnter = (el, done) => {
+  el.style.opacity = '0';
+  el.style.transform = 'scale(0.92)';
+  el.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+  el.focus();
+  requestAnimationFrame(() => {
+    el.style.opacity = '1';
+    el.style.transform = 'scale(1)';
+    setTimeout(done, 300);
+  });
+};
+
+const onDialogLeave = (el, done) => {
+  done();
 };
 </script>
 

@@ -126,6 +126,11 @@ const isLoading = ref(false);
 const isError = ref(false);
 const errorMessage = ref('');
 const songs = ref([]);
+const getTodayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 const defaultImg = 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=300&q=80';
 
 const goToArtist = (id) => {
@@ -162,7 +167,7 @@ const fetchDailyRecommend = async () => {
   try {
     const cachedData = localStorage.getItem('kg_desktop_daily_rec_full');
     const cachedDate = localStorage.getItem('kg_desktop_daily_date');
-    const today = new Date().toLocaleDateString('zh-CN');
+    const today = getTodayStr();
     if (cachedData && cachedDate === today) {
       const parsed = JSON.parse(cachedData);
       if (parsed && parsed.length > 0) {
@@ -186,7 +191,7 @@ const fetchDailyRecommend = async () => {
         const normalized = normalizeSongs(rawSongs, defaultImg);
         songs.value = normalized;
         localStorage.setItem('kg_desktop_daily_rec_full', JSON.stringify(normalized));
-        localStorage.setItem('kg_desktop_daily_date', new Date().toLocaleDateString('zh-CN'));
+        localStorage.setItem('kg_desktop_daily_date', getTodayStr());
     } else if (res.code !== 1 && res.status !== 1 && songs.value.length === 0) {
         throw new Error('服务器拒绝访问，可能由于频繁请求被风控拦截。');
     }

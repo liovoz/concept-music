@@ -1,13 +1,13 @@
 <template>
   <div ref="scrollContainer" class="h-full overflow-y-auto custom-scrollbar flex flex-col relative" id="artist-list-scroll-container">
-    <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-indigo-50/80 to-white -z-10"></div>
+    <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-blue-50/80 to-white -z-10"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
 
       <div class="flex items-end justify-between mb-6 w-full gap-4">
         <div class="flex-1 min-w-0">
           <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight truncate">
-            歌手 <span class="text-lg text-indigo-500 font-bold ml-2">Artists</span>
+            歌手 <span class="text-lg text-blue-500 font-bold ml-2">Artists</span>
           </h2>
           <p class="text-xs text-gray-500 mt-2 font-medium">浏览你喜爱的歌手</p>
         </div>
@@ -15,10 +15,10 @@
 
       <div class="flex items-center flex-wrap gap-4 mb-8">
         <div class="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
-          <button v-for="opt in typeOptions" :key="opt.key" @click="currentType = opt.key" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all no-drag" :class="currentType === opt.key ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">{{ opt.label }}</button>
+          <button v-for="opt in typeOptions" :key="opt.key" @click="currentType = opt.key" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all no-drag" :class="currentType === opt.key ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">{{ opt.label }}</button>
         </div>
         <div class="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
-          <button v-for="opt in sexOptions" :key="opt.key" @click="currentSex = opt.key" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all no-drag" :class="currentSex === opt.key ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">{{ opt.label }}</button>
+          <button v-for="opt in sexOptions" :key="opt.key" @click="currentSex = opt.key" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all no-drag" :class="currentSex === opt.key ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">{{ opt.label }}</button>
         </div>
       </div>
 
@@ -48,13 +48,13 @@
               <img :src="artist.avatar || defaultImg" :alt="artist.name" loading="lazy" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
-            <h4 class="text-sm font-bold text-gray-800 line-clamp-1 group-hover:text-indigo-600 transition-colors text-center max-w-full" v-tooltip="artist.name">{{ artist.name }}</h4>
+            <h4 class="text-sm font-bold text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors text-center max-w-full" v-tooltip="artist.name">{{ artist.name }}</h4>
             <p v-if="artist.fans_count" class="text-xs text-gray-400 mt-1 font-medium">{{ formatCount(artist.fans_count) }} 粉丝</p>
           </div>
         </div>
 
         <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-6 text-xs font-medium">
-          <div v-if="isLoadingMore" class="flex items-center text-indigo-500">
+          <div v-if="isLoadingMore" class="flex items-center text-blue-500">
             <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             正在加载更多歌手...
           </div>

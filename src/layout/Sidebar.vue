@@ -4,7 +4,7 @@
 <template>
   <aside class="w-56 bg-gray-50 border-r border-gray-100 flex flex-col pt-4 pb-5 z-20 h-full relative">
     
-    <div class="px-4 mb-2">
+    <div class="px-4 mb-2 overflow-visible">
       <div 
         @click="!userStore.isLoggedIn ? userStore.openLoginModal() : null"
         class="relative flex items-center p-2.5 rounded-xl transition-all duration-300 no-drag group"
@@ -39,7 +39,7 @@
             v-if="isVipCardVisible && userStore.isLoggedIn" 
             @mouseenter="showVipCard" 
             @mouseleave="hideVipCard"
-            class="absolute left-0 top-full mt-2 w-full bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl p-4 z-[100] origin-top-left"
+            class="absolute left-0 right-0 top-full mt-2 bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl p-4 z-[100] origin-top"
           >
             <div class="absolute left-0 bottom-full w-full h-4 bg-transparent"></div>
             
@@ -89,14 +89,15 @@
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar-hidden flex flex-col">
+    <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
       <nav class="flex flex-col space-y-1 px-3">
         <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">在线音乐</div>
         <div @click="$router.push('/')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>首页</div>
         <div @click="$router.push('/rank')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>排行榜</div>
         <div @click="$router.push('/new-songs')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/new-songs' ? 'font-medium bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/new-songs' ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>新歌速递</div>
         <div @click="$router.push('/fm')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/fm' ? 'font-medium bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/fm' ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>私人FM</div>
-        <div @click="$router.push('/artists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/artists' ? 'font-medium bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/artists' ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>歌手</div>
+        <div @click="$router.push('/artists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/artists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/artists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>歌手</div>
+        <div @click="$router.push('/playlist-category')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/playlist-category' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/playlist-category' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>歌单广场</div>
 
         <div class="px-3 pt-4 pb-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">我的音乐</div>
         <div @click="$router.push('/history')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/history' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/history' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>听歌足迹</div>
@@ -167,7 +168,22 @@ const updateModalRef = inject('updateModalRef', null);
 
 const showLogoutConfirm = ref(false);
 const isVipCardVisible = ref(false);
-let hoverTimer = null; 
+let hoverTimer = null;
+let isHoveringVipArea = false;
+
+const showVipCard = () => {
+  isHoveringVipArea = true;
+  clearTimeout(hoverTimer);
+  isVipCardVisible.value = true;
+};
+const hideVipCard = () => {
+  isHoveringVipArea = false;
+  hoverTimer = setTimeout(() => {
+    if (!isHoveringVipArea) {
+      isVipCardVisible.value = false;
+    }
+  }, 200); 
+};
 
 const now = ref(Date.now());
 let timer = null;
@@ -179,16 +195,6 @@ const claimBtnText = computed(() => {
   }
   return `领 3 小时 VIP (${userStore.vipState.count}/8)`;
 });
-
-const showVipCard = () => {
-  clearTimeout(hoverTimer);
-  isVipCardVisible.value = true;
-};
-const hideVipCard = () => {
-  hoverTimer = setTimeout(() => {
-    isVipCardVisible.value = false;
-  }, 150); 
-};
 
 const handleGatewayDown = (e) => {
    const msg = e.detail?.message || '网络或网关连接异常';
@@ -223,6 +229,7 @@ onMounted(() => {
 
 onUnmounted(() => { 
   if (timer) clearInterval(timer); 
+  if (hoverTimer) clearTimeout(hoverTimer);
   window.removeEventListener('API_GATEWAY_DOWN', handleGatewayDown);
 });
 
@@ -291,7 +298,15 @@ const isLikedMusicActive = computed(() => {
 
 const goToLikedMusic = () => {
   if (!userStore.isLoggedIn) return userStore.openLoginModal();
-  if (userStore.likedPlaylistGlobalId) router.push(`/playlist/${userStore.likedPlaylistGlobalId}`);
+  if (userStore.likedPlaylistGlobalId) {
+    router.push(`/playlist/${userStore.likedPlaylistGlobalId}`);
+  } else {
+    userStore.fetchLikedPlaylistMeta().then(() => {
+      if (userStore.likedPlaylistGlobalId) {
+        router.push(`/playlist/${userStore.likedPlaylistGlobalId}`);
+      }
+    });
+  }
 };
 </script>
 
@@ -305,4 +320,8 @@ const goToLikedMusic = () => {
 }
 .custom-scrollbar-hidden::-webkit-scrollbar { display: none; }
 .custom-scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.3); border-radius: 4px; }
+.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.6); }
 </style>

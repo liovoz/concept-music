@@ -507,6 +507,8 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('kg_desktop_local_play_counts'); 
         localStorage.removeItem('kg_desktop_has_dfid');
         localStorage.removeItem('kg_desktop_day_vip_states');
+        localStorage.removeItem('kg_desktop_daily_rec_home');
+        localStorage.removeItem('kg_desktop_daily_date');
       } catch (e) {}
       
       this.isLoggedIn = false;

@@ -254,10 +254,6 @@ const handlePlay = (song) => {
   store.playSong(buildPlayPayload(song, rankInfo.value.cover || defaultImg));
 };
 
-const goToArtist = (id) => {
-  if (id) router.push(`/artist/${id}`);
-};
-
 const goToAlbum = (id) => {
   if (id) router.push(`/album/${id}`);
 };

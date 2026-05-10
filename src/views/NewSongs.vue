@@ -143,24 +143,26 @@ const extractSongs = (res) => {
   const getName = (item) => item.SongName || item.songname || item.name || item.FileName || item.filename || item.title || item.Title;
   const isRealSong = (item) => !!(item && typeof item === 'object' && getHash(item) && getName(item));
 
-  const traverse = (data, depth) => {
-    if (depth > 20 || !data) return;
+  const traverse = (data, depth, visited) => {
+    if (depth > 8 || !data) return;
+    if (typeof data === 'object' && visited.has(data)) return;
+    if (typeof data === 'object') visited.add(data);
     if (Array.isArray(data)) {
       data.forEach(item => {
         if (isRealSong(item)) {
           const h = getHash(item);
           if (!songMap.has(h)) songMap.set(h, item);
         } else {
-          traverse(item, depth + 1);
+          traverse(item, depth + 1, visited);
         }
       });
       return;
     }
     if (typeof data === 'object') {
-      Object.values(data).forEach(val => traverse(val, depth + 1));
+      Object.values(data).forEach(val => traverse(val, depth + 1, visited));
     }
   };
-  traverse(res, 0);
+  traverse(res, 0, new WeakSet());
   return Array.from(songMap.values());
 };
 

@@ -264,7 +264,6 @@ const fetchArtistData = async () => {
 };
 
 const fetchAlbums = async () => {
-  if (albums.value.length > 0) return; 
   isLoadingAlbums.value = true;
   try {
     const res = await request.get('/artist/albums', { params: { id: route.params.id, page: 1, pagesize: 100, timestamp: Date.now() } });
@@ -309,7 +308,7 @@ const setupObserver = () => {
 watch(() => activeTab.value, (newTab) => {
   if (newTab === 'albums') fetchAlbums();
   if (newTab === 'songs') {
-    setTimeout(() => { if (loadMoreTrigger.value && observer) observer.observe(loadMoreTrigger.value); }, 100);
+    setTimeout(() => { setupObserver(); }, 100);
   }
 });
 
