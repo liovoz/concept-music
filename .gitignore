@@ -1,41 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+release/
+
 # Logs
-logs
+logs/
 *.log
+debug.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-release
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local overrides
 *.local
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-Temp/
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-# Test screenshots
+# Local temp/cache/tooling state
+Temp/
+.gstack/
+*.tmp
+*.temp
+
+# Test artifacts
 test_screenshots/
 
 # Documentation (local only)
 docs/
-
-# Environment files (contain sensitive config)
-# .env.*
-# .env
-
-# OS generated files
-Thumbs.db
-Desktop.ini
