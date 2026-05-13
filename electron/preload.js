@@ -26,6 +26,7 @@ const lyricControlMgr = createListenerManager('main-lyric-control');
 const lyricEnterMgr = createListenerManager('lyric-mouse-enter');
 const lyricLeaveMgr = createListenerManager('lyric-mouse-leave');
 const lyricClosedMgr = createListenerManager('lyric-window-closed');
+const lyricReadyMgr = createListenerManager('lyric-window-ready');
 const trayActionMgr = createListenerManager('tray-action');
 
 contextBridge.exposeInMainWorld('windowControls', {
@@ -73,6 +74,9 @@ contextBridge.exposeInMainWorld('lyricAPI', {
   },
   onClosed: (callback) => {
     lyricClosedMgr.set(() => callback());
+  },
+  onReady: (callback) => {
+    lyricReadyMgr.set(() => callback());
   },
   startDrag: () => ipcRenderer.send('lyric-window-drag'),
   stopDrag: () => ipcRenderer.send('lyric-window-drag-stop')

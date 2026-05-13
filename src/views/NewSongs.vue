@@ -55,7 +55,7 @@
         </div>
 
         <div class="space-y-1">
-          <div v-for="(song, index) in songs" :key="song._hash + index" @dblclick="handlePlay(song)"
+          <div v-for="(song, index) in songs" :key="song._hash + index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)"
             class="flex items-center px-4 py-3 rounded-xl hover:bg-emerald-50/60 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm font-bold group-hover:hidden flex-shrink-0 flex flex-col items-center justify-center"
               :class="index === 0 ? 'text-emerald-500' : index === 1 ? 'text-teal-500' : index === 2 ? 'text-cyan-500' : 'text-gray-400'">
@@ -107,6 +107,7 @@ import { useRouter } from 'vue-router';
 import request from '../utils/request';
 import { usePlayerStore } from '../store/playerStore';
 import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
+import { openSongContextMenu } from '../utils/songContextMenu';
 import BackToTop from '../components/BackToTop.vue';
 import SingerLink from '../components/SingerLink.vue';
 
@@ -256,6 +257,11 @@ const setupObserver = () => {
 const handlePlay = (song) => {
   if (!song._hash) return;
   playerStore.playSong(buildPlayPayload(song, defaultImg));
+};
+
+const handleSongContextMenu = (event, song) => {
+  if (!song._hash) return;
+  openSongContextMenu(event, buildPlayPayload(song, defaultImg));
 };
 
 const playAll = () => {

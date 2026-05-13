@@ -323,6 +323,7 @@ function createLyricWindow() {
   lyricWindow.once('ready-to-show', () => {
     lyricWindow.show();
     startLyricMouseTracker();
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('lyric-window-ready');
   });
   lyricWindow.on('closed', () => {
     stopLyricMouseTracker();

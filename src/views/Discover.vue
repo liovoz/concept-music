@@ -55,7 +55,7 @@
 
         <div v-else-if="dailySongs.length > 0" class="w-full flex flex-col">
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
-            <div v-for="song in dailySongs" :key="song._hash" @dblclick="handlePlay(song)" class="group flex items-center p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-blue-100 transition-all cursor-pointer no-drag min-w-0">
+            <div v-for="song in dailySongs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="group flex items-center p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-blue-100 transition-all cursor-pointer no-drag min-w-0">
               <div class="relative w-[50px] h-[50px] flex-shrink-0 rounded-md overflow-hidden bg-gray-100 mr-3 border border-gray-50">
                 <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
                 
@@ -153,6 +153,7 @@ import request from '../utils/request';
 import { useUserStore } from '../store/userStore';
 import { usePlayerStore } from '../store/playerStore';
 import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
+import { openSongContextMenu } from '../utils/songContextMenu';
 import BackToTop from '../components/BackToTop.vue';
 import SingerLink from '../components/SingerLink.vue';
 
@@ -257,6 +258,11 @@ const goToPlaylist = (id) => {
 const handlePlay = (song) => {
   if (!song._hash) return;
   store.playSong(buildPlayPayload(song, defaultImg));
+};
+
+const handleSongContextMenu = (event, song) => {
+  if (!song._hash) return;
+  openSongContextMenu(event, buildPlayPayload(song, defaultImg));
 };
 
 const playAllDaily = () => {

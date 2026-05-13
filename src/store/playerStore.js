@@ -55,6 +55,25 @@ const setCachedUrl = (hash, quality, data) => {
 const pendingResolves = new Map();
 let playVersion = 0;
 
+const resetPreloadAudio = () => {
+  preloadAudio.pause();
+  preloadAudio.removeAttribute('src');
+  preloadAudio.load();
+  preloadState = {
+    hash: null,
+    quality: 'standard',
+    isPreview: false,
+    url: null
+  };
+};
+
+const clearUrlResolutionState = () => {
+  playVersion++;
+  pendingResolves.clear();
+  urlCache.clear();
+  resetPreloadAudio();
+};
+
 export const QUALITY_CONFIG = [
   { key: 'viper_atmos', name: '全景声', param: 'viper_atmos' },
   { key: 'viper_clear', name: '超清蝰蛇', param: 'viper_clear' },
@@ -117,6 +136,7 @@ export const usePlayerStore = defineStore('player', {
 
     _errorSkipTimer: null,
     _vipActionTimer: null,
+    failedSong: null,
 
     peakMode: false,
     peakStartOffset: 0,
@@ -403,6 +423,42 @@ export const usePlayerStore = defineStore('player', {
       if (!exists) this.playlist.push(song);
     },
 
+    appendToPlaylist(song, options = {}) {
+      if (!song || !song.hash) return false;
+      const exists = this.playlist.some(s => s.hash === song.hash);
+      if (exists) {
+        if (!options.silent) this.showToast('歌曲已在播放列表中');
+        return false;
+      }
+      this.playlist.push(song);
+      if (!options.silent) this.showToast('已添加到播放列表');
+      this.triggerPreload();
+      return true;
+    },
+
+    insertNext(song) {
+      if (!song || !song.hash) return false;
+      if (this.currentSong?.hash === song.hash) {
+        this.showToast('当前歌曲正在播放');
+        return false;
+      }
+
+      const existingIndex = this.playlist.findIndex(s => s.hash === song.hash);
+      if (existingIndex !== -1) this.playlist.splice(existingIndex, 1);
+
+      let currentIndex = this.playlist.findIndex(s => s.hash === this.currentSong?.hash);
+      if (this.currentSong && currentIndex === -1) {
+        this.playlist.unshift(this.currentSong);
+        currentIndex = 0;
+      }
+
+      const insertIndex = currentIndex === -1 ? 0 : currentIndex + 1;
+      this.playlist.splice(insertIndex, 0, song);
+      this.showToast('已添加到下一首播放');
+      this.triggerPreload();
+      return true;
+    },
+
     async fetchSongQualityInfo(song) {
       if (!song) return;
       if (!song.qualities) song.qualities = extractQualities(song);
@@ -432,6 +488,19 @@ export const usePlayerStore = defineStore('player', {
           }
         }
       } catch (e) {}
+    },
+
+    async prepareAutoQuality(song, targetQuality = null) {
+      if (!song || targetQuality) return;
+      if (!song.qualities) song.qualities = extractQualities(song);
+
+      const userStore = useUserStore();
+      const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
+      const isVipSong = song.is_vip || song.is_paid;
+      const hasFullAccess = isVipUser || !isVipSong;
+      if (!hasFullAccess) return;
+
+      await this.fetchSongQualityInfo(song);
     },
 
     getBestAvailableQuality(song) {
@@ -599,7 +668,7 @@ export const usePlayerStore = defineStore('player', {
 
       const fallbackHash = songInfo.qualities?.standard || songInfo.hash || songInfo.FileHash || '';
 
-      if (hasFullAccess) {
+      {
           for (const qObj of tryQueue) {
             let hashToTry = songInfo.qualities?.[qObj.key] || fallbackHash;
             if (!hashToTry) continue;
@@ -609,7 +678,7 @@ export const usePlayerStore = defineStore('player', {
               if (songInfo.album_id) reqObject.album_id = songInfo.album_id;
               if (songInfo.album_audio_id) reqObject.album_audio_id = songInfo.album_audio_id;
               
-              const res = await request.get('/song/url', { params: reqObject });
+              const res = await request.get('/song/url', { params: reqObject, silent: true });
               const targetObj = res?.data ? res.data : res;
               
               let url = null;
@@ -634,7 +703,7 @@ export const usePlayerStore = defineStore('player', {
            if (songInfo.album_id) reqObject.album_id = songInfo.album_id;
            if (songInfo.album_audio_id) reqObject.album_audio_id = songInfo.album_audio_id;
            
-           const res = await request.get('/song/url', { params: reqObject });
+           const res = await request.get('/song/url', { params: reqObject, silent: true });
            const targetObj = res?.data ? res.data : res;
            if (targetObj?.url && targetObj.url.length > 0) {
              let previewUrl = Array.isArray(targetObj.url) ? targetObj.url[0] : targetObj.url;
@@ -682,6 +751,7 @@ export const usePlayerStore = defineStore('player', {
 
       try {
         if (!nextSong.qualities) nextSong.qualities = extractQualities(nextSong);
+        await this.prepareAutoQuality(nextSong, null);
         const res = await this.resolveSongUrl(nextSong, null);
         if (res && res.url) {
           preloadAudio.src = res.url;
@@ -701,11 +771,24 @@ export const usePlayerStore = defineStore('player', {
 
     async playSong(songInfo, targetQuality = null, maintainTime = 0, autoPlay = true) {
       if (this._errorSkipTimer) { clearTimeout(this._errorSkipTimer); this._errorSkipTimer = null; }
+      if (this._vipActionTimer) { clearTimeout(this._vipActionTimer); this._vipActionTimer = null; }
       this.isLoading = true;
       this.isError = false;        
       this.errorMessage = '';
+      const previousSong = this.currentSong;
+      const previousPlaybackState = {
+        currentQuality: this.currentQuality,
+        currentTime: this.currentTime,
+        duration: this.duration,
+        isCurrentSongPreview: this.isCurrentSongPreview,
+        wasPlaying: this.isPlaying
+      };
+      const isSongChange = !previousSong || previousSong.hash !== songInfo.hash;
       
-      if (maintainTime === 0) {
+      if (isSongChange && maintainTime === 0) {
+        activeAudio.pause();
+        this.isPlaying = false;
+      } else if (maintainTime === 0) {
         this.currentTime = 0;
         this.isCurrentSongPreview = false;
       }
@@ -732,7 +815,7 @@ export const usePlayerStore = defineStore('player', {
 
       const autoTargetQuality = targetQuality;
 
-      if (songInfo.hash === preloadState.hash && preloadAudio.src && preloadState.quality === autoTargetQuality && maintainTime === 0) {
+      if (songInfo.hash === preloadState.hash && preloadAudio.src && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
           activeAudio.pause();
           activeAudio.currentTime = 0;
           
@@ -773,25 +856,49 @@ export const usePlayerStore = defineStore('player', {
           return;
       }
 
-      this.currentSong = songInfo;
-
       const thisPlayVersion = ++playVersion;
 
       const triggerFallback = (reason) => {
-        this.isError = true;
-        this.errorMessage = `获取失败，已切至兜底音源`;
-        this.isCurrentSongPreview = false;
-        activeAudio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-        if (maintainTime > 0) activeAudio.currentTime = maintainTime;
-        if (autoPlay) {
-          const p = activeAudio.play();
-          if (p !== undefined) p.catch(() => {});
-        }
         this.isLoading = false;
+        this.isError = true;
+        this.isPlaying = false;
+        this.failedSong = songInfo;
+        const isVipSong = songInfo.is_vip || songInfo.is_paid;
+        const userStore = useUserStore();
+        if (isVipSong && !userStore.isLoggedIn) {
+          this.errorMessage = 'VIP 歌曲需要登录后播放';
+        } else {
+          this.errorMessage = '音频获取失败，请尝试其他歌曲';
+        }
+        if (!previousSong) {
+          activeAudio.pause();
+          activeAudio.removeAttribute('src');
+          activeAudio.load();
+          this.currentSong = null;
+          this.currentQuality = 'standard';
+          this.currentTime = 0;
+          this.duration = 0;
+          this.isCurrentSongPreview = false;
+        } else {
+          this.currentSong = previousSong;
+          this.currentQuality = previousPlaybackState.currentQuality;
+          this.currentTime = previousPlaybackState.currentTime;
+          this.duration = previousPlaybackState.duration;
+          this.isCurrentSongPreview = previousPlaybackState.isCurrentSongPreview;
+          if (previousPlaybackState.wasPlaying) {
+            const resumePromise = activeAudio.play();
+            if (resumePromise !== undefined) {
+              resumePromise
+                .then(() => { this.isPlaying = true; })
+                .catch(() => { this.isPlaying = false; });
+            }
+          }
+        }
         setTimeout(() => this.clearError(), 5000);
       };
 
       try {
+        await this.prepareAutoQuality(songInfo, targetQuality);
         const res = await this.resolveSongUrl(songInfo, targetQuality);
 
         if (thisPlayVersion !== playVersion) {
@@ -799,10 +906,13 @@ export const usePlayerStore = defineStore('player', {
           return;
         }
 
-        if (res.url) {
+        if (res?.url) {
+          this.failedSong = null;
+          this.currentSong = songInfo;
           this.currentQuality = res.quality;
           this.isCurrentSongPreview = res.isPreview; 
           activeAudio.src = res.url;
+          if (maintainTime === 0) this.currentTime = 0;
           if (res.isPreview && autoPlay) this.showToast('正在试听 VIP 歌曲片段，登录解锁完整版');
         } else {
           triggerFallback('所有音质接口均拒绝访问');
@@ -877,8 +987,8 @@ export const usePlayerStore = defineStore('player', {
 
       await this.fetchSongQualityInfo(this.currentSong);
 
-      for (const qKey of [...Object.keys(this.currentSong.qualities || {}), 'best', 'hq']) {
-        const cacheKey = `${this.currentSong.hash}_${qKey}`;
+      for (const q of [...QUALITY_CONFIG, { key: 'best' }, { key: 'hq' }]) {
+        const cacheKey = `${this.currentSong.hash}_${q.key}`;
         if (urlCache.has(cacheKey)) urlCache.delete(cacheKey);
       }
 
@@ -898,8 +1008,8 @@ export const usePlayerStore = defineStore('player', {
     },
 
     async downgradeForLogout() {
-      preloadState.hash = null;
-      urlCache.clear();
+      clearUrlResolutionState();
+      this.hasDfid = false;
       
       if (!this.currentSong) return;
 
@@ -907,17 +1017,7 @@ export const usePlayerStore = defineStore('player', {
       const isVipSong = this.currentSong.is_vip || this.currentSong.is_paid;
 
       if (isVipSong || isVipQuality) {
-        this.showToast('✨ 账号已登出，已为您恢复试听限制及标准音质');
-        const savedTime = activeAudio.currentTime;
-        const wasPlaying = this.isPlaying;
-        const songRef = this.currentSong;
-        
-        if (this._vipActionTimer) clearTimeout(this._vipActionTimer);
-        this._vipActionTimer = setTimeout(async () => {
-           if (this.currentSong !== songRef) return;
-           const bestQuality = this.getBestAvailableQuality(songRef);
-           await this.playSong(songRef, bestQuality, savedTime, wasPlaying);
-        }, 150);
+        this.showToast('✨ 账号已登出，当前歌曲可继续播放，切换歌曲后将恢复试听限制');
       }
     },
 
@@ -925,6 +1025,7 @@ export const usePlayerStore = defineStore('player', {
       if (!this.currentSong) return;
       const savedTime = activeAudio.currentTime;
       const wasPlaying = this.isPlaying;
+      clearUrlResolutionState();
       
       if (this.isCurrentSongPreview) {
         this.showToast('✨ VIP 身份确认，正在解除限制并为您自动匹配最高音质...');
@@ -937,15 +1038,27 @@ export const usePlayerStore = defineStore('player', {
       this._vipActionTimer = setTimeout(async () => {
          if (this.currentSong !== songRef) return;
 
-         for (const qKey of [...Object.keys(songRef.qualities || {}), 'best', 'hq']) {
-           const cacheKey = `${songRef.hash}_${qKey}`;
-           if (urlCache.has(cacheKey)) urlCache.delete(cacheKey);
-         }
-
          await this.fetchSongQualityInfo(songRef);
-         const bestQuality = this.getBestAvailableQuality(songRef);
 
-         await this.playSong(songRef, bestQuality, savedTime, wasPlaying);
+         try {
+           const res = await this.resolveSongUrl(songRef, null);
+           if (this.currentSong !== songRef) return;
+
+           if (res?.url) {
+             this.currentQuality = res.quality;
+             this.isCurrentSongPreview = res.isPreview;
+             activeAudio.src = res.url;
+             if (res.isPreview && savedTime > 59) {
+               activeAudio.currentTime = 59.5;
+             } else {
+               activeAudio.currentTime = savedTime;
+             }
+             if (wasPlaying) {
+               const p = activeAudio.play();
+               if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+             }
+           }
+         } catch (e) {}
 
          const actualQName = QUALITY_CONFIG.find(q => q.key === this.currentQuality)?.name || '标准音质';
          if (this.isCurrentSongPreview) {
@@ -956,7 +1069,24 @@ export const usePlayerStore = defineStore('player', {
       }, 150);
     },
 
+    handleAuthCapabilityChanged(reason = 'auth') {
+      clearUrlResolutionState();
+      if (reason === 'logout' || reason === 'vip-downgrade') {
+        this.hasDfid = false;
+        return;
+      }
+      if (this.currentSong) {
+        this.reloadCurrentSongForVip();
+      }
+    },
+
     togglePlay() {
+      if (this.isError) {
+        const retrySong = this.failedSong || this.currentSong;
+        if (retrySong) this.playSong(retrySong);
+        else this.clearError();
+        return;
+      }
       if (!this.currentSong) return;
       if (this.isPlaying) {
         activeAudio.pause();
@@ -984,7 +1114,7 @@ export const usePlayerStore = defineStore('player', {
       this.currentTime = time;
     },
 
-    clearError() { this.isError = false; this.errorMessage = ''; },
+    clearError() { this.isError = false; this.errorMessage = ''; this.failedSong = null; },
 
     playPrev() {
       if (this.playlist.length === 0) return;
@@ -1097,16 +1227,28 @@ export const usePlayerStore = defineStore('player', {
       const removedSong = this.playlist[index];
       if (!removedSong) return;
       const removedHash = removedSong.hash;
+      const isCurrentSong = this.currentSong && this.currentSong.hash === removedHash;
+      
       this.playlist.splice(index, 1);
       
-      this.triggerPreload();
-
-      if (this.currentSong && this.currentSong.hash === removedHash) {
+      if (isCurrentSong) {
         activeAudio.pause();
+        activeAudio.src = '';
         this.isPlaying = false;
+        this.isCurrentSongPreview = false;
         this.currentSong = null;
-        if (this.playlist.length > 0) this.playNext(); 
+        this.currentQuality = 'standard';
+        this.isError = false;
+        this.errorMessage = '';
+        this.failedSong = null;
+        
+        if (this.playlist.length > 0) {
+          const nextIndex = Math.min(index, this.playlist.length - 1);
+          this.playSong(this.playlist[nextIndex]);
+        }
       }
+      
+      this.triggerPreload();
     },
 
     clearPlaylist() {
@@ -1121,6 +1263,7 @@ export const usePlayerStore = defineStore('player', {
       this.isCurrentSongPreview = false;
       this.isError = false;
       this.errorMessage = '';
+      this.failedSong = null;
       this.currentQuality = 'standard';
       this.isPlaylistVisible = false;
       this.peakMode = false;

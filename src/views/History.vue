@@ -76,7 +76,7 @@
           </div>
           
           <div class="space-y-1">
-            <div v-for="(song, index) in currentSongs" :key="song._hash + index" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
+            <div v-for="(song, index) in currentSongs" :key="song._hash + index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
               <div class="w-10 text-center text-sm font-bold group-hover:hidden flex-shrink-0 flex flex-col items-center justify-center"
                    :class="activeTab === 'rank' ? {'text-red-500': index === 0, 'text-orange-400': index === 1, 'text-yellow-500': index === 2, 'text-gray-400': index > 2} : 'text-gray-400'">
                 {{ (index + 1).toString().padStart(2, '0') }}
@@ -137,6 +137,7 @@ import { usePlayerStore } from '../store/playerStore';
 import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
 import BackToTop from '../components/BackToTop.vue';
 import SingerLink from '../components/SingerLink.vue';
+import { openSongContextMenu } from '../utils/songContextMenu';
 
 const userStore = useUserStore();
 const store = usePlayerStore();
@@ -349,6 +350,11 @@ onUnmounted(() => { if (observer) observer.disconnect(); });
 const handlePlay = (song) => {
   if (!song._hash) return;
   store.playSong(buildPlayPayload(song, defaultImg));
+};
+
+const handleSongContextMenu = (event, song) => {
+  if (!song._hash) return;
+  openSongContextMenu(event, buildPlayPayload(song, defaultImg));
 };
 
 const goToAlbum = (id) => {

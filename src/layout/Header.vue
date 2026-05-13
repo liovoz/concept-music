@@ -561,15 +561,9 @@ const maximize = () => { if (window.windowControls) window.windowControls.maximi
 
 const showCloseDialog = ref(false);
 const closeChoice = ref('minimize');
-const closeActionMemory = ref(null);
-
 const close = () => {
   if (disclaimerVisible.value) {
     if (window.trayAPI) window.trayAPI.forceQuit();
-    return;
-  }
-  if (closeActionMemory.value) {
-    executeCloseActionDirect(closeActionMemory.value);
     return;
   }
   closeChoice.value = 'minimize';
@@ -577,7 +571,6 @@ const close = () => {
 };
 
 const executeCloseAction = () => {
-  closeActionMemory.value = closeChoice.value;
   showCloseDialog.value = false;
   nextTick(() => {
     requestAnimationFrame(() => {

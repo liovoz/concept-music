@@ -48,7 +48,7 @@ const ipcAdapter = async (config) => {
 };
 
 const request = axios.create({
-  baseURL: '',
+  baseURL: isElectron ? '' : '/api',
   timeout: 15000,
   adapter: isElectron ? ipcAdapter : undefined
 });

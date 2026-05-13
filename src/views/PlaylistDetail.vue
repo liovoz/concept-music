@@ -77,7 +77,7 @@
         </div>
         
         <div class="space-y-1 w-full">
-          <div v-for="(song, index) in songs" :key="song._hash || index" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
+          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 flex-shrink-0" @click.stop="handlePlay(song)">
                <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
@@ -134,6 +134,7 @@ import request from '../utils/request';
 import { usePlayerStore } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
 import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
+import { openSongContextMenu } from '../utils/songContextMenu';
 import BackToTop from '../components/BackToTop.vue';
 import SingerLink from '../components/SingerLink.vue';
 
@@ -525,6 +526,11 @@ onUnmounted(() => { if (observer) observer.disconnect(); });
 const handlePlay = (song) => {
   if (!song._hash) return;
   store.playSong(buildPlayPayload(song, playlistInfo.value.cover || defaultImg));
+};
+
+const handleSongContextMenu = (event, song) => {
+  if (!song._hash) return;
+  openSongContextMenu(event, buildPlayPayload(song, playlistInfo.value.cover || defaultImg));
 };
 
 const playAll = () => {

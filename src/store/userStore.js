@@ -85,6 +85,7 @@ export const useUserStore = defineStore('user', {
     async fetchVipDetail() {
       if (!this.isLoggedIn) return;
       try {
+        const oldVip = this.userInfo?.vip > 0;
         const res = await request.get('/user/vip/detail', { params: { timestamp: Date.now() }, silent: true });
         if (res && res.data) {
           const data = res.data;
@@ -129,6 +130,10 @@ export const useUserStore = defineStore('user', {
           if (this.userInfo) {
              this.userInfo.vip = isVip ? 1 : 0;
              localStorage.setItem('kg_desktop_userInfo', JSON.stringify(this.userInfo));
+             if (oldVip !== isVip) {
+               const playerStore = usePlayerStore();
+               playerStore.handleAuthCapabilityChanged(isVip ? 'vip-upgrade' : 'vip-downgrade');
+             }
           }
         }
       } catch (e) {}
@@ -259,11 +264,6 @@ export const useUserStore = defineStore('user', {
 
            await this.fetchVipDetail();
            await this.fetchUserInfo();
-
-           const playerStore = usePlayerStore();
-           if (playerStore.currentSong && this.userInfo.vip > 0) {
-             playerStore.reloadCurrentSongForVip();
-           }
            
            return { success: true, msg: `${msg} 预计延期至：${this.vipExpirationTime || '同步中...'}` };
         } else {
@@ -501,15 +501,8 @@ export const useUserStore = defineStore('user', {
           this.checkDayVipReset();
           
           const playerStore = usePlayerStore();
-          if (playerStore.isCurrentSongPreview && this.userInfo.vip > 0) {
-             playerStore.reloadCurrentSongForVip();
-          } else if (playerStore.currentSong && this.userInfo.vip > 0) {
-             const bestQ = playerStore.getBestAvailableQuality(playerStore.currentSong);
-             const isVipQuality = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(bestQ);
-             const currentIsVipQuality = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(playerStore.currentQuality);
-             if (isVipQuality && !currentIsVipQuality) {
-               playerStore.reloadCurrentSongForVip();
-             }
+          if (playerStore.currentSong && this.userInfo.vip > 0) {
+             playerStore.handleAuthCapabilityChanged('login');
           }
           
         } else {
@@ -553,7 +546,6 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('kg_desktop_local_history');
         localStorage.removeItem('kg_desktop_local_play_counts'); 
         localStorage.removeItem('kg_desktop_has_dfid');
-        localStorage.removeItem('kg_desktop_day_vip_states');
         localStorage.removeItem('kg_desktop_daily_rec_home');
         localStorage.removeItem('kg_desktop_daily_date');
         localStorage.removeItem('kg_desktop_cookies');

@@ -303,20 +303,11 @@ const executeLogout = () => {
 };
 
 const isLikedMusicActive = computed(() => {
-  return userStore.likedPlaylistGlobalId && route.params.id && String(route.params.id) === String(userStore.likedPlaylistGlobalId);
+  return route.path === '/liked';
 });
 
 const goToLikedMusic = () => {
-  if (!userStore.isLoggedIn) return userStore.openLoginModal();
-  if (userStore.likedPlaylistGlobalId) {
-    router.push(`/playlist/${userStore.likedPlaylistGlobalId}`);
-  } else {
-    userStore.fetchLikedPlaylistMeta().then(() => {
-      if (userStore.likedPlaylistGlobalId) {
-        router.push(`/playlist/${userStore.likedPlaylistGlobalId}`);
-      }
-    });
-  }
+  router.push('/liked');
 };
 </script>
 

@@ -129,7 +129,7 @@
           </div>
 
           <div v-else class="space-y-1">
-            <div v-for="(song, idx) in upcomingSongs" :key="song._hash + idx" @dblclick="playFromQueue(idx)"
+            <div v-for="(song, idx) in upcomingSongs" :key="song._hash + idx" @contextmenu="handleSongContextMenu($event, song)" @dblclick="playFromQueue(idx)"
               class="flex items-center px-4 py-3 rounded-xl hover:bg-purple-50/60 group transition-colors cursor-pointer no-drag min-w-0">
               <div class="w-10 text-center text-sm font-bold text-gray-300 group-hover:hidden flex-shrink-0">
                 {{ (idx + 1).toString().padStart(2, '0') }}
@@ -190,6 +190,7 @@ import { usePlayerStore } from '../store/playerStore';
 import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
 import BackToTop from '../components/BackToTop.vue';
 import SingerLink from '../components/SingerLink.vue';
+import { openSongContextMenu } from '../utils/songContextMenu';
 
 defineOptions({ name: 'PersonalFM' });
 
@@ -453,6 +454,11 @@ const playFromQueue = (idx) => {
   if (fmMode.value === 'peak') {
     schedulePeakSeek(fmQueue.value[actualIndex]._hash);
   }
+};
+
+const handleSongContextMenu = (event, song) => {
+  if (!song._hash) return;
+  openSongContextMenu(event, buildPlayPayload(song, defaultImg));
 };
 
 const switchMode = (mode) => {

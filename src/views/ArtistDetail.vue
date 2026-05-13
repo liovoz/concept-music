@@ -69,7 +69,7 @@
           <div class="flex items-center px-4 py-2 text-xs text-gray-400 border-b border-gray-100 mb-2 min-w-0">
             <div class="w-10 text-center flex-shrink-0">#</div><div class="flex-1 pl-2 min-w-0">音乐标题</div><div class="w-[28%] hidden md:block pr-4 min-w-0">专辑</div><div class="w-16 text-right pr-4 flex-shrink-0">时长</div>
           </div>
-          <div v-for="(song, index) in songs" :key="song._hash || index" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
+          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 flex-shrink-0" @click.stop="handlePlay(song)">
                <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
@@ -139,6 +139,7 @@ import { useRoute, useRouter } from 'vue-router';
 import request from '../utils/request';
 import { usePlayerStore } from '../store/playerStore';
 import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
+import { openSongContextMenu } from '../utils/songContextMenu';
 import BackToTop from '../components/BackToTop.vue'; 
 
 const route = useRoute();
@@ -342,6 +343,11 @@ onUnmounted(() => { if (observer) observer.disconnect(); });
 const handlePlay = (song) => {
   if (!song._hash && !song._album_audio_id) return;
   store.playSong(buildPlayPayload(song, artistInfo.value.avatar || defaultImg));
+};
+
+const handleSongContextMenu = (event, song) => {
+  if (!song._hash && !song._album_audio_id) return;
+  openSongContextMenu(event, buildPlayPayload(song, artistInfo.value.avatar || defaultImg));
 };
 
 const playAllSongs = () => {

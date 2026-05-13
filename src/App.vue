@@ -25,6 +25,7 @@
     <LoginModal />
     <GlobalToast />
     <GlobalDialog />
+    <SongContextMenu />
     <DisclaimerModal @accepted="onDisclaimerAccepted" />
     <UpdateModal ref="updateModalRef" />
 
@@ -52,6 +53,7 @@ import GlobalToast from './components/GlobalToast.vue';
 const cachedComponents = new Set(['PersonalFM', 'PlaylistCategory']);
 const isCached = (Component) => cachedComponents.has(Component?.name); 
 import GlobalDialog from './components/GlobalDialog.vue';
+import SongContextMenu from './components/SongContextMenu.vue';
 import UpdateModal from './components/UpdateModal.vue';
 import DisclaimerModal from './components/DisclaimerModal.vue';
 import { useUserStore } from './store/userStore';

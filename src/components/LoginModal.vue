@@ -28,7 +28,7 @@
 
           <img v-else-if="qrImageBase64" :src="qrImageBase64" alt="登录二维码" class="w-full h-full object-contain rounded-xl" />
 
-          <div v-if="scanStatus === 2 || scanStatus === 404" class="absolute inset-0 bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center text-green-600 z-10">
+          <div v-if="scanStatus === 2" class="absolute inset-0 bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center text-green-600 z-10">
             <svg class="w-10 h-10 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
             <span class="text-sm font-bold">扫描成功</span>
             <span class="text-[10px] text-gray-600 mt-1">请在手机端点击确认登录</span>
@@ -40,7 +40,7 @@
             <span class="text-[10px] text-gray-600 mt-1">正在同步用户信息</span>
           </div>
 
-          <div v-if="scanStatus === 0 || scanStatus === 402" @click="initLoginFlow" class="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white cursor-pointer hover:bg-black/70 transition-colors z-10">
+          <div v-if="scanStatus === 0 || scanStatus === 402 || scanStatus === 404" @click="initLoginFlow" class="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white cursor-pointer hover:bg-black/70 transition-colors z-10">
             <svg class="w-8 h-8 mb-2 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             <span class="text-sm font-bold">二维码已失效</span>
             <span class="text-[10px] text-gray-300 mt-1">点击刷新重新获取</span>
@@ -165,7 +165,7 @@ const startPollingStatus = () => {
         await userStore.fetchUserInfo();
         closeModal();
       } 
-      else if (scanStatus.value === 0 || scanStatus.value === 402) {
+      else if (scanStatus.value === 0 || scanStatus.value === 402 || scanStatus.value === 404) {
         clearPolling();
       }
     } catch (e) {

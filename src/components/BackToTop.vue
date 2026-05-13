@@ -1,11 +1,8 @@
-// ====================
-// 文件：src/components/BackToTop.vue
-// ====================
 <template>
   <Teleport to="body">
     <Transition name="fade-up">
-      <button 
-        v-if="isVisible" 
+      <button
+        v-if="isVisible"
         @click="scrollToTop"
         class="fixed right-10 bottom-28 h-12 bg-white/95 backdrop-blur-md border border-gray-100 rounded-full shadow-[0_8px_30px_rgba(59,130,246,0.15)] flex items-center justify-center text-blue-500 hover:text-blue-600 hover:bg-white hover:shadow-[0_8px_30px_rgba(59,130,246,0.25)] transition-all duration-300 active:scale-95 z-[9999] no-drag group overflow-hidden px-3.5"
       >
@@ -19,26 +16,45 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 const props = defineProps({
   targetId: {
     type: String,
-    required: true
+    default: ''
   },
   threshold: {
     type: Number,
-    default: 400
+    default: 240
   }
 });
 
 const isVisible = ref(false);
+const route = useRoute();
 let scrollContainer = null;
 
-const handleScroll = (e) => {
-  if (e && e.target) {
-    isVisible.value = e.target.scrollTop > props.threshold;
+const findScrollContainer = () => {
+  if (props.targetId) {
+    const target = document.getElementById(props.targetId);
+    if (target) return target;
+    return null;
   }
+
+  const main = document.querySelector('main');
+  const candidates = Array.from(main?.querySelectorAll('.custom-scrollbar, [data-scroll-container]') || []);
+  return candidates.find(el => {
+    const style = window.getComputedStyle(el);
+    return /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight;
+  }) || null;
+};
+
+const updateVisibility = () => {
+  isVisible.value = !!scrollContainer && scrollContainer.scrollTop > props.threshold;
+};
+
+const handleScroll = () => {
+  updateVisibility();
 };
 
 const scrollToTop = () => {
@@ -47,30 +63,40 @@ const scrollToTop = () => {
   }
 };
 
-onMounted(() => {
-  nextTick(() => {
-    scrollContainer = document.getElementById(props.targetId);
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', handleScroll);
-      // 主动检测一次初始状态，防止页面重载时已经处于滚动状态
-      handleScroll({ target: scrollContainer });
-    }
-  });
-});
-
-onUnmounted(() => {
+const unbind = () => {
   if (scrollContainer) {
     scrollContainer.removeEventListener('scroll', handleScroll);
+    scrollContainer = null;
   }
-});
+};
+
+const bind = async () => {
+  unbind();
+  isVisible.value = false;
+  await nextTick();
+  requestAnimationFrame(() => {
+    scrollContainer = findScrollContainer();
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+      updateVisibility();
+    }
+  });
+};
+
+onMounted(bind);
+onUnmounted(unbind);
+watch(() => route.fullPath, bind);
 </script>
 
 <style scoped>
-.fade-up-enter-active, .fade-up-leave-active { 
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+.fade-up-enter-active,
+.fade-up-leave-active {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.fade-up-enter-from, .fade-up-leave-to { 
-  opacity: 0; 
-  transform: translateY(20px) scale(0.8); 
+
+.fade-up-enter-from,
+.fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.8);
 }
 </style>
