@@ -14,7 +14,7 @@
       <div class="flex items-center mb-10 gap-8">
         <div v-if="isLoading" class="w-40 h-40 rounded-full bg-gray-200 animate-pulse flex-shrink-0 shadow-md"></div>
         <div v-else class="relative w-40 h-40 rounded-full flex-shrink-0 shadow-lg overflow-hidden border-4 border-white bg-white group">
-          <img :src="artistInfo.avatar || defaultImg" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <img :src="artistInfo.avatar || defaultImg" :alt="artistInfo.name || '歌手头像'" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
           <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
         </div>
 

@@ -11,7 +11,7 @@
         :class="userStore.isLoggedIn ? 'bg-white shadow-sm border border-gray-200 cursor-default' : 'hover:bg-gray-200 cursor-pointer'"
       >
         <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200">
-          <img v-if="userStore.isLoggedIn && userStore.userInfo" :src="userStore.userInfo.avatar" class="w-full h-full object-cover" />
+          <img v-if="userStore.isLoggedIn && userStore.userInfo" :src="userStore.userInfo.avatar" :alt="userStore.userInfo.nickname || '用户头像'" class="w-full h-full object-cover" />
           <svg v-else class="w-full h-full text-gray-400 p-1.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
         </div>
         
@@ -116,7 +116,7 @@
 
     <Teleport to="body">
       <transition name="fade-scale">
-        <div v-if="showLogoutConfirm" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag">
+        <div v-if="showLogoutConfirm" ref="logoutModalRef" tabindex="-1" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag outline-none" @keydown.escape="showLogoutConfirm = false" @click.self="showLogoutConfirm = false">
           <div class="bg-white w-[320px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
             <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4"><svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div>
             <h3 class="text-lg font-bold text-gray-800 mb-2">退出登录</h3>
@@ -132,7 +132,7 @@
 
     <Teleport to="body">
       <transition name="fade-scale">
-        <div v-if="userStore.showVipUpgradeModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag" @click.self="userStore.closeVipUpgradeModal()">
+        <div v-if="userStore.showVipUpgradeModal" ref="vipUpgradeModalRef" tabindex="-1" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag outline-none" @click.self="userStore.closeVipUpgradeModal()" @keydown.escape="userStore.closeVipUpgradeModal()">
           <div class="bg-white w-[340px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
             <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue';
+import { ref, computed, onMounted, onUnmounted, inject, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store/userStore';
 import { usePlayerStore } from '../store/playerStore'; 
@@ -168,21 +168,24 @@ const updateModalRef = inject('updateModalRef', null);
 
 const showLogoutConfirm = ref(false);
 const isVipCardVisible = ref(false);
-let hoverTimer = null;
-let isHoveringVipArea = false;
+const logoutModalRef = ref(null);
+const vipUpgradeModalRef = ref(null);
+let showTimer = null;
+let hideTimer = null;
 
 const showVipCard = () => {
-  isHoveringVipArea = true;
-  clearTimeout(hoverTimer);
-  isVipCardVisible.value = true;
+  clearTimeout(hideTimer);
+  if (!isVipCardVisible.value) {
+    showTimer = setTimeout(() => {
+      isVipCardVisible.value = true;
+    }, 80);
+  }
 };
 const hideVipCard = () => {
-  isHoveringVipArea = false;
-  hoverTimer = setTimeout(() => {
-    if (!isHoveringVipArea) {
-      isVipCardVisible.value = false;
-    }
-  }, 200); 
+  clearTimeout(showTimer);
+  hideTimer = setTimeout(() => {
+    isVipCardVisible.value = false;
+  }, 300);
 };
 
 const now = ref(Date.now());
@@ -209,10 +212,9 @@ const checkForUpdates = () => {
 
 onMounted(() => {
   window.addEventListener('API_GATEWAY_DOWN', handleGatewayDown);
-  
-  // ✨ 核心修复 B：移除组件挂载期并发发起的用户状态校验。
-  // 让 App.vue 发起的 userStore.verifySession() 全权把控鉴权逻辑与指纹获取
-  // 删除了对 userStore.checkVipReset(); userStore.checkDayVipReset(); userStore.fetchVipDetail(); 的并发调用。
+
+  watch(showLogoutConfirm, (v) => { if (v) nextTick(() => { logoutModalRef.value?.focus(); }); });
+  watch(() => userStore.showVipUpgradeModal, (v) => { if (v) nextTick(() => { vipUpgradeModalRef.value?.focus(); }); });
 
   timer = setInterval(() => {
     now.value = Date.now();
@@ -229,7 +231,8 @@ onMounted(() => {
 
 onUnmounted(() => { 
   if (timer) clearInterval(timer); 
-  if (hoverTimer) clearTimeout(hoverTimer);
+  if (showTimer) clearTimeout(showTimer);
+  if (hideTimer) clearTimeout(hideTimer);
   window.removeEventListener('API_GATEWAY_DOWN', handleGatewayDown);
 });
 
@@ -248,6 +251,13 @@ const formattedCooldown = computed(() => {
 const handleClaimOneDayVip = async () => {
   const res = await userStore.claimOneDayVip();
   playerStore.showToast(res.msg);
+  if (res.success) {
+    if (playerStore.currentSong && userStore.userInfo.vip > 0) {
+      playerStore.reloadCurrentSongForVip();
+    } else if (!playerStore.isPlaying && playerStore.currentSong) {
+      playerStore.playNext(true);
+    }
+  }
 };
 
 const handleClaimDailyVip = async () => {
@@ -261,7 +271,7 @@ const handleVipUpgradeClaim = async () => {
     const res = await userStore.claimOneDayVip();
     playerStore.showToast(res.msg);
     if (res.success) {
-      if (playerStore.isCurrentSongPreview && userStore.userInfo.vip > 0) {
+      if (playerStore.currentSong && userStore.userInfo.vip > 0) {
         playerStore.reloadCurrentSongForVip();
       } else if (!playerStore.isPlaying && playerStore.currentSong) {
         playerStore.playNext(true);
@@ -275,7 +285,7 @@ const handleVipUpgradeClaim = async () => {
     const res = await userStore.claimDailyVip();
     playerStore.showToast(res.msg);
     if (res.success) {
-      if (playerStore.isCurrentSongPreview && userStore.userInfo.vip > 0) {
+      if (playerStore.currentSong && userStore.userInfo.vip > 0) {
         playerStore.reloadCurrentSongForVip();
       } else if (!playerStore.isPlaying && playerStore.currentSong) {
         playerStore.playNext(true);

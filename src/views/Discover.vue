@@ -57,7 +57,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
             <div v-for="song in dailySongs" :key="song._hash" @dblclick="handlePlay(song)" class="group flex items-center p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-blue-100 transition-all cursor-pointer no-drag min-w-0">
               <div class="relative w-[50px] h-[50px] flex-shrink-0 rounded-md overflow-hidden bg-gray-100 mr-3 border border-gray-50">
-                <img :src="song._cover" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
+                <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
                 
                 <div @click.stop="handlePlay(song)" class="absolute inset-0 bg-black/20 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
                   <svg class="w-6 h-6 text-white ml-0.5 drop-shadow-md transform scale-75 group-hover:scale-100 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>

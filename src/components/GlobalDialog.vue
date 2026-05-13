@@ -4,7 +4,7 @@
 <template>
   <Teleport to="body">
     <transition name="dialog-fade">
-      <div v-if="store.dialogState.visible" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/30 backdrop-blur-sm no-drag" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
+      <div v-if="store.dialogState.visible" ref="dialogRef" tabindex="-1" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/30 backdrop-blur-sm no-drag outline-none" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
         <div class="bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-[380px] flex flex-col overflow-hidden transform transition-all">
           
           <div class="px-6 py-5 border-b border-gray-50 flex items-center">
@@ -35,8 +35,14 @@
 </template>
 
 <script setup>
+import { ref, watch, nextTick } from 'vue';
 import { usePlayerStore } from '../store/playerStore';
 const store = usePlayerStore();
+const dialogRef = ref(null);
+
+watch(() => store.dialogState.visible, (newVal) => {
+  if (newVal) nextTick(() => { dialogRef.value?.focus(); });
+});
 </script>
 
 <style scoped>

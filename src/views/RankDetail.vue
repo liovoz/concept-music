@@ -15,7 +15,7 @@
       <div class="flex items-end mb-10">
         <div v-if="isLoading && page === 1" class="w-48 h-48 rounded-2xl bg-gray-200 animate-pulse flex-shrink-0 shadow-md"></div>
         <div v-else class="relative w-48 h-48 rounded-2xl flex-shrink-0 shadow-lg overflow-hidden border border-gray-100 bg-white">
-          <img :src="rankInfo.cover || defaultImg" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover" />
+          <img :src="rankInfo.cover || defaultImg" :alt="rankInfo.name || '排行榜封面'" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover" />
         </div>
 
         <div class="ml-6 flex flex-col justify-end flex-1 min-w-0">
@@ -77,7 +77,7 @@
             </div>
             
             <div class="flex-1 pl-2 text-sm text-gray-800 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
-              <img :src="song._cover" class="w-9 h-9 rounded shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
+              <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
               <span class="truncate min-w-0">{{ song._title }}</span>
               <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
               <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>

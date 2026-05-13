@@ -14,7 +14,7 @@
       <div class="flex items-end mb-10 gap-6">
         <div v-if="isLoading && page === 1" class="w-48 h-48 rounded-2xl bg-gray-200 animate-pulse flex-shrink-0 shadow-md"></div>
         <div v-else class="relative w-48 h-48 rounded-2xl flex-shrink-0 shadow-lg overflow-hidden border border-gray-100 bg-white group z-10">
-          <img :src="albumInfo.cover || defaultImg" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 relative z-10" />
+          <img :src="albumInfo.cover || defaultImg" :alt="albumInfo.name || '专辑封面'" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 relative z-10" />
           <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20"></div>
           
           <div class="absolute -right-5 top-1/2 transform -translate-y-1/2 w-[90%] h-[90%] bg-[#111] rounded-full shadow-[0_0_15px_rgba(0,0,0,0.6)] -z-10 group-hover:translate-x-4 transition-transform duration-700 border border-gray-800" style="background: repeating-radial-gradient(#111 0px, #1c1c1c 2px, #111 4px);"></div>

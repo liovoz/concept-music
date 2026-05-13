@@ -4,7 +4,7 @@
 <template>
   <Teleport to="body">
   <transition name="fade-scale">
-    <div v-if="userStore.showLoginModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag" @keydown.escape="closeModal" @click.self="closeModal">
+    <div v-if="userStore.showLoginModal" ref="loginModalRef" tabindex="-1" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag outline-none" @keydown.escape="closeModal" @click.self="closeModal">
       
       <div class="bg-white w-[380px] rounded-3xl shadow-2xl p-8 relative flex flex-col items-center">
         <button @click="closeModal" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-1.5 no-drag">
@@ -26,12 +26,18 @@
             <span class="text-xs font-medium text-center">获取失败<br>点击重试</span>
           </div>
 
-          <img v-else-if="qrImageBase64" :src="qrImageBase64" class="w-full h-full object-contain rounded-xl" />
+          <img v-else-if="qrImageBase64" :src="qrImageBase64" alt="登录二维码" class="w-full h-full object-contain rounded-xl" />
 
           <div v-if="scanStatus === 2 || scanStatus === 404" class="absolute inset-0 bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center text-green-600 z-10">
             <svg class="w-10 h-10 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
             <span class="text-sm font-bold">扫描成功</span>
             <span class="text-[10px] text-gray-600 mt-1">请在手机端点击确认登录</span>
+          </div>
+
+          <div v-if="scanStatus === 5" class="absolute inset-0 bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center text-blue-600 z-10">
+            <svg class="animate-spin h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span class="text-sm font-bold">登录中...</span>
+            <span class="text-[10px] text-gray-600 mt-1">正在同步用户信息</span>
           </div>
 
           <div v-if="scanStatus === 0 || scanStatus === 402" @click="initLoginFlow" class="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white cursor-pointer hover:bg-black/70 transition-colors z-10">
@@ -51,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, watch, onUnmounted, nextTick } from 'vue';
 import { useUserStore } from '../store/userStore';
 import request from '../utils/request';
 
@@ -62,6 +68,7 @@ const isError = ref(false);
 const qrKey = ref('');
 const qrImageBase64 = ref('');
 const scanStatus = ref(-1);
+const loginModalRef = ref(null);
 let pollingTimer = null;
 let pollingCount = 0;
 const MAX_POLLING_COUNT = 150;
@@ -129,6 +136,8 @@ const initLoginFlow = async () => {
 
 const startPollingStatus = () => {
   pollingCount = 0;
+  let consecutiveErrors = 0;
+  const MAX_CONSECUTIVE_ERRORS = 5;
   pollingTimer = setInterval(async () => {
     pollingCount++;
     if (pollingCount > MAX_POLLING_COUNT) {
@@ -141,6 +150,8 @@ const startPollingStatus = () => {
         params: { key: qrKey.value, timestamp: Date.now() } 
       });
       
+      consecutiveErrors = 0;
+      
       let code = -1;
       if (checkRes?.data && checkRes.data.status !== undefined) code = checkRes.data.status;
       else if (checkRes?.data && checkRes.data.code !== undefined) code = checkRes.data.code;
@@ -148,12 +159,9 @@ const startPollingStatus = () => {
 
       if (code !== -1) scanStatus.value = Number(code);
 
-      // ✨ 修复逻辑：处理扫码确认成功的状态
       if (scanStatus.value === 4 || scanStatus.value === 405) {
         clearPolling();
-        
-        // 🛑 核心修复：已被删除的 userStore.backupCookies(); 已经彻底移除，绝不让它在此引发 TypeError 报错！
-        
+        scanStatus.value = 5;
         await userStore.fetchUserInfo();
         closeModal();
       } 
@@ -161,20 +169,27 @@ const startPollingStatus = () => {
         clearPolling();
       }
     } catch (e) {
-      // ✨ 增强防御：植入高精度探针，拦截真实错误
-      console.error('【探针捕获】状态轮询期间发生异常:');
-      console.error(e);
-      // 如果出现类似 TypeError 这类代码逻辑错误，重点抛出警报
+      consecutiveErrors++;
       if (e instanceof TypeError || e instanceof ReferenceError) {
-        console.error('【探针致命错误】检测到前端代码语法/变量引用错误:', e.message);
+        console.error('轮询致命错误:', e.message);
+        clearPolling();
+        scanStatus.value = 0;
+        return;
+      }
+      if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+        clearPolling();
+        scanStatus.value = 0;
+        return;
       }
     }
   }, 2000); 
 };
 
 watch(() => userStore.showLoginModal, (newVal) => {
-  if (newVal) initLoginFlow(); 
-  else clearPolling();  
+  if (newVal) {
+    initLoginFlow(); 
+    nextTick(() => { loginModalRef.value?.focus(); });
+  } else clearPolling();  
 });
 
 const closeModal = () => userStore.closeLoginModal();

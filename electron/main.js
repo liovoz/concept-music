@@ -138,15 +138,21 @@ function startLocalServer() {
       }
     });
     let retryCount = 0;
+    let serverReady = false;
     const pingServer = () => {
       const req = http.get('http://127.0.0.1:10420/server/now', (res) => {
-        if (res.statusCode === 200 || res.statusCode === 404) resolve();
+        if (res.statusCode === 200 || res.statusCode === 404) { serverReady = true; resolve(); }
         else handleError();
       }).on('error', handleError);
       req.setTimeout(500, () => { req.destroy(); handleError(); });
       function handleError() {
         retryCount++;
-        if (retryCount >= 100) resolve(); 
+        if (retryCount >= 100) {
+          if (!serverReady && mainWindow && !mainWindow.isDestroyed()) {
+            dialog.showErrorBox('后端服务启动失败', '本地 API 服务未能在规定时间内启动，部分功能可能不可用。\n请尝试重启应用。');
+          }
+          resolve();
+        }
         else setTimeout(pingServer, 100); 
       }
     };
@@ -276,13 +282,18 @@ function stopLyricMouseTracker() {
 function createLyricWindow() {
   if (lyricWindow) return;
   const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth } = primaryDisplay.workAreaSize;
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+
+  const lyricWidth = Math.min(900, screenWidth - 100);
+  const lyricHeight = 160;
+  const lyricX = Math.max(0, Math.floor((screenWidth - lyricWidth) / 2));
+  const lyricY = Math.max(0, Math.min(60, screenHeight - lyricHeight - 10));
 
   lyricWindow = new BrowserWindow({
-    width: Math.min(900, screenWidth - 100),
-    height: 160,
-    x: Math.floor((screenWidth - 900) / 2),
-    y: 60,
+    width: lyricWidth,
+    height: lyricHeight,
+    x: lyricX,
+    y: lyricY,
     transparent: true,
     backgroundColor: '#00000000',
     frame: false,

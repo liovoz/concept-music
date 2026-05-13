@@ -136,13 +136,8 @@ const createRequest = (options) => {
         answer.body = body;
       }
 
-      if (response.data.status === 0 || (response.data?.error_code && response.data.error_code !== 0)) {
-        answer.status = 502;
-        reject(answer);
-      } else {
-        answer.status = 200;
-        resolve(answer);
-      }
+      answer.status = 200;
+      resolve(answer);
     } catch (e) {
       answer.status = 502;
       answer.body = { status: 0, msg: e };

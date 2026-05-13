@@ -18,7 +18,7 @@
         class="relative w-12 h-12 bg-gray-50 rounded-lg border border-gray-100 flex-shrink-0 flex items-center justify-center text-gray-300 overflow-hidden cursor-pointer group shadow-sm hover:shadow transition-all"
         v-tooltip="'展开/收起歌词'"
       >
-        <img v-if="store.currentSong && store.currentSong.cover" :src="store.currentSong.cover" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        <img v-if="store.currentSong && store.currentSong.cover" :src="store.currentSong.cover" :alt="store.currentSong.name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <svg v-else class="w-6 h-6 transition-transform duration-500 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19a2 2 0 11-4 0 2 2 0 014 0zm12-3a2 2 0 11-4 0 2 2 0 014 0zM9 10l12-3"></path></svg>
         
         <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]">
@@ -136,7 +136,7 @@
     </div>
 
     <transition name="slide-up">
-      <div v-if="store.isPlaylistVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex flex-col z-50 overflow-hidden text-gray-800" tabindex="-1" @keydown.escape="store.isPlaylistVisible = false">
+      <div v-if="store.isPlaylistVisible && !store.isLyricsVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex flex-col z-50 overflow-hidden text-gray-800" tabindex="-1" @keydown.escape="store.isPlaylistVisible = false">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
           <h3 class="font-bold text-gray-800 text-sm">当前播放队列 <span class="text-gray-400 font-normal ml-1">({{ store.playlist.length }}首)</span></h3>
           <button @click="store.clearPlaylist" class="text-xs text-gray-500 hover:text-blue-600 transition-colors no-drag">清空</button>
@@ -199,12 +199,14 @@
         </div>
 
         <div class="flex-1 flex flex-row px-12 lg:px-24 max-w-[1400px] mx-auto w-full z-10 gap-16 lg:gap-24 items-center">
-           <div class="w-5/12 flex items-center justify-center">
-            <div class="relative w-[340px] h-[340px] xl:w-[420px] xl:h-[420px] rounded-full flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.15)] border-[2px] border-gray-200/50 bg-gradient-to-br from-[#111] to-[#1a1a1a]" 
-                 :class="{ 'animate-[spin_20s_linear_infinite]': store.isPlaying }">
+           <div class="w-5/12 flex items-center justify-center relative">
+            <div class="relative">
+              <div class="w-[340px] h-[340px] xl:w-[420px] xl:h-[420px] rounded-full flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.15)] border-[2px] border-gray-200/50 bg-gradient-to-br from-[#111] to-[#1a1a1a]"
+                   :style="{ transform: `rotate(${discRotation}deg)` }">
                <div class="absolute inset-0 rounded-full pointer-events-none opacity-40" style="background: repeating-radial-gradient(#111 0px, #1c1c1c 2px, #111 4px);"></div>
                <div class="absolute inset-0 rounded-full pointer-events-none mix-blend-screen opacity-50" style="background: conic-gradient(from 45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 10%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0) 70%);"></div>
-               <img :src="store.currentSong?.cover || defaultImg" class="w-[65%] h-[65%] rounded-full object-cover shadow-[0_0_20px_rgba(0,0,0,0.9)] z-10" />
+               <img :src="store.currentSong?.cover || defaultImg" :alt="store.currentSong?.name || '唱片'" class="w-[65%] h-[65%] rounded-full object-cover shadow-[0_0_20px_rgba(0,0,0,0.9)] z-10" />
+              </div>
             </div>
           </div>
           
@@ -241,9 +243,16 @@
                 
                 <li v-for="(line, index) in parsedLyrics" :key="index"
                     @click="seekToLyric(line.time)"
-                    class="text-xl lg:text-2xl transition-all duration-300 ease-out origin-center cursor-pointer flex items-center justify-center text-center group mb-6 lg:mb-8 w-full"
-                    :class="index === activeLyricIndex ? 'text-gray-900 font-black scale-110 drop-shadow-md' : 'text-gray-400 font-bold hover:text-gray-600'">
-                  <span class="leading-relaxed px-4">{{ line.text }}</span>
+                    class="transition-all duration-300 ease-out origin-center cursor-pointer flex flex-col items-center justify-center text-center group mb-4 lg:mb-5 w-full"
+                    :class="index === activeLyricIndex ? 'scale-[1.03]' : 'hover:scale-[1.01]'">
+                  <span class="leading-relaxed px-4 transition-colors duration-300"
+                        :class="index === activeLyricIndex ? 'text-gray-900 font-bold text-xl lg:text-2xl' : 'text-gray-400 font-normal text-lg lg:text-xl hover:text-gray-500'">
+                    {{ line.text }}
+                  </span>
+                  <span v-if="line.translation" class="px-4 mt-1 transition-colors duration-300 leading-snug"
+                        :class="index === activeLyricIndex ? 'text-gray-500 font-semibold text-[0.85em] lg:text-base' : 'text-gray-300/60 font-medium text-[0.8em] lg:text-sm'">
+                    {{ line.translation }}
+                  </span>
                 </li>
                 
                 <div class="w-full pointer-events-none" style="height: 38vh;"></div>
@@ -266,6 +275,46 @@ import request from '../utils/request';
 const store = usePlayerStore();
 const userStore = useUserStore();
 const router = useRouter();
+
+const discRotation = ref(0);
+let discAnimFrame = null;
+let discLastTime = 0;
+let discSpeed = 0;
+const DISC_RPM = 360 / 20;
+const DISC_FRICTION = 0.985;
+
+const animateDisc = (timestamp) => {
+  if (!discLastTime) discLastTime = timestamp;
+  const dt = Math.min((timestamp - discLastTime) / 1000, 0.1);
+  discLastTime = timestamp;
+
+  if (store.isPlaying) {
+    discSpeed = DISC_RPM;
+  } else {
+    discSpeed *= Math.pow(DISC_FRICTION, dt * 60);
+    if (discSpeed < 0.1) {
+      discSpeed = 0;
+      discLastTime = 0;
+      discAnimFrame = null;
+      return;
+    }
+  }
+  discRotation.value = (discRotation.value + discSpeed * dt) % 360;
+  discAnimFrame = requestAnimationFrame(animateDisc);
+};
+
+const startDiscAnimation = () => {
+  if (!discAnimFrame) {
+    discLastTime = 0;
+    discAnimFrame = requestAnimationFrame(animateDisc);
+  }
+};
+
+watch(() => store.isPlaying, (playing) => {
+  if (playing) startDiscAnimation();
+});
+
+startDiscAnimation();
 
 const playlistPanelRef = ref(null);
 const playlistBtnRef = ref(null);
@@ -329,6 +378,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (discAnimFrame) cancelAnimationFrame(discAnimFrame);
   document.removeEventListener('mousedown', handleClickOutside);
   window.removeEventListener('keydown', handleGlobalKeyDown); 
 });
@@ -404,7 +454,7 @@ const lyricsContainer = ref(null);
 const lyricError = ref(''); 
 const defaultImg = 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=300&q=80';
 
-const parseLyrics = (lyricStr) => {
+const parseLyrics = (lyricStr, translationArr) => {
   if (!lyricStr) return [];
   const lines = lyricStr.split('\n');
   const result = [];
@@ -415,6 +465,8 @@ const parseLyrics = (lyricStr) => {
   const offsetMatch = lyricStr.match(/\[offset:([+-]?\d+)\]/i);
   if (offsetMatch) offset = parseInt(offsetMatch[1], 10) / 1000;
 
+  let lineIndex = 0;
+
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i].trim();
     if (!line) continue;
@@ -424,7 +476,11 @@ const parseLyrics = (lyricStr) => {
     if (krcMatch) {
       const timeInSeconds = (parseInt(krcMatch[1], 10) / 1000) + offset;
       const text = line.replace(krcExp, '').trim();
-      if (text) result.push({ time: timeInSeconds, text });
+      if (text) {
+        const translation = (Array.isArray(translationArr) && translationArr[lineIndex]) || '';
+        result.push({ time: timeInSeconds, text, translation });
+        lineIndex++;
+      }
       continue; 
     }
 
@@ -441,8 +497,10 @@ const parseLyrics = (lyricStr) => {
           else if (msStr.length === 2) ms = parseInt(msStr, 10) * 10;
           else ms = parseInt(msStr, 10);
           const timeInSeconds = (min * 60) + sec + (ms / 1000) + offset;
-          result.push({ time: timeInSeconds, text });
+          const translation = (Array.isArray(translationArr) && translationArr[lineIndex]) || '';
+          result.push({ time: timeInSeconds, text, translation });
         });
+        lineIndex++;
       }
     }
   }
@@ -489,7 +547,8 @@ const fetchLyrics = async () => {
     const rawStr = resLyr.decodeContent || resLyr.content || '';
     if (!rawStr) throw new Error('API 返回了空歌词文本');
 
-    const parsed = parseLyrics(rawStr);
+    const translationArr = resLyr.translation || null;
+    const parsed = parseLyrics(rawStr, translationArr);
     if (parsed.length === 0) throw new Error('未能提取出有效时间轴。');
     parsedLyrics.value = parsed;
   } catch (error) {
@@ -526,10 +585,12 @@ const syncLyricToDesktop = () => {
   if (window.lyricAPI && store.isDesktopLyricVisible) {
     let curr = '听见好时光';
     let next = '概念音乐 Desktop';
+    let trans = '';
     
     if (parsedLyrics.value.length > 0 && activeLyricIndex.value >= 0) {
        curr = parsedLyrics.value[activeLyricIndex.value]?.text || curr;
        next = parsedLyrics.value[activeLyricIndex.value + 1]?.text || '';
+       trans = parsedLyrics.value[activeLyricIndex.value]?.translation || '';
     } else if (store.currentSong) {
        curr = store.currentSong.name;
        next = store.currentSong.singer || '';
@@ -538,6 +599,7 @@ const syncLyricToDesktop = () => {
     window.lyricAPI.sync({
       currentText: curr,
       nextText: next,
+      currentTranslation: trans,
       isPlaying: store.isPlaying
     });
   }

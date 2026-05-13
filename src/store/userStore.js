@@ -188,44 +188,84 @@ export const useUserStore = defineStore('user', {
         const apiDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
         let resDay = null;
+        let isRequestError = false;
         try {
            resDay = await request.get('/youth/day/vip', { 
-             params: { receive_day: apiDateStr, timestamp: Date.now() } 
+             params: { receive_day: apiDateStr, timestamp: Date.now() },
+             silent: true
            });
         } catch (e) {
-           resDay = e; 
+           if (e.response?.data) {
+             resDay = e.response.data;
+           } else {
+             isRequestError = true;
+             resDay = null;
+           }
+        }
+
+        if (isRequestError) {
+           try {
+             resDay = await request.get('/youth/day/vip', { 
+               params: { receive_day: apiDateStr, timestamp: Date.now() },
+               silent: true
+             });
+             isRequestError = false;
+           } catch (e) {
+             if (e.response?.data) {
+               resDay = e.response.data;
+               isRequestError = false;
+             } else {
+               return { success: false, msg: '网络连接不稳定，请检查网络后重试' };
+             }
+           }
         }
 
         let isSuccess = false;
+        let isAlreadyClaimed = false;
         let msg = '';
 
-        if (resDay && (resDay.status === 1 || resDay.error_code === 0)) {
+        if (!isRequestError && resDay && (resDay.status === 1 || resDay.error_code === 0)) {
            isSuccess = true;
            msg = '🎉 1天 VIP 领取成功！';
         } else {
            const errMsg = resDay?.error_msg || resDay?.message || resDay?.response?.data?.error_msg || '';
            const errCode = resDay?.error_code || resDay?.response?.data?.error_code;
 
-           if (errCode === 131001 || errMsg.includes('上限') || errMsg.includes('完成') || errMsg.includes('领取过') || errMsg.includes('已经')) {
-              isSuccess = true; 
+           if (errCode === 131001 || errCode === 131003 || errCode === 131004
+               || errMsg.includes('上限') || errMsg.includes('完成')
+               || errMsg.includes('领取过') || errMsg.includes('已经')
+               || errMsg.includes('已领取') || errMsg.includes('今日已')) {
+              isSuccess = true;
+              isAlreadyClaimed = true;
               msg = '云端显示今日额度已达上限，本地状态已自动同步修正！';
            } else if (errMsg.includes('502') || errMsg.includes('500') || errMsg.includes('504')) {
               msg = '酷狗服务器繁忙，系统稍后重试';
+           } else if (errMsg) {
+              msg = `领取失败：${errMsg}`;
            } else {
-              msg = errMsg || '网络波动或风控拦截，请稍后重试';
+              msg = '领取失败，请稍后重试';
            }
         }
 
         if (isSuccess) {
-           await request.get('/youth/day/vip/upgrade', { params: { timestamp: Date.now() } }).catch(() => {});
+           if (!isAlreadyClaimed) {
+             try {
+               await request.get('/youth/day/vip/upgrade', { params: { timestamp: Date.now() }, silent: true });
+             } catch (e) {}
+           }
            
            this.dayVipState.claimed = true;
            this.saveDayVipState();
 
            await this.fetchVipDetail();
            await this.fetchUserInfo();
+
+           const playerStore = usePlayerStore();
+           if (playerStore.currentSong && this.userInfo.vip > 0) {
+             playerStore.reloadCurrentSongForVip();
+           }
            
-           return { success: true, msg: `${msg} 预计延期至：${this.vipExpirationTime}` };
+           return { success: true, msg: `${msg} 预计延期至：${this.vipExpirationTime || '同步中...'}` };
         } else {
            return { success: false, msg };
         }
@@ -434,10 +474,10 @@ export const useUserStore = defineStore('user', {
 
         const res = await request.get('/user/detail', { params: { timestamp: Date.now() }, silent: true });
         let info = null;
-        const traverse = (data) => {
-          if (info) return;
-          if (data && (data.nickname || data.username)) { info = data; return; }
-          if (data && typeof data === 'object') Object.values(data).forEach(traverse);
+        const traverse = (data, depth = 0) => {
+          if (info || depth > 8 || !data || typeof data !== 'object') return;
+          if (data.nickname || data.username) { info = data; return; }
+          Object.values(data).forEach(val => traverse(val, depth + 1));
         }
         traverse(res);
 
@@ -463,6 +503,13 @@ export const useUserStore = defineStore('user', {
           const playerStore = usePlayerStore();
           if (playerStore.isCurrentSongPreview && this.userInfo.vip > 0) {
              playerStore.reloadCurrentSongForVip();
+          } else if (playerStore.currentSong && this.userInfo.vip > 0) {
+             const bestQ = playerStore.getBestAvailableQuality(playerStore.currentSong);
+             const isVipQuality = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(bestQ);
+             const currentIsVipQuality = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(playerStore.currentQuality);
+             if (isVipQuality && !currentIsVipQuality) {
+               playerStore.reloadCurrentSongForVip();
+             }
           }
           
         } else {
@@ -470,7 +517,7 @@ export const useUserStore = defineStore('user', {
         }
       } catch (error) {
         const msg = (error.message || '').toLowerCase();
-        if (msg.includes('502') || msg.includes('500') || msg.includes('503') || msg.includes('504') || msg.includes('network error')) {
+        if (msg.includes('network error') || msg.includes('timeout') || msg.includes('request failed')) {
           console.warn('网络波动导致鉴权失败，已拦截误杀，保留用户登录状态');
         } else {
           this.logout();
@@ -514,13 +561,20 @@ export const useUserStore = defineStore('user', {
       
       this.isLoggedIn = false;
       this.userInfo = { userid: '', nickname: '', avatar: '', vip: 0 }; 
+      this.likedPlaylistGlobalId = null;
+      this.likedListId = null;
       this.likedHashes = [];
       this.likedPlaylistCover = ''; 
+      this.likedFilesMap = {};
       this.vipExpirationTime = '';
       this.vipLevelName = '普通用户';
+      this.vipState = { date: '', count: 0, lastTime: 0 };
       this.dayVipState = { date: '', uid: '', claimed: false }; 
       this.localHistory = [];
       this.localPlayCounts = {}; 
+      this.isVipProcessing = false;
+      this.isDayVipProcessing = false;
+      this._lastVipPollTime = 0;
       
       this.collectedListIds = [];
       this.createdListIds = [];

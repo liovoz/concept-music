@@ -1,24 +1,29 @@
-// ====================
-// 文件：src/utils/request.js
-// ====================
 import axios from 'axios';
 
-// ✨ 终极适配器：强行接管 Axios，将所有请求转换为内部 IPC 通信
+const isElectron = typeof window !== 'undefined' && window.apiBridge && typeof window.apiBridge.request === 'function';
+
 const ipcAdapter = async (config) => {
-  // 清洗掉 Axios 内部复杂的对象，只保留纯数据，确保能通过 IPC 序列化
-  const cleanConfig = JSON.parse(JSON.stringify({
-    url: config.url,
-    method: config.method,
-    data: config.data,
-    params: config.params,
-    headers: config.headers
-  }));
+  let cleanConfig;
+  try {
+    cleanConfig = JSON.parse(JSON.stringify({
+      url: config.url,
+      method: config.method,
+      data: config.data,
+      params: config.params,
+      headers: config.headers
+    }));
+  } catch (e) {
+    cleanConfig = {
+      url: String(config.url || ''),
+      method: String(config.method || 'GET'),
+      data: config.data,
+      params: config.params,
+      headers: config.headers
+    };
+  }
 
   try {
-    // 呼叫底层 main.js 替我们发送请求
     const response = await window.apiBridge.request(cleanConfig);
-    
-    // 伪装成 Axios 标准返回格式交还给业务层
     const axiosResponse = {
       data: response.data,
       status: response.status,
@@ -43,9 +48,9 @@ const ipcAdapter = async (config) => {
 };
 
 const request = axios.create({
-  baseURL: '', // 不再需要 BaseURL，直接传相对路径
+  baseURL: '',
   timeout: 15000,
-  adapter: ipcAdapter // ✨ 强制绑定 IPC 引擎！
+  adapter: isElectron ? ipcAdapter : undefined
 });
 
 request.interceptors.request.use(
@@ -75,8 +80,8 @@ request.interceptors.response.use(
   },
   async (error) => {
     const config = error.config;
-    if (!config || !config.retryCount) {
-       if(config) config.retryCount = 0;
+    if (config && typeof config.retryCount !== 'number') {
+       config.retryCount = 0;
     }
 
     const isNetworkError = error.message === 'Network Error' || error.code === 'ECONNREFUSED';
@@ -125,8 +130,11 @@ request.get = async function(...args) {
       devPromise = originalGet.apply(this, args).then(res => {
         localStorage.setItem('kg_desktop_has_dfid', 'true');
         return res;
+      }).catch(err => {
+        devPromise = null;
+        throw err;
       }).finally(() => {
-        setTimeout(() => { devPromise = null; }, 5000);
+        setTimeout(() => { devPromise = null; }, 2000);
       });
     }
     return devPromise;

@@ -182,8 +182,12 @@ const extractSongs = (res) => {
     return !!(getHash(item) && getName(item));
   };
 
+  const seen = new WeakSet();
+
   const traverse = (data, depth) => {
-    if (depth > 8 || !data) return;
+    if (depth > 8 || !data || typeof data !== 'object') return;
+    if (seen.has(data)) return;
+    seen.add(data);
     if (Array.isArray(data)) {
       data.forEach(item => {
         if (isRealSong(item)) {
@@ -195,9 +199,7 @@ const extractSongs = (res) => {
       });
       return;
     }
-    if (typeof data === 'object') {
-      Object.values(data).forEach(val => traverse(val, depth + 1));
-    }
+    Object.values(data).forEach(val => traverse(val, depth + 1));
   };
 
   traverse(res, 0);
@@ -294,11 +296,16 @@ const setupObserver = () => {
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value);
 };
 
+let searchDebounceTimer = null;
+
 watch(
   () => route.query.keyword,
   (newKeyword) => {
     if (newKeyword && newKeyword !== currentKeyword.value) {
-      fetchSearch().then(() => setupObserver());
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        fetchSearch().then(() => setupObserver());
+      }, 400);
     }
   }
 );
@@ -315,7 +322,7 @@ const playAll = () => {
   if (songs.value.length === 0) return;
   store.clearPlaylist();
   songs.value.forEach(song => {
-     if(song._hash) store.playlist.push(buildPlayPayload(song, defaultImg));
+     if(song._hash) store.addToPlaylist(buildPlayPayload(song, defaultImg));
   });
   if(store.playlist.length > 0) store.playSong(store.playlist[0]);
 };

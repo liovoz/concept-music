@@ -15,7 +15,7 @@
       <div class="flex items-end mb-10 gap-6">
         <div v-if="isLoading && page === 1" class="w-48 h-48 rounded-2xl bg-gray-200 animate-pulse flex-shrink-0 shadow-md"></div>
         <div v-else class="relative w-48 h-48 rounded-2xl flex-shrink-0 shadow-lg overflow-hidden border border-gray-100 bg-white group">
-          <img :key="playlistCover" :src="playlistCover" @error="handleCoverError" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <img :key="playlistCover" :src="playlistCover" :alt="playlistInfo.name || '歌单封面'" @error="handleCoverError" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
           <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
         </div>
 
@@ -84,7 +84,7 @@
             </div>
             
             <div class="flex-1 pl-2 text-sm text-gray-800 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
-              <img :src="song._cover" class="w-9 h-9 rounded shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
+              <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
               <span class="truncate min-w-0">{{ song._title }}</span>
               <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
               <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
@@ -183,11 +183,13 @@ const isCreatedByMe = computed(() => {
 
 const isCollected = computed(() => {
   const id = String(route.params.id);
+  if (userStore.collectedListIds.includes(id) || !!userStore.collectedMap[id]) return true;
   const originGid = playlistInfo.value.list_create_gid || rawPlaylistData.value?.list_info?.list_create_gid || rawPlaylistData.value?.info?.list_create_gid;
-  return userStore.collectedListIds.includes(id) || 
-         !!userStore.collectedMap[id] || 
-         (originGid && userStore.collectedListIds.includes(String(originGid))) ||
-         (originGid && !!userStore.collectedMap[String(originGid)]);
+  if (originGid) {
+    const gid = String(originGid);
+    return userStore.collectedListIds.includes(gid) || !!userStore.collectedMap[gid];
+  }
+  return false;
 });
 
 const playlistCover = computed(() => {
@@ -378,14 +380,17 @@ const extractSongs = (res) => {
       validArr = res.data.songs;
   }
   const isRealSong = (item) => item && typeof item === 'object' && (item.hash || item.filehash || item.FileHash);
+  const seen = new WeakSet();
   const traverse = (data, depth) => {
-    if (depth > 6 || !data || validArr.length > 0) return;
+    if (depth > 6 || !data || typeof data !== 'object' || validArr.length > 0) return;
+    if (seen.has(data)) return;
+    seen.add(data);
     if (Array.isArray(data)) {
       if (data.length > 0 && isRealSong(data[0])) validArr = data;
       data.forEach(item => traverse(item, depth + 1));
       return;
     }
-    if (typeof data === 'object') Object.values(data).forEach(val => traverse(val, depth + 1));
+    Object.values(data).forEach(val => traverse(val, depth + 1));
   };
   if (validArr.length === 0) traverse(res, 0);
   return validArr;
@@ -394,8 +399,11 @@ const extractSongs = (res) => {
 const extractPlaylistInfo = (res) => {
   let info = {};
   const formatImg = (url) => url ? url.replace(/\{size\}/g, '400') : '';
+  const seen2 = new WeakSet();
   const traverse = (data, depth) => {
     if (depth > 6 || !data || typeof data !== 'object') return;
+    if (seen2.has(data)) return;
+    seen2.add(data);
     if (data.specialname || data.listname || data.name || data.title) {
       if(!info.name) info.name = data.specialname || data.listname || data.name || data.title;
     }
@@ -524,7 +532,7 @@ const playAll = () => {
   store.clearPlaylist();
   songs.value.forEach(song => {
      if(song._hash) {
-       store.playlist.push(buildPlayPayload(song, playlistInfo.value.cover || defaultImg));
+       store.addToPlaylist(buildPlayPayload(song, playlistInfo.value.cover || defaultImg));
      }
   });
   if(store.playlist.length > 0) store.playSong(store.playlist[0]);

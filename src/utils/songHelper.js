@@ -30,10 +30,10 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
   }).map(song => {
     let hash128 = song.FileHash || song.hash || song.filehash || song.audio_info?.hash_128 || '';
     let hash320 = song['320hash'] || song.HQFileHash || song.hqhash || song.audio_info?.hash_320 || '';
-    let hashFlac = song.sqhash || song.SQFileHash || song.audio_info?.hash_flac || song.audio_info?.hash_high || '';
-    let hashViperClear = '';
-    let hashViperAtmos = '';
-    let hashHigh = '';
+    let hashFlac = song.sqhash || song.SQFileHash || song.audio_info?.hash_flac || '';
+    let hashHigh = song.hash_high || song.HighFileHash || song.audio_info?.hash_high || '';
+    let hashViperClear = song.hash_viper_clear || song.audio_info?.hash_viper_clear || '';
+    let hashViperAtmos = song.hash_viper_atmos || song.audio_info?.hash_viper_atmos || '';
 
     if (song.relate_goods && Array.isArray(song.relate_goods)) {
         song.relate_goods.forEach(item => {
@@ -51,7 +51,7 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
 
     const qualities = {
         standard: hash128, hq: hash320, sq: hashFlac,
-        high: hashHigh || hashFlac, viper_clear: hashViperClear || hashFlac, viper_atmos: hashViperAtmos || hashFlac
+        high: hashHigh, viper_clear: hashViperClear, viper_atmos: hashViperAtmos
     };
 
     let rawTitle = song.SongName || song.songname || song.name || song.FileName || song.filename || song.title || song.Title || '未知标题';

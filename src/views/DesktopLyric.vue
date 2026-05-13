@@ -41,8 +41,8 @@
       <div class="lyric-line lyric-main" :class="activeTheme.textClass" :style="{ fontSize: config.fontSize + 'px' }">
         {{ currentText }}
       </div>
-      <div v-if="config.showSub && nextText" class="lyric-line lyric-sub" :class="activeTheme.textClass" :style="{ fontSize: Math.max(14, config.fontSize - 14) + 'px' }">
-        {{ nextText }}
+      <div v-if="config.showSub && (currentTranslation || nextText)" class="lyric-line lyric-sub" :class="activeTheme.textClass" :style="{ fontSize: Math.max(14, config.fontSize - 14) + 'px' }">
+        {{ currentTranslation || nextText }}
       </div>
     </div>
 
@@ -97,6 +97,7 @@ const showSettings = ref(false);
 const showLockToast = ref(false);
 const currentText = ref('听见好时光');
 const nextText = ref('');
+const currentTranslation = ref('');
 const isPlaying = ref(false);
 
 const config = reactive({
@@ -185,6 +186,7 @@ onMounted(() => {
     window.lyricAPI.onSync((data) => {
       currentText.value = data.currentText;
       nextText.value = data.nextText;
+      currentTranslation.value = data.currentTranslation || '';
       isPlaying.value = data.isPlaying;
     });
 

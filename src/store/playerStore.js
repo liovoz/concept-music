@@ -34,14 +34,23 @@ const setCachedUrl = (hash, quality, data) => {
   const key = `${hash}_${quality}`;
   urlCache.set(key, { ...data, time: Date.now() });
   if (urlCache.size > 80) {
-  let oldestKey = null;
-  let oldestTime = Infinity;
-  for (const [k, v] of urlCache) {
-    if (v.time < oldestTime) { oldestTime = v.time; oldestKey = k; }
+    const now = Date.now();
+    const expired = [];
+    for (const [k, v] of urlCache) {
+      if (now - v.time >= 3600000) expired.push(k);
+    }
+    if (expired.length > 0) {
+      expired.forEach(k => urlCache.delete(k));
+    } else {
+      let oldestKey = null;
+      let oldestTime = Infinity;
+      for (const [k, v] of urlCache) {
+        if (v.time < oldestTime) { oldestTime = v.time; oldestKey = k; }
+      }
+      if (oldestKey) urlCache.delete(oldestKey);
+    }
   }
-  if (oldestKey) urlCache.delete(oldestKey);
- }
-  };
+};
 
 const pendingResolves = new Map();
 let playVersion = 0;
@@ -62,7 +71,9 @@ const extractQualities = (song) => {
     standard: song.hash || song.FileHash || song.filehash || '',
     hq: song['320hash'] || song.hash_320 || song.HQFileHash || '',
     sq: song.sqhash || song.hash_flac || song.SQFileHash || song.al8hash || '',
-    high: '', viper_clear: '', viper_atmos: ''
+    high: song.hash_high || song.HighFileHash || '',
+    viper_clear: song.hash_viper_clear || '',
+    viper_atmos: song.hash_viper_atmos || ''
   };
 };
 
@@ -150,10 +161,14 @@ export const usePlayerStore = defineStore('player', {
     closeDialog(isConfirm = false) {
       if (this.dialogInterval) clearInterval(this.dialogInterval);
       this.dialogState.visible = false;
-      if (isConfirm && this.dialogState.onConfirm) {
-        this.dialogState.onConfirm();
-      } else if (!isConfirm && this.dialogState.onCancel) {
-        this.dialogState.onCancel();
+      const confirmCb = this.dialogState.onConfirm;
+      const cancelCb = this.dialogState.onCancel;
+      this.dialogState.onConfirm = null;
+      this.dialogState.onCancel = null;
+      if (isConfirm && confirmCb) {
+        confirmCb();
+      } else if (!isConfirm && cancelCb) {
+        cancelCb();
       }
     },
 
@@ -381,6 +396,59 @@ export const usePlayerStore = defineStore('player', {
 
     togglePlaylist() { this.isPlaylistVisible = !this.isPlaylistVisible; },
     toggleLyrics() { this.isLyricsVisible = !this.isLyricsVisible; },
+
+    addToPlaylist(song) {
+      if (!song || !song.hash) return;
+      const exists = this.playlist.find(s => s.hash === song.hash);
+      if (!exists) this.playlist.push(song);
+    },
+
+    async fetchSongQualityInfo(song) {
+      if (!song) return;
+      if (!song.qualities) song.qualities = extractQualities(song);
+
+      try {
+        let info = null;
+        if (song.album_audio_id && String(song.album_audio_id) !== '0') {
+          const krmRes = await request.get('/krm/audio', { params: { album_audio_id: song.album_audio_id, fields: 'audio_info', timestamp: Date.now() }, silent: true });
+          info = krmRes?.data?.audio_info || krmRes?.data?.data?.audio_info || krmRes?.data;
+        }
+        if (!info && song.hash) {
+          const audioRes = await request.get('/audio', { params: { hash: song.hash, timestamp: Date.now() }, silent: true });
+          info = audioRes?.data?.audio_info || audioRes?.data?.data?.audio_info || audioRes?.data || audioRes;
+        }
+
+        if (info) {
+          if (!song.qualities) song.qualities = {};
+          if (info.hash_320 && !song.qualities.hq) song.qualities.hq = info.hash_320;
+          if (info.hash_flac && !song.qualities.sq) song.qualities.sq = info.hash_flac;
+          if (info.hash_high && !song.qualities.high) song.qualities.high = info.hash_high;
+          if (info.hash_viper_clear && !song.qualities.viper_clear) song.qualities.viper_clear = info.hash_viper_clear;
+          if (info.hash_viper_atmos && !song.qualities.viper_atmos) song.qualities.viper_atmos = info.hash_viper_atmos;
+
+          for (const qKey of Object.keys(song.qualities)) {
+            const cacheKey = `${song.hash}_${qKey}`;
+            if (urlCache.has(cacheKey)) urlCache.delete(cacheKey);
+          }
+        }
+      } catch (e) {}
+    },
+
+    getBestAvailableQuality(song) {
+      if (!song || !song.qualities) return 'standard';
+      const userStore = useUserStore();
+      const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
+      const isVipSong = song.is_vip || song.is_paid;
+      const hasFullAccess = isVipUser || !isVipSong;
+
+      for (const q of QUALITY_CONFIG) {
+        if (!song.qualities[q.key]) continue;
+        const isVipQuality = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(q.key);
+        if (isVipQuality && !hasFullAccess) continue;
+        return q.key;
+      }
+      return 'standard';
+    },
     
     // ✨ 新增：开关桌面歌词
     toggleDesktopLyric() {
@@ -405,7 +473,7 @@ export const usePlayerStore = defineStore('player', {
 
       if (!songInfo.qualities) songInfo.qualities = extractQualities(songInfo);
 
-      const cacheQ = targetQuality || this.currentQuality;
+      const cacheQ = targetQuality || (hasFullAccess ? 'best' : 'hq');
       const dedupeKey = `${songInfo.hash}_${cacheQ}_${hasFullAccess}`;
 
       if (pendingResolves.has(dedupeKey)) {
@@ -432,19 +500,6 @@ export const usePlayerStore = defineStore('player', {
           }
       }
 
-      let tryQueue = [...QUALITY_CONFIG];
-      if (targetQuality) {
-        const targetIdx = tryQueue.findIndex(q => q.key === targetQuality);
-        if (targetIdx !== -1) tryQueue = tryQueue.slice(targetIdx);
-      }
-
-      if (!isVipUser) {
-        const vipQualities = ['viper_atmos', 'viper_clear', 'high', 'sq'];
-        tryQueue = tryQueue.filter(q => !vipQualities.includes(q.key));
-      }
-
-      let finalResult = { url: null, quality: 'standard', isPreview: false };
-
       if (!this.hasDfid) {
         for (let attempt = 0; attempt < 3; attempt++) {
           try {
@@ -457,12 +512,97 @@ export const usePlayerStore = defineStore('player', {
         }
       }
 
+      let finalResult = { url: null, quality: 'standard', isPreview: false };
+
+      if (hasFullAccess && songInfo.album_audio_id && String(songInfo.album_audio_id) !== '0') {
+        try {
+          const newRes = await request.get('/song/url/new', {
+            params: {
+              hash: songInfo.hash,
+              album_audio_id: songInfo.album_audio_id,
+              album_id: songInfo.album_id || 0,
+              timestamp: Date.now()
+            },
+            silent: true
+          });
+
+          const urlData = newRes?.data?.url || newRes?.data || newRes;
+          const urlMap = {};
+
+          const extractUrl = (val) => {
+            if (!val) return null;
+            if (typeof val === 'string' && val.startsWith('http')) return val;
+            if (Array.isArray(val) && val.length > 0) {
+              const first = val[0];
+              if (typeof first === 'string' && first.startsWith('http')) return first;
+            }
+            return null;
+          };
+
+          if (Array.isArray(urlData)) {
+            for (const item of urlData) {
+              if (!item?.quality) continue;
+              const url = extractUrl(item.url) || extractUrl(item.backupUrl);
+              if (url) urlMap[item.quality] = url;
+            }
+          } else if (typeof urlData === 'object' && urlData !== null) {
+            for (const [qKey, val] of Object.entries(urlData)) {
+              const url = extractUrl(val);
+              if (url) urlMap[qKey] = url;
+            }
+          }
+
+          const qualityParamMap = {
+            '128': 'standard', '320': 'hq', 'flac': 'sq',
+            'high': 'high', 'viper_atmos': 'viper_atmos',
+            'viper_clear': 'viper_clear', 'super': 'high'
+          };
+
+          for (const q of QUALITY_CONFIG) {
+            const paramKey = Object.entries(qualityParamMap).find(([, v]) => v === q.key)?.[0];
+            if (!paramKey || !urlMap[paramKey]) continue;
+            const isVipQ = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(q.key);
+            if (isVipQ && !isVipUser) continue;
+
+            setCachedUrl(songInfo.hash, q.key, { url: urlMap[paramKey], quality: q.key, isPreview: false });
+          }
+
+          for (const q of QUALITY_CONFIG) {
+            const paramKey = Object.entries(qualityParamMap).find(([, v]) => v === q.key)?.[0];
+            if (!paramKey || !urlMap[paramKey]) continue;
+            const isVipQ = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(q.key);
+            if (isVipQ && !isVipUser) continue;
+
+            if (!songInfo.qualities) songInfo.qualities = {};
+            songInfo.qualities[q.key] = songInfo.qualities[q.key] || urlMap[paramKey];
+
+            finalResult = { url: urlMap[paramKey], quality: q.key, isPreview: false };
+            break;
+          }
+
+          if (finalResult.url) {
+            setCachedUrl(songInfo.hash, cacheQ, finalResult);
+            return finalResult;
+          }
+        } catch (e) {}
+      }
+
+      let tryQueue = [...QUALITY_CONFIG];
+      if (targetQuality) {
+        const targetIdx = tryQueue.findIndex(q => q.key === targetQuality);
+        if (targetIdx !== -1) tryQueue = tryQueue.slice(targetIdx);
+      }
+      if (!isVipUser) {
+        const vipQualities = ['viper_atmos', 'viper_clear', 'high', 'sq'];
+        tryQueue = tryQueue.filter(q => !vipQualities.includes(q.key));
+      }
+
+      const fallbackHash = songInfo.qualities?.standard || songInfo.hash || songInfo.FileHash || '';
+
       if (hasFullAccess) {
           for (const qObj of tryQueue) {
-            let hashToTry = songInfo.qualities?.[qObj.key];
-
-            if (!hashToTry) hashToTry = songInfo.qualities?.standard || songInfo.hash || songInfo.FileHash;
-            if (!hashToTry) continue; 
+            let hashToTry = songInfo.qualities?.[qObj.key] || fallbackHash;
+            if (!hashToTry) continue;
 
             try {
               const reqObject = { hash: hashToTry, quality: qObj.param };
@@ -489,7 +629,7 @@ export const usePlayerStore = defineStore('player', {
 
       if (!finalResult.url) {
         try {
-           let hashToTry = songInfo.qualities?.standard || songInfo.hash;
+           let hashToTry = fallbackHash;
            const reqObject = { hash: hashToTry, free_part: 1, quality: '128' };
            if (songInfo.album_id) reqObject.album_id = songInfo.album_id;
            if (songInfo.album_audio_id) reqObject.album_audio_id = songInfo.album_audio_id;
@@ -541,7 +681,8 @@ export const usePlayerStore = defineStore('player', {
       if (!nextSong || preloadState.hash === nextSong.hash) return;
 
       try {
-        const res = await this.resolveSongUrl(nextSong);
+        if (!nextSong.qualities) nextSong.qualities = extractQualities(nextSong);
+        const res = await this.resolveSongUrl(nextSong, null);
         if (res && res.url) {
           preloadAudio.src = res.url;
           preloadAudio.load(); 
@@ -585,7 +726,13 @@ export const usePlayerStore = defineStore('player', {
       const exists = this.playlist.find(s => s.hash === songInfo.hash);
       if (!exists) this.playlist.push(songInfo);
 
-      if (songInfo.hash === preloadState.hash && preloadAudio.src && !targetQuality && maintainTime === 0) {
+      if (!songInfo.qualities) songInfo.qualities = extractQualities(songInfo);
+
+      const userStore = useUserStore();
+
+      const autoTargetQuality = targetQuality;
+
+      if (songInfo.hash === preloadState.hash && preloadAudio.src && preloadState.quality === autoTargetQuality && maintainTime === 0) {
           activeAudio.pause();
           activeAudio.currentTime = 0;
           
@@ -691,7 +838,7 @@ export const usePlayerStore = defineStore('player', {
       } catch (error) {
         triggerFallback('网络请求异常');
       } finally {
-        if (!autoPlay) this.isLoading = false;
+        this.isLoading = false;
       }
     },
 
@@ -726,26 +873,13 @@ export const usePlayerStore = defineStore('player', {
       this.isLoading = true;
       const targetQName = QUALITY_CONFIG.find(q => q.key === targetQuality)?.name || '未知音质';
 
-      if (!this.currentSong.qualities || !this.currentSong.qualities[targetQuality]) {
-          try {
-              let info = null;
-              if (this.currentSong.album_audio_id) {
-                  const krmRes = await request.get('/krm/audio', { params: { album_audio_id: this.currentSong.album_audio_id, fields: 'audio_info', timestamp: Date.now() }, silent: true });
-                  info = krmRes?.data?.audio_info || krmRes?.data?.data?.audio_info;
-              } else if (this.currentSong.hash) {
-                  const audioRes = await request.get('/audio', { params: { hash: this.currentSong.hash, timestamp: Date.now() }, silent: true });
-                  info = audioRes?.data?.audio_info || audioRes?.data || audioRes;
-              }
+      if (!this.currentSong.qualities) this.currentSong.qualities = extractQualities(this.currentSong);
 
-              if (info) {
-                  if (!this.currentSong.qualities) this.currentSong.qualities = {};
-                  this.currentSong.qualities.hq = info.hash_320 || this.currentSong.qualities.hq;
-                  this.currentSong.qualities.sq = info.hash_flac || info.hash_high || this.currentSong.qualities.sq;
-                  this.currentSong.qualities.high = info.hash_high || this.currentSong.qualities.high;
-                  this.currentSong.qualities.viper_clear = info.hash_viper_clear || this.currentSong.qualities.viper_clear;
-                  this.currentSong.qualities.viper_atmos = info.hash_viper_atmos || this.currentSong.qualities.viper_atmos;
-              }
-          } catch(e) {}
+      await this.fetchSongQualityInfo(this.currentSong);
+
+      for (const qKey of [...Object.keys(this.currentSong.qualities || {}), 'best', 'hq']) {
+        const cacheKey = `${this.currentSong.hash}_${qKey}`;
+        if (urlCache.has(cacheKey)) urlCache.delete(cacheKey);
       }
 
       const savedTime = activeAudio.currentTime;
@@ -781,57 +915,43 @@ export const usePlayerStore = defineStore('player', {
         if (this._vipActionTimer) clearTimeout(this._vipActionTimer);
         this._vipActionTimer = setTimeout(async () => {
            if (this.currentSong !== songRef) return;
-           await this.playSong(songRef, 'standard', savedTime, wasPlaying);
+           const bestQuality = this.getBestAvailableQuality(songRef);
+           await this.playSong(songRef, bestQuality, savedTime, wasPlaying);
         }, 150);
       }
     },
 
     async reloadCurrentSongForVip() {
-      if (!this.currentSong || !this.isCurrentSongPreview) return;
+      if (!this.currentSong) return;
       const savedTime = activeAudio.currentTime;
       const wasPlaying = this.isPlaying;
       
-      this.showToast('✨ VIP 身份确认，正在解除限制并为您自动匹配最高音质...');
+      if (this.isCurrentSongPreview) {
+        this.showToast('✨ VIP 身份确认，正在解除限制并为您自动匹配最高音质...');
+      } else {
+        this.showToast('✨ VIP 身份确认，正在为您升级至最高音质...');
+      }
       
       const songRef = this.currentSong;
       if (this._vipActionTimer) clearTimeout(this._vipActionTimer);
       this._vipActionTimer = setTimeout(async () => {
          if (this.currentSong !== songRef) return;
-         try {
-              let info = null;
-              if (songRef.album_audio_id) {
-                  const krmRes = await request.get('/krm/audio', { params: { album_audio_id: songRef.album_audio_id, fields: 'audio_info', timestamp: Date.now() }, silent: true });
-                  info = krmRes?.data?.audio_info || krmRes?.data?.data?.audio_info;
-              } else if (songRef.hash) {
-                  const audioRes = await request.get('/audio', { params: { hash: songRef.hash, timestamp: Date.now() }, silent: true });
-                  info = audioRes?.data?.audio_info || audioRes?.data || audioRes;
-              }
 
-              if (info) {
-                  if (!songRef.qualities) songRef.qualities = {};
-                  songRef.qualities.hq = info.hash_320 || songRef.qualities.hq;
-                  songRef.qualities.sq = info.hash_flac || info.hash_high || songRef.qualities.sq;
-                  songRef.qualities.high = info.hash_high || songRef.qualities.high;
-                  songRef.qualities.viper_clear = info.hash_viper_clear || songRef.qualities.viper_clear;
-                  songRef.qualities.viper_atmos = info.hash_viper_atmos || songRef.qualities.viper_atmos;
-              }
-         } catch(e) {}
-
-         let bestQuality = 'standard';
-         for (const q of QUALITY_CONFIG) {
-            if (songRef.qualities && songRef.qualities[q.key]) {
-                bestQuality = q.key;
-                break;
-            }
+         for (const qKey of [...Object.keys(songRef.qualities || {}), 'best', 'hq']) {
+           const cacheKey = `${songRef.hash}_${qKey}`;
+           if (urlCache.has(cacheKey)) urlCache.delete(cacheKey);
          }
+
+         await this.fetchSongQualityInfo(songRef);
+         const bestQuality = this.getBestAvailableQuality(songRef);
 
          await this.playSong(songRef, bestQuality, savedTime, wasPlaying);
 
          const actualQName = QUALITY_CONFIG.find(q => q.key === this.currentQuality)?.name || '标准音质';
-         if (this.currentQuality !== 'standard') {
-             this.showToast(`✨ 已成功解锁完整版，并自动为您升级至【${actualQName}】`);
-         } else {
-             this.showToast(`✨ 已为您无缝解锁完整版音乐`);
+         if (this.isCurrentSongPreview) {
+           this.showToast(`✨ 已为您无缝解锁完整版音乐`);
+         } else if (this.currentQuality !== 'standard') {
+           this.showToast(`✨ 已成功升级至【${actualQName}】`);
          }
       }, 150);
     },
@@ -853,8 +973,12 @@ export const usePlayerStore = defineStore('player', {
 
     seek(time) {
       if (!this.currentSong) return;
+      time = Math.max(0, time);
       if (this.isCurrentSongPreview && time > 60) {
         time = 60;
+      }
+      if (this.duration > 0 && time > this.duration) {
+        time = this.duration;
       }
       activeAudio.currentTime = time;
       this.currentTime = time;
