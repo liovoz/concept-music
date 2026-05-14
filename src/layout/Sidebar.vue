@@ -37,12 +37,8 @@
         <transition name="pop-down">
           <div 
             v-if="isVipCardVisible && userStore.isLoggedIn" 
-            @mouseenter="showVipCard" 
-            @mouseleave="hideVipCard"
-            class="absolute left-0 right-0 top-full mt-2 bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl p-4 z-[100] origin-top"
+            class="absolute left-0 right-0 top-full mt-2 bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl p-4 z-[100] origin-top pointer-events-none"
           >
-            <div class="absolute left-0 bottom-full w-full h-4 bg-transparent"></div>
-            
             <div class="flex flex-col space-y-2 relative z-10">
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-black text-orange-600 uppercase tracking-tighter">Asset Detail</span>
@@ -185,7 +181,7 @@ const hideVipCard = () => {
   clearTimeout(showTimer);
   hideTimer = setTimeout(() => {
     isVipCardVisible.value = false;
-  }, 300);
+  }, 120);
 };
 
 const now = ref(Date.now());
@@ -251,13 +247,6 @@ const formattedCooldown = computed(() => {
 const handleClaimOneDayVip = async () => {
   const res = await userStore.claimOneDayVip();
   playerStore.showToast(res.msg);
-  if (res.success) {
-    if (playerStore.currentSong && userStore.userInfo.vip > 0) {
-      playerStore.reloadCurrentSongForVip();
-    } else if (!playerStore.isPlaying && playerStore.currentSong) {
-      playerStore.playNext(true);
-    }
-  }
 };
 
 const handleClaimDailyVip = async () => {
@@ -271,11 +260,6 @@ const handleVipUpgradeClaim = async () => {
     const res = await userStore.claimOneDayVip();
     playerStore.showToast(res.msg);
     if (res.success) {
-      if (playerStore.currentSong && userStore.userInfo.vip > 0) {
-        playerStore.reloadCurrentSongForVip();
-      } else if (!playerStore.isPlaying && playerStore.currentSong) {
-        playerStore.playNext(true);
-      }
       return;
     }
     playerStore.showToast('1天VIP领取失败，请稍后重试');
@@ -284,13 +268,6 @@ const handleVipUpgradeClaim = async () => {
   if (userStore.vipState.count < 8 && cooldownRemaining.value <= 0) {
     const res = await userStore.claimDailyVip();
     playerStore.showToast(res.msg);
-    if (res.success) {
-      if (playerStore.currentSong && userStore.userInfo.vip > 0) {
-        playerStore.reloadCurrentSongForVip();
-      } else if (!playerStore.isPlaying && playerStore.currentSong) {
-        playerStore.playNext(true);
-      }
-    }
   } else {
     playerStore.showToast('VIP 领取冷却中，请稍后再试');
   }

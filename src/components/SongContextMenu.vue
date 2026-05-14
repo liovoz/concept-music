@@ -22,14 +22,23 @@
 
       <div class="my-1 h-px bg-gray-100"></div>
 
-      <button class="menu-item" @click="toggleLike">
+      <button class="menu-item" :class="{ liked: isLiked }" @click="toggleLike">
         <HeartIcon class="menu-icon" :filled="isLiked" />
         <span>{{ isLiked ? '取消喜欢' : '添加到我喜欢' }}</span>
       </button>
-      <button class="menu-item" :class="{ disabled: !song?.singer_id }" @click="goArtist">
+      <button v-if="songArtists.length <= 1" class="menu-item" :class="{ disabled: songArtists.length === 0 }" @click="goArtist(songArtists[0])">
         <UserIcon class="menu-icon" />
         <span>查看歌手</span>
       </button>
+      <template v-else>
+        <div class="menu-item menu-item-heading">
+          <UserIcon class="menu-icon" />
+          <span>&#26597;&#30475;&#27468;&#25163;</span>
+        </div>
+        <button v-for="artist in songArtists" :key="artist.id || artist.name" class="menu-item artist-subitem" @click="goArtist(artist)" v-tooltip="artist.name">
+          <span class="truncate">{{ artist.name }}</span>
+        </button>
+      </template>
       <button class="menu-item" :class="{ disabled: !song?.album_id }" @click="goAlbum">
         <DiscIcon class="menu-icon" />
         <span>查看专辑</span>
@@ -55,6 +64,8 @@ import { computed, h, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlayerStore } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
+import { getSongArtists } from '../utils/songHelper';
+import { goToArtist as navigateArtist } from '../utils/artistNavigation';
 
 const makeIcon = (paths, options = {}) => (props = {}) => h(
   'svg',
@@ -96,6 +107,8 @@ const isLiked = computed(() => {
   return !!hash && userStore.likedHashes.includes(hash);
 });
 
+const songArtists = computed(() => getSongArtists(song.value));
+
 const close = () => {
   visible.value = false;
   song.value = null;
@@ -136,9 +149,8 @@ const playNext = () => runAndClose(() => playerStore.insertNext(song.value));
 const append = () => runAndClose(() => playerStore.appendToPlaylist(song.value));
 const toggleLike = () => runAndClose(() => userStore.toggleLikeSong(song.value));
 
-const goArtist = () => runAndClose(() => {
-  if (!song.value?.singer_id) return playerStore.showToast('暂无该歌手详情信息');
-  router.push(`/artist/${song.value.singer_id}`);
+const goArtist = (artist) => runAndClose(() => {
+  navigateArtist(router, artist, playerStore);
 });
 
 const goAlbum = () => runAndClose(() => {
@@ -208,9 +220,33 @@ onUnmounted(() => {
   color: rgb(203, 213, 225);
 }
 
+.menu-item-heading {
+  pointer-events: none;
+  color: rgb(100, 116, 139);
+  padding-bottom: 0.25rem;
+}
+
+.artist-subitem {
+  padding-left: 3rem;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+  color: rgb(71, 85, 105);
+  font-weight: 700;
+}
+
 .menu-item.danger:hover {
   background: rgba(254, 242, 242, 0.9);
   color: rgb(239, 68, 68);
+}
+
+.menu-item.liked .menu-icon {
+  color: rgb(239, 68, 68);
+}
+
+
+.menu-item.liked:hover {
+  background: rgba(254, 242, 242, 0.9);
+  color: rgb(220, 38, 38);
 }
 
 .menu-icon {

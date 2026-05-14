@@ -50,7 +50,11 @@ if (!gotTheLock) {
 
 // --- 金库与鉴权逻辑 (保持原样) ---
 let vaultMemoryCache = null;
-app.on('before-quit', () => { isQuitting = true; if (trayManager) trayManager.setIsQuitting(true); });
+app.on('before-quit', () => {
+  isQuitting = true;
+  closeLyricWindow({ destroy: true });
+  if (trayManager) trayManager.setIsQuitting(true);
+});
 function getVaultPath() { return path.join(app.getPath('userData'), 'kugou_auth_vault.json'); }
 function loadVaultCookies() {
   if (vaultMemoryCache !== null) return vaultMemoryCache; 
@@ -224,6 +228,31 @@ let lyricForceInteractive = false;
 let lyricLocked = false;
 let lyricLockedHoverCount = 0;
 let lyricMouseTracker = null;
+let lyricHotArea = null;
+const LYRIC_LOCKED_HOVER_TICKS = 13;
+
+function isPointInRect(point, rect) {
+  if (!rect) return false;
+  return (
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.width &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.height
+  );
+}
+
+function closeLyricWindow({ destroy = false } = {}) {
+  stopLyricMouseTracker();
+  lyricInteractive = false;
+  lyricForceInteractive = false;
+  lyricLocked = false;
+  lyricLockedHoverCount = 0;
+  lyricHotArea = null;
+  if (lyricWindow && !lyricWindow.isDestroyed()) {
+    if (destroy) lyricWindow.destroy();
+    else lyricWindow.close();
+  }
+}
 
 function startLyricMouseTracker() {
   if (lyricMouseTracker) return;
@@ -236,16 +265,26 @@ function startLyricMouseTracker() {
 
     const cursorPos = screen.getCursorScreenPoint();
     const bounds = lyricWindow.getBounds();
-    const inside =
-      cursorPos.x >= bounds.x &&
-      cursorPos.x <= bounds.x + bounds.width &&
-      cursorPos.y >= bounds.y &&
-      cursorPos.y <= bounds.y + bounds.height;
+    const inside = isPointInRect(cursorPos, bounds);
 
     if (lyricLocked) {
-      if (inside) {
+      if (lyricInteractive && inside) {
+        return;
+      }
+
+      const hotArea = lyricHotArea
+        ? {
+            x: bounds.x + lyricHotArea.x,
+            y: bounds.y + lyricHotArea.y,
+            width: lyricHotArea.width,
+            height: lyricHotArea.height
+          }
+        : null;
+      const insideHotArea = isPointInRect(cursorPos, hotArea);
+
+      if (insideHotArea) {
         lyricLockedHoverCount++;
-        if (lyricLockedHoverCount >= 8 && !lyricInteractive) {
+        if (lyricLockedHoverCount >= LYRIC_LOCKED_HOVER_TICKS && !lyricInteractive) {
           lyricInteractive = true;
           lyricWindow.setIgnoreMouseEvents(false);
           lyricWindow.webContents.send('lyric-mouse-enter');
@@ -332,13 +371,23 @@ function createLyricWindow() {
     lyricForceInteractive = false;
     lyricLocked = false;
     lyricLockedHoverCount = 0;
+    lyricHotArea = null;
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('lyric-window-closed');
   });
 }
 
-ipcMain.on('toggle-desktop-lyric', () => { if (lyricWindow) lyricWindow.close(); else createLyricWindow(); });
+ipcMain.on('toggle-desktop-lyric', () => { if (lyricWindow) closeLyricWindow(); else createLyricWindow(); });
 ipcMain.on('sync-lyric', (event, data) => { if (lyricWindow && !lyricWindow.isDestroyed()) lyricWindow.webContents.send('update-lyric', data); });
 ipcMain.on('lyric-control-cmd', (event, cmd) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('main-lyric-control', cmd); });
+ipcMain.on('lyric-hot-area', (event, rect) => {
+  if (!rect || !Number.isFinite(rect.x) || !Number.isFinite(rect.y) || !Number.isFinite(rect.width) || !Number.isFinite(rect.height)) return;
+  lyricHotArea = {
+    x: Math.max(0, Math.floor(rect.x)),
+    y: Math.max(0, Math.floor(rect.y)),
+    width: Math.max(1, Math.ceil(rect.width)),
+    height: Math.max(1, Math.ceil(rect.height))
+  };
+});
 
 ipcMain.on('set-ignore-mouse', (event, ignore) => {
   if (!lyricWindow || lyricWindow.isDestroyed()) return;
@@ -504,6 +553,10 @@ const createWindow = () => {
       mainWindow.close();
     }
   });
+  ipcMain.on('window-hide-to-tray', () => {
+    if (trayManager) trayManager.handleWindowClose();
+    else if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide();
+  });
   mainWindow.on('close', (e) => {
     if (trayManager && !trayManager.getIsQuitting()) {
       e.preventDefault();
@@ -526,9 +579,15 @@ app.whenReady().then(async () => {
   });
   createWindow();      
   await startLocalServer(); 
-  trayManager = new TrayManager(mainWindow, ipcMain);
+  trayManager = new TrayManager(mainWindow, ipcMain, {
+    onBeforeQuit: () => closeLyricWindow({ destroy: true })
+  });
   trayManager.init(getAppIconPath());
-  ipcMain.on('force-quit', () => { if (trayManager) trayManager.forceQuit(); });
+  ipcMain.on('force-quit', () => {
+    closeLyricWindow({ destroy: true });
+    if (trayManager) trayManager.forceQuit();
+    app.quit();
+  });
   ipcMain.on('update-tray-tooltip', (event, songInfo) => { if (trayManager) trayManager.updateTooltip(songInfo); });
   ipcMain.on('update-tray-play-state', (event, isPlaying) => { if (trayManager) trayManager.updatePlayState(isPlaying); });
   ipcMain.on('update-tray-play-mode', (event, mode) => { if (trayManager) trayManager.updatePlayMode(mode); });
@@ -542,5 +601,5 @@ app.whenReady().then(async () => {
   }
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin' && (!trayManager || trayManager.getIsQuitting())) app.quit(); });
-app.on('will-quit', () => { if (trayManager) trayManager._unregisterShortcuts(); if (serverProcess) serverProcess.kill(); });
+app.on('will-quit', () => { closeLyricWindow({ destroy: true }); if (trayManager) trayManager._unregisterShortcuts(); if (serverProcess) serverProcess.kill(); });
 }

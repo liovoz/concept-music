@@ -19,6 +19,65 @@ export const findDeepDuration = (obj, depth = 0) => {
   return 0;
 };
 
+export const isValidArtistId = (id) => {
+  const value = String(id || '').trim();
+  return !!(value && value !== '0' && value !== 'undefined' && value !== 'null');
+};
+
+export const isUnknownSinger = (name) => {
+  const value = String(name || '').trim();
+  return !value || value === '\u672a\u77e5\u6b4c\u624b';
+};
+
+export const splitSingerNames = (name) => {
+  if (isUnknownSinger(name)) return [];
+  return String(name).split(/[,\uFF0C\u3001\/\uFF0F&\uFF06]+/u).map(n => n.trim()).filter(Boolean);
+};
+
+export const getSongArtists = (song = {}) => {
+  const artistSources = [song._singers, song.artists, song.singer_list, song.singerinfo, song.Singers, song.authors]
+    .find(source => Array.isArray(source) && source.length > 0) || [];
+  const artists = [];
+  const seen = new Set();
+
+  const pushSingleArtist = (id, name) => {
+    const artistName = String(name || '').trim();
+    if (isUnknownSinger(artistName)) return;
+    const artistId = String(id || '').trim();
+    const key = `${artistId || 'no-id'}::${artistName}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    artists.push({ id: artistId, name: artistName });
+  };
+
+  const pushArtist = (id, name) => {
+    const parts = splitSingerNames(name);
+    if (parts.length > 1) {
+      parts.forEach((part, index) => {
+        pushSingleArtist(index === 0 ? id : '', part);
+      });
+      return;
+    }
+    pushSingleArtist(id, name);
+  };
+
+  artistSources.forEach(artist => {
+    pushArtist(
+      artist?.id || artist?.singer_id || artist?.singerid || artist?.author_id || artist?.ID || '',
+      artist?.name || artist?.singer_name || artist?.singername || artist?.author_name || ''
+    );
+  });
+
+  if (artists.length === 0) {
+    splitSingerNames(song._singer || song.singer || song.SingerName || song.singername || song.author_name || song.author)
+      .forEach((name, index) => {
+        pushArtist(index === 0 ? (song._singer_id || song.singer_id || song.SingerId || song.singerid || song.author_id || '') : '', name);
+      });
+  }
+
+  return artists;
+};
+
 export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=300&q=80') => {
   return rawList.filter(item => {
     if (!item || typeof item !== 'object') return false;
@@ -73,7 +132,7 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
     }
 
     singerId = String(singerId || '').trim();
-    const hasValidSingerId = singerId && singerId !== '' && singerId !== '0' && singerId !== 'undefined' && singerId !== 'null';
+    const hasValidSingerId = isValidArtistId(singerId);
 
     const extractSingersArray = (songObj) => {
         const singers = [];
@@ -119,7 +178,7 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
         }
 
         if (singers.length === 0 && rawSinger && rawSinger !== '未知歌手') {
-            const names = rawSinger.split(/[,，、\/]/).map(n => n.trim()).filter(n => n);
+            const names = splitSingerNames(rawSinger);
             names.forEach((name, idx) => {
                 const sid = idx === 0 && hasValidSingerId ? singerId : '';
                 singers.push({ id: sid, name });
@@ -129,7 +188,8 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
         return singers;
     };
 
-    const singersArray = extractSingersArray(song);
+    let singersArray = extractSingersArray(song);
+    singersArray = getSongArtists({ _singers: singersArray });
 
     if (rawTitle.includes(' - ')) {
       const parts = rawTitle.split(' - ');
@@ -137,6 +197,9 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
       rawTitle = parts.slice(1).join(' - ').trim();
     }
     if (!rawSinger) rawSinger = '未知歌手';
+    if (singersArray.length === 0) {
+      singersArray = getSongArtists({ ...song, _singer: rawSinger, _singer_id: singerId });
+    }
 
     // ✨ 核心修复 2：智能推断“单曲”和“现场录音”，消除廉价的“未知专辑”
     let album = (song.AlbumName || song.album_name || song.albumname || song.album?.name || song.album_info?.album_name || song.albuminfo?.name || song.albuminfo?.album_name || song.relate_goods?.[0]?.albumname || song.remark || '').trim();
@@ -186,6 +249,7 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
       _singer: rawSinger,
       _singer_id: singerId,
       _singers: singersArray,
+      artists: singersArray,
       _album: album,
       _duration: durationFormatted,
       _album_id: albumId,
@@ -199,12 +263,15 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
 };
 
 export const buildPlayPayload = (song, fallbackCover = 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=300&q=80') => {
+  const artists = getSongArtists(song);
+  const primaryArtist = artists[0] || {};
   return {
     hash: song._hash,
     name: song._title,
     singer: song._singer,
-    singer_id: song._singer_id,
-    _singers: song._singers || (song._singer ? [{ id: song._singer_id || '', name: song._singer }] : []),
+    singer_id: song._singer_id || primaryArtist.id || '',
+    _singers: artists,
+    artists,
     album: song._album,
     cover: song._cover || fallbackCover,
     album_id: song._album_id,

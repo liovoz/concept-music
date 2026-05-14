@@ -31,17 +31,17 @@
         <button class="tb-btn" @click.stop="lockLyric" title="锁定穿透">
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
         </button>
-        <button class="tb-btn tb-btn-close" @click.stop="sendCommand('close')" title="关闭">
+        <button class="tb-btn tb-btn-close" @click.stop="closeLyricWindow" title="关闭">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </template>
     </div>
 
     <div class="lyric-body" :class="{ 'lyric-body-hidden': showSettings }">
-      <div class="lyric-line lyric-main" :class="activeTheme.textClass" :style="{ fontSize: config.fontSize + 'px' }">
+      <div class="lyric-line lyric-main" :style="{ fontSize: config.fontSize + 'px', color: activeTheme.color }">
         {{ currentText }}
       </div>
-      <div v-if="config.showSub && (currentTranslation || nextText)" class="lyric-line lyric-sub" :class="activeTheme.textClass" :style="{ fontSize: Math.max(14, config.fontSize - 14) + 'px' }">
+      <div v-if="config.showSub && (currentTranslation || nextText)" class="lyric-line lyric-sub" :style="{ fontSize: Math.max(14, config.fontSize - 14) + 'px', color: activeTheme.color }">
         {{ currentTranslation || nextText }}
       </div>
     </div>
@@ -82,14 +82,14 @@
 
     <transition name="toast-fade">
       <div v-if="showLockToast" class="lock-toast">
-        已锁定鼠标穿透，悬停歌词可解锁
+        已锁定鼠标穿透，悬停歌词 1 秒可解锁
       </div>
     </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 
 const isHovered = ref(false);
 const isLocked = ref(false);
@@ -107,13 +107,41 @@ const config = reactive({
 });
 
 const themes = [
-  { id: 'white', color: '#ffffff', textClass: 'text-white' },
-  { id: 'blue', color: '#4facfe', textClass: 'text-blue-400' },
-  { id: 'pink', color: '#ff0844', textClass: 'text-pink-500' },
-  { id: 'gold', color: '#f6d365', textClass: 'text-yellow-400' }
+  { id: 'white', color: '#ffffff' },
+  { id: 'red', color: '#ef4444' },
+  { id: 'blue', color: '#2563eb' },
+  { id: 'green', color: '#059669' },
+  { id: 'purple', color: '#9333ea' }
 ];
 
 const activeTheme = computed(() => themes.find(t => t.id === config.colorTheme) || themes[0]);
+
+const updateLyricHotArea = async () => {
+  await nextTick();
+  requestAnimationFrame(() => {
+    if (!window.lyricAPI?.updateHotArea) return;
+
+    const root = document.getElementById('desktop-lyric-root');
+    const lines = Array.from(document.querySelectorAll('.lyric-line'))
+      .filter(el => el.offsetParent !== null && el.textContent.trim());
+    if (!root || lines.length === 0) return;
+
+    const rootRect = root.getBoundingClientRect();
+    const rects = lines.map(el => el.getBoundingClientRect());
+    const left = Math.min(...rects.map(rect => rect.left));
+    const top = Math.min(...rects.map(rect => rect.top));
+    const right = Math.max(...rects.map(rect => rect.right));
+    const bottom = Math.max(...rects.map(rect => rect.bottom));
+    const padding = 10;
+
+    window.lyricAPI.updateHotArea({
+      x: Math.max(0, left - rootRect.left - padding),
+      y: Math.max(0, top - rootRect.top - padding),
+      width: Math.min(rootRect.width, right - left + padding * 2),
+      height: Math.min(rootRect.height, bottom - top + padding * 2)
+    });
+  });
+};
 
 const handleMouseEnter = () => {
   isHovered.value = true;
@@ -141,6 +169,10 @@ const handleDragStart = (e) => {
 
 const sendCommand = (cmd) => {
   if (window.lyricAPI) window.lyricAPI.sendControl(cmd);
+};
+
+const closeLyricWindow = () => {
+  if (window.lyricAPI) window.lyricAPI.toggle();
 };
 
 const openSettings = () => {
@@ -188,6 +220,7 @@ onMounted(() => {
       nextText.value = data.nextText;
       currentTranslation.value = data.currentTranslation || '';
       isPlaying.value = data.isPlaying;
+      updateLyricHotArea();
     });
 
     window.lyricAPI.onMouseEnter(() => {
@@ -198,12 +231,17 @@ onMounted(() => {
       handleMouseLeave();
     });
   }
+
+  updateLyricHotArea();
 });
 
 onUnmounted(() => {
 });
 
-watch(config, (v) => localStorage.setItem('kg_desktop_lyric_config', JSON.stringify(v)), { deep: true });
+watch(config, (v) => {
+  localStorage.setItem('kg_desktop_lyric_config', JSON.stringify(v));
+  updateLyricHotArea();
+}, { deep: true });
 </script>
 
 <style scoped>
@@ -337,21 +375,25 @@ watch(config, (v) => localStorage.setItem('kg_desktop_lyric_config', JSON.string
 
 .lyric-line {
   text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   max-width: 100%;
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
 }
 
 .lyric-main {
   font-weight: 800;
+  -webkit-line-clamp: 2;
   letter-spacing: 0.02em;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .lyric-sub {
   font-weight: 600;
+  -webkit-line-clamp: 2;
   opacity: 0.65;
   margin-top: 2px;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);

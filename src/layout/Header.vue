@@ -223,6 +223,11 @@
             </div>
           </div>
 
+          <label class="flex items-center mb-4 text-xs text-gray-500 cursor-pointer no-drag select-none">
+            <input type="checkbox" v-model="rememberCloseChoice" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+            <span>本次运行不再询问，直接使用当前选择</span>
+          </label>
+
           <div class="flex space-x-3">
             <button @click="showCloseDialog = false" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold transition-colors no-drag">取消</button>
             <button @click="executeCloseAction" class="flex-1 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95 no-drag" :class="closeChoice === 'quit' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
@@ -547,6 +552,8 @@ onMounted(() => {
   if (window.windowControls?.onWindowRestored) {
     window.windowControls.onWindowRestored(() => {
       showCloseDialog.value = false;
+      closeChoice.value = 'minimize';
+      rememberCloseChoice.value = false;
     });
   }
 });
@@ -561,21 +568,32 @@ const maximize = () => { if (window.windowControls) window.windowControls.maximi
 
 const showCloseDialog = ref(false);
 const closeChoice = ref('minimize');
+const rememberCloseChoice = ref(false);
+const sessionCloseAction = ref(null);
 const close = () => {
   if (disclaimerVisible.value) {
     if (window.trayAPI) window.trayAPI.forceQuit();
     return;
   }
+  if (sessionCloseAction.value) {
+    executeCloseActionDirect(sessionCloseAction.value);
+    return;
+  }
   closeChoice.value = 'minimize';
+  rememberCloseChoice.value = false;
   showCloseDialog.value = true;
 };
 
 const executeCloseAction = () => {
+  const action = closeChoice.value;
+  if (rememberCloseChoice.value) {
+    sessionCloseAction.value = action;
+  }
   showCloseDialog.value = false;
   nextTick(() => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        executeCloseActionDirect(closeChoice.value);
+        executeCloseActionDirect(action);
       });
     });
   });
@@ -585,7 +603,8 @@ const executeCloseActionDirect = (action) => {
   if (action === 'quit') {
     if (window.trayAPI) window.trayAPI.forceQuit();
   } else {
-    if (window.windowControls) window.windowControls.close();
+    if (window.windowControls?.hideToTray) window.windowControls.hideToTray();
+    else if (window.windowControls) window.windowControls.close();
   }
 };
 

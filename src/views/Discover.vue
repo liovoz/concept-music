@@ -267,11 +267,7 @@ const handleSongContextMenu = (event, song) => {
 
 const playAllDaily = () => {
   if (dailySongs.value.length === 0) return;
-  store.clearPlaylist();
-  dailySongs.value.forEach(song => {
-     if(song._hash) store.playlist.push(buildPlayPayload(song, defaultImg));
-  });
-  if(store.playlist.length > 0) store.playSong(store.playlist[0]);
+  store.prependPlaylistAndPlay(dailySongs.value.map(song => buildPlayPayload(song, defaultImg)));
 };
 
 watch(() => userStore.isLoggedIn, (newVal) => { 

@@ -29,19 +29,19 @@
       
       <div class="ml-3 overflow-hidden flex flex-col justify-center">
         <div class="flex items-center">
-          <span class="text-sm font-bold text-gray-800 truncate" v-tooltip="store.currentSong?.name">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
+          <span ref="titleViewportRef" class="player-title-viewport text-sm font-bold text-gray-800" v-tooltip="store.currentSong?.name">
+            <span ref="titleTextRef" class="player-title-track" :class="{ 'is-marquee': isTitleOverflow }">
+              <span class="player-title-text">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
+              <span v-if="isTitleOverflow" class="player-title-text player-title-copy" aria-hidden="true">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
+            </span>
+          </span>
           <span v-if="store.isCurrentSongPreview" class="ml-2 flex-shrink-0 bg-green-50 text-green-600 border border-green-200 px-1 py-0.5 rounded text-[8px] font-black tracking-widest uppercase leading-none mt-0.5 shadow-sm">试听</span>
           <span v-else-if="store.currentSong?.is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
           <span v-else-if="store.currentSong?.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
         </div>
         <div class="flex items-center mt-0.5 space-x-2">
-          <span 
-            @click="goToArtist(store.currentSong?.singer_id)"
-            class="text-xs text-gray-500 truncate font-medium transition-colors"
-            :class="store.currentSong?.singer_id ? 'hover:text-blue-600 cursor-pointer' : ''"
-          >
-            {{ store.currentSong ? store.currentSong.singer : '概念音乐 Desktop' }}
-          </span>
+          <SingerLink v-if="store.currentSong" :singers="store.currentSong._singers || store.currentSong.artists" :singer-name="store.currentSong.singer" :singer-id="store.currentSong.singer_id" size="small" />
+          <span v-else class="text-xs text-gray-500 truncate font-medium">Concept Music Desktop</span>
         </div>
       </div>
 
@@ -160,13 +160,7 @@
                     <span v-if="song.is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
                     <span v-else-if="song.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
                   </div>
-                  <span 
-                    @click.stop="goToArtist(song.singer_id)"
-                    class="text-[10px] text-gray-400 truncate mt-0.5 transition-colors"
-                    :class="song.singer_id ? 'hover:text-blue-600 cursor-pointer' : ''"
-                  >
-                    {{ song.singer }}
-                  </span>
+                  <SingerLink :singers="song._singers || song.artists" :singer-name="song.singer" :singer-id="song.singer_id" size="small" />
                 </div>
               </div>
               <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
@@ -223,12 +217,8 @@
                   v-tooltip="store.currentSong?.album">
                   专辑：{{ store.currentSong?.album || '未知专辑' }}
                 </span>
-                <span 
-                  @click="goToArtist(store.currentSong?.singer_id)"
-                  class="truncate max-w-[45%] text-center transition-colors" 
-                  :class="store.currentSong?.singer_id ? 'hover:text-blue-600 cursor-pointer' : ''"
-                  v-tooltip="store.currentSong?.singer">
-                  歌手：{{ store.currentSong?.singer || '未知歌手' }}
+                <span class="truncate max-w-[45%] text-center transition-colors flex items-center justify-center gap-1" v-tooltip="store.currentSong?.singer">
+                  <span class="flex-shrink-0">歌手：</span><SingerLink v-if="store.currentSong" :singers="store.currentSong._singers || store.currentSong.artists" :singer-name="store.currentSong.singer" :singer-id="store.currentSong.singer_id" />
                 </span>
               </div>
             </div>
@@ -272,10 +262,14 @@ import { usePlayerStore, QUALITY_CONFIG } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
 import request from '../utils/request';
 import { openSongContextMenu } from '../utils/songContextMenu';
+import SingerLink from '../components/SingerLink.vue';
 
 const store = usePlayerStore();
 const userStore = useUserStore();
 const router = useRouter();
+const titleViewportRef = ref(null);
+const titleTextRef = ref(null);
+const isTitleOverflow = ref(false);
 
 const discRotation = ref(0);
 let discAnimFrame = null;
@@ -283,6 +277,17 @@ let discLastTime = 0;
 let discSpeed = 0;
 const DISC_RPM = 360 / 20;
 const DISC_FRICTION = 0.985;
+
+const updateTitleOverflow = async () => {
+  await nextTick();
+  const viewport = titleViewportRef.value;
+  const text = titleTextRef.value?.querySelector('.player-title-text');
+  if (!viewport || !text) {
+    isTitleOverflow.value = false;
+    return;
+  }
+  isTitleOverflow.value = text.scrollWidth > viewport.clientWidth + 2;
+};
 
 const animateDisc = (timestamp) => {
   if (!discLastTime) discLastTime = timestamp;
@@ -376,13 +381,16 @@ onMounted(() => {
   store.initAudio();
   document.addEventListener('mousedown', handleClickOutside);
   window.addEventListener('keydown', handleGlobalKeyDown);
+  window.addEventListener('resize', updateTitleOverflow);
   if (window.lyricAPI) window.lyricAPI.onReady(syncLyricToDesktop);
+  updateTitleOverflow();
 });
 
 onUnmounted(() => {
   if (discAnimFrame) cancelAnimationFrame(discAnimFrame);
   document.removeEventListener('mousedown', handleClickOutside);
   window.removeEventListener('keydown', handleGlobalKeyDown);
+  window.removeEventListener('resize', updateTitleOverflow);
   if (window.lyricAPI) window.lyricAPI.onReady(null);
 });
 
@@ -628,6 +636,7 @@ watch(() => store.isDesktopLyricVisible, (visible) => {
 watch(() => store.currentSong?.hash, (newHash) => {
   parsedLyrics.value = [];
   lyricError.value = '';
+  updateTitleOverflow();
   if (newHash && (store.isLyricsVisible || store.isDesktopLyricVisible)) fetchLyrics();
 });
 
@@ -673,4 +682,39 @@ const openLyricsPage = () => {
 .custom-scrollbar-hidden::-webkit-scrollbar { display: none; }
 .custom-scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
 .mask-gradient { -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); }
+.player-title-viewport {
+  display: inline-flex;
+  max-width: 190px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.player-title-track {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.player-title-track.is-marquee {
+  min-width: max-content;
+  animation: player-title-marquee 11s linear infinite;
+}
+
+.player-title-viewport:hover .player-title-track.is-marquee {
+  animation-play-state: paused;
+}
+
+.player-title-text {
+  flex-shrink: 0;
+}
+
+.player-title-copy {
+  padding-left: 2.5rem;
+}
+
+@keyframes player-title-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-50% - 1.25rem)); }
+}
 </style>

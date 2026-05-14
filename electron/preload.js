@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('windowControls', {
   minimize: () => ipcRenderer.send('window-min'),
   maximize: () => ipcRenderer.send('window-max'),
   close: () => ipcRenderer.send('window-close'),
+  hideToTray: () => ipcRenderer.send('window-hide-to-tray'),
   onCloseDialogTrigger: (callback) => {
     closeDialogMgr.set(callback);
   },
@@ -66,6 +67,7 @@ contextBridge.exposeInMainWorld('lyricAPI', {
   setIgnoreMouse: (ignore) => ipcRenderer.send('set-ignore-mouse', ignore),
   setMouseAuto: () => ipcRenderer.send('set-mouse-auto'),
   unlockLyric: () => ipcRenderer.send('unlock-lyric'),
+  updateHotArea: (rect) => ipcRenderer.send('lyric-hot-area', rect),
   onMouseEnter: (callback) => {
     lyricEnterMgr.set(() => callback());
   },

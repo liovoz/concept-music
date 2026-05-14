@@ -75,10 +75,13 @@
                <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
             </div>
             
-            <div class="flex-1 pl-2 text-sm text-gray-800 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
-              <span class="truncate min-w-0">{{ song._title }}</span>
-              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+            <div class="flex-1 pl-2 pr-4 overflow-hidden min-w-0">
+              <div class="text-sm text-gray-800 font-medium flex items-center min-w-0" v-tooltip="song._title">
+                <span class="truncate min-w-0">{{ song._title }}</span>
+                <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
+                <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+              </div>
+              <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" size="small" />
             </div>
             
             <div class="w-[28%] hidden md:block text-xs text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
@@ -138,9 +141,10 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import request from '../utils/request';
 import { usePlayerStore } from '../store/playerStore';
-import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
+import { normalizeSongs, buildPlayPayload, splitSingerNames } from '../utils/songHelper';
 import { openSongContextMenu } from '../utils/songContextMenu';
 import BackToTop from '../components/BackToTop.vue'; 
+import SingerLink from '../components/SingerLink.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -200,12 +204,54 @@ const extractSongs = (res) => {
   else if (res?.data?.data && Array.isArray(res.data.data)) validArr = res.data.data;
   else if (res?.data && Array.isArray(res.data)) validArr = res.data;
   
-  return validArr.map(item => ({
-    ...item,
-    name: item.name || item.SongName || item.audio_name,
-    author_name: item.author_name || item.singername || item.SingerName,
-    album_audio_id: item.album_audio_id || item.audio_id || item.mixsongid 
-  })).filter(item => item.name && (item.hash || item.FileHash || item.album_audio_id));
+  const currentArtistId = String(route.params.id || '').trim();
+  const currentArtistName = artistInfo.value?.name || '';
+
+  const buildFallbackSingerList = (name, id) => {
+    const names = splitSingerNames(name);
+    if (names.length === 0) return [{ id, name }];
+    if (names.length === 1) return [{ id, name: names[0] }];
+    return names.map(singerName => ({
+      id: singerName.trim() === currentArtistName.trim() ? id : '',
+      name: singerName
+    }));
+  };
+
+  const normalizeSingerList = (source) => {
+    if (!Array.isArray(source) || source.length === 0) return [];
+
+    return source.flatMap(artist => {
+      const artistId = String(artist?.id || artist?.singer_id || artist?.singerid || artist?.author_id || artist?.ID || '').trim();
+      const artistName = artist?.name || artist?.singer_name || artist?.singername || artist?.author_name || '';
+      const names = splitSingerNames(artistName);
+      if (names.length <= 1) return [{ id: artistId, name: names[0] || artistName }];
+
+      return names.map((name, index) => ({
+        id: name.trim() === currentArtistName.trim() ? currentArtistId : (index === 0 && artistId !== currentArtistId ? artistId : ''),
+        name
+      }));
+    }).filter(artist => artist.name);
+  };
+
+  const extracted = validArr.map(item => {
+    const existingArtists = item.singer_list || item.singerinfo || item.Singers || item.authors;
+    const hasArtists = Array.isArray(existingArtists) && existingArtists.length > 0;
+    const singerId = item.SingerId || item.singerid || item.author_id || item.singer_id || (hasArtists ? '' : currentArtistId);
+    const singerName = item.author_name || item.singername || item.SingerName || item.author || (hasArtists ? '' : currentArtistName);
+    const singerList = hasArtists ? normalizeSingerList(existingArtists) : buildFallbackSingerList(singerName, singerId);
+    return {
+      ...item,
+      name: item.name || item.SongName || item.audio_name,
+      author_name: singerName,
+      singer_id: singerId,
+      singerid: singerId,
+      author_id: singerId,
+      singer_list: singerList,
+      album_audio_id: item.album_audio_id || item.audio_id || item.mixsongid
+    };
+  }).filter(item => item.name && (item.hash || item.FileHash || item.album_audio_id));
+
+  return extracted;
 };
 
 const extractAlbums = (res) => {
@@ -286,7 +332,8 @@ const loadMoreSongs = async () => {
     const newRawSongs = extractSongs(res);
     if (newRawSongs.length === 0) hasMoreSongs.value = false;
     else {
-      songs.value.push(...normalizeSongs(newRawSongs, defaultImg));
+      const normalized = normalizeSongs(newRawSongs, defaultImg);
+      songs.value.push(...normalized);
       if (newRawSongs.length < 30) hasMoreSongs.value = false;
     }
   } catch (error) {
@@ -352,11 +399,7 @@ const handleSongContextMenu = (event, song) => {
 
 const playAllSongs = () => {
   if (songs.value.length === 0) return;
-  store.clearPlaylist();
-  songs.value.forEach(song => {
-     if(song._hash || song._album_audio_id) store.playlist.push(buildPlayPayload(song, artistInfo.value.avatar || defaultImg));
-  });
-  if(store.playlist.length > 0) store.playSong(store.playlist[0]);
+  store.prependPlaylistAndPlay(songs.value.map(song => buildPlayPayload(song, artistInfo.value.avatar || defaultImg)));
 };
 </script>
 

@@ -297,11 +297,7 @@ const handleSongContextMenu = (event, song) => {
 
 const playAll = () => {
   if (songs.value.length === 0) return;
-  store.clearPlaylist();
-  songs.value.forEach(song => {
-     if(song._hash || song._album_audio_id) store.playlist.push(buildPlayPayload(song, albumInfo.value.cover || defaultImg));
-  });
-  if(store.playlist.length > 0) store.playSong(store.playlist[0]);
+  store.prependPlaylistAndPlay(songs.value.map(song => buildPlayPayload(song, albumInfo.value.cover || defaultImg)));
 };
 </script>
 

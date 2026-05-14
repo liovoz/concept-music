@@ -15,6 +15,8 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { goToArtist as navigateArtist } from '../utils/artistNavigation';
+import { isUnknownSinger } from '../utils/songHelper';
 
 const props = defineProps({
   singers: {
@@ -49,7 +51,7 @@ const displaySingers = computed(() => {
     return props.singers.filter(s => s && s.name);
   }
 
-  if (props.singerName && props.singerName.trim() && props.singerName !== '未知歌手') {
+  if (props.singerName && props.singerName.trim() && !isUnknownSinger(props.singerName)) {
     const id = props.singerId ? String(props.singerId) : '';
     return [{ id, name: props.singerName.trim() }];
   }
@@ -57,20 +59,7 @@ const displaySingers = computed(() => {
   return [];
 });
 
-const isValidId = (id) => {
-  const s = String(id || '').trim();
-  return s && s !== '' && s !== '0' && s !== 'undefined' && s !== 'null';
-};
-
 const handleClick = (singer) => {
-  if (!singer || !singer.name || singer.name === '未知歌手') {
-    return;
-  }
-
-  if (isValidId(singer.id)) {
-    router.push(`/artist/${singer.id}`);
-  } else {
-    router.push({ path: '/search', query: { keyword: singer.name.trim() } });
-  }
+  navigateArtist(router, singer);
 };
 </script>

@@ -82,9 +82,10 @@ export const useUserStore = defineStore('user', {
       localStorage.setItem('kg_desktop_local_play_counts', JSON.stringify(this.localPlayCounts));
     },
 
-    async fetchVipDetail() {
+    async fetchVipDetail(options = {}) {
       if (!this.isLoggedIn) return;
       try {
+        const { notifyPlayer = true } = options;
         const oldVip = this.userInfo?.vip > 0;
         const res = await request.get('/user/vip/detail', { params: { timestamp: Date.now() }, silent: true });
         if (res && res.data) {
@@ -130,7 +131,7 @@ export const useUserStore = defineStore('user', {
           if (this.userInfo) {
              this.userInfo.vip = isVip ? 1 : 0;
              localStorage.setItem('kg_desktop_userInfo', JSON.stringify(this.userInfo));
-             if (oldVip !== isVip) {
+             if (notifyPlayer && oldVip !== isVip) {
                const playerStore = usePlayerStore();
                playerStore.handleAuthCapabilityChanged(isVip ? 'vip-upgrade' : 'vip-downgrade');
              }
@@ -189,6 +190,7 @@ export const useUserStore = defineStore('user', {
 
       this.isDayVipProcessing = true;
       try {
+        const wasVip = this.userInfo?.vip > 0;
         const d = new Date();
         const apiDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -262,10 +264,16 @@ export const useUserStore = defineStore('user', {
            this.dayVipState.claimed = true;
            this.saveDayVipState();
 
-           await this.fetchVipDetail();
-           await this.fetchUserInfo();
+           await this.fetchVipDetail({ notifyPlayer: false });
+           await this.fetchUserInfo({ notifyPlayer: false });
+
+           const isVip = this.userInfo?.vip > 0;
+           if (!wasVip && isVip) {
+             const playerStore = usePlayerStore();
+             playerStore.handleAuthCapabilityChanged('vip-upgrade');
+           }
            
-           return { success: true, msg: `${msg} 预计延期至：${this.vipExpirationTime || '同步中...'}` };
+           return { success: true, becameVip: !wasVip && isVip, msg: `${msg} 预计延期至：${this.vipExpirationTime || '同步中...'}` };
         } else {
            return { success: false, msg };
         }
@@ -288,6 +296,7 @@ export const useUserStore = defineStore('user', {
 
       this.isVipProcessing = true;
       try {
+        const wasVip = this.userInfo?.vip > 0;
         const res = await request.get('/youth/vip');
         
         if (res && (res.status === 1 || res.error_code === 0)) {
@@ -305,8 +314,14 @@ export const useUserStore = defineStore('user', {
           this.saveVipState();
           
           const oldTime = this.vipExpirationTime;
-          await this.fetchVipDetail();
-          await this.fetchUserInfo();
+          await this.fetchVipDetail({ notifyPlayer: false });
+          await this.fetchUserInfo({ notifyPlayer: false });
+
+          const isVip = this.userInfo?.vip > 0;
+          if (!wasVip && isVip) {
+            const playerStore = usePlayerStore();
+            playerStore.handleAuthCapabilityChanged('vip-upgrade');
+          }
           
           let displayTime = this.vipExpirationTime;
           if (displayTime === oldTime) {
@@ -316,7 +331,7 @@ export const useUserStore = defineStore('user', {
           }
 
           const total = res.data?.total || 8;
-          return { success: true, msg: `🎉 领取成功！VIP 已延期至：${displayTime} (${this.vipState.count}/${total})` };
+          return { success: true, becameVip: !wasVip && isVip, msg: `🎉 领取成功！VIP 已延期至：${displayTime} (${this.vipState.count}/${total})` };
         } else {
           const errMsg = res?.error_msg || res?.message || '';
           if (errMsg.includes('上限') || errMsg.includes('完成') || errMsg.includes('频繁')) {
@@ -468,8 +483,9 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async fetchUserInfo() {
+    async fetchUserInfo(options = {}) {
       try {
+        const { notifyPlayer = true } = options;
         await request.get('/register/dev', { silent: true }).catch(() => {});
 
         const res = await request.get('/user/detail', { params: { timestamp: Date.now() }, silent: true });
@@ -495,13 +511,13 @@ export const useUserStore = defineStore('user', {
           localStorage.setItem('kg_desktop_userInfo', JSON.stringify(this.userInfo));
           
           this.fetchLikedPlaylistMeta(); 
-          await this.fetchVipDetail(); 
+          await this.fetchVipDetail({ notifyPlayer }); 
           
           this.checkVipReset();
           this.checkDayVipReset();
           
           const playerStore = usePlayerStore();
-          if (playerStore.currentSong && this.userInfo.vip > 0) {
+          if (notifyPlayer && playerStore.currentSong && this.userInfo.vip > 0) {
              playerStore.handleAuthCapabilityChanged('login');
           }
           

@@ -423,6 +423,71 @@ export const usePlayerStore = defineStore('player', {
       if (!exists) this.playlist.push(song);
     },
 
+    addSongsToPlaylist(songs = [], options = {}) {
+      const incoming = Array.isArray(songs) ? songs.filter(song => song && song.hash) : [];
+      let added = 0;
+      let skipped = 0;
+
+      incoming.forEach(song => {
+        const exists = this.playlist.some(item => item.hash === song.hash);
+        if (exists) {
+          skipped++;
+          return;
+        }
+        this.playlist.push(song);
+        added++;
+      });
+
+      if (added > 0) this.triggerPreload();
+      if (!options.silent) {
+        const skippedText = skipped > 0 ? `，已跳过 ${skipped} 首重复歌曲` : '';
+        this.showToast(added > 0 ? `已添加 ${added} 首歌曲${skippedText}` : '歌曲已在播放列表中');
+      }
+      return { added, skipped, total: incoming.length };
+    },
+
+    replacePlaylistAndPlay(songs = [], options = {}) {
+      const incoming = Array.isArray(songs) ? songs.filter(song => song && song.hash) : [];
+      const unique = [];
+      const seen = new Set();
+      incoming.forEach(song => {
+        if (seen.has(song.hash)) return;
+        seen.add(song.hash);
+        unique.push(song);
+      });
+
+      if (unique.length === 0) return { added: 0, skipped: incoming.length, total: incoming.length };
+      this.playlist = unique;
+      const startIndex = Math.max(0, Math.min(options.startIndex || 0, unique.length - 1));
+      this.playSong(unique[startIndex]);
+      if (!options.silent) this.showToast(`已加入 ${unique.length} 首歌曲并开始播放`);
+      return { added: unique.length, skipped: incoming.length - unique.length, total: incoming.length };
+    },
+
+    prependPlaylistAndPlay(songs = [], options = {}) {
+      const incoming = Array.isArray(songs) ? songs.filter(song => song && song.hash) : [];
+      const front = [];
+      const seen = new Set();
+
+      incoming.forEach(song => {
+        if (seen.has(song.hash)) return;
+        seen.add(song.hash);
+        front.push(song);
+      });
+
+      if (front.length === 0) return { added: 0, skipped: incoming.length, total: incoming.length };
+
+      const rest = this.playlist.filter(song => song && song.hash && !seen.has(song.hash));
+      this.playlist = [...front, ...rest];
+      this.playSong(front[0]);
+      if (!options.silent) {
+        const skipped = incoming.length - front.length;
+        const skippedText = skipped > 0 ? `，已跳过 ${skipped} 首重复歌曲` : '';
+        this.showToast(`优先播放已加载的 ${front.length} 首歌曲${skippedText}`);
+      }
+      return { added: front.length, skipped: incoming.length - front.length, total: incoming.length };
+    },
+
     appendToPlaylist(song, options = {}) {
       if (!song || !song.hash) return false;
       const exists = this.playlist.some(s => s.hash === song.hash);
@@ -1025,26 +1090,31 @@ export const usePlayerStore = defineStore('player', {
       if (!this.currentSong) return;
       const savedTime = activeAudio.currentTime;
       const wasPlaying = this.isPlaying;
-      clearUrlResolutionState();
-      
-      if (this.isCurrentSongPreview) {
-        this.showToast('✨ VIP 身份确认，正在解除限制并为您自动匹配最高音质...');
-      } else {
-        this.showToast('✨ VIP 身份确认，正在为您升级至最高音质...');
-      }
-      
       const songRef = this.currentSong;
       if (this._vipActionTimer) clearTimeout(this._vipActionTimer);
       this._vipActionTimer = setTimeout(async () => {
          if (this.currentSong !== songRef) return;
 
          await this.fetchSongQualityInfo(songRef);
+         const bestQuality = this.getBestAvailableQuality(songRef);
+         if (!this.isCurrentSongPreview && this.currentQuality === bestQuality) return;
+
+         clearUrlResolutionState();
+
+         if (this.isCurrentSongPreview) {
+           this.showToast('✨ VIP 身份确认，正在解除限制并为您自动匹配最高音质...');
+         } else {
+           this.showToast('✨ VIP 身份确认，正在为您升级至最高音质...');
+         }
 
          try {
            const res = await this.resolveSongUrl(songRef, null);
            if (this.currentSong !== songRef) return;
 
            if (res?.url) {
+             const shouldSwapSource = res.quality !== this.currentQuality || res.isPreview !== this.isCurrentSongPreview || activeAudio.src !== res.url;
+             if (!shouldSwapSource) return;
+
              this.currentQuality = res.quality;
              this.isCurrentSongPreview = res.isPreview;
              activeAudio.src = res.url;
@@ -1070,8 +1140,8 @@ export const usePlayerStore = defineStore('player', {
     },
 
     handleAuthCapabilityChanged(reason = 'auth') {
-      clearUrlResolutionState();
       if (reason === 'logout' || reason === 'vip-downgrade') {
+        clearUrlResolutionState();
         this.hasDfid = false;
         return;
       }

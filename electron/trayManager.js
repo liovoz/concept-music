@@ -6,9 +6,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export class TrayManager {
-  constructor(mainWindow, ipcMain) {
+  constructor(mainWindow, ipcMain, options = {}) {
     this.mainWindow = mainWindow;
     this.ipcMain = ipcMain;
+    this.onBeforeQuit = options.onBeforeQuit || null;
     this.tray = null;
     this.isPlaying = false;
     this.currentSong = null;
@@ -145,6 +146,7 @@ export class TrayManager {
 
   forceQuit() {
     this.isQuitting = true;
+    if (this.onBeforeQuit) this.onBeforeQuit();
     this._unregisterShortcuts();
     if (this.tray) {
       this.tray.destroy();
