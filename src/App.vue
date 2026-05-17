@@ -6,12 +6,12 @@
     <router-view></router-view>
   </div>
 
-  <div v-else class="flex h-screen w-full flex-col bg-white overflow-hidden text-gray-800 font-sans relative">
+  <div v-else class="flex h-screen w-full flex-col bg-white dark:bg-slate-950 overflow-hidden text-gray-800 dark:text-slate-100 font-sans relative transition-colors duration-200">
     <Header />
 
     <div class="flex flex-1 overflow-hidden relative">
       <Sidebar />
-      <main class="flex-1 bg-white relative min-w-0 overflow-hidden">
+      <main class="flex-1 bg-white dark:bg-slate-950 relative min-w-0 overflow-hidden transition-colors duration-200">
         <router-view v-slot="{ Component }">
           <keep-alive :include="['PersonalFM', 'PlaylistCategory']">
             <component :is="Component" :key="isCached(Component) ? Component.name : $route.fullPath" />
@@ -33,7 +33,7 @@
       <div 
         v-if="tooltipState.visible"
         :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px' }"
-        class="fixed z-[99998] max-w-md px-4 py-2.5 bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] text-xs text-gray-700 leading-relaxed whitespace-pre-wrap pointer-events-none font-medium"
+        class="fixed z-[99998] max-w-md px-4 py-2.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] text-xs text-gray-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap pointer-events-none font-medium"
         :class="tooltipState.isBottom ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2'"
       >
         {{ tooltipState.text }}

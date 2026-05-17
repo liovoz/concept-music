@@ -634,6 +634,8 @@ export const usePlayerStore = defineStore('player', {
           }
       }
 
+      const isRestrictedSong = !hasFullAccess && (songInfo.is_vip || songInfo.is_paid);
+
       if (!this.hasDfid) {
         for (let attempt = 0; attempt < 3; attempt++) {
           try {
@@ -647,6 +649,25 @@ export const usePlayerStore = defineStore('player', {
       }
 
       let finalResult = { url: null, quality: 'standard', isPreview: false };
+
+      if (isRestrictedSong) {
+        try {
+           const fallbackHash = songInfo.qualities?.standard || songInfo.hash || songInfo.FileHash || '';
+           const reqObject = { hash: fallbackHash, free_part: 1, quality: '128' };
+           if (songInfo.album_id) reqObject.album_id = songInfo.album_id;
+           if (songInfo.album_audio_id) reqObject.album_audio_id = songInfo.album_audio_id;
+
+           const res = await request.get('/song/url', { params: reqObject, silent: true });
+           const targetObj = res?.data ? res.data : res;
+           if (targetObj?.url && targetObj.url.length > 0) {
+             const previewUrl = Array.isArray(targetObj.url) ? targetObj.url[0] : targetObj.url;
+             finalResult = { url: previewUrl, quality: 'standard', isPreview: true };
+           }
+        } catch(e) {}
+
+        if (finalResult.url) setCachedUrl(songInfo.hash, cacheQ, finalResult);
+        return finalResult;
+      }
 
       if (hasFullAccess && songInfo.album_audio_id && String(songInfo.album_audio_id) !== '0') {
         try {
@@ -782,6 +803,16 @@ export const usePlayerStore = defineStore('player', {
       return finalResult;
     },
 
+    canTryFullPlayback(song) {
+      if (!song) return false;
+      const userStore = useUserStore();
+      const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
+      if (isVipUser) return true;
+      if (!(song.is_vip || song.is_paid)) return true;
+      const qualities = song.qualities || extractQualities(song);
+      return !!(qualities.standard || qualities.hq || song.hash);
+    },
+
     calculateNextSong(isAuto = true) {
       if (this.playlist.length <= 1) return null;
       let nextIndex = this.playlist.findIndex(s => s.hash === this.currentSong?.hash);
@@ -795,7 +826,7 @@ export const usePlayerStore = defineStore('player', {
         if (i === nextIndex) continue;
         const candidate = this.playlist[i];
         const isVipSong = candidate.is_vip || candidate.is_paid;
-        if (!isVipSong || isVipUser || !isAuto) playableIndices.push(i);
+        if (!isVipSong || isVipUser || !isAuto || this.canTryFullPlayback(candidate)) playableIndices.push(i);
       }
 
       if (playableIndices.length === 0) return null;

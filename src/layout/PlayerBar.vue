@@ -2,7 +2,7 @@
 // 文件：src/layout/PlayerBar.vue
 // ====================
 <template>
-  <footer class="h-20 w-full bg-white/95 backdrop-blur-xl border-t border-gray-100 flex items-center justify-between px-4 sm:px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] relative min-w-0">
+  <footer class="h-20 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-gray-100 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_-8px_28px_rgba(0,0,0,0.35)] relative min-w-0 transition-colors duration-200">
     
     <transition name="fade">
       <div v-if="store.isError" class="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg shadow-md text-xs font-medium flex items-center z-[60]">
@@ -15,7 +15,7 @@
     <div class="flex items-center w-[320px]">
       <div 
         @click="openLyricsPage" 
-        class="relative w-12 h-12 bg-gray-50 rounded-lg border border-gray-100 flex-shrink-0 flex items-center justify-center text-gray-300 overflow-hidden cursor-pointer group shadow-sm hover:shadow transition-all"
+        class="relative w-12 h-12 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 flex-shrink-0 flex items-center justify-center text-gray-300 dark:text-slate-500 overflow-hidden cursor-pointer group shadow-sm hover:shadow transition-all"
         v-tooltip="'展开/收起歌词'"
       >
         <img v-if="store.currentSong && store.currentSong.cover" :src="store.currentSong.cover" :alt="store.currentSong.name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -29,7 +29,7 @@
       
       <div class="ml-3 overflow-hidden flex flex-col justify-center">
         <div class="flex items-center">
-          <span ref="titleViewportRef" class="player-title-viewport text-sm font-bold text-gray-800" v-tooltip="store.currentSong?.name">
+          <span ref="titleViewportRef" class="player-title-viewport text-sm font-bold text-gray-800 dark:text-slate-100" v-tooltip="store.currentSong?.name">
             <span ref="titleTextRef" class="player-title-track" :class="{ 'is-marquee': isTitleOverflow }">
               <span class="player-title-text">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
               <span v-if="isTitleOverflow" class="player-title-text player-title-copy" aria-hidden="true">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
@@ -84,14 +84,14 @@
       </div>
     </div>
 
-    <div class="flex items-center justify-end w-[320px] space-x-4 text-gray-500 pr-2">
+    <div class="flex items-center justify-end w-[320px] space-x-4 text-gray-500 dark:text-slate-400 pr-2">
        
        <button @click="store.toggleDesktopLyric" class="no-drag cursor-pointer font-bold tracking-wider transition-colors flex items-center text-xs px-3 py-1.5 rounded-md border relative flex-shrink-0" :class="store.isDesktopLyricVisible ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-blue-600'" v-tooltip="'开启/关闭桌面歌词'">
          词
        </button>
 
-       <div v-if="store.currentSong" ref="qualityMenuRef" @mouseleave="qualityMenuOpen = false" class="relative flex flex-col items-center justify-center no-drag z-[60]">
-         <div @click="qualityMenuOpen = !qualityMenuOpen" @mouseenter="qualityMenuOpen = true" class="cursor-pointer font-bold tracking-wider uppercase transition-colors flex items-center text-xs px-3 py-1.5 rounded-md border border-transparent hover:border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-blue-600" v-tooltip="'音质选择'">
+       <div v-if="store.currentSong" ref="qualityMenuRef" class="relative flex flex-col items-center justify-center no-drag z-[60]">
+         <div @click="qualityMenuOpen = !qualityMenuOpen" class="cursor-pointer font-bold tracking-wider uppercase transition-colors flex items-center text-xs px-3 py-1.5 rounded-md border border-transparent hover:border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-blue-600" v-tooltip="'音质选择'">
            {{ qualityDisplayName }}
          </div>
          
@@ -136,8 +136,8 @@
     </div>
 
     <transition name="slide-up">
-      <div v-if="store.isPlaylistVisible && !store.isLyricsVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex flex-col z-50 overflow-hidden text-gray-800" tabindex="-1" @keydown.escape="store.isPlaylistVisible = false">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+      <div v-if="store.isPlaylistVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.55)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-slate-100" tabindex="-1" @keydown.escape="store.isPlaylistVisible = false">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/60">
           <h3 class="font-bold text-gray-800 text-sm">当前播放队列 <span class="text-gray-400 font-normal ml-1">({{ store.playlist.length }}首)</span></h3>
           <button @click="store.clearPlaylist" class="text-xs text-gray-500 hover:text-blue-600 transition-colors no-drag">清空</button>
         </div>
@@ -148,15 +148,23 @@
             <p class="text-xs font-medium">你还没有添加任何歌曲</p>
           </div>
           <div v-else class="space-y-1">
-            <div v-for="(song, index) in store.playlist" :key="song.hash + '_' + index" @contextmenu="handlePlaylistContextMenu($event, song, index)" class="group flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors" :class="{ 'bg-blue-50/60': store.currentSong?.hash === song.hash }">
+            <div
+              v-for="(song, index) in store.playlist"
+              :key="song.hash + '_' + index"
+              @contextmenu="handlePlaylistContextMenu($event, song, index)"
+              @mouseenter="playlistHoverIndex = index"
+              @mouseleave="playlistHoverIndex = -1"
+              class="group flex items-center justify-between px-4 py-2.5 rounded-xl cursor-pointer transition-colors"
+              :style="getPlaylistRowStyle(song, index)"
+            >
               <div class="flex items-center flex-1 overflow-hidden">
                 <div class="w-4 h-4 mr-3 flex items-center justify-center flex-shrink-0">
                   <svg v-if="store.currentSong?.hash === song.hash && store.isPlaying" class="w-4 h-4 text-blue-600 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"/></svg>
-                  <span v-else class="text-xs text-gray-400 font-medium group-hover:text-blue-600">{{ index + 1 }}</span>
+                  <span v-else class="text-xs text-gray-400 dark:text-slate-400 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400">{{ index + 1 }}</span>
                 </div>
                 <div class="flex-1 pl-2 text-xs font-medium flex flex-col justify-center overflow-hidden">
                   <div class="flex items-center">
-                    <span class="truncate text-gray-800" :class="{ 'text-blue-600': store.currentSong?.hash === song.hash }">{{ song.name }}</span>
+                    <span class="truncate text-gray-800 dark:text-slate-100" :class="{ '!text-blue-600 dark:!text-blue-400': store.currentSong?.hash === song.hash }">{{ song.name }}</span>
                     <span v-if="song.is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
                     <span v-else-if="song.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
                   </div>
@@ -164,8 +172,8 @@
                 </div>
               </div>
               <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-                <button @click.stop="store.playSong(song)" class="text-gray-400 hover:text-blue-600 p-1 no-drag"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg></button>
-                <button @click.stop="store.removeFromPlaylist(index)" class="text-gray-400 hover:text-red-500 p-1 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <button @click.stop="store.playSong(song)" class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg></button>
+                <button @click.stop="store.removeFromPlaylist(index)" class="text-gray-400 dark:text-slate-500 hover:text-red-500 p-1 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
               </div>
             </div>
           </div>
@@ -176,10 +184,10 @@
 
   <Teleport to="body">
     <transition name="lyric-fade">
-      <div v-if="store.isLyricsVisible" class="fixed top-0 left-0 w-full h-[calc(100vh-80px)] z-[45] flex flex-col no-drag overflow-hidden" tabindex="-1" @keydown.escape="store.toggleLyrics()">
-        <div class="absolute inset-0 bg-[#f8f9fa] -z-30"></div>
-        <div class="absolute inset-0 bg-cover bg-center scale-125 transition-all duration-[2s] ease-out opacity-40 blur-[100px] saturate-200 -z-20" :style="{ backgroundImage: `url(${store.currentSong?.cover || defaultImg})` }"></div>
-        <div class="absolute inset-0 bg-white/60 backdrop-blur-3xl -z-10"></div>
+      <div v-if="store.isLyricsVisible" class="fixed top-0 left-0 w-full h-[calc(100vh-80px)] z-[45] flex flex-col no-drag overflow-hidden" :class="isDark ? 'text-slate-100' : 'text-gray-900'" tabindex="-1" @keydown.escape="store.toggleLyrics()">
+        <div class="absolute inset-0 -z-30" :class="isDark ? 'bg-slate-950' : 'bg-[#f8f9fa]'"></div>
+        <div class="absolute inset-0 bg-cover bg-center scale-125 transition-all duration-[2s] ease-out blur-[100px] saturate-200 -z-20" :class="isDark ? 'opacity-25' : 'opacity-40'" :style="{ backgroundImage: `url(${store.currentSong?.cover || defaultImg})` }"></div>
+        <div class="absolute inset-0 backdrop-blur-3xl -z-10" :class="isDark ? 'bg-slate-950/80' : 'bg-white/60'"></div>
         
         <div v-if="store.isCurrentSongPreview" class="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-orange-100/90 backdrop-blur-md border border-orange-200 text-orange-600 px-6 py-2 rounded-full text-xs font-bold shadow-lg flex items-center transition-all">
           <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
@@ -187,7 +195,7 @@
         </div>
 
         <div class="relative w-full h-16 flex items-center justify-between px-8 drag-region z-50">
-          <button @click="store.toggleLyrics" class="no-drag w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200/50 text-gray-500 hover:text-gray-800 transition-colors" v-tooltip="'收起歌词'">
+          <button @click="store.toggleLyrics" class="no-drag w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200/50 dark:hover:bg-slate-800/80 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 transition-colors" v-tooltip="'收起歌词'">
             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
           </button>
         </div>
@@ -207,9 +215,9 @@
           <div class="w-7/12 flex flex-col h-[75vh] relative">
             <div class="flex flex-col items-center justify-center mb-10 flex-shrink-0 w-full transition-all">
               <div class="flex items-center justify-center mb-4 w-full">
-                <h2 class="text-3xl xl:text-4xl font-extrabold text-gray-900 tracking-tight truncate max-w-[80%] text-center">{{ store.currentSong?.name }}</h2>
+                <h2 class="text-3xl xl:text-4xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight truncate max-w-[80%] text-center">{{ store.currentSong?.name }}</h2>
               </div>
-              <div class="flex items-center justify-center text-sm text-gray-500 space-x-8 font-medium w-full">
+              <div class="flex items-center justify-center text-sm text-gray-500 dark:text-slate-400 space-x-8 font-medium w-full">
                 <span 
                   @click="goToAlbum(store.currentSong?.album_id)"
                   class="truncate max-w-[45%] text-center transition-colors" 
@@ -236,11 +244,11 @@
                     class="transition-all duration-300 ease-out origin-center cursor-pointer flex flex-col items-center justify-center text-center group mb-4 lg:mb-5 w-full"
                     :class="index === activeLyricIndex ? 'scale-[1.03]' : 'hover:scale-[1.01]'">
                   <span class="leading-relaxed px-4 transition-colors duration-300"
-                        :class="index === activeLyricIndex ? 'text-gray-900 font-bold text-xl lg:text-2xl' : 'text-gray-400 font-normal text-lg lg:text-xl hover:text-gray-500'">
+                        :class="index === activeLyricIndex ? 'text-gray-900 dark:text-slate-50 font-bold text-xl lg:text-2xl' : 'text-gray-400 dark:text-slate-500 font-normal text-lg lg:text-xl hover:text-gray-500 dark:hover:text-slate-300'">
                     {{ line.text }}
                   </span>
                   <span v-if="line.translation" class="px-4 mt-1 transition-colors duration-300 leading-snug"
-                        :class="index === activeLyricIndex ? 'text-gray-500 font-semibold text-[0.85em] lg:text-base' : 'text-gray-300/60 font-medium text-[0.8em] lg:text-sm'">
+                        :class="index === activeLyricIndex ? 'text-gray-500 dark:text-slate-300 font-semibold text-[0.85em] lg:text-base' : 'text-gray-300/60 dark:text-slate-600 font-medium text-[0.8em] lg:text-sm'">
                     {{ line.translation }}
                   </span>
                 </li>
@@ -263,10 +271,12 @@ import { useUserStore } from '../store/userStore';
 import request from '../utils/request';
 import { openSongContextMenu } from '../utils/songContextMenu';
 import SingerLink from '../components/SingerLink.vue';
+import { useTheme } from '../composables/useTheme';
 
 const store = usePlayerStore();
 const userStore = useUserStore();
 const router = useRouter();
+const { isDark } = useTheme();
 const titleViewportRef = ref(null);
 const titleTextRef = ref(null);
 const isTitleOverflow = ref(false);
@@ -326,6 +336,7 @@ const playlistPanelRef = ref(null);
 const playlistBtnRef = ref(null);
 const qualityMenuRef = ref(null);
 const qualityMenuOpen = ref(false);
+const playlistHoverIndex = ref(-1);
 
 const qualityOptions = QUALITY_CONFIG.map(q => ({
   ...q,
@@ -431,6 +442,23 @@ const isCurrentLiked = computed(() => {
   if (!store.currentSong) return false;
   return userStore.likedHashes.includes((store.currentSong.hash || '').toUpperCase());
 });
+
+const getPlaylistRowStyle = (song, index) => {
+  const isCurrent = store.currentSong?.hash === song.hash;
+  const isHovered = playlistHoverIndex.value === index;
+
+  if (isDark.value) {
+    if (isCurrent && isHovered) return { backgroundColor: 'rgba(51, 65, 85, 0.92)' };
+    if (isCurrent) return { backgroundColor: 'rgba(30, 41, 59, 0.86)' };
+    if (isHovered) return { backgroundColor: 'rgba(30, 41, 59, 0.78)' };
+    return { backgroundColor: 'transparent' };
+  }
+
+  if (isCurrent && isHovered) return { backgroundColor: 'rgba(219, 234, 254, 0.86)' };
+  if (isCurrent) return { backgroundColor: 'rgba(239, 246, 255, 0.76)' };
+  if (isHovered) return { backgroundColor: 'rgba(249, 250, 251, 0.95)' };
+  return { backgroundColor: 'transparent' };
+};
 
 const playModeTip = computed(() => {
   if (store.playMode === 'sequence') return '列表循环';

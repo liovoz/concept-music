@@ -1,5 +1,5 @@
 <template>
-  <header class="h-14 w-full flex items-center justify-between px-6 bg-white drag-region z-40 border-b border-gray-50">
+  <header class="h-14 w-full flex items-center justify-between px-6 bg-white dark:bg-slate-900 drag-region z-40 border-b border-gray-50 dark:border-slate-800 transition-colors duration-200">
     <div class="flex items-center w-48 text-blue-600 font-black text-lg tracking-wide select-none">
       <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
       概念音乐 Desktop
@@ -21,7 +21,7 @@
           @blur="handleBlur"
           type="text" 
           :placeholder="defaultPlaceholder" 
-          class="w-full h-8 bg-gray-100 shadow-inner hover:bg-gray-200 focus:bg-white focus:shadow-none focus:ring-1 focus:ring-blue-300 border border-transparent focus:border-blue-300 rounded-full pl-9 pr-8 text-xs text-gray-700 outline-none transition-all placeholder-gray-400 font-medium"
+          class="w-full h-8 bg-gray-100 dark:bg-slate-800 shadow-inner hover:bg-gray-200 dark:hover:bg-slate-700 focus:bg-white dark:focus:bg-slate-900 focus:shadow-none focus:ring-1 focus:ring-blue-300 dark:focus:ring-blue-500 border border-transparent focus:border-blue-300 dark:focus:border-blue-500 rounded-full pl-9 pr-8 text-xs text-gray-700 dark:text-slate-100 outline-none transition-all placeholder-gray-400 dark:placeholder-slate-500 font-medium"
         />
 
         <button 
@@ -34,7 +34,7 @@
         </button>
 
         <transition name="fade">
-          <div v-if="isFocused" class="absolute top-11 left-0 w-full bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 flex flex-col py-2 max-h-[460px]">
+          <div v-if="isFocused" class="absolute top-11 left-0 w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] border border-gray-100 dark:border-slate-700 overflow-hidden z-50 flex flex-col py-2 max-h-[460px]">
             
             <template v-if="!searchKeyword.trim()">
               <div v-if="history.length > 0" class="pb-2 border-b border-gray-100">
@@ -181,7 +181,21 @@
       </div>
     </div>
 
-    <div class="w-48 flex justify-end items-center space-x-3 no-drag text-gray-400">
+    <div class="w-48 flex justify-end items-center space-x-3 no-drag text-gray-400 dark:text-slate-400">
+      <button
+        @click="toggleTheme"
+        class="group relative flex h-7 w-7 items-center justify-center rounded-full hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-all no-drag"
+        v-tooltip="isDark ? '切换到浅色模式' : '切换到深色模式'"
+        :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
+      >
+        <svg v-if="isDark" class="w-4 h-4 transition-transform duration-200 group-active:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364-.707.707M6.343 17.657l-.707.707m12.728 0-.707-.707M6.343 6.343l-.707-.707"></path>
+          <circle cx="12" cy="12" r="4" stroke-width="2"></circle>
+        </svg>
+        <svg v-else class="w-4 h-4 transition-transform duration-200 group-active:-rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+        </svg>
+      </button>
       <button @click="minimize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
       <button @click="maximize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke-width="2"></rect></svg></button>
       <button @click="close" class="hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
@@ -191,7 +205,7 @@
   <Teleport to="body">
     <transition name="fade-scale" :css="false" @enter="onDialogEnter" @leave="onDialogLeave">
       <div v-if="showCloseDialog" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag" @keydown.escape="showCloseDialog = false" tabindex="-1">
-        <div class="bg-white w-[360px] rounded-2xl shadow-2xl p-6 relative flex flex-col">
+        <div class="bg-white dark:bg-slate-900 w-[360px] rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.55)] p-6 relative flex flex-col border border-transparent dark:border-slate-700">
           <h3 class="text-lg font-bold text-gray-800 mb-1">关闭概念音乐？</h3>
           <p class="text-xs text-gray-400 mb-5">请选择关闭方式</p>
 
@@ -246,11 +260,13 @@ import { useRouter, useRoute } from 'vue-router';
 import request from '../utils/request';
 import { useSearchHistory } from '../composables/useSearchHistory';
 import { disclaimerVisible } from '../utils/appState';
+import { useTheme } from '../composables/useTheme';
 
 const router = useRouter();
 const route = useRoute();
 const searchKeyword = ref('');
 const searchInput = ref(null);
+const { isDark, toggleTheme } = useTheme();
 
 const isFocused = ref(false);
 const isSuggestLoading = ref(false);

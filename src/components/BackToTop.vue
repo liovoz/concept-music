@@ -2,9 +2,9 @@
   <Teleport to="body">
     <Transition name="fade-up">
       <button
-        v-if="isVisible"
+        v-if="isVisible && !playerStore.isLyricsVisible"
         @click="scrollToTop"
-        class="fixed right-10 bottom-28 h-12 bg-white/95 backdrop-blur-md border border-gray-100 rounded-full shadow-[0_8px_30px_rgba(59,130,246,0.15)] flex items-center justify-center text-blue-500 hover:text-blue-600 hover:bg-white hover:shadow-[0_8px_30px_rgba(59,130,246,0.25)] transition-all duration-300 active:scale-95 z-[9999] no-drag group overflow-hidden px-3.5"
+        class="fixed right-10 bottom-28 h-12 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-gray-100 dark:border-slate-700 rounded-full shadow-[0_8px_30px_rgba(59,130,246,0.15)] dark:shadow-[0_10px_34px_rgba(0,0,0,0.38)] flex items-center justify-center text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-[0_8px_30px_rgba(59,130,246,0.25)] transition-all duration-300 active:scale-95 z-[9999] no-drag group overflow-hidden px-3.5"
       >
         <svg class="w-5 h-5 flex-shrink-0 transform group-hover:-translate-y-0.5 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
@@ -18,6 +18,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { usePlayerStore } from '../store/playerStore';
 
 const props = defineProps({
   targetId: {
@@ -32,6 +33,7 @@ const props = defineProps({
 
 const isVisible = ref(false);
 const route = useRoute();
+const playerStore = usePlayerStore();
 let scrollContainer = null;
 
 const findScrollContainer = () => {

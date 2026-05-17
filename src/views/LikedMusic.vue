@@ -9,7 +9,7 @@
         </div>
         <h2 class="text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">我喜欢的音乐</h2>
         <p class="text-sm text-gray-500 mb-8 max-w-sm leading-relaxed">安全登录后，即可收藏您喜爱的音乐，随时随地重温心动旋律。</p>
-        <button @click="userStore.openLoginModal()" class="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(59,130,246,0.3)] transition-all transform active:scale-95 no-drag flex items-center">
+        <button @click="userStore.openLoginModal()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag flex items-center">
           立即安全登录
           <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
         </button>

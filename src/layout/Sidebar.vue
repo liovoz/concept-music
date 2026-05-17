@@ -2,13 +2,13 @@
 // 文件：src/layout/Sidebar.vue
 // ====================
 <template>
-  <aside class="w-56 bg-gray-50 border-r border-gray-100 flex flex-col pt-4 pb-5 z-20 h-full relative">
+  <aside class="w-56 bg-gray-50 dark:bg-slate-900/95 border-r border-gray-100 dark:border-slate-800 flex flex-col pt-4 pb-5 z-20 h-full relative transition-colors duration-200">
     
     <div class="px-4 mb-2 overflow-visible">
       <div 
         @click="!userStore.isLoggedIn ? userStore.openLoginModal() : null"
         class="relative flex items-center p-2.5 rounded-xl transition-all duration-300 no-drag group"
-        :class="userStore.isLoggedIn ? 'bg-white shadow-sm border border-gray-200 cursor-default' : 'hover:bg-gray-200 cursor-pointer'"
+        :class="userStore.isLoggedIn ? 'bg-white dark:bg-slate-800 shadow-sm border border-gray-200 dark:border-slate-700 cursor-default' : 'hover:bg-gray-200 dark:hover:bg-slate-800 cursor-pointer'"
       >
         <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200">
           <img v-if="userStore.isLoggedIn && userStore.userInfo" :src="userStore.userInfo.avatar" :alt="userStore.userInfo.nickname || '用户头像'" class="w-full h-full object-cover" />
@@ -102,7 +102,7 @@
       </nav>
     </div>
 
-    <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 pt-3">
+    <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 dark:border-slate-800 pt-3">
       <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">系统</div>
       <div @click="checkForUpdates" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors text-gray-600 hover:bg-gray-200 group">
         <svg class="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>

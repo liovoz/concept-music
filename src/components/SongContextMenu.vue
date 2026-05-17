@@ -3,7 +3,7 @@
     <div
       v-if="visible"
       ref="menuRef"
-      class="fixed z-[100001] w-56 overflow-hidden rounded-xl border border-gray-100 bg-white/95 py-1.5 text-xs font-bold text-gray-700 shadow-[0_16px_45px_rgba(15,23,42,0.16)] backdrop-blur-xl no-drag"
+      class="fixed z-[100001] w-56 overflow-hidden rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 py-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
       :style="{ left: position.x + 'px', top: position.y + 'px' }"
       @contextmenu.prevent
     >
@@ -20,7 +20,7 @@
         <span>添加到播放列表</span>
       </button>
 
-      <div class="my-1 h-px bg-gray-100"></div>
+      <div class="my-1 h-px bg-gray-100 dark:bg-slate-700"></div>
 
       <button class="menu-item" :class="{ liked: isLiked }" @click="toggleLike">
         <HeartIcon class="menu-icon" :filled="isLiked" />
@@ -35,7 +35,7 @@
           <UserIcon class="menu-icon" />
           <span>&#26597;&#30475;&#27468;&#25163;</span>
         </div>
-        <button v-for="artist in songArtists" :key="artist.id || artist.name" class="menu-item artist-subitem" @click="goArtist(artist)" v-tooltip="artist.name">
+        <button v-for="artist in songArtists" :key="artist.id || artist.name" class="menu-item artist-subitem text-gray-700 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400" @click="goArtist(artist)" v-tooltip="artist.name">
           <span class="truncate">{{ artist.name }}</span>
         </button>
       </template>
@@ -49,7 +49,7 @@
       </button>
 
       <template v-if="source === 'playlist'">
-        <div class="my-1 h-px bg-gray-100"></div>
+        <div class="my-1 h-px bg-gray-100 dark:bg-slate-700"></div>
         <button class="menu-item danger" @click="removeFromPlaylist">
           <TrashIcon class="menu-icon" />
           <span>从播放列表移除</span>
@@ -184,7 +184,6 @@ onMounted(() => {
   window.addEventListener('song-context-menu:open', open);
   window.addEventListener('song-context-menu:close', close);
   window.addEventListener('mousedown', handlePointerDown);
-  window.addEventListener('scroll', close, true);
   window.addEventListener('resize', close);
   window.addEventListener('keydown', handleKeyDown);
 });
@@ -193,7 +192,6 @@ onUnmounted(() => {
   window.removeEventListener('song-context-menu:open', open);
   window.removeEventListener('song-context-menu:close', close);
   window.removeEventListener('mousedown', handlePointerDown);
-  window.removeEventListener('scroll', close, true);
   window.removeEventListener('resize', close);
   window.removeEventListener('keydown', handleKeyDown);
 });
@@ -215,9 +213,18 @@ onUnmounted(() => {
   color: rgb(37, 99, 235);
 }
 
+:global(.dark) .menu-item:hover {
+  background: rgba(37, 99, 235, 0.18);
+  color: rgb(96, 165, 250);
+}
+
 .menu-item.disabled {
   pointer-events: none;
   color: rgb(203, 213, 225);
+}
+
+:global(.dark) .menu-item.disabled {
+  color: rgb(71, 85, 105);
 }
 
 .menu-item-heading {
@@ -226,11 +233,14 @@ onUnmounted(() => {
   padding-bottom: 0.25rem;
 }
 
+:global(.dark) .menu-item-heading {
+  color: rgb(148, 163, 184);
+}
+
 .artist-subitem {
   padding-left: 3rem;
   padding-top: 0.45rem;
   padding-bottom: 0.45rem;
-  color: rgb(71, 85, 105);
   font-weight: 700;
 }
 

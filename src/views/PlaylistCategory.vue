@@ -29,10 +29,10 @@
               v-for="category in categories"
               :key="category.id"
               @click="selectCategory(category)"
-              class="px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap no-drag"
+              class="px-4 py-2 rounded-full text-sm font-bold transition-colors whitespace-nowrap no-drag border"
               :class="activeCategory.id === category.id
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200'
+                : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-200'"
             >
               {{ category.name }}
             </button>
@@ -226,7 +226,7 @@ const fetchTags = async () => {
 
 const scrollToTop = () => {
   const scrollEl = document.getElementById('playlist-category-scroll');
-  if (scrollEl) scrollEl.scrollTo({ top: 0 });
+  if (scrollEl) scrollEl.scrollTo({ top: 0, behavior: 'auto' });
 };
 
 const fetchPlaylists = async (isLoadMore = false) => {

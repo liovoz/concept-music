@@ -6,8 +6,10 @@ import { createPinia } from 'pinia'
 import router from './router' 
 import './style.css'
 import App from './App.vue'
+import { initTheme } from './composables/useTheme.js'
 import { tooltipDirective } from './utils/tooltip.js' // ✨ 引入指令
 
+initTheme()
 const app = createApp(App)
 const pinia = createPinia()
 
