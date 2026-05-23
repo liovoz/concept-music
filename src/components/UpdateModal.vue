@@ -150,7 +150,7 @@ import { ref, onMounted, computed } from 'vue';
 
 const isVisible = ref(false);
 const status = ref('idle');
-const appVersion = ref('1.0.0');
+const appVersion = ref(__APP_VERSION__);
 const updateInfo = ref({});
 const progressInfo = ref({ percent: 0, bytesPerSecond: 0 });
 const errorMsg = ref('');

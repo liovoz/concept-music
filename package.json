@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "electron .",
+    "start": "node scripts/start-electron-dev.mjs",
+    "start:electron": "electron .",
     "pack": "vite build && electron-builder",
     "release": "vite build && electron-builder --publish always"
   },

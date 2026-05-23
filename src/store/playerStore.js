@@ -9,6 +9,8 @@ const audioA = new Audio();
 const audioB = new Audio();
 audioA.preload = 'auto';
 audioB.preload = 'auto';
+audioA.crossOrigin = 'anonymous';
+audioB.crossOrigin = 'anonymous';
 
 let activeAudio = audioA;    
 let preloadAudio = audioB;   
@@ -55,9 +57,124 @@ const setCachedUrl = (hash, quality, data) => {
 const pendingResolves = new Map();
 let playVersion = 0;
 
+const VOLUME_BOOST_LEVELS = [1.25, 1.5, 2];
+const VOLUME_BOOST_ENABLED_KEY = 'kg_desktop_volume_boost_enabled';
+const VOLUME_BOOST_LEVEL_KEY = 'kg_desktop_volume_boost_level';
+const VOLUME_BOOST_INITIALIZED_KEY = 'kg_desktop_volume_boost_initialized';
+const LOCAL_AUDIO_PROXY_BASE = 'http://127.0.0.1:10420';
+
+let audioContext = null;
+let audioGraphInitialized = false;
+const audioOutputNodes = new WeakMap();
+
+const getStoredBoostLevel = () => {
+  const saved = parseFloat(localStorage.getItem(VOLUME_BOOST_LEVEL_KEY));
+  return VOLUME_BOOST_LEVELS.includes(saved) ? saved : 1.5;
+};
+
+const getInitialBoostEnabled = () => {
+  if (localStorage.getItem(VOLUME_BOOST_INITIALIZED_KEY) !== 'true') {
+    localStorage.setItem(VOLUME_BOOST_INITIALIZED_KEY, 'true');
+    localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
+    return false;
+  }
+  return localStorage.getItem(VOLUME_BOOST_ENABLED_KEY) === 'true';
+};
+
+const getRawAudioUrl = (url = '') => {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url, window.location.href);
+    const proxied = parsed.searchParams.get('url');
+    if (parsed.pathname === '/audio/proxy' && proxied) return proxied;
+  } catch (e) {}
+  return url;
+};
+
+const buildAudioProxyUrl = (url) => {
+  if (!url) return '';
+  const rawUrl = getRawAudioUrl(url);
+  try {
+    const parsed = new URL(rawUrl);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return rawUrl;
+  } catch (e) {
+    return rawUrl;
+  }
+  const base = typeof window !== 'undefined' && window.apiBridge ? LOCAL_AUDIO_PROXY_BASE : '/api';
+  return `${base}/audio/proxy?url=${encodeURIComponent(rawUrl)}`;
+};
+
+const shouldUseAudioProxy = (store) => store.volumeBoostEnabled || audioGraphInitialized;
+
+const setAudioSource = (audio, url, useProxy) => {
+  const rawUrl = getRawAudioUrl(url);
+  audio._rawSourceUrl = rawUrl;
+  audio._usingProxy = !!useProxy;
+  audio._proxyFallbackAttempted = false;
+  audio._proxyRestoreTime = 0;
+  audio._proxyResumeOnLoad = false;
+  audio.src = useProxy ? buildAudioProxyUrl(rawUrl) : rawUrl;
+};
+
+const ensureAudioContext = () => {
+  if (audioContext) return audioContext;
+  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextCtor) return null;
+  audioContext = new AudioContextCtor();
+  return audioContext;
+};
+
+const configureCompressor = (compressor, enabled) => {
+  if (!audioContext || !compressor) return;
+  const now = audioContext.currentTime;
+  if (enabled) {
+    compressor.threshold.setValueAtTime(-3, now);
+    compressor.knee.setValueAtTime(8, now);
+    compressor.ratio.setValueAtTime(12, now);
+    compressor.attack.setValueAtTime(0.003, now);
+    compressor.release.setValueAtTime(0.25, now);
+  } else {
+    compressor.threshold.setValueAtTime(0, now);
+    compressor.knee.setValueAtTime(0, now);
+    compressor.ratio.setValueAtTime(1, now);
+    compressor.attack.setValueAtTime(0.003, now);
+    compressor.release.setValueAtTime(0.25, now);
+  }
+};
+
+const ensureAudioOutputNode = (audio) => {
+  if (audioOutputNodes.has(audio)) return audioOutputNodes.get(audio);
+  const ctx = ensureAudioContext();
+  if (!ctx) return null;
+
+  const source = ctx.createMediaElementSource(audio);
+  const gain = ctx.createGain();
+  const compressor = ctx.createDynamicsCompressor();
+  source.connect(gain);
+  gain.connect(compressor);
+  compressor.connect(ctx.destination);
+
+  const nodes = { source, gain, compressor };
+  audioOutputNodes.set(audio, nodes);
+  return nodes;
+};
+
+const ensureAudioOutputGraph = () => {
+  if (audioGraphInitialized) return true;
+  const nodeA = ensureAudioOutputNode(audioA);
+  const nodeB = ensureAudioOutputNode(audioB);
+  audioGraphInitialized = !!(nodeA && nodeB);
+  return audioGraphInitialized;
+};
+
 const resetPreloadAudio = () => {
   preloadAudio.pause();
   preloadAudio.removeAttribute('src');
+  preloadAudio._rawSourceUrl = '';
+  preloadAudio._usingProxy = false;
+  preloadAudio._proxyFallbackAttempted = false;
+  preloadAudio._proxyRestoreTime = 0;
+  preloadAudio._proxyResumeOnLoad = false;
   preloadAudio.load();
   preloadState = {
     hash: null,
@@ -126,6 +243,8 @@ export const usePlayerStore = defineStore('player', {
     hasReportedCurrentSong: false, 
     
     volume: (() => { const v = parseFloat(localStorage.getItem('kg_desktop_volume')); return (isNaN(v) || v < 0 || v > 1) ? 1 : v; })(),
+    volumeBoostEnabled: getInitialBoostEnabled(),
+    volumeBoostLevel: getStoredBoostLevel(),
     savedVolume: 1,
     currentQuality: 'standard',
     
@@ -352,6 +471,32 @@ export const usePlayerStore = defineStore('player', {
            return;
         }
 
+        if (activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
+          const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
+            ? activeAudio._proxyRestoreTime
+            : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
+          const wasPlaying = activeAudio._proxyResumeOnLoad || (this.isPlaying && !activeAudio.paused);
+          this.volumeBoostEnabled = false;
+          localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
+          setAudioSource(activeAudio, activeAudio._rawSourceUrl, false);
+          activeAudio._proxyFallbackAttempted = true;
+          activeAudio._proxyRestoreTime = savedTime;
+          activeAudio._proxyResumeOnLoad = wasPlaying;
+          this.applyAudioOutputSettings();
+          this.showToast('音量增强代理不可用，已恢复普通播放');
+          activeAudio.load();
+          activeAudio.addEventListener('loadedmetadata', () => {
+            if (savedTime > 0) activeAudio.currentTime = savedTime;
+            if (wasPlaying) {
+              const p = activeAudio.play();
+              if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+            }
+            activeAudio._proxyRestoreTime = 0;
+            activeAudio._proxyResumeOnLoad = false;
+          }, { once: true });
+          return;
+        }
+
         this.isLoading = false;
         this.isPlaying = false;
         
@@ -367,13 +512,13 @@ export const usePlayerStore = defineStore('player', {
     },
 
     initAudio() {
-      audioA.volume = this.volume;
-      audioB.volume = this.volume;
+      this.applyAudioOutputSettings();
       if (!audioEventsBound) {
         this.bindAudioEvents(audioA);
         this.bindAudioEvents(audioB);
         audioEventsBound = true;
       }
+      if (this.volumeBoostEnabled) this.ensureBoostAudioOutput();
 
       if (window.lyricAPI) {
         window.lyricAPI.onControl((cmd) => {
@@ -399,10 +544,85 @@ export const usePlayerStore = defineStore('player', {
     setVolume(val) {
       const v = Math.max(0, Math.min(1, val));
       this.volume = v;
-      audioA.volume = v;
-      audioB.volume = v;
       localStorage.setItem('kg_desktop_volume', v.toString());
       if (v > 0) this.savedVolume = v;
+      this.applyAudioOutputSettings();
+    },
+
+    applyAudioOutputSettings() {
+      const multiplier = this.volumeBoostEnabled ? this.volumeBoostLevel : 1;
+      const outputGain = this.volume * multiplier;
+
+      if (!audioGraphInitialized) {
+        audioA.volume = this.volume;
+        audioB.volume = this.volume;
+        return;
+      }
+
+      audioA.volume = 1;
+      audioB.volume = 1;
+      [audioA, audioB].forEach(audio => {
+        const nodes = audioOutputNodes.get(audio);
+        if (!nodes?.gain || !audioContext) return;
+        nodes.gain.gain.setValueAtTime(outputGain, audioContext.currentTime);
+        configureCompressor(nodes.compressor, this.volumeBoostEnabled);
+      });
+    },
+
+    async ensureBoostAudioOutput() {
+      if (!ensureAudioOutputGraph()) {
+        this.volumeBoostEnabled = false;
+        localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
+        this.showToast('当前环境不支持音量增强，已保持普通播放');
+        this.applyAudioOutputSettings();
+        return false;
+      }
+
+      if (audioContext?.state === 'suspended') {
+        try { await audioContext.resume(); } catch (e) {}
+      }
+      this.applyAudioOutputSettings();
+
+      [activeAudio, preloadAudio].forEach(audio => {
+        if (!audio._rawSourceUrl || audio._usingProxy) return;
+        const isActive = audio === activeAudio;
+        const savedTime = isActive && Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+        const wasPlaying = isActive && this.isPlaying && !audio.paused;
+        setAudioSource(audio, audio._rawSourceUrl, true);
+        audio._proxyRestoreTime = savedTime;
+        audio._proxyResumeOnLoad = wasPlaying;
+        audio.load();
+        if (!isActive) return;
+        audio.addEventListener('loadedmetadata', () => {
+          if (savedTime > 0) audio.currentTime = savedTime;
+          if (wasPlaying) {
+            const p = audio.play();
+            if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+          }
+          audio._proxyRestoreTime = 0;
+          audio._proxyResumeOnLoad = false;
+        }, { once: true });
+      });
+      return true;
+    },
+
+    async setVolumeBoostEnabled(enabled) {
+      this.volumeBoostEnabled = !!enabled;
+      localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, this.volumeBoostEnabled ? 'true' : 'false');
+      if (this.volumeBoostEnabled) await this.ensureBoostAudioOutput();
+      else this.applyAudioOutputSettings();
+    },
+
+    setVolumeBoostLevel(level) {
+      const nextLevel = VOLUME_BOOST_LEVELS.includes(Number(level)) ? Number(level) : 1.5;
+      this.volumeBoostLevel = nextLevel;
+      localStorage.setItem(VOLUME_BOOST_LEVEL_KEY, nextLevel.toString());
+      if (this.volumeBoostEnabled) this.ensureBoostAudioOutput();
+      else this.applyAudioOutputSettings();
+    },
+
+    toggleVolumeBoost() {
+      return this.setVolumeBoostEnabled(!this.volumeBoostEnabled);
     },
 
     toggleMute() {
@@ -850,7 +1070,7 @@ export const usePlayerStore = defineStore('player', {
         await this.prepareAutoQuality(nextSong, null);
         const res = await this.resolveSongUrl(nextSong, null);
         if (res && res.url) {
-          preloadAudio.src = res.url;
+          setAudioSource(preloadAudio, res.url, shouldUseAudioProxy(this));
           preloadAudio.load(); 
           
           preloadState = {
@@ -969,6 +1189,11 @@ export const usePlayerStore = defineStore('player', {
         if (!previousSong) {
           activeAudio.pause();
           activeAudio.removeAttribute('src');
+          activeAudio._rawSourceUrl = '';
+          activeAudio._usingProxy = false;
+          activeAudio._proxyFallbackAttempted = false;
+          activeAudio._proxyRestoreTime = 0;
+          activeAudio._proxyResumeOnLoad = false;
           activeAudio.load();
           this.currentSong = null;
           this.currentQuality = 'standard';
@@ -1007,7 +1232,7 @@ export const usePlayerStore = defineStore('player', {
           this.currentSong = songInfo;
           this.currentQuality = res.quality;
           this.isCurrentSongPreview = res.isPreview; 
-          activeAudio.src = res.url;
+          setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this));
           if (maintainTime === 0) this.currentTime = 0;
           if (res.isPreview && autoPlay) this.showToast('正在试听 VIP 歌曲片段，登录解锁完整版');
         } else {
@@ -1143,12 +1368,12 @@ export const usePlayerStore = defineStore('player', {
            if (this.currentSong !== songRef) return;
 
            if (res?.url) {
-             const shouldSwapSource = res.quality !== this.currentQuality || res.isPreview !== this.isCurrentSongPreview || activeAudio.src !== res.url;
+             const shouldSwapSource = res.quality !== this.currentQuality || res.isPreview !== this.isCurrentSongPreview || activeAudio._rawSourceUrl !== res.url;
              if (!shouldSwapSource) return;
 
              this.currentQuality = res.quality;
              this.isCurrentSongPreview = res.isPreview;
-             activeAudio.src = res.url;
+             setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this));
              if (res.isPreview && savedTime > 59) {
                activeAudio.currentTime = 59.5;
              } else {
@@ -1335,6 +1560,11 @@ export const usePlayerStore = defineStore('player', {
       if (isCurrentSong) {
         activeAudio.pause();
         activeAudio.src = '';
+        activeAudio._rawSourceUrl = '';
+        activeAudio._usingProxy = false;
+        activeAudio._proxyFallbackAttempted = false;
+        activeAudio._proxyRestoreTime = 0;
+        activeAudio._proxyResumeOnLoad = false;
         this.isPlaying = false;
         this.isCurrentSongPreview = false;
         this.currentSong = null;
@@ -1356,6 +1586,18 @@ export const usePlayerStore = defineStore('player', {
       this.playlist = [];
       activeAudio.pause();
       preloadAudio.pause();
+      activeAudio.removeAttribute('src');
+      preloadAudio.removeAttribute('src');
+      activeAudio._rawSourceUrl = '';
+      activeAudio._usingProxy = false;
+      activeAudio._proxyFallbackAttempted = false;
+      activeAudio._proxyRestoreTime = 0;
+      activeAudio._proxyResumeOnLoad = false;
+      preloadAudio._rawSourceUrl = '';
+      preloadAudio._usingProxy = false;
+      preloadAudio._proxyFallbackAttempted = false;
+      preloadAudio._proxyRestoreTime = 0;
+      preloadAudio._proxyResumeOnLoad = false;
       this.isPlaying = false;
       this.currentSong = null;
       this.currentTime = 0;

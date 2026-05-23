@@ -3,6 +3,9 @@
 // ====================
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { readFileSync } from 'fs'
+
+const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 
 export default defineConfig(({ mode }) => {
   // 根据当前工作模式（development 或 production）加载对应的 .env 文件
@@ -10,6 +13,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './', // ✨ 修复白屏 2：强制使用相对路径，确保桌面端资源被正确引入
+    define: {
+      __APP_VERSION__: JSON.stringify(packageJson.version)
+    },
     plugins: [vue()],
     server: {
       // 这里的端口是前端 Vue 项目运行的端口，不用动

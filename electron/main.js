@@ -16,6 +16,7 @@ app.commandLine.appendSwitch('disable-http-cache');
 const { autoUpdater } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const DEV_FRONTEND_URL = 'http://127.0.0.1:5173';
 
 function getAppIconPath() {
   return app.isPackaged
@@ -110,7 +111,36 @@ ipcMain.on('clear-vault', () => {
 });
 
 // --- 服务端逻辑 (保持原样) ---
-function startLocalServer() {
+const LOCAL_SERVER_HEALTH_URL = 'http://127.0.0.1:10420/server/now';
+
+function isLocalServerReady(timeout = 500) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (ready) => {
+      if (settled) return;
+      settled = true;
+      resolve(ready);
+    };
+
+    const req = http.get(LOCAL_SERVER_HEALTH_URL, (res) => {
+      res.resume();
+      done(res.statusCode === 200 || res.statusCode === 404);
+    });
+
+    req.on('error', () => done(false));
+    req.setTimeout(timeout, () => {
+      req.destroy();
+      done(false);
+    });
+  });
+}
+
+async function startLocalServer() {
+  if (await isLocalServerReady()) {
+    console.log('[Server] Reusing existing local API server on port 10420.');
+    return;
+  }
+
   return new Promise((resolve) => {
     let serverPath;
     let serverCwd; 
@@ -130,6 +160,12 @@ function startLocalServer() {
     serverProcess.stderr.on('data', (data) => {
       const msg = data.toString();
       serverErrorLog += msg;
+      if (msg.includes('EADDRINUSE')) {
+        isLocalServerReady().then((ready) => {
+          if (ready) resolve();
+        });
+        return;
+      }
       console.error('[Server]', msg);
     });
     serverProcess.stdout.on('data', (data) => {
@@ -144,7 +180,7 @@ function startLocalServer() {
     let retryCount = 0;
     let serverReady = false;
     const pingServer = () => {
-      const req = http.get('http://127.0.0.1:10420/server/now', (res) => {
+      const req = http.get(LOCAL_SERVER_HEALTH_URL, (res) => {
         if (res.statusCode === 200 || res.statusCode === 404) { serverReady = true; resolve(); }
         else handleError();
       }).on('error', handleError);
@@ -357,7 +393,7 @@ function createLyricWindow() {
   lyricWindow.setIgnoreMouseEvents(true, { forward: true });
 
   if (app.isPackaged) lyricWindow.loadURL('app://localhost/#/desktop-lyric');
-  else lyricWindow.loadURL('http://localhost:5173/#/desktop-lyric');
+  else lyricWindow.loadURL(`${DEV_FRONTEND_URL}/#/desktop-lyric`);
 
   lyricWindow.once('ready-to-show', () => {
     lyricWindow.show();
@@ -597,7 +633,7 @@ app.whenReady().then(async () => {
     mainWindow.loadURL('app://localhost/');
     setTimeout(() => { autoUpdater.checkForUpdates().catch(() => {}); }, 3000);
   } else {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL(DEV_FRONTEND_URL);
   }
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin' && (!trayManager || trayManager.getIsQuitting())) app.quit(); });

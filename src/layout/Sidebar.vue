@@ -28,7 +28,7 @@
             >
               VIP
             </span>
-            <span class="truncate">{{ userStore.userInfo.vip > 0 ? '尊贵会员' : '普通用户' }}</span>
+            <span class="truncate">{{ userStore.userInfo.vip > 0 ? userStore.vipLevelName : '普通用户' }}</span>
           </div>
         </div>
 

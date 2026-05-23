@@ -79,9 +79,15 @@ export const tooltipDirective = {
   },
   
   updated(el, binding) {
-    el.setAttribute('data-tooltip', binding.value || '');
-    if (tooltipState.visible && tooltipState.activeEl === el && tooltipState.text !== binding.value) {
-      tooltipState.text = binding.value;
+    const nextText = binding.value || '';
+    el.setAttribute('data-tooltip', nextText);
+    if (tooltipState.visible && tooltipState.activeEl === el) {
+      if (!nextText) {
+        tooltipState.visible = false;
+        tooltipState.activeEl = null;
+      } else if (tooltipState.text !== nextText) {
+        tooltipState.text = nextText;
+      }
     }
     if (el.getAttribute('title')) el.removeAttribute('title');
   },

@@ -5,6 +5,157 @@ import { defineStore } from 'pinia';
 import request from '../utils/request';
 import { usePlayerStore } from './playerStore';
 
+const VIP_DETAIL_PROBE_ENABLED = false;
+const VIP_DETAIL_PROBE_REDACT_KEYS = /token|cookie|authorization|password|secret|dfid|mid/i;
+
+const sanitizeVipProbePayload = (value, seen = new WeakSet()) => {
+  if (value === null || typeof value !== 'object') return value;
+  if (seen.has(value)) return '[Circular]';
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.map(item => sanitizeVipProbePayload(item, seen));
+  }
+
+  return Object.fromEntries(Object.entries(value).map(([key, val]) => [
+    key,
+    VIP_DETAIL_PROBE_REDACT_KEYS.test(key) ? '[REDACTED]' : sanitizeVipProbePayload(val, seen)
+  ]));
+};
+
+const logVipDetailProbe = (label, payload) => {
+  if (!VIP_DETAIL_PROBE_ENABLED) return;
+  try {
+    console.groupCollapsed(`[VIP API Probe] ${label}`);
+    console.log('time:', new Date().toISOString());
+    console.log(sanitizeVipProbePayload(payload));
+    console.groupEnd();
+  } catch (error) {
+    console.log('[VIP API Probe]', label, payload);
+  }
+};
+
+const pickVipProbeFields = (vip, index) => ({
+  index,
+  busi_type: vip?.busi_type,
+  product_type: vip?.product_type,
+  is_vip: vip?.is_vip,
+  is_paid_vip: vip?.is_paid_vip,
+  purchased_type: vip?.purchased_type,
+  purchased_ios_type: vip?.purchased_ios_type,
+  vip_begin_time: vip?.vip_begin_time,
+  vip_clearday: vip?.vip_clearday,
+  vip_end_time: vip?.vip_end_time,
+  paid_vip_expire_time: vip?.paid_vip_expire_time,
+  vip_limit_quota_total: vip?.vip_limit_quota?.total
+});
+
+const DEFAULT_VIP_STATUS = {
+  isVip: false,
+  level: 'normal',
+  productType: '',
+  source: 'none',
+  displayName: '普通用户',
+  expireTime: '',
+  quotaTotal: 0,
+  isPaidVip: false
+};
+
+const CONCEPT_VIP_LEVELS = {
+  svip: { rank: 40, level: 'concept_svip', displayName: '畅听版VIP' },
+  tvip: { rank: 30, level: 'concept_tvip', displayName: '概念版VIP' }
+};
+
+const loadVipStatus = () => {
+  try {
+    return { ...DEFAULT_VIP_STATUS, ...JSON.parse(localStorage.getItem('kg_desktop_vip_status') || '{}') };
+  } catch (e) {
+    return { ...DEFAULT_VIP_STATUS };
+  }
+};
+
+const parseVipTime = (value) => {
+  if (!value) return 0;
+  const ts = new Date(String(value).replace(/-/g, '/')).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+};
+
+const isActiveVipTime = (value, now = Date.now()) => {
+  const ts = parseVipTime(value);
+  return ts > now;
+};
+
+const pickBetterVip = (current, candidate) => {
+  if (!current) return candidate;
+  if (candidate.rank !== current.rank) return candidate.rank > current.rank ? candidate : current;
+  return parseVipTime(candidate.expireTime) > parseVipTime(current.expireTime) ? candidate : current;
+};
+
+const resolveVipStatusFromDetail = (data, now = Date.now()) => {
+  let selected = null;
+
+  if (Array.isArray(data?.busi_vip)) {
+    data.busi_vip.forEach((vip) => {
+      if (vip?.busi_type !== 'concept' || Number(vip?.is_vip) !== 1 || !isActiveVipTime(vip?.vip_end_time, now)) return;
+
+      const productType = String(vip.product_type || '').toLowerCase();
+      const levelMeta = CONCEPT_VIP_LEVELS[productType] || {
+        rank: 20,
+        level: 'concept_vip',
+        displayName: '概念版VIP'
+      };
+
+      selected = pickBetterVip(selected, {
+        ...levelMeta,
+        isVip: true,
+        productType,
+        source: 'concept',
+        expireTime: vip.vip_end_time || '',
+        quotaTotal: Number(vip?.vip_limit_quota?.total || 0),
+        isPaidVip: Number(vip?.is_paid_vip || 0) === 1,
+        raw: vip
+      });
+    });
+  }
+
+  const rootVipExpireTime = data?.vip_end_time || data?.vip_y_endtime || '';
+  if (Number(data?.vip_type || 0) > 0 && isActiveVipTime(rootVipExpireTime, now)) {
+    selected = pickBetterVip(selected, {
+      isVip: true,
+      rank: 10,
+      level: 'kugou_vip',
+      productType: String(data.vip_type),
+      source: 'kugou',
+      displayName: '酷狗VIP',
+      expireTime: rootVipExpireTime,
+      quotaTotal: 0,
+      isPaidVip: true,
+      raw: data
+    });
+  }
+
+  const musicVipType = Number(data?.m_vip_type ?? data?.m_type ?? 0);
+  const musicVipExpireTime = data?.m_y_endtime || data?.m_end_time || '';
+  if (musicVipType > 0 && isActiveVipTime(musicVipExpireTime, now)) {
+    selected = pickBetterVip(selected, {
+      isVip: true,
+      rank: 5,
+      level: 'kugou_music_pack',
+      productType: String(musicVipType),
+      source: 'kugou_music_pack',
+      displayName: '酷狗音乐包',
+      expireTime: musicVipExpireTime,
+      quotaTotal: 0,
+      isPaidVip: true,
+      raw: data
+    });
+  }
+
+  if (!selected) return { ...DEFAULT_VIP_STATUS };
+  const { rank, raw, ...status } = selected;
+  return status;
+};
+
 export const useUserStore = defineStore('user', {
   state: () => ({
     isLoggedIn: localStorage.getItem('kg_desktop_isLoggedIn') === 'true',
@@ -29,6 +180,7 @@ export const useUserStore = defineStore('user', {
     dayVipState: { date: '', uid: '', claimed: false },
     vipExpirationTime: localStorage.getItem('kg_desktop_vip_expire') || '', 
     vipLevelName: localStorage.getItem('kg_desktop_vip_name') || '普通用户',
+    vipStatus: loadVipStatus(),
     
     localHistory: JSON.parse(localStorage.getItem('kg_desktop_local_history') || '[]'),
     localPlayCounts: JSON.parse(localStorage.getItem('kg_desktop_local_play_counts') || '{}'),
@@ -52,8 +204,10 @@ export const useUserStore = defineStore('user', {
         this.userInfo.vip = 0;
         this.vipLevelName = '普通用户';
         this.vipExpirationTime = '';
+        this.vipStatus = { ...DEFAULT_VIP_STATUS };
         localStorage.setItem('kg_desktop_userInfo', JSON.stringify(this.userInfo));
         localStorage.setItem('kg_desktop_vip_name', '普通用户');
+        localStorage.setItem('kg_desktop_vip_status', JSON.stringify(this.vipStatus));
         localStorage.removeItem('kg_desktop_vip_expire');
         this._lastVipPollTime = 0;
         this.maybePollVipDetail();
@@ -88,45 +242,49 @@ export const useUserStore = defineStore('user', {
         const { notifyPlayer = true } = options;
         const oldVip = this.userInfo?.vip > 0;
         const res = await request.get('/user/vip/detail', { params: { timestamp: Date.now() }, silent: true });
+        logVipDetailProbe('/user/vip/detail raw response', res);
         if (res && res.data) {
           const data = res.data;
           const now = Date.now();
-          let isVip = false;
-          let expireTime = '';
-          let levelName = '普通用户';
+          const conceptVips = Array.isArray(data.busi_vip)
+            ? data.busi_vip.filter(v => v.busi_type === 'concept' && Number(v.is_vip) === 1)
+            : [];
+          const resolvedVipStatus = resolveVipStatusFromDetail(data, now);
+          const isVip = resolvedVipStatus.isVip;
+          const expireTime = resolvedVipStatus.expireTime;
+          const levelName = resolvedVipStatus.displayName;
+          const selectedConceptVip = resolvedVipStatus.source === 'concept'
+            ? conceptVips.find(v => String(v.product_type || '').toLowerCase() === resolvedVipStatus.productType
+                && v.vip_end_time === resolvedVipStatus.expireTime) || null
+            : null;
 
-          if (data.vip_type > 0 || data.m_vip_type > 0) {
-             const mainExpireTs = new Date((data.vip_end_time || data.m_y_endtime || '').replace(/-/g, '/')).getTime();
-             if (mainExpireTs > now) {
-                isVip = true;
-                expireTime = data.vip_end_time || data.m_y_endtime;
-                levelName = data.vip_type > 0 ? '👑 酷狗超级 VIP' : '🎵 酷狗音乐包';
-             }
-          }
-
-          if (data.busi_vip && Array.isArray(data.busi_vip)) {
-             const conceptVips = data.busi_vip.filter(v => v.busi_type === 'concept' && v.is_vip === 1);
-             if (conceptVips.length > 0) {
-                const latestVip = conceptVips.reduce((latest, current) => {
-                   const latestTime = new Date((latest.vip_end_time || '').replace(/-/g, '/')).getTime() || 0;
-                   const currentTime = new Date((current.vip_end_time || '').replace(/-/g, '/')).getTime() || 0;
-                   return currentTime > latestTime ? current : latest;
-                }, conceptVips[0]);
-
-                const expireTs = new Date((latestVip.vip_end_time || '').replace(/-/g, '/')).getTime();
-
-                if (expireTs > now) {
-                    isVip = true;
-                    expireTime = latestVip.vip_end_time;
-                    levelName = latestVip.product_type === 'svip' ? '🎁 概念版专属 SVIP' : '🎁 概念版白嫖 VIP';
-                }
-             }
-          }
+          logVipDetailProbe('/user/vip/detail parsed summary', {
+            rawVipType: data.vip_type,
+            rawMusicVipType: data.m_vip_type ?? data.m_type,
+            rawVipEndTime: data.vip_end_time,
+            rawMusicVipEndTime: data.m_y_endtime,
+            busiVipCount: Array.isArray(data.busi_vip) ? data.busi_vip.length : 0,
+            busiVipSummary: Array.isArray(data.busi_vip) ? data.busi_vip.map(pickVipProbeFields) : [],
+            conceptVipCount: conceptVips.length,
+            conceptVipSummary: conceptVips.map(pickVipProbeFields),
+            conceptVips,
+            selectedConceptVip: selectedConceptVip ? pickVipProbeFields(selectedConceptVip, conceptVips.indexOf(selectedConceptVip)) : null,
+            resolved: {
+              isVip,
+              expireTime,
+              levelName,
+              vipStatus: resolvedVipStatus,
+              previousVip: oldVip,
+              notifyPlayer
+            }
+          });
 
           this.vipExpirationTime = expireTime;
           this.vipLevelName = levelName;
+          this.vipStatus = resolvedVipStatus;
           localStorage.setItem('kg_desktop_vip_expire', expireTime);
           localStorage.setItem('kg_desktop_vip_name', levelName);
+          localStorage.setItem('kg_desktop_vip_status', JSON.stringify(resolvedVipStatus));
 
           if (this.userInfo) {
              this.userInfo.vip = isVip ? 1 : 0;
@@ -136,8 +294,17 @@ export const useUserStore = defineStore('user', {
                playerStore.handleAuthCapabilityChanged(isVip ? 'vip-upgrade' : 'vip-downgrade');
              }
           }
+        } else {
+          logVipDetailProbe('/user/vip/detail empty data', res);
         }
-      } catch (e) {}
+      } catch (e) {
+        logVipDetailProbe('/user/vip/detail request error', {
+          message: e?.message,
+          status: e?.response?.status,
+          responseData: e?.response?.data,
+          error: e
+        });
+      }
     },
 
     checkVipReset() {
@@ -498,7 +665,7 @@ export const useUserStore = defineStore('user', {
         traverse(res);
 
         if (info) {
-          const isVip = (info.vip_type > 0 || info.m_vip_type > 0) || 
+          const isVip = (info.vip_type > 0 || (info.m_vip_type ?? info.m_type ?? 0) > 0) || 
             (this.vipExpirationTime && new Date(this.vipExpirationTime.replace(/-/g, '/')).getTime() > Date.now());
           this.userInfo = {
             userid: String(info.userid || info.uid || info.id || ''),
@@ -557,6 +724,7 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('kg_desktop_vip_state');
         localStorage.removeItem('kg_desktop_vip_expire');
         localStorage.removeItem('kg_desktop_vip_name');
+        localStorage.removeItem('kg_desktop_vip_status');
         localStorage.removeItem('kg_desktop_collected_map');
         localStorage.removeItem('kg_desktop_deleted_playlists');
         localStorage.removeItem('kg_desktop_local_history');
@@ -576,6 +744,7 @@ export const useUserStore = defineStore('user', {
       this.likedFilesMap = {};
       this.vipExpirationTime = '';
       this.vipLevelName = '普通用户';
+      this.vipStatus = { ...DEFAULT_VIP_STATUS };
       this.vipState = { date: '', count: 0, lastTime: 0 };
       this.dayVipState = { date: '', uid: '', claimed: false }; 
       this.localHistory = [];
