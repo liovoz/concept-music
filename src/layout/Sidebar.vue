@@ -280,7 +280,16 @@ const executeLogout = () => {
 };
 
 const isLikedMusicActive = computed(() => {
-  return route.path === '/liked';
+  if (route.path === '/liked') return true;
+  if (route.name !== 'PlaylistDetail') return false;
+
+  const currentPlaylistId = String(route.params.id || '');
+  const likedIds = [
+    userStore.likedPlaylistGlobalId,
+    userStore.likedListId
+  ].filter(Boolean).map(id => String(id));
+
+  return likedIds.includes(currentPlaylistId);
 });
 
 const goToLikedMusic = () => {

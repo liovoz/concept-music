@@ -34,10 +34,10 @@
         </div>
       </div>
 
-      <div class="flex items-center space-x-8 border-b border-gray-100 mb-6 sticky top-0 bg-white/90 backdrop-blur-md z-20 py-2">
-        <button @click="activeTab = 'songs'" class="pb-2 text-sm font-bold border-b-2 transition-all relative top-[9px] no-drag" :class="activeTab === 'songs' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-800'">热门单曲</button>
-        <button @click="activeTab = 'albums'" class="pb-2 text-sm font-bold border-b-2 transition-all relative top-[9px] no-drag" :class="activeTab === 'albums' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-800'">全部专辑</button>
-        <button @click="activeTab = 'desc'" class="pb-2 text-sm font-bold border-b-2 transition-all relative top-[9px] no-drag" :class="activeTab === 'desc' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-800'">歌手详情</button>
+      <div class="flex items-center space-x-8 border-b border-gray-100 dark:border-slate-700 mb-6">
+        <button @click="activeTab = 'songs'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'songs' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">热门单曲</button>
+        <button @click="activeTab = 'albums'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'albums' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">全部专辑</button>
+        <button @click="activeTab = 'desc'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'desc' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">歌手详情</button>
       </div>
 
       <div v-if="isError" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100">

@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>私人FM UI Concepts</title>
+  <style>
+    :root {
+      --ink: #171717;
+      --muted: #77736d;
+      --line: rgba(22, 22, 22, .1);
+      --paper: #f6f1e9;
+      --warm: #d7a75b;
+      --rose: #c95555;
+      --green: #236a58;
+      --violet: #7052b8;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(215, 167, 91, .28), transparent 34rem),
+        radial-gradient(circle at 82% 2%, rgba(112, 82, 184, .16), transparent 32rem),
+        linear-gradient(135deg, #f9f5ee 0%, #eee7dc 100%);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+      padding: 28px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(320px, 1fr));
+      gap: 22px;
+      max-width: 1480px;
+      margin: 0 auto;
+    }
+
+    .concept {
+      min-height: 880px;
+      border: 1px solid rgba(0, 0, 0, .08);
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(255, 252, 246, .8);
+      box-shadow: 0 30px 80px rgba(42, 32, 18, .16);
+      position: relative;
+    }
+
+    .label {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 5;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .82);
+      border: 1px solid rgba(0, 0, 0, .08);
+      font-size: 12px;
+      font-weight: 700;
+      color: #5d5347;
+      backdrop-filter: blur(18px);
+    }
+
+    .screen {
+      height: 100%;
+      padding: 72px 28px 28px;
+      position: relative;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0;
+      line-height: 1.05;
+    }
+
+    .title p {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .68);
+      display: grid;
+      place-items: center;
+      color: #534b43;
+      font-weight: 800;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .62);
+      border-radius: 14px;
+      margin-bottom: 26px;
+    }
+
+    .segmented span {
+      text-align: center;
+      padding: 10px 6px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #756c61;
+    }
+
+    .segmented .active {
+      color: #171717;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(73, 53, 25, .12);
+    }
+
+    .cover {
+      width: min(72%, 280px);
+      aspect-ratio: 1;
+      margin: 10px auto 22px;
+      border-radius: 28px;
+      background:
+        linear-gradient(145deg, rgba(0, 0, 0, .08), transparent 40%),
+        linear-gradient(135deg, #1f513f, #deb163 48%, #b64a50);
+      box-shadow: 0 34px 70px rgba(92, 64, 24, .3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cover:before {
+      content: "";
+      position: absolute;
+      inset: 22%;
+      border-radius: 50%;
+      border: 34px solid rgba(255, 255, 255, .2);
+      background: rgba(20, 20, 20, .14);
+    }
+
+    .song {
+      text-align: center;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .song h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.12;
+    }
+
+    .song p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .reason {
+      margin: 18px auto 0;
+      max-width: 360px;
+      padding: 12px 14px;
+      border: 1px solid rgba(35, 106, 88, .18);
+      background: rgba(35, 106, 88, .08);
+      color: #235344;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin: 28px 0;
+    }
+
+    .round {
+      width: 50px;
+      height: 50px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(31, 26, 20, .12);
+      font-size: 18px;
+      color: #4f473e;
+    }
+
+    .play {
+      width: 68px;
+      height: 68px;
+      background: #171717;
+      color: #fff;
+      font-size: 24px;
+    }
+
+    .queue-mini {
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+      margin-top: 6px;
+    }
+
+    .queue-head {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .mini-row {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, .05);
+      font-size: 13px;
+    }
+
+    .thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6d8a83, #e1c179);
+    }
+
+    .scan {
+      background:
+        linear-gradient(180deg, rgba(18, 18, 18, .9), rgba(18, 18, 18, .98)),
+        radial-gradient(circle at 50% 32%, rgba(215, 167, 91, .35), transparent 20rem);
+      color: #f7f0e4;
+    }
+
+    .scan .screen { padding-top: 84px; }
+    .scan .title p,
+    .scan .queue-head,
+    .scan .song p { color: rgba(247, 240, 228, .62); }
+    .scan .icon-btn,
+    .scan .segmented {
+      background: rgba(255, 255, 255, .08);
+      border-color: rgba(255, 255, 255, .12);
+      color: #f7f0e4;
+    }
+    .scan .segmented span { color: rgba(247, 240, 228, .55); }
+    .scan .segmented .active {
+      background: rgba(247, 240, 228, .92);
+      color: #171717;
+    }
+
+    .progress-cover {
+      width: min(76%, 300px);
+      aspect-ratio: 1;
+      margin: 24px auto;
+      border-radius: 50%;
+      padding: 8px;
+      background: conic-gradient(var(--warm) 0 72%, rgba(255,255,255,.12) 72% 100%);
+      box-shadow: 0 0 80px rgba(215, 167, 91, .2);
+    }
+
+    .progress-cover .cover {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      border-radius: 50%;
+      box-shadow: none;
+    }
+
+    .timer {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      align-items: baseline;
+      margin-top: -4px;
+      color: var(--warm);
+      font-weight: 900;
+    }
+
+    .timer strong { font-size: 34px; }
+    .timer span { font-size: 13px; color: rgba(247, 240, 228, .55); }
+
+    .decision {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 30px 0 26px;
+    }
+
+    .decision button {
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 18px;
+      padding: 16px 10px;
+      background: rgba(255, 255, 255, .08);
+      color: #f7f0e4;
+      font-weight: 900;
+      font-size: 15px;
+    }
+
+    .decision .yes {
+      background: #f7f0e4;
+      color: #171717;
+    }
+
+    .next-stack {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .stack-card {
+      min-height: 118px;
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .1);
+      color: rgba(247, 240, 228, .72);
+      font-size: 12px;
+    }
+
+    .tuning {
+      background: linear-gradient(180deg, #fbfaf7, #ece7df);
+    }
+
+    .taste-card {
+      border-radius: 22px;
+      padding: 18px;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 46px rgba(55, 40, 20, .12);
+      margin-bottom: 18px;
+    }
+
+    .taste-card h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 68px 1fr 52px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      color: #5d5347;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .track {
+      height: 7px;
+      border-radius: 99px;
+      background: #e7dfd4;
+      overflow: hidden;
+    }
+
+    .fill {
+      width: var(--w);
+      height: 100%;
+      background: var(--c);
+      border-radius: inherit;
+    }
+
+    .feedback-sheet {
+      margin-top: 18px;
+      border-radius: 28px 28px 18px 18px;
+      background: #171717;
+      color: #fff;
+      padding: 22px;
+      box-shadow: 0 -16px 50px rgba(23, 23, 23, .2);
+    }
+
+    .feedback-sheet h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .feedback-sheet p {
+      margin: 7px 0 16px;
+      color: rgba(255, 255, 255, .6);
+      font-size: 13px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      padding: 10px 13px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .09);
+      border: 1px solid rgba(255, 255, 255, .12);
+      color: rgba(255, 255, 255, .88);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .chip.active {
+      background: #fff;
+      color: #171717;
+    }
+
+    .ghost-queue {
+      opacity: .42;
+      filter: blur(.2px);
+      transform: scale(.96);
+      transform-origin: top;
+    }
+
+    @media (max-width: 1100px) {
+      body { padding: 18px; }
+      .board { grid-template-columns: 1fr; }
+      .concept { min-height: 760px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <section class="concept">
+      <div class="label">方案 A：沉浸电台</div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="title">
+            <h1>私人FM</h1>
+            <p>少管理列表，多听当下这一首</p>
+          </div>
+          <div class="icon-btn">⋯</div>
+        </div>
+
+        <div class="segmented">
+          <span class="active">合口味</span>
+          <span>找新歌</span>
+          <span>走远点</span>
+        </div>
+
+        <div class="cover"></div>
+        <div class="song">
+          <h2>夏夜经过你</h2>
+          <p>林野声 · 温柔摇滚集</p>
+        </div>
+        <div class="reason">推荐理由：和你最近收藏的独立流行、木吉他氛围接近，但节奏更轻。</div>
+
+        <div class="controls">
+          <button class="round">×</button>
+          <button class="round play">▶</button>
+          <button class="round">♡</button>
+          <button class="round">⏭</button>
+        </div>
+
+        <div class="queue-mini">
+          <div class="queue-head">
+            <span>接下来</span>
+            <span>只预览 3 首</span>
+          </div>
+          <div class="mini-row"><div class="thumb"></div><strong>落日之前</strong><span>03:48</span></div>
+          <div class="mini-row"><div class="thumb"></div><strong>低空飞行</strong><span>04:12</span></div>
+          <div class="mini-row"><div class="thumb"></div><strong>慢慢靠近</strong><span>03:31</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="concept scan">
+      <div class="label">方案 B：30 秒速听</div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="title">
+            <h1>高潮扫歌</h1>
+            <p>每首只听最有记忆点的 30 秒</p>
+          </div>
+          <div class="icon-btn">↗</div>
+        </div>
+
+        <div class="segmented">
+          <span>完整听</span>
+          <span class="active">速听</span>
+          <span>随机走</span>
+        </div>
+
+        <div class="progress-cover"><div class="cover"></div></div>
+        <div class="timer"><strong>21</strong><span>/ 30 秒</span></div>
+
+        <div class="song">
+          <h2>把灯关掉</h2>
+          <p>高潮段落 · 已自动定位</p>
+        </div>
+
+        <div class="decision">
+          <button>不对味</button>
+          <button class="yes">继续听</button>
+        </div>
+
+        <div class="next-stack">
+          <div class="stack-card">下一首<br><strong>城市背面</strong></div>
+          <div class="stack-card">更小众<br><strong>南边来信</strong></div>
+          <div class="stack-card">相似氛围<br><strong>晚风之前</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="concept tuning">
+      <div class="label">方案 C：口味反馈</div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="title">
+            <h1>调你的 FM</h1>
+            <p>把“不喜欢”变成可理解的口味信号</p>
+          </div>
+          <div class="icon-btn">✓</div>
+        </div>
+
+        <div class="cover" style="width: 58%; margin-top: 0;"></div>
+        <div class="song">
+          <h2>雾里公路</h2>
+          <p>唐木 · 午夜专辑</p>
+        </div>
+
+        <div class="taste-card">
+          <h3>今天的电台倾向</h3>
+          <div class="slider-row"><span>熟悉</span><div class="track"><div class="fill" style="--w:72%;--c:#236a58"></div></div><span>探索</span></div>
+          <div class="slider-row"><span>安静</span><div class="track"><div class="fill" style="--w:38%;--c:#d7a75b"></div></div><span>热烈</span></div>
+          <div class="slider-row"><span>大众</span><div class="track"><div class="fill" style="--w:64%;--c:#7052b8"></div></div><span>小众</span></div>
+        </div>
+
+        <div class="ghost-queue">
+          <div class="mini-row"><div class="thumb"></div><strong>雨停以后</strong><span>03:20</span></div>
+          <div class="mini-row"><div class="thumb"></div><strong>旧电影院</strong><span>04:01</span></div>
+        </div>
+
+        <div class="feedback-sheet">
+          <h3>这首哪里不对？</h3>
+          <p>点一下就换歌，顺便让下一轮更准。</p>
+          <div class="chips">
+            <span class="chip active">风格不对</span>
+            <span class="chip">太吵</span>
+            <span class="chip">太慢</span>
+            <span class="chip">不想听这个歌手</span>
+            <span class="chip">听腻了</span>
+            <span class="chip">只是换一首</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

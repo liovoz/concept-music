@@ -154,7 +154,7 @@ async function startLocalServer() {
     let serverErrorLog = '';
     serverProcess = fork(serverPath, [], {
       cwd: serverCwd, 
-      env: { ...process.env, PORT: 10420, ELECTRON_RUN_AS_NODE: '1' },
+      env: { ...process.env, PORT: 10420, platform: 'lite', ELECTRON_RUN_AS_NODE: '1' },
       silent: true 
     });
     serverProcess.stderr.on('data', (data) => {

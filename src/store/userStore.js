@@ -7,6 +7,9 @@ import { usePlayerStore } from './playerStore';
 
 const VIP_DETAIL_PROBE_ENABLED = false;
 const VIP_DETAIL_PROBE_REDACT_KEYS = /token|cookie|authorization|password|secret|dfid|mid/i;
+const AUTH_TOKEN_REFRESH_INTERVAL = 5 * 60 * 1000;
+
+let authTokenRefreshPromise = null;
 
 const sanitizeVipProbePayload = (value, seen = new WeakSet()) => {
   if (value === null || typeof value !== 'object') return value;
@@ -187,7 +190,8 @@ export const useUserStore = defineStore('user', {
     
     isVipProcessing: false,
     isDayVipProcessing: false,
-    _lastVipPollTime: 0
+    _lastVipPollTime: 0,
+    _lastAuthTokenRefreshTime: 0
   }),
 
   actions: {
@@ -195,6 +199,34 @@ export const useUserStore = defineStore('user', {
     closeLoginModal() { this.showLoginModal = false; },
     openVipUpgradeModal() { this.showVipUpgradeModal = true; },
     closeVipUpgradeModal() { this.showVipUpgradeModal = false; },
+
+    async refreshAuthTokens(options = {}) {
+      const { force = false, allowLoggedOut = false } = options;
+      if (!allowLoggedOut && !this.isLoggedIn) return false;
+
+      const now = Date.now();
+      if (!force && now - this._lastAuthTokenRefreshTime < AUTH_TOKEN_REFRESH_INTERVAL) {
+        return true;
+      }
+
+      if (authTokenRefreshPromise) return authTokenRefreshPromise;
+
+      authTokenRefreshPromise = request.get('/login/token', {
+        params: { timestamp: now },
+        silent: true
+      }).then((res) => {
+        const ok = !!(res && (res.status === 1 || res.error_code === 0 || res.data));
+        if (ok) this._lastAuthTokenRefreshTime = Date.now();
+        return ok;
+      }).catch(() => {
+        this._lastAuthTokenRefreshTime = 0;
+        return false;
+      }).finally(() => {
+        authTokenRefreshPromise = null;
+      });
+
+      return authTokenRefreshPromise;
+    },
 
     checkVipExpiration() {
       if (!this.isLoggedIn || this.userInfo.vip <= 0 || !this.vipExpirationTime) return;
@@ -431,6 +463,7 @@ export const useUserStore = defineStore('user', {
            this.dayVipState.claimed = true;
            this.saveDayVipState();
 
+           await this.refreshAuthTokens({ force: true });
            await this.fetchVipDetail({ notifyPlayer: false });
            await this.fetchUserInfo({ notifyPlayer: false });
 
@@ -481,6 +514,7 @@ export const useUserStore = defineStore('user', {
           this.saveVipState();
           
           const oldTime = this.vipExpirationTime;
+          await this.refreshAuthTokens({ force: true });
           await this.fetchVipDetail({ notifyPlayer: false });
           await this.fetchUserInfo({ notifyPlayer: false });
 
@@ -652,8 +686,9 @@ export const useUserStore = defineStore('user', {
 
     async fetchUserInfo(options = {}) {
       try {
-        const { notifyPlayer = true } = options;
+        const { notifyPlayer = true, forceAuthRefresh = false } = options;
         await request.get('/register/dev', { silent: true }).catch(() => {});
+        await this.refreshAuthTokens({ allowLoggedOut: true, force: forceAuthRefresh });
 
         const res = await request.get('/user/detail', { params: { timestamp: Date.now() }, silent: true });
         let info = null;
@@ -752,6 +787,7 @@ export const useUserStore = defineStore('user', {
       this.isVipProcessing = false;
       this.isDayVipProcessing = false;
       this._lastVipPollTime = 0;
+      this._lastAuthTokenRefreshTime = 0;
       
       this.collectedListIds = [];
       this.createdListIds = [];

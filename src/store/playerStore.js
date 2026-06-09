@@ -191,6 +191,14 @@ const clearUrlResolutionState = () => {
   resetPreloadAudio();
 };
 
+const clearSongUrlCache = (hash) => {
+  if (!hash) return;
+  const prefix = `${hash}_`;
+  for (const key of urlCache.keys()) {
+    if (key.startsWith(prefix)) urlCache.delete(key);
+  }
+};
+
 export const QUALITY_CONFIG = [
   { key: 'viper_atmos', name: '全景声', param: 'viper_atmos' },
   { key: 'viper_clear', name: '超清蝰蛇', param: 'viper_clear' },
@@ -220,6 +228,16 @@ const getExpectedDuration = (song) => {
     return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
   }
   return 0;
+};
+
+const getPreviewToastMessage = (userStore) => {
+  if (userStore.isLoggedIn && userStore.userInfo?.vip > 0) {
+    return '正在试听 VIP 歌曲片段，播放授权未能获取完整版，请稍后重试';
+  }
+  if (userStore.isLoggedIn) {
+    return '正在试听 VIP 歌曲片段，开通 VIP 解锁完整版';
+  }
+  return '正在试听 VIP 歌曲片段，登录解锁完整版';
 };
 
 let audioEventsBound = false;
@@ -843,7 +861,7 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
-    async _doResolveSongUrl(songInfo, targetQuality, cacheQ, hasFullAccess, isVipUser) {
+    async _doResolveSongUrl(songInfo, targetQuality, cacheQ, hasFullAccess, isVipUser, authRefreshAttempted = false) {
       const cached = getCachedUrl(songInfo.hash, cacheQ);
       
       if (cached) {
@@ -854,7 +872,8 @@ export const usePlayerStore = defineStore('player', {
           }
       }
 
-      const isRestrictedSong = !hasFullAccess && (songInfo.is_vip || songInfo.is_paid);
+      const isVipSong = songInfo.is_vip || songInfo.is_paid;
+      const isRestrictedSong = !hasFullAccess && isVipSong;
 
       if (!this.hasDfid) {
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -1000,6 +1019,15 @@ export const usePlayerStore = defineStore('player', {
               }
             } catch (e) { continue; }
           }
+      }
+
+      if (!finalResult.url && hasFullAccess && isVipSong && isVipUser && !authRefreshAttempted) {
+        const userStore = useUserStore();
+        const refreshed = await userStore.refreshAuthTokens({ force: true });
+        if (refreshed) {
+          clearSongUrlCache(songInfo.hash);
+          return this._doResolveSongUrl(songInfo, targetQuality, cacheQ, hasFullAccess, isVipUser, true);
+        }
       }
 
       if (!finalResult.url) {
@@ -1151,7 +1179,7 @@ export const usePlayerStore = defineStore('player', {
             }
           }
 
-          if (this.isCurrentSongPreview) this.showToast('正在试听 VIP 歌曲片段，登录解锁完整版');
+          if (this.isCurrentSongPreview) this.showToast(getPreviewToastMessage(userStore));
 
           if (autoPlay) {
              const playPromise = activeAudio.play();
@@ -1234,7 +1262,7 @@ export const usePlayerStore = defineStore('player', {
           this.isCurrentSongPreview = res.isPreview; 
           setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this));
           if (maintainTime === 0) this.currentTime = 0;
-          if (res.isPreview && autoPlay) this.showToast('正在试听 VIP 歌曲片段，登录解锁完整版');
+          if (res.isPreview && autoPlay) this.showToast(getPreviewToastMessage(userStore));
         } else {
           triggerFallback('所有音质接口均拒绝访问');
           return;
