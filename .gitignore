@@ -1,0 +1,78 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+dist-ssr/
+release/
+out/
+build/
+*.asar
+*.blockmap
+
+# Logs
+logs/
+*.log
+debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+
+# Local overrides
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local temp/cache/tooling state
+Temp/
+.gstack/
+.codex/
+.agents/
+.cache/
+.vite/
+.electron-builder/
+.eslintcache
+*.tsbuildinfo
+*.tmp
+*.temp
+
+# Test artifacts
+test_screenshots/
+coverage/
+playwright-report/
+test-results/
+
+# Documentation (local only)
+docs/
+
+# Local design/browser capture scratch state
+design/

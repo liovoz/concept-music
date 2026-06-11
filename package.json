@@ -1,0 +1,104 @@
+{
+  "name": "concept-music",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node scripts/start-electron-dev.mjs",
+    "start:electron": "electron .",
+    "pack": "vite build && electron-builder",
+    "release": "vite build && electron-builder --publish always"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "electron-updater": "^6.1.8",
+    "fs-extra": "^11.2.0",
+    "lodash.escaperegexp": "^4.1.2",
+    "lodash.isequal": "^4.5.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "autoprefixer": "^10.5.0",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "postcss": "^8.5.12",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.2.0"
+  },
+  "build": {
+    "appId": "com.concept.music",
+    "productName": "概念音乐",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "server",
+        "to": "server",
+        "filter": [
+          "**/*",
+          "!node_modules/.cache"
+        ]
+      },
+      {
+        "from": "public/icon.ico",
+        "to": "icon.ico"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "liovoz",
+        "repo": "concept-music"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "perMachine": false,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "installerHeaderIcon": "public/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "概念音乐",
+      "deleteAppDataOnUninstall": false,
+      "language": 2052
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.${ext}"
+    },
+    "mac": {
+      "target": "dmg"
+    }
+  }
+}

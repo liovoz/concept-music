@@ -1,0 +1,145 @@
+import axios from 'axios';
+
+const isElectron = typeof window !== 'undefined' && window.apiBridge && typeof window.apiBridge.request === 'function';
+
+const ipcAdapter = async (config) => {
+  let cleanConfig;
+  try {
+    cleanConfig = JSON.parse(JSON.stringify({
+      url: config.url,
+      method: config.method,
+      data: config.data,
+      params: config.params,
+      headers: config.headers
+    }));
+  } catch (e) {
+    cleanConfig = {
+      url: String(config.url || ''),
+      method: String(config.method || 'GET'),
+      data: config.data,
+      params: config.params,
+      headers: config.headers
+    };
+  }
+
+  try {
+    const response = await window.apiBridge.request(cleanConfig);
+    const axiosResponse = {
+      data: response.data,
+      status: response.status,
+      statusText: response.status === 200 ? 'OK' : 'Error',
+      headers: {},
+      config: config,
+      request: {}
+    };
+
+    if (response.status >= 200 && response.status < 300) {
+      return axiosResponse;
+    } else {
+      const error = new Error(`Request failed with status code ${response.status}`);
+      error.config = config;
+      error.response = axiosResponse;
+      error.status = response.status;
+      throw error;
+    }
+  } catch (err) {
+    throw err;
+  }
+};
+
+const request = axios.create({
+  baseURL: isElectron ? '' : '/api',
+  timeout: 15000,
+  adapter: isElectron ? ipcAdapter : undefined
+});
+
+request.interceptors.request.use(
+  (config) => {
+    if (config.method.toLowerCase() === 'get') {
+      if (!config.params || !Object.prototype.hasOwnProperty.call(config.params, 'timestamp')) {
+        config.params = { ...config.params, timestamp: Date.now() };
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+request.interceptors.response.use(
+  (response) => {
+    if (response.data && response.data.errcode === 20028) {
+       localStorage.removeItem('kg_desktop_has_dfid');
+       if (!response.config?.silent) {
+           window.dispatchEvent(new CustomEvent('API_GATEWAY_DOWN', {
+               detail: { message: '🎵 播放受限：该歌曲需要验证，请检查是否为 VIP 专享' }
+           }));
+       }
+       return Promise.reject(new Error('请求验证受限'));
+    }
+    return response.data; 
+  },
+  async (error) => {
+    const config = error.config;
+    if (config && typeof config.retryCount !== 'number') {
+       config.retryCount = 0;
+    }
+
+    const isNetworkError = error.message === 'Network Error' || error.code === 'ECONNREFUSED';
+    const status = error.response?.status || null;
+    const errcode = error.response?.data?.errcode || null;
+
+    if (config && isNetworkError && config.retryCount < 2) {
+       config.retryCount += 1;
+       console.warn(`本地连接波动，正在进行第 ${config.retryCount} 次自动重试: ${config.url}`);
+       await new Promise(resolve => setTimeout(resolve, 500));
+       return request(config);
+    }
+
+    console.error(`API 请求失败 [${config?.url}]:`, error.message);
+    
+    if (errcode === 20028 || status === 500) {
+       localStorage.removeItem('kg_desktop_has_dfid');
+    }
+
+    if (!config?.silent) {
+        if (errcode === 20028 || status === 500) {
+           window.dispatchEvent(new CustomEvent('API_GATEWAY_DOWN', {
+               detail: { message: '🎵 播放受限：此歌曲可能是 VIP 专享或因版权受限' }
+           }));
+        } else if (isNetworkError || [502, 503, 504].includes(status)) {
+           window.dispatchEvent(new CustomEvent('API_GATEWAY_DOWN', {
+               detail: { message: '⚠️ 后端 API 连接异常，请检查网络环境' }
+           }));
+        }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+const originalGet = request.get;
+let devPromise = null;
+
+request.get = async function(...args) {
+  const url = args[0];
+  if (url === '/register/dev' || url === '/api/register/dev') {
+    if (localStorage.getItem('kg_desktop_has_dfid') === 'true') {
+        return Promise.resolve({ status: 1, error_code: 0, msg: 'dfid cached' });
+    }
+    if (!devPromise) {
+      devPromise = originalGet.apply(this, args).then(res => {
+        localStorage.setItem('kg_desktop_has_dfid', 'true');
+        return res;
+      }).catch(err => {
+        devPromise = null;
+        throw err;
+      }).finally(() => {
+        setTimeout(() => { devPromise = null; }, 2000);
+      });
+    }
+    return devPromise;
+  }
+  return originalGet.apply(this, args);
+};
+
+export default request;
