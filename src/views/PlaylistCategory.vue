@@ -1,6 +1,6 @@
 <template>
-  <div class="h-full flex flex-col relative overflow-hidden bg-white min-w-0">
-    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50/80 to-white -z-10 pointer-events-none"></div>
+  <div class="h-full flex flex-col relative overflow-hidden bg-white dark:!bg-slate-950 text-gray-800 dark:text-slate-100 min-w-0 transition-colors">
+    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50/80 to-white dark:from-blue-950/20 dark:via-slate-950 dark:to-slate-950 -z-10 pointer-events-none"></div>
 
     <div id="playlist-category-scroll" class="p-8 z-10 flex-1 flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar min-w-0 box-border scroll-smooth">
 
