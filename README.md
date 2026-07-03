@@ -103,44 +103,6 @@ npm run release
 
 发布前需要确保已配置 GitHub Token，且 `package.json` 中的 `build.publish.owner` 与 `build.publish.repo` 指向正确仓库。
 
-## 发布 v3.0.0 前检查
-
-本次发布文案见 [RELEASE_v3.0.0.md](RELEASE_v3.0.0.md)。
-
-1. 将 `package.json` 的 `version` 改为 `3.0.0`。
-2. 运行 `npm install --package-lock-only` 同步根目录 `package-lock.json` 版本。
-3. 确认 `server/package.json` 不需要跟随桌面端版本号变更。
-4. 运行 `npm run build`，确认前端构建通过。
-5. 提交源码、README、Release 文案和 `.gitignore` 更新。
-6. 创建并推送 `v3.0.0` 标签，由 GitHub Actions 生成 Release 产物。
-
-## GitHub Actions 发布
-
-仓库包含 `.github/workflows/build.yml`，当推送 `v*` 标签时会自动：
-
-1. 检出代码。
-2. 安装 Node.js 20。
-3. 安装根项目依赖。
-4. 安装 `server` 依赖。
-5. 执行 `npm run release` 构建并发布 Windows 安装版与便携版。
-
-## 仓库清理建议
-
-以下内容不应提交到远程仓库：
-
-- `node_modules/`
-- `dist/`
-- `release/`
-- `.gstack/`
-- `.codex/`
-- `.agents/`
-- `.cache/`
-- `design/edge-profile/`
-- 日志、缓存、测试报告、临时文件
-- `.env`、证书、密钥、令牌等敏感凭据文件
-
-如果这些文件已经被 Git 跟踪，单独修改 `.gitignore` 不会让它们从远程消失，需要执行 `git rm --cached` 后再提交。
-
 ## 免责声明
 
 本项目仅用于学习、研究和个人技术交流。请尊重音乐版权和相关平台规则，不要将本项目用于商业用途或任何违法违规场景。使用过程中产生的账号、版权、网络或第三方接口风险由使用者自行承担。
