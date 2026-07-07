@@ -9,8 +9,18 @@ export const tooltipState = reactive({
   x: 0,
   y: 0,
   isBottom: false,
+  maxHeight: 320,
+  hoveringTooltip: false,
   activeEl: null
 });
+
+let hideTimer = null;
+
+export const hideTooltip = () => {
+  tooltipState.visible = false;
+  tooltipState.activeEl = null;
+  tooltipState.hoveringTooltip = false;
+};
 
 const isElementOverflowing = (el) => {
   if (el.clientWidth === 0 || el.clientHeight === 0) return false;
@@ -29,6 +39,7 @@ export const tooltipDirective = {
     el.setAttribute('data-tooltip', binding.value || '');
 
     el._mouseenter = () => {
+      if (hideTimer) clearTimeout(hideTimer);
       const text = el.getAttribute('data-tooltip');
       if (!text) return;
 
@@ -49,27 +60,41 @@ export const tooltipDirective = {
       if (posX < padding) posX = padding;
       if (posX > window.innerWidth - padding) posX = window.innerWidth - padding;
 
+      const bottomSafeArea = 110;
+      const verticalPadding = 16;
+      const gap = 10;
+      const approxLineCount = Math.ceil(text.length / 32);
+      const estimatedHeight = Math.min(520, Math.max(48, approxLineCount * 20 + 28));
+      const availableBelow = Math.max(0, windowHeight - bottomSafeArea - rect.bottom - gap);
+      const availableAbove = Math.max(0, rect.top - verticalPadding - gap);
+      const shouldOpenAbove = availableBelow < estimatedHeight && availableAbove > availableBelow;
+
       let posY = 0;
       let isBottom = false;
-      
-      if (rect.bottom > windowHeight - 100) {
-        posY = rect.top - 10; 
+      let maxHeight = 0;
+
+      if (shouldOpenAbove) {
+        posY = rect.top - gap;
         isBottom = true;
+        maxHeight = Math.max(80, Math.min(520, availableAbove));
       } else {
-        posY = rect.bottom + 10; 
+        posY = rect.bottom + gap;
         isBottom = false;
+        maxHeight = Math.max(80, Math.min(520, availableBelow || windowHeight - bottomSafeArea - posY));
       }
 
       tooltipState.x = posX;
       tooltipState.y = posY;
       tooltipState.isBottom = isBottom;
+      tooltipState.maxHeight = maxHeight;
       tooltipState.visible = true;
     };
 
     el._mouseleave = () => {
       if (tooltipState.activeEl === el) {
-        tooltipState.visible = false;
-        tooltipState.activeEl = null;
+        hideTimer = setTimeout(() => {
+          if (!tooltipState.hoveringTooltip) hideTooltip();
+        }, 120);
       }
     };
 

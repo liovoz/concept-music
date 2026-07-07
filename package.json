@@ -52,6 +52,13 @@
         ]
       },
       {
+        "from": "music_source",
+        "to": "music_source",
+        "filter": [
+          "**/*.js"
+        ]
+      },
+      {
         "from": "public/icon.ico",
         "to": "icon.ico"
       }

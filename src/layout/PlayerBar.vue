@@ -40,7 +40,7 @@
           <span v-else-if="store.currentSong?.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
         </div>
         <div class="flex items-center mt-0.5 space-x-2">
-          <SingerLink v-if="store.currentSong" :singers="store.currentSong._singers || store.currentSong.artists" :singer-name="store.currentSong.singer" :singer-id="store.currentSong.singer_id" size="small" />
+          <SingerLink v-if="store.currentSong" :singers="store.currentSong._singers || store.currentSong.artists" :singer-name="store.currentSong.singer" :singer-id="store.currentSong.singer_id" size="small" :disabled="isNeteaseImportSong(store.currentSong)" disabled-tooltip="网易导入歌曲暂不支持跳转" />
           <span v-else class="text-xs text-gray-500 truncate font-medium">Concept Music Desktop</span>
         </div>
       </div>
@@ -115,18 +115,21 @@
          <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 pb-2 transition-all duration-300 origin-bottom" :class="qualityMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'">
            <div class="flex flex-col bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden w-32 py-1.5 relative">
              <div class="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none"></div>
-             
-             <div v-for="(q, index) in qualityOptions" :key="q.key" @click="store.switchQuality(q.key); qualityMenuOpen = false" 
-                  class="text-xs py-2.5 font-bold cursor-pointer transition-all relative z-10 flex items-center justify-between px-4" 
+
+             <div v-for="(q, index) in qualityMenuOptions" :key="q.key" @click="handleQualitySelect(q)"
+                  class="text-xs py-2.5 font-bold transition-all relative z-10 flex items-center justify-between px-4"
+                  v-tooltip="q.disabled ? '当前网易歌曲未提供该音质' : ''"
                   :class="[
                     index !== qualityOptions.length - 1 ? 'border-b border-gray-50/50' : '',
-                    store.currentQuality === q.key ? 'text-blue-600 bg-blue-50/50' : 'text-gray-600 hover:bg-gray-50'
+                    q.disabled ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer',
+                    !q.disabled && store.currentQuality === q.key ? 'text-blue-600 bg-blue-50/50' : '',
+                    !q.disabled && store.currentQuality !== q.key ? 'text-gray-600 hover:bg-gray-50' : ''
                   ]">
                <div class="flex items-center">
                  <span v-if="store.currentQuality === q.key" class="absolute left-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm"></span>
                  <span :class="{'ml-1': store.currentQuality === q.key}">{{ q.name }}</span>
                </div>
-               <span v-if="q.isVip" class="bg-blue-50 text-blue-600 border border-blue-200 px-1 py-[1px] rounded text-[7px] font-black tracking-widest uppercase transform scale-90 origin-right ml-2 shadow-sm">VIP</span>
+               <span v-if="q.isVip" class="border px-1 py-[1px] rounded text-[7px] font-black tracking-widest uppercase transform scale-90 origin-right ml-2 shadow-sm" :class="q.disabled ? 'bg-gray-50 text-gray-300 border-gray-100' : 'bg-blue-50 text-blue-600 border-blue-200'">VIP</span>
              </div>
            </div>
          </div>
@@ -211,7 +214,7 @@
                     <span v-if="song.is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
                     <span v-else-if="song.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
                   </div>
-                  <SingerLink :singers="song._singers || song.artists" :singer-name="song.singer" :singer-id="song.singer_id" size="small" />
+                  <SingerLink :singers="song._singers || song.artists" :singer-name="song.singer" :singer-id="song.singer_id" size="small" :disabled="isNeteaseImportSong(song)" disabled-tooltip="网易导入歌曲暂不支持跳转" />
                 </div>
               </div>
               <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
@@ -262,13 +265,13 @@
               </div>
               <div class="flex items-center justify-center text-sm text-gray-500 dark:text-slate-400 space-x-8 font-medium w-full">
                 <span 
-                  @click="goToAlbum(store.currentSong?.album_id)"
+                  @click="goToAlbum(store.currentSong)"
                   class="truncate max-w-[45%] text-center transition-colors" 
-                  :class="store.currentSong?.album_id ? 'hover:text-blue-600 cursor-pointer' : ''"
-                  v-tooltip="store.currentSong?.album">
+                  :class="!isNeteaseImportSong(store.currentSong) && store.currentSong?.album_id ? 'hover:text-blue-600 cursor-pointer' : 'cursor-default'"
+                  v-tooltip="isNeteaseImportSong(store.currentSong) ? '网易导入歌曲暂不支持跳转' : store.currentSong?.album">
                   专辑：{{ store.currentSong?.album || '未知专辑' }}
                 </span>
-                <span class="truncate max-w-[45%] text-center transition-colors flex items-center justify-center gap-1" v-tooltip="store.currentSong?.singer">
+                <span class="truncate max-w-[45%] text-center transition-colors flex items-center justify-center gap-1" :class="isNeteaseImportSong(store.currentSong) ? 'pointer-events-none cursor-default' : ''" v-tooltip="isNeteaseImportSong(store.currentSong) ? '网易导入歌曲暂不支持跳转' : store.currentSong?.singer">
                   <span class="flex-shrink-0">歌手：</span><SingerLink v-if="store.currentSong" :singers="store.currentSong._singers || store.currentSong.artists" :singer-name="store.currentSong.singer" :singer-id="store.currentSong.singer_id" />
                 </span>
               </div>
@@ -394,9 +397,23 @@ const qualityOptions = QUALITY_CONFIG.map(q => ({
   isVip: ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(q.key)
 }));
 
+const qualityMenuOptions = computed(() => qualityOptions.map(q => ({
+  ...q,
+  disabled: isNeteaseImportSong(store.currentSong) && !store.currentSong?.qualities?.[q.key]
+})));
+
 const qualityDisplayName = computed(() => {
   return qualityOptions.find(q => q.key === store.currentQuality)?.short || '标准';
 });
+
+const handleQualitySelect = (quality) => {
+  if (quality.disabled) {
+    store.showToast('当前网易歌曲未提供该音质');
+    return;
+  }
+  qualityMenuOpen.value = false;
+  store.switchQuality(quality.key);
+};
 
 const boostTip = computed(() => {
   if (boostMenuOpen.value) return '';
@@ -410,7 +427,9 @@ const goToArtist = (id) => {
   router.push(`/artist/${id}`);
 };
 
-const goToAlbum = (id) => {
+const goToAlbum = (song) => {
+  if (isNeteaseImportSong(song)) return;
+  const id = song?.album_id;
   if (!id || id === '0') return store.showToast('暂无该专辑详情信息');
   if (store.isLyricsVisible) store.toggleLyrics();
   if (store.isPlaylistVisible) store.isPlaylistVisible = false;
@@ -559,6 +578,45 @@ const lyricsContainer = ref(null);
 const lyricError = ref(''); 
 const defaultImg = 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=300&q=80';
 
+const isNeteaseImportSong = (song) => {
+  return song?.source === 'netease-import' || String(song?.hash || '').startsWith('netease:');
+};
+
+const getNeteaseSongId = (song) => {
+  return String(song?.neteaseId || song?.songId || song?.id || song?.hash || '')
+    .replace(/^netease:/, '')
+    .trim();
+};
+
+const parseTimedLyricRows = (lyricStr = '') => {
+  const rows = [];
+  const lrcExp = /\[(\d{2,}):(\d{2})(?:\.(\d{1,3}))?\]/g;
+
+  lyricStr.split('\n').forEach(rawLine => {
+    const line = rawLine.trim();
+    if (!line) return;
+
+    const matches = [...line.matchAll(lrcExp)];
+    if (matches.length === 0) return;
+
+    const text = line.replace(lrcExp, '').trim();
+    if (!text) return;
+
+    matches.forEach(match => {
+      const min = parseInt(match[1], 10);
+      const sec = parseInt(match[2], 10);
+      const msStr = match[3] || '0';
+      let ms = 0;
+      if (msStr.length === 1) ms = parseInt(msStr, 10) * 100;
+      else if (msStr.length === 2) ms = parseInt(msStr, 10) * 10;
+      else ms = parseInt(msStr, 10);
+      rows.push({ time: (min * 60) + sec + (ms / 1000), text });
+    });
+  });
+
+  return rows.sort((a, b) => a.time - b.time);
+};
+
 const parseLyrics = (lyricStr, translationArr) => {
   if (!lyricStr) return [];
   const lines = lyricStr.split('\n');
@@ -582,7 +640,7 @@ const parseLyrics = (lyricStr, translationArr) => {
       const timeInSeconds = (parseInt(krcMatch[1], 10) / 1000) + offset;
       const text = line.replace(krcExp, '').trim();
       if (text) {
-        const translation = (Array.isArray(translationArr) && translationArr[lineIndex]) || '';
+        const translation = getTranslationForLine(translationArr, timeInSeconds, lineIndex);
         result.push({ time: timeInSeconds, text, translation });
         lineIndex++;
       }
@@ -602,7 +660,7 @@ const parseLyrics = (lyricStr, translationArr) => {
           else if (msStr.length === 2) ms = parseInt(msStr, 10) * 10;
           else ms = parseInt(msStr, 10);
           const timeInSeconds = (min * 60) + sec + (ms / 1000) + offset;
-          const translation = (Array.isArray(translationArr) && translationArr[lineIndex]) || '';
+          const translation = getTranslationForLine(translationArr, timeInSeconds, lineIndex);
           result.push({ time: timeInSeconds, text, translation });
         });
         lineIndex++;
@@ -610,6 +668,35 @@ const parseLyrics = (lyricStr, translationArr) => {
     }
   }
   return result.sort((a, b) => a.time - b.time);
+};
+
+const getTranslationForLine = (translationArr, time, lineIndex) => {
+  if (!Array.isArray(translationArr)) return '';
+  const timedTranslation = translationArr.find(item => {
+    return item && typeof item === 'object' && Math.abs(Number(item.time) - time) < 0.35;
+  });
+  if (timedTranslation) return timedTranslation.text || '';
+  return typeof translationArr[lineIndex] === 'string' ? translationArr[lineIndex] : '';
+};
+
+const fetchNeteaseLyrics = async (targetHash) => {
+  const neteaseId = getNeteaseSongId(store.currentSong);
+  if (!neteaseId) throw new Error('缺少网易云歌曲 ID');
+
+  const res = await request.get('/netease/lyric', {
+    params: { id: neteaseId, timestamp: Date.now() },
+    silent: true,
+  });
+
+  if (store.currentSong?.hash !== targetHash) return;
+
+  const rawStr = res?.lrc?.lyric || res?.lyric || '';
+  if (!rawStr) throw new Error('网易云暂无该歌曲歌词');
+
+  const translationRows = parseTimedLyricRows(res?.tlyric?.lyric || '');
+  const parsed = parseLyrics(rawStr, translationRows);
+  if (parsed.length === 0) throw new Error('未能提取出有效时间轴');
+  parsedLyrics.value = parsed;
 };
 
 const fetchLyrics = async () => {
@@ -624,6 +711,11 @@ const fetchLyrics = async () => {
   lyricError.value = '';
   
   try {
+    if (isNeteaseImportSong(store.currentSong)) {
+      await fetchNeteaseLyrics(targetHash);
+      return;
+    }
+
     const keywordStr = store.currentSong.singer ? `${store.currentSong.singer} - ${store.currentSong.name}` : store.currentSong.name;
     const standardHash = store.currentSong.qualities?.standard || store.currentSong.hash;
 

@@ -14,7 +14,7 @@
       <main class="flex-1 bg-white dark:bg-slate-950 relative min-w-0 overflow-hidden transition-colors duration-200">
         <router-view v-slot="{ Component }">
           <keep-alive :include="['PersonalFM', 'PlaylistCategory']">
-            <component :is="Component" :key="isCached(Component) ? Component.name : $route.fullPath" />
+            <component :is="Component" :key="getRouteComponentKey(Component)" />
           </keep-alive>
         </router-view>
       </main>
@@ -32,9 +32,11 @@
     <transition name="fade-tooltip">
       <div 
         v-if="tooltipState.visible"
-        :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px' }"
-        class="fixed z-[99998] max-w-md px-4 py-2.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] text-xs text-gray-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap pointer-events-none font-medium"
+        :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px', maxHeight: tooltipState.maxHeight + 'px' }"
+        class="fixed z-[99998] max-w-md overflow-y-auto overscroll-contain px-4 py-2.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] text-xs text-gray-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap pointer-events-auto font-medium custom-scrollbar"
         :class="tooltipState.isBottom ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2'"
+        @mouseenter="tooltipState.hoveringTooltip = true"
+        @mouseleave="hideTooltip"
       >
         {{ tooltipState.text }}
       </div>
@@ -49,16 +51,22 @@ import Sidebar from './layout/Sidebar.vue';
 import PlayerBar from './layout/PlayerBar.vue';
 import LoginModal from './components/LoginModal.vue';
 import GlobalToast from './components/GlobalToast.vue';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
 const cachedComponents = new Set(['PersonalFM', 'PlaylistCategory']);
 const isCached = (Component) => cachedComponents.has(Component?.name); 
+const getRouteComponentKey = (Component) => {
+  if (typeof route.meta?.stableComponentKey === 'string') return route.meta.stableComponentKey;
+  return isCached(Component) ? Component.name : route.fullPath;
+};
 import GlobalDialog from './components/GlobalDialog.vue';
 import SongContextMenu from './components/SongContextMenu.vue';
 import UpdateModal from './components/UpdateModal.vue';
 import DisclaimerModal from './components/DisclaimerModal.vue';
 import { useUserStore } from './store/userStore';
 import { usePlayerStore } from './store/playerStore';
-import { tooltipState } from './utils/tooltip';
+import { hideTooltip, tooltipState } from './utils/tooltip';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();

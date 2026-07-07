@@ -94,11 +94,35 @@
         <div @click="$router.push('/fm')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/fm' ? 'font-medium bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/fm' ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>私人FM</div>
         <div @click="$router.push('/artists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/artists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/artists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>歌手</div>
         <div @click="$router.push('/playlist-category')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/playlist-category' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/playlist-category' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>歌单广场</div>
-
         <div class="px-3 pt-4 pb-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">我的音乐</div>
         <div @click="$router.push('/history')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/history' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/history' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>听歌足迹</div>
         <div @click="goToLikedMusic" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="isLikedMusicActive ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="isLikedMusicActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>我喜欢的音乐</div>
         <div @click="$router.push('/my-playlists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/my-playlists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/my-playlists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>私人歌单</div>
+        <div
+          @click="$router.push('/import/netease')"
+          class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group"
+          :class="$route.path.startsWith('/import/netease') ? 'font-medium bg-red-100 text-red-600' : 'text-gray-600 hover:bg-gray-200'"
+        >
+          <svg
+            class="w-4 h-4 mr-3 flex-shrink-0 transition-colors"
+            :class="$route.path.startsWith('/import/netease') ? 'text-red-600' : 'text-gray-400 group-hover:text-gray-500'"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.15"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h8.5" />
+            <path d="M4 11h7" />
+            <path d="M4 16h5.5" />
+            <path d="M16.5 5.5v10" />
+            <path d="M16.5 5.5 20 4.6v3l-3.5.9" />
+            <path d="M16.5 15.5a2.4 2.4 0 1 1-1.7-2.3" />
+          </svg>
+          网易歌单
+        </div>
       </nav>
     </div>
 
@@ -311,4 +335,17 @@ const goToLikedMusic = () => {
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.3); border-radius: 4px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.6); }
+
+nav > div > svg:first-child {
+  width: 17px;
+  height: 17px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+nav > div > svg:first-child path {
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
 </style>
