@@ -22,6 +22,7 @@
 
       <div class="my-1 h-px bg-gray-100 dark:bg-slate-700"></div>
 
+      <template v-if="!isNeteaseImportContext">
       <button class="menu-item" :class="{ liked: isLiked }" @click="toggleLike">
         <HeartIcon class="menu-icon" :filled="isLiked" />
         <span>{{ isLiked ? '取消喜欢' : '添加到我喜欢' }}</span>
@@ -43,6 +44,7 @@
         <DiscIcon class="menu-icon" />
         <span>查看专辑</span>
       </button>
+      </template>
       <button class="menu-item" @click="copyInfo">
         <CopyIcon class="menu-icon" />
         <span>复制歌曲信息</span>
@@ -108,6 +110,11 @@ const isLiked = computed(() => {
 });
 
 const songArtists = computed(() => getSongArtists(song.value));
+const isNeteaseImportContext = computed(() => {
+  return source.value === 'netease-import'
+    || song.value?.source === 'netease-import'
+    || String(song.value?.hash || '').startsWith('netease:');
+});
 
 const close = () => {
   visible.value = false;

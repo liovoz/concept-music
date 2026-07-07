@@ -62,6 +62,7 @@ const VOLUME_BOOST_ENABLED_KEY = 'kg_desktop_volume_boost_enabled';
 const VOLUME_BOOST_LEVEL_KEY = 'kg_desktop_volume_boost_level';
 const VOLUME_BOOST_INITIALIZED_KEY = 'kg_desktop_volume_boost_initialized';
 const LOCAL_AUDIO_PROXY_BASE = 'http://127.0.0.1:10420';
+const NETEASE_IMPORT_SOURCE = 'netease-import';
 
 let audioContext = null;
 let audioGraphInitialized = false;
@@ -208,8 +209,66 @@ export const QUALITY_CONFIG = [
   { key: 'standard', name: '标准音质', param: '128' }
 ];
 
+const hasNeteaseQualityInfo = (quality) => {
+  if (!quality || typeof quality !== 'object') return false;
+  if (quality.br && Number(quality.br) > 0) return true;
+  if (quality.size && Number(quality.size) > 0) return true;
+  return Boolean(quality.level || quality.type || quality.name);
+};
+
+const getMaxNeteaseBitrate = (song = {}) => {
+  const privilege = song.privilege || {};
+  return Math.max(
+    0,
+    Number(song.m?.br || 0),
+    Number(song.h?.br || 0),
+    Number(song.sq?.br || 0),
+    Number(song.hr?.br || 0),
+    Number(privilege.maxbr || 0),
+    Number(privilege.playMaxbr || 0),
+    Number(privilege.pl || 0),
+    Number(privilege.fl || 0),
+    Number(privilege.dl || 0)
+  );
+};
+
+const getNeteaseImportId = (song = {}) => {
+  return String(song.neteaseId || song.songId || song.id || song.hash || song._hash || '')
+    .replace(/^netease:/, '')
+    .trim();
+};
+
+const buildNeteaseImportQualities = (song = {}) => {
+  const detail = song.sourceSongInfo || song;
+  const id = getNeteaseImportId(song) || getNeteaseImportId(detail);
+  if (!id) return { standard: '' };
+
+  const qualities = { standard: id };
+  const maxBitrate = getMaxNeteaseBitrate(detail);
+
+  if (
+    hasNeteaseQualityInfo(detail.h) ||
+    hasNeteaseQualityInfo(detail.sq) ||
+    hasNeteaseQualityInfo(detail.hr) ||
+    maxBitrate >= 320000
+  ) {
+    qualities.hq = id;
+  }
+  if (hasNeteaseQualityInfo(detail.sq) || hasNeteaseQualityInfo(detail.hr) || maxBitrate >= 999000) {
+    qualities.sq = id;
+  }
+  if (hasNeteaseQualityInfo(detail.hr) || maxBitrate >= 1999000) {
+    qualities.high = id;
+  }
+
+  return qualities;
+};
+
 const extractQualities = (song) => {
   if (!song) return { standard: '', hq: '', sq: '', high: '', viper_clear: '', viper_atmos: '' };
+  if (song.source === NETEASE_IMPORT_SOURCE) {
+    return buildNeteaseImportQualities(song);
+  }
   if (song.qualities && Object.keys(song.qualities).length > 0) return song.qualities;
   return {
     standard: song.hash || song.FileHash || song.filehash || '',
@@ -228,6 +287,10 @@ const getExpectedDuration = (song) => {
     return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
   }
   return 0;
+};
+
+const isNeteaseImportSong = (song) => {
+  return song?.source === NETEASE_IMPORT_SOURCE || String(song?.hash || '').startsWith('netease:');
 };
 
 const getPreviewToastMessage = (userStore) => {
@@ -282,6 +345,7 @@ export const usePlayerStore = defineStore('player', {
 
     dialogState: {
       visible: false,
+      type: 'info',
       title: '',
       message: '',
       confirmText: '确定',
@@ -295,6 +359,7 @@ export const usePlayerStore = defineStore('player', {
 
   actions: {
     showDialog(options) {
+      this.dialogState.type = options.type || 'info';
       this.dialogState.title = options.title || '提示';
       this.dialogState.message = options.message || '';
       this.dialogState.confirmText = options.confirmText || '确定';
@@ -323,6 +388,7 @@ export const usePlayerStore = defineStore('player', {
       const cancelCb = this.dialogState.onCancel;
       this.dialogState.onConfirm = null;
       this.dialogState.onCancel = null;
+      this.dialogState.type = 'info';
       if (isConfirm && confirmCb) {
         confirmCb();
       } else if (!isConfirm && cancelCb) {
@@ -832,6 +898,10 @@ export const usePlayerStore = defineStore('player', {
 
     async fetchSongQualityInfo(song) {
       if (!song) return;
+      if (isNeteaseImportSong(song)) {
+        song.qualities = extractQualities(song);
+        return;
+      }
       if (!song.qualities) song.qualities = extractQualities(song);
 
       try {
@@ -863,6 +933,10 @@ export const usePlayerStore = defineStore('player', {
 
     async prepareAutoQuality(song, targetQuality = null) {
       if (!song || targetQuality) return;
+      if (isNeteaseImportSong(song)) {
+        song.qualities = extractQualities(song);
+        return;
+      }
       if (!song.qualities) song.qualities = extractQualities(song);
 
       const userStore = useUserStore();
@@ -876,6 +950,13 @@ export const usePlayerStore = defineStore('player', {
 
     getBestAvailableQuality(song) {
       if (!song || !song.qualities) return 'standard';
+      if (isNeteaseImportSong(song)) {
+        for (const q of QUALITY_CONFIG) {
+          if (song.qualities[q.key]) return q.key;
+        }
+        return 'standard';
+      }
+
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
       const isVipSong = song.is_vip || song.is_paid;
@@ -906,6 +987,26 @@ export const usePlayerStore = defineStore('player', {
     },
 
     async resolveSongUrl(songInfo, targetQuality = null) {
+      if (isNeteaseImportSong(songInfo)) {
+        songInfo.qualities = extractQualities(songInfo);
+        const cacheQ = targetQuality && songInfo.qualities?.[targetQuality]
+          ? targetQuality
+          : this.getBestAvailableQuality(songInfo);
+        const dedupeKey = `${songInfo.hash}_${cacheQ}_${NETEASE_IMPORT_SOURCE}`;
+
+        if (pendingResolves.has(dedupeKey)) {
+          return pendingResolves.get(dedupeKey);
+        }
+
+        const promise = this._resolveNeteaseImportSongUrl(songInfo, cacheQ);
+        pendingResolves.set(dedupeKey, promise);
+        try {
+          return await promise;
+        } finally {
+          pendingResolves.delete(dedupeKey);
+        }
+      }
+
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
       const isVipSong = songInfo.is_vip || songInfo.is_paid;
@@ -927,6 +1028,34 @@ export const usePlayerStore = defineStore('player', {
       } finally {
         pendingResolves.delete(dedupeKey);
       }
+    },
+
+    async _resolveNeteaseImportSongUrl(songInfo, quality) {
+      const cached = getCachedUrl(songInfo.hash, quality);
+      if (cached) return cached;
+
+      try {
+        const res = await request.post('/source/resolve', {
+          song: songInfo,
+          quality
+        }, {
+          silent: true,
+          headers: { 'x-apicache-bypass': '1' }
+        });
+
+        if (res?.url && typeof res.url === 'string' && res.url.startsWith('http')) {
+          const finalResult = {
+            url: res.url,
+            quality: quality === 'best' ? (res.quality || 'standard') : quality,
+            isPreview: false,
+            sourceInfo: res.source || null
+          };
+          setCachedUrl(songInfo.hash, quality, finalResult);
+          return finalResult;
+        }
+      } catch (e) {}
+
+      return { url: null, quality: 'standard', isPreview: false };
     },
 
     async _doResolveSongUrl(songInfo, targetQuality, cacheQ, hasFullAccess, isVipUser, authRefreshAttempted = false) {
@@ -1121,6 +1250,7 @@ export const usePlayerStore = defineStore('player', {
 
     canTryFullPlayback(song) {
       if (!song) return false;
+      if (isNeteaseImportSong(song)) return true;
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
       if (isVipUser) return true;
@@ -1160,6 +1290,10 @@ export const usePlayerStore = defineStore('player', {
     async triggerPreload() {
       const nextSong = this.calculateNextSong();
       if (!nextSong || preloadState.hash === nextSong.hash) return;
+      if (isNeteaseImportSong(nextSong)) {
+        resetPreloadAudio();
+        return;
+      }
 
       try {
         if (!nextSong.qualities) nextSong.qualities = extractQualities(nextSong);
@@ -1199,6 +1333,15 @@ export const usePlayerStore = defineStore('player', {
       
       if (isSongChange && maintainTime === 0) {
         activeAudio.pause();
+        if (isNeteaseImportSong(songInfo)) {
+          activeAudio.removeAttribute('src');
+          activeAudio._rawSourceUrl = '';
+          activeAudio._usingProxy = false;
+          activeAudio._proxyFallbackAttempted = false;
+          activeAudio._proxyRestoreTime = 0;
+          activeAudio._proxyResumeOnLoad = false;
+          activeAudio.load();
+        }
         this.isPlaying = false;
       } else if (maintainTime === 0) {
         this.currentTime = 0;
@@ -1221,13 +1364,17 @@ export const usePlayerStore = defineStore('player', {
       const exists = this.playlist.find(s => s.hash === songInfo.hash);
       if (!exists) this.playlist.push(songInfo);
 
-      if (!songInfo.qualities) songInfo.qualities = extractQualities(songInfo);
+      if (isNeteaseImportSong(songInfo)) {
+        songInfo.qualities = extractQualities(songInfo);
+      } else if (!songInfo.qualities) {
+        songInfo.qualities = extractQualities(songInfo);
+      }
 
       const userStore = useUserStore();
 
       const autoTargetQuality = targetQuality;
 
-      if (songInfo.hash === preloadState.hash && preloadAudio.src && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
+      if (!isNeteaseImportSong(songInfo) && songInfo.hash === preloadState.hash && preloadAudio.src && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
           activeAudio.pause();
           activeAudio.currentTime = 0;
           
@@ -1372,11 +1519,19 @@ export const usePlayerStore = defineStore('player', {
     async switchQuality(targetQuality) {
       if (!this.currentSong || this.currentQuality === targetQuality) return;
 
+      if (isNeteaseImportSong(this.currentSong)) {
+        this.currentSong.qualities = extractQualities(this.currentSong);
+        if (!this.currentSong.qualities?.[targetQuality]) {
+          this.showToast('当前网易歌曲未提供该音质');
+          return;
+        }
+      }
+
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
       const isVipQuality = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(targetQuality);
 
-      if (isVipQuality && !isVipUser) {
+      if (isVipQuality && !isVipUser && !isNeteaseImportSong(this.currentSong)) {
         if (userStore.isLoggedIn) {
           this.showDialog({
             title: 'VIP 专属音质',
@@ -1711,6 +1866,41 @@ export const usePlayerStore = defineStore('player', {
       this.peakDuration = 30;
       preloadState.hash = null;
       if (this._vipActionTimer) { clearTimeout(this._vipActionTimer); this._vipActionTimer = null; }
+      this.syncTrayState();
+    },
+
+    clearNeteaseImportPlaybackState() {
+      this.cancelPlayAllHydration();
+      clearUrlResolutionState();
+      this.playlist = this.playlist.filter(song => !isNeteaseImportSong(song));
+
+      if (!isNeteaseImportSong(this.currentSong)) {
+        this.triggerPreload();
+        this.syncTrayState();
+        return;
+      }
+
+      activeAudio.pause();
+      activeAudio.removeAttribute('src');
+      activeAudio._rawSourceUrl = '';
+      activeAudio._usingProxy = false;
+      activeAudio._proxyFallbackAttempted = false;
+      activeAudio._proxyRestoreTime = 0;
+      activeAudio._proxyResumeOnLoad = false;
+      activeAudio.load();
+      this.isPlaying = false;
+      this.currentSong = null;
+      this.currentTime = 0;
+      this.duration = 0;
+      this.isLoading = false;
+      this.isCurrentSongPreview = false;
+      this.isError = false;
+      this.errorMessage = '';
+      this.failedSong = null;
+      this.currentQuality = 'standard';
+      this.peakMode = false;
+      this.peakStartOffset = 0;
+      this.peakDuration = 30;
       this.syncTrayState();
     },
 

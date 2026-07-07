@@ -8,8 +8,9 @@
         <div class="bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-[380px] flex flex-col overflow-hidden transform transition-all">
           
           <div class="px-6 py-5 border-b border-gray-50 flex items-center">
-             <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mr-3 shadow-inner">
-               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+             <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 shadow-inner" :class="dialogTone.iconWrap">
+               <svg v-if="store.dialogState.type === 'danger'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 9v3.5m0 3h.01M10.3 4.2 2.1 18a2 2 0 0 0 1.72 3h16.36a2 2 0 0 0 1.72-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/></svg>
+               <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
              </div>
              <h3 class="text-lg font-bold text-gray-800 tracking-wide">{{ store.dialogState.title }}</h3>
           </div>
@@ -22,7 +23,7 @@
             <button @click="store.closeDialog(false)" class="px-5 py-2 rounded-full text-xs font-bold text-gray-500 hover:bg-gray-200/80 hover:text-gray-800 transition-colors no-drag focus:outline-none">
               {{ store.dialogState.cancelText }}
             </button>
-            <button @click="store.closeDialog(true)" class="px-6 py-2 rounded-full text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95 flex items-center justify-center min-w-[100px] no-drag focus:outline-none">
+            <button @click="store.closeDialog(true)" class="px-6 py-2 rounded-full text-xs font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center min-w-[100px] no-drag focus:outline-none" :class="dialogTone.confirmButton">
               {{ store.dialogState.confirmText }}
               <span v-if="store.dialogState.countdown > 0" class="ml-1 opacity-90 font-mono">({{ store.dialogState.countdown }}s后自动执行)</span>
             </button>
@@ -35,10 +36,24 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { usePlayerStore } from '../store/playerStore';
 const store = usePlayerStore();
 const dialogRef = ref(null);
+
+const dialogTone = computed(() => {
+  if (store.dialogState.type === 'danger') {
+    return {
+      iconWrap: 'bg-red-50 text-red-500',
+      confirmButton: 'bg-red-500 hover:bg-red-600 shadow-red-200',
+    };
+  }
+
+  return {
+    iconWrap: 'bg-blue-50 text-blue-500',
+    confirmButton: 'bg-blue-600 hover:bg-blue-700 shadow-blue-200',
+  };
+});
 
 watch(() => store.dialogState.visible, (newVal) => {
   if (newVal) nextTick(() => { dialogRef.value?.focus(); });

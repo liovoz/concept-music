@@ -3,8 +3,9 @@
     <template v-for="(singer, index) in displaySingers" :key="singer.id || index">
       <span
         @click.stop="handleClick(singer)"
-        class="inline-block truncate transition-colors duration-200 text-xs text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap hover:text-blue-600 cursor-pointer"
-        :class="[sizeClass, underlineClass]"
+        class="inline-block truncate transition-colors duration-200 text-xs text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap"
+        :class="[sizeClass, underlineClass, disabledClass]"
+        v-tooltip="disabled ? disabledTooltip : ''"
       >
         {{ singer.name }}<span v-if="index < displaySingers.length - 1" class="mx-0.5">,</span>
       </span>
@@ -38,6 +39,14 @@ const props = defineProps({
   showUnderline: {
     type: Boolean,
     default: false
+  },
+  disabled: {
+    type: Boolean,
+    default: false
+  },
+  disabledTooltip: {
+    type: String,
+    default: '暂不支持跳转'
   }
 });
 
@@ -45,6 +54,7 @@ const router = useRouter();
 
 const sizeClass = computed(() => props.size === 'small' ? 'text-[11px]' : 'text-xs');
 const underlineClass = computed(() => props.showUnderline ? 'hover:underline' : '');
+const disabledClass = computed(() => props.disabled ? 'cursor-default hover:text-gray-500' : 'cursor-pointer hover:text-blue-600');
 
 const displaySingers = computed(() => {
   if (props.singers && props.singers.length > 0) {
@@ -60,6 +70,7 @@ const displaySingers = computed(() => {
 });
 
 const handleClick = (singer) => {
+  if (props.disabled) return;
   navigateArtist(router, singer);
 };
 </script>

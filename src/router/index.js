@@ -18,6 +18,7 @@ import AlbumDetail from '../views/AlbumDetail.vue';
 import PersonalFM from '../views/PersonalFM.vue';
 import NewSongs from '../views/NewSongs.vue';
 import PlaylistCategory from '../views/PlaylistCategory.vue';
+import NeteaseImport from '../views/NeteaseImport.vue';
 
 const routes = [
   { path: '/', name: 'Discover', component: Discover },
@@ -35,6 +36,8 @@ const routes = [
   { path: '/fm', name: 'PersonalFM', component: PersonalFM },
   { path: '/new-songs', name: 'NewSongs', component: NewSongs },
   { path: '/playlist-category', name: 'PlaylistCategory', component: PlaylistCategory },
+  { path: '/import/netease', name: 'NeteaseImport', component: NeteaseImport, meta: { stableComponentKey: 'NeteaseImport' } },
+  { path: '/import/netease/:id', name: 'NeteaseImportDetail', component: NeteaseImport, meta: { stableComponentKey: 'NeteaseImport' } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ];
 

@@ -266,8 +266,9 @@ async function consturctServer(moduleDefs) {
     proxyAudioRequest(rawUrl, req, res);
   });
 
-  // Cache
-  app.use(cache('2 minutes', (_, res) => res.statusCode === 200));
+  // Cache only idempotent GET requests. POST module calls can carry different
+  // song data on the same route, so caching by URL would replay stale results.
+  app.use(cache('2 minutes', (req, res) => req.method === 'GET' && res.statusCode === 200));
 
   const moduleDefinitions = moduleDefs || (await getModulesDefinitions(path.join(__dirname, 'module'), {}));
 
