@@ -1,6 +1,6 @@
 # 概念音乐
 
-概念音乐是一款基于 Electron、Vue 3 和 Vite 构建的 Windows 桌面音乐播放器。项目内置本地 KuGou API 服务，支持在线播放、歌单、排行榜、搜索、私人 FM、桌面歌词、系统托盘控制、多音质播放和自动更新。
+概念音乐是一款基于 Electron、Vue 3 和 Vite 构建的 Windows 桌面音乐播放器。项目内置本地 KuGou API 服务，支持在线音乐播放、歌单与排行榜浏览、搜索、私人 FM、桌面歌词、系统托盘控制、多音质播放、网易云歌单导入和自动更新。
 
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Electron](https://img.shields.io/badge/Electron-30+-9EFFDB)
@@ -16,6 +16,7 @@
 - 排行榜：浏览榜单列表和榜单歌曲详情。
 - 搜索：支持歌曲搜索、综合搜索、搜索历史和结果播放。
 - 歌手与专辑：支持歌手详情、热门单曲、专辑列表、专辑详情与跨页面跳转。
+- 网易云歌单导入：支持读取网易云歌单信息，并将歌曲转换为播放器内部队列。
 - 私人 FM：支持 FM 队列、相似推荐、喜欢/不喜欢、跳过和高潮片段播放。
 - 我的音乐：支持登录、我的歌单、喜欢列表、听歌足迹等账号相关能力。
 - 播放器：支持播放/暂停、上一首、下一首、进度拖动、音量控制、播放队列和播放模式切换。
@@ -73,23 +74,6 @@ npm run release
 
 发布到 GitHub Releases。发布前需要配置 GitHub Token，并确认 `package.json` 中的 `build.publish.owner` 与 `build.publish.repo` 指向正确仓库。
 
-## 仓库上传注意
-
-请只提交源码、配置、锁文件和必要静态资源。以下内容属于本地依赖、缓存、临时文件或构建产物，不应上传到 GitHub：
-
-- `node_modules/`
-- `server/node_modules/`
-- `.pnpm-store/`
-- `dist/`
-- `release/`
-- `Temp/`
-- `.gstack/`
-- `.agents/`
-- `design/`
-- `.env` 和 `.env.*`
-
-`server/.env.example` 可以提交；真实密钥、Cookie、Token、证书和私钥必须只放在本地环境变量或 `.env` 中。
-
 ## Electron 安装失败处理
 
 项目已在 `.npmrc` 中配置 Electron 和 electron-builder 的国内镜像。若仍遇到类似下面的错误：
@@ -110,12 +94,30 @@ npm run check:setup -- --repair
 npm install
 ```
 
+## 仓库上传注意
+
+请只提交源码、配置、锁文件和必要静态资源。以下内容属于本地依赖、缓存、临时文件或构建产物，不应上传到 GitHub：
+
+- `node_modules/`
+- `server/node_modules/`
+- `.pnpm-store/`
+- `dist/`
+- `release/`
+- `Temp/`
+- `.gstack/`
+- `.agents/`
+- `design/`
+- `.env` 和 `.env.*`
+
+`server/.env.example` 可以提交；真实密钥、Cookie、Token、证书和私钥必须只放在本地环境变量或 `.env` 中。
+
 ## 项目结构
 
 ```text
 .
 ├─ .github/workflows/       # GitHub Actions 构建与发布流程
 ├─ electron/                # Electron 主进程、预加载脚本、托盘管理
+├─ music_source/            # 第三方音源脚本及来源说明
 ├─ public/                  # 应用图标等静态资源
 ├─ scripts/                 # 安装检查与本地开发启动脚本
 ├─ server/                  # 内置 KuGou API 服务
@@ -142,6 +144,10 @@ npm install
 内置 API 服务基于 KuGouMusicApi 项目能力进行集成与适配：
 
 https://github.com/MakcRe/KuGouMusicApi
+
+第三方音源脚本来源说明见：
+
+[music_source/README.md](music_source/README.md)
 
 ## 许可证
 
