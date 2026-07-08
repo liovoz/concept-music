@@ -1,4 +1,4 @@
-const { apiver, appid, wx_appid, wx_lite_appid, wx_secret, wx_lite_secret, srcappid, clientver, liteAppid, liteClientver } = require('./config.json');
+const { apiver, appid, wx_appid, wx_lite_appid, srcappid, clientver, liteAppid, liteClientver } = require('./config.json');
 const {
   cryptoAesDecrypt,
   cryptoAesEncrypt,
@@ -19,6 +19,8 @@ const { randomString, decodeLyrics, parseCookieString, cookieToJson, randomNumbe
 const isLite = process.env.platform === 'lite';
 const useAppid = isLite ? liteAppid : appid;
 const useClientver = isLite ? liteClientver : clientver;
+const wxSecret = process.env.KUGOU_WX_SECRET || '';
+const wxLiteSecret = process.env.KUGOU_WX_LITE_SECRET || '';
 
 module.exports = {
   apiver,
@@ -27,8 +29,8 @@ module.exports = {
   // liteClientver,
   wx_appid,
   wx_lite_appid,
-  wx_secret,
-  wx_lite_secret,
+  wx_secret: wxSecret,
+  wx_lite_secret: wxLiteSecret,
   srcappid,
   clientver: useClientver,
   isLite,

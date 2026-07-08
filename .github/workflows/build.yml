@@ -26,9 +26,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install server dependencies
-        run: cd server && npm install && cd ..
-
       - name: Build & Publish
         run: npm run release
         env:

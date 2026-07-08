@@ -2,19 +2,17 @@ FROM node:lts-alpine
 
 RUN apk add --no-cache tini
 
-RUN corepack enable
-
 ENV NODE_ENV=production
 
 WORKDIR /app
 
 RUN chown node:node /app
 
-COPY --chown=node:node package.json pnpm-lock.yaml ./
+COPY --chown=node:node package.json package-lock.json ./
 
 USER node
 
-RUN pnpm install --prod --frozen-lockfile
+RUN npm ci --omit=dev
 
 COPY --chown=node:node . ./
 

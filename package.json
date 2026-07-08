@@ -3,6 +3,7 @@
   "private": true,
   "version": "3.1.0",
   "type": "module",
+  "packageManager": "npm@10.8.2",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -10,8 +11,14 @@
     "preview": "vite preview",
     "start": "node scripts/start-electron-dev.mjs",
     "start:electron": "electron .",
+    "postinstall": "node scripts/postinstall.mjs",
+    "check:setup": "node scripts/check-setup.mjs",
     "pack": "vite build && electron-builder",
     "release": "vite build && electron-builder --publish always"
+  },
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
   },
   "dependencies": {
     "axios": "^1.6.8",
@@ -48,7 +55,19 @@
         "to": "server",
         "filter": [
           "**/*",
-          "!node_modules/.cache"
+          "!node_modules/.cache",
+          "!node_modules/**/.cache/**",
+          "!.github/**",
+          "!docs/**",
+          "!Dockerfile",
+          "!.dockerignore",
+          "!vercel.json",
+          "!nodemon.json",
+          "!tsconfig.json",
+          "!.prettierrc.json",
+          "!README.md",
+          "!LICENSE",
+          "!interface.d.ts"
         ]
       },
       {
