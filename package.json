@@ -89,7 +89,7 @@
         "provider": "github",
         "owner": "liovoz",
         "repo": "concept-music",
-        "draft": false
+        "releaseType": "release"
       }
     ],
     "win": {
