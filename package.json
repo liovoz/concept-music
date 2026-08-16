@@ -109,6 +109,7 @@
       "icon": "public/icon.ico"
     },
     "nsis": {
+      "useZip": true,
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,

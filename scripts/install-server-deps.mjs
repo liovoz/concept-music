@@ -32,10 +32,12 @@ export function installServerDependencies() {
   }
 
   const useCi = process.env.CI === 'true' && fs.existsSync(path.join(serverDir, 'package-lock.json'));
-  const npmArgs = [useCi ? 'ci' : 'install'];
+  // Server is embedded as a runtime resource; devDependencies (typescript/prettier/pkg...)
+  // must not be installed, otherwise they get bundled into the installer (~80 MB waste).
+  const npmArgs = [useCi ? 'ci' : 'install', '--omit=dev'];
   const npm = resolveNpmCommand();
 
-  console.log(`[setup] Installing server dependencies with npm ${useCi ? 'ci' : 'install'}...`);
+  console.log(`[setup] Installing server dependencies with npm ${useCi ? 'ci' : 'install'} --omit=dev...`);
 
   return new Promise((resolve, reject) => {
     // Run inside serverDir so npm treats server as its own project root;
