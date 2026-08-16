@@ -30,5 +30,3 @@ jobs:
         run: npm run release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 允许覆盖已发布超过 2 小时的同名 Release 产物（重发布同版本号时需要）
-          EP_GH_IGNORE_TIME: true
