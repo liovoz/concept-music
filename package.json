@@ -88,7 +88,8 @@
       {
         "provider": "github",
         "owner": "liovoz",
-        "repo": "concept-music"
+        "repo": "concept-music",
+        "releaseType": "release"
       }
     ],
     "win": {
@@ -124,7 +125,7 @@
       "language": 2052
     },
     "portable": {
-      "artifactName": "${productName}-${version}-Portable.${ext}"
+      "artifactName": "${name}-${version}-Portable.${ext}"
     },
     "mac": {
       "target": "dmg"
