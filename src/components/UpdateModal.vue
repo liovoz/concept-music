@@ -244,16 +244,34 @@ onMounted(() => {
           progressInfo.value = data.progressObj || {};
           break;
         case 'error':
+          if (status.value === 'cancelled') break;
           if (data.isManualCheck || isVisible.value) {
             let msg = data.message || '';
-            if (msg.includes('404') || msg.includes('github.com')) {
-              msg = '暂无可用更新，或更新服务器未配置';
-            } else if (msg.includes('net::') || msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
-              msg = '无法连接到更新服务器，请检查网络';
-            } else if (msg.includes('aborted') || msg.includes('cancel')) {
-              msg = '';
-            } else if (msg.length > 60) {
-              msg = '网络连接异常，请稍后重试';
+            const inDownloadPhase = data.phase === 'download' || status.value === 'downloading';
+            if (inDownloadPhase) {
+              if (msg.includes('404')) {
+                msg = '更新安装包不存在或已被移除，请手动下载';
+              } else if (msg.includes('ENOSPC')) {
+                msg = '磁盘空间不足，请清理后重试';
+              } else if (msg.includes('EPERM') || msg.includes('EBUSY') || msg.includes('in use')) {
+                msg = '安装包被占用或权限不足，请关闭杀毒软件后重试';
+              } else if (msg.includes('net::') || msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT')) {
+                msg = '无法连接到更新服务器，请检查网络';
+              } else if (msg.includes('aborted') || msg.includes('cancel')) {
+                msg = '';
+              } else if (msg.length > 60) {
+                msg = '网络连接异常，请稍后重试';
+              }
+            } else {
+              if (msg.includes('404') || msg.includes('github.com')) {
+                msg = '暂无可用更新，或更新服务器未配置';
+              } else if (msg.includes('net::') || msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
+                msg = '无法连接到更新服务器，请检查网络';
+              } else if (msg.includes('aborted') || msg.includes('cancel')) {
+                msg = '';
+              } else if (msg.length > 60) {
+                msg = '网络连接异常，请稍后重试';
+              }
             }
             if (status.value === 'downloading') {
               isDownloadError.value = true;
@@ -264,6 +282,9 @@ onMounted(() => {
               status.value = 'error';
             }
           }
+          break;
+        case 'cancelled':
+          status.value = 'cancelled';
           break;
         case 'downloaded':
           status.value = 'downloaded';

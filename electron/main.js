@@ -203,6 +203,12 @@ async function startLocalServer() {
 function initAutoUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.logger = {
+    info: (...args) => console.log('[Updater]', ...args),
+    warn: (...args) => console.warn('[Updater]', ...args),
+    error: (...args) => console.error('[Updater]', ...args),
+    debug: (...args) => console.log('[Updater][debug]', ...args)
+  };
   autoUpdater.setFeedURL({
     provider: 'github',
     owner: 'liovoz',
@@ -220,41 +226,81 @@ function initAutoUpdater() {
   };
   let downloadRetryCount = 0;
   const MAX_DOWNLOAD_RETRIES = 3;
+  let updatePhase = null; // 'checking' | 'downloading' | null
+  let isDownloadCancelled = false;
 
-  autoUpdater.on('checking-for-update', () => sendToWindow({ type: 'checking', isManualCheck }));
-  autoUpdater.on('update-available', (info) => sendToWindow({ type: 'available', info, isManualCheck }));
-  autoUpdater.on('update-not-available', (info) => { sendToWindow({ type: 'not-available', info, isManualCheck }); isManualCheck = false; });
-  autoUpdater.on('error', (err) => { sendToWindow({ type: 'error', message: err.message, isManualCheck }); isManualCheck = false; downloadCancellationToken = null; });
+  autoUpdater.on('checking-for-update', () => { updatePhase = 'checking'; sendToWindow({ type: 'checking', isManualCheck }); });
+  autoUpdater.on('update-available', (info) => { updatePhase = null; sendToWindow({ type: 'available', info, isManualCheck }); });
+  autoUpdater.on('update-not-available', (info) => { updatePhase = null; sendToWindow({ type: 'not-available', info, isManualCheck }); isManualCheck = false; });
+  autoUpdater.on('error', (err) => {
+    const message = (err && err.message) || '';
+    console.error('[Updater] error:', message);
+    if (isDownloadCancelled) {
+      isDownloadCancelled = false;
+      updatePhase = null;
+      downloadCancellationToken = null;
+      downloadRetryCount = 0;
+      sendToWindow({ type: 'cancelled' });
+      return;
+    }
+    // 下载阶段的失败先静默重试，重试期间不推送错误，避免界面在“下载中/失败”之间抖动
+    if (updatePhase === 'downloading' && downloadRetryCount < MAX_DOWNLOAD_RETRIES) return;
+    updatePhase = null;
+    sendToWindow({ type: 'error', message, isManualCheck, phase: 'download' });
+    isManualCheck = false;
+    downloadCancellationToken = null;
+  });
   autoUpdater.on('download-progress', (progressObj) => { downloadRetryCount = 0; sendToWindow({ type: 'progress', progressObj }); });
-  autoUpdater.on('update-downloaded', (info) => { sendToWindow({ type: 'downloaded', info }); downloadCancellationToken = null; downloadRetryCount = 0; });
+  autoUpdater.on('update-downloaded', (info) => { updatePhase = null; sendToWindow({ type: 'downloaded', info }); downloadCancellationToken = null; downloadRetryCount = 0; });
 
   ipcMain.on('check-for-updates', () => {
-    isManualCheck = true; 
+    isManualCheck = true;
     if (!app.isPackaged) { sendToWindow({ type: 'error', message: '开发环境暂不支持自动更新，请打包后体验', isManualCheck }); isManualCheck = false; return; }
-    autoUpdater.checkForUpdates().catch(err => { sendToWindow({ type: 'error', message: '检查更新失败，请检查网络', isManualCheck }); isManualCheck = false; });
+    updatePhase = 'checking';
+    autoUpdater.checkForUpdates().catch(err => {
+      console.error('[Updater] checkForUpdates failed:', err && err.message);
+      updatePhase = null;
+      sendToWindow({ type: 'error', message: '检查更新失败，请检查网络', isManualCheck });
+      isManualCheck = false;
+    });
   });
 
   const doDownloadUpdate = () => {
+    isDownloadCancelled = false;
     downloadCancellationToken = new AbortController();
     autoUpdater.downloadUpdate(downloadCancellationToken.signal).catch(err => {
       const errMsg = (err && err.message) || '';
       if (errMsg.includes('aborted') || errMsg.includes('cancel')) {
+        // 用户主动取消：由 error 事件统一发送 cancelled 状态
         return;
       }
+      console.error('[Updater] download failed:', errMsg);
       if (downloadRetryCount < MAX_DOWNLOAD_RETRIES) {
         downloadRetryCount++;
+        console.log(`[Updater] 下载重试 ${downloadRetryCount}/${MAX_DOWNLOAD_RETRIES}，3 秒后重试`);
         setTimeout(() => { doDownloadUpdate(); }, 3000);
       } else {
-        sendToWindow({ type: 'error', message: errMsg || '下载失败，请检查网络连接', isManualCheck: true });
+        updatePhase = null;
+        sendToWindow({ type: 'error', message: errMsg || '下载失败，请检查网络连接', isManualCheck: true, phase: 'download' });
         downloadRetryCount = 0;
       }
       downloadCancellationToken = null;
     });
   };
 
-  ipcMain.on('download-update', () => { downloadRetryCount = 0; doDownloadUpdate(); });
-  ipcMain.on('cancel-download', () => { if (downloadCancellationToken) { downloadCancellationToken.abort(); downloadCancellationToken = null; downloadRetryCount = 0; } });
-  ipcMain.on('quit-and-install', () => autoUpdater.quitAndInstall());
+  ipcMain.on('download-update', () => { downloadRetryCount = 0; updatePhase = 'downloading'; doDownloadUpdate(); });
+  ipcMain.on('cancel-download', () => {
+    if (downloadCancellationToken) {
+      isDownloadCancelled = true;
+      downloadCancellationToken.abort();
+      downloadCancellationToken = null;
+      downloadRetryCount = 0;
+    } else {
+      sendToWindow({ type: 'cancelled' });
+    }
+  });
+  // oneClick:false 的辅助安装器：非静默安装并在完成后拉起应用
+  ipcMain.on('quit-and-install', () => autoUpdater.quitAndInstall(false, true));
   ipcMain.handle('get-app-version', () => app.getVersion());
 }
 
