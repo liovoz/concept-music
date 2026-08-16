@@ -64,6 +64,13 @@ const VOLUME_BOOST_INITIALIZED_KEY = 'kg_desktop_volume_boost_initialized';
 const LOCAL_AUDIO_PROXY_BASE = 'http://127.0.0.1:10420';
 const NETEASE_IMPORT_SOURCE = 'netease-import';
 
+const PLAY_MODES = ['sequence', 'loop', 'random'];
+const PLAY_MODE_KEY = 'kg_play_mode';
+const getStoredPlayMode = () => {
+  const saved = localStorage.getItem(PLAY_MODE_KEY);
+  return PLAY_MODES.includes(saved) ? saved : 'sequence';
+};
+
 let audioContext = null;
 let audioGraphInitialized = false;
 const audioOutputNodes = new WeakMap();
@@ -320,7 +327,7 @@ export const usePlayerStore = defineStore('player', {
     isPlaylistVisible: false,
     isLyricsVisible: false,
     isDesktopLyricVisible: false, // ✨ 新增：桌面歌词显示状态
-    playMode: 'sequence', 
+    playMode: getStoredPlayMode(), 
     
     hasReportedCurrentSong: false, 
     
@@ -979,9 +986,14 @@ export const usePlayerStore = defineStore('player', {
     },
 
     togglePlayMode() {
-      const modes = ['sequence', 'loop', 'random'];
-      const currentIdx = modes.indexOf(this.playMode);
-      this.playMode = modes[(currentIdx + 1) % modes.length];
+      const currentIdx = PLAY_MODES.indexOf(this.playMode);
+      this.setPlayMode(PLAY_MODES[(currentIdx + 1) % PLAY_MODES.length]);
+    },
+
+    setPlayMode(mode) {
+      if (!PLAY_MODES.includes(mode)) return;
+      this.playMode = mode;
+      localStorage.setItem(PLAY_MODE_KEY, mode);
       this.triggerPreload();
       this.syncTrayState();
     },

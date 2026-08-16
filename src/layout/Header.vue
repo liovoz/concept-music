@@ -5,8 +5,8 @@
       概念音乐 Desktop
     </div>
 
-    <div class="flex-1 flex justify-center no-drag relative">
-      <div class="relative w-80 group">
+    <div class="flex-1 flex justify-center relative">
+      <div class="relative w-80 group no-drag">
         <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         
         <input 
@@ -19,6 +19,7 @@
           @keydown.esc="isFocused = false"
           @focus="handleFocus"
           @blur="handleBlur"
+          @click="syncFocusState"
           type="text" 
           :placeholder="defaultPlaceholder" 
           class="w-full h-8 bg-gray-100 dark:bg-slate-800 shadow-inner hover:bg-gray-200 dark:hover:bg-slate-700 focus:bg-white dark:focus:bg-slate-900 focus:shadow-none focus:ring-1 focus:ring-blue-300 dark:focus:ring-blue-500 border border-transparent focus:border-blue-300 dark:focus:border-blue-500 rounded-full pl-9 pr-8 text-xs text-gray-700 dark:text-slate-100 outline-none transition-all placeholder-gray-400 dark:placeholder-slate-500 font-medium"
@@ -181,7 +182,7 @@
       </div>
     </div>
 
-    <div class="w-48 flex justify-end items-center space-x-3 no-drag text-gray-400 dark:text-slate-400">
+    <div class="w-48 flex justify-end items-center space-x-3 text-gray-400 dark:text-slate-400">
       <button
         @click="toggleTheme"
         class="group relative flex h-7 w-7 items-center justify-center rounded-full hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-all no-drag"
@@ -196,9 +197,9 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
         </svg>
       </button>
-      <button @click="minimize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
-      <button @click="maximize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke-width="2"></rect></svg></button>
-      <button @click="close" class="hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+      <button @click="minimize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
+      <button @click="maximize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke-width="2"></rect></svg></button>
+      <button @click="close" class="hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
     </div>
   </header>
 
@@ -365,12 +366,24 @@ const fetchDefaultPlaceholder = async () => {
   }
 };
 
+let blurTimer = null;
+
 const handleFocus = () => {
+  clearTimeout(blurTimer);
   isFocused.value = true;
   selectedIndex.value = -1;
   if (!searchKeyword.value.trim()) {
     fetchHotList();
+  } else if (!isSuggestLoading.value && !hasSuggestData()) {
+    // 搜索跳转后建议数据已被清空，重新聚焦时按当前关键词立即拉取
+    clearTimeout(debounceTimer);
+    requestSuggest();
   }
+};
+
+const syncFocusState = () => {
+  // DOM 已聚焦时 focus 事件不会再派发，点击时手动同步下拉显示状态
+  if (!isFocused.value) handleFocus();
 };
 
 const handleSearch = () => {
@@ -507,6 +520,28 @@ const parseSuggestData = (res) => {
   return groups;
 };
 
+const hasSuggestData = () => {
+  const g = suggestGroups.value;
+  return g.songs.length > 0 || g.artists.length > 0 || g.albums.length > 0;
+};
+
+const requestSuggest = async () => {
+  const keyword = searchKeyword.value.trim();
+  if (!keyword) return;
+  isSuggestLoading.value = true;
+  try {
+    const res = await request.get('/search/suggest', {
+      params: { keywords: keyword }
+    });
+    suggestGroups.value = parseSuggestData(res);
+    selectedIndex.value = -1;
+  } catch (err) {
+    console.error('联想请求失败:', err);
+  } finally {
+    isSuggestLoading.value = false;
+  }
+};
+
 const handleInput = () => {
   clearTimeout(debounceTimer);
   if (!searchKeyword.value.trim()) {
@@ -515,25 +550,11 @@ const handleInput = () => {
     fetchHotList();
     return;
   }
-  
-  debounceTimer = setTimeout(async () => {
-    isSuggestLoading.value = true;
-    try {
-      const res = await request.get('/search/suggest', {
-        params: { keywords: searchKeyword.value.trim() }
-      });
-      suggestGroups.value = parseSuggestData(res);
-      selectedIndex.value = -1;
-    } catch (err) {
-      console.error('联想请求失败:', err);
-    } finally {
-      isSuggestLoading.value = false;
-    }
-  }, 400);
+  debounceTimer = setTimeout(() => requestSuggest(), 400);
 };
 
 const handleBlur = () => {
-  setTimeout(() => { isFocused.value = false; }, 150);
+  blurTimer = setTimeout(() => { isFocused.value = false; }, 150);
 };
 
 const clearSearch = () => {
@@ -541,6 +562,9 @@ const clearSearch = () => {
   suggestGroups.value = { songs: [], artists: [], albums: [] };
   selectedIndex.value = -1;
   if (searchInput.value) searchInput.value.focus();
+  // 已聚焦时 focus() 不会触发事件，直接同步下拉状态并展示热搜（有缓存不重复请求）
+  isFocused.value = true;
+  fetchHotList();
 };
 
 watch(() => route.query.keyword, (newKeyword) => {

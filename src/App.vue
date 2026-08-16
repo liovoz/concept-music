@@ -87,9 +87,9 @@ const handleTrayAction = (action) => {
     case 'next': playerStore.playNext(); break;
     case 'toggle-mute': playerStore.toggleMute(); break;
     case 'toggle-lyric': playerStore.toggleDesktopLyric(); break;
-    case 'set-mode-sequence': playerStore.playMode = 'sequence'; playerStore.syncTrayState(); break;
-    case 'set-mode-loop': playerStore.playMode = 'loop'; playerStore.syncTrayState(); break;
-    case 'set-mode-random': playerStore.playMode = 'random'; playerStore.syncTrayState(); break;
+    case 'set-mode-sequence': playerStore.setPlayMode('sequence'); break;
+    case 'set-mode-loop': playerStore.setPlayMode('loop'); break;
+    case 'set-mode-random': playerStore.setPlayMode('random'); break;
     case 'show-about':
       if (updateModalRef.value) updateModalRef.value.showModal();
       break;
@@ -108,6 +108,10 @@ onMounted(() => {
   if (disclaimerAccepted) userStore.verifySession(); 
   if (window.trayAPI) {
     window.trayAPI.onTrayAction(handleTrayAction);
+    // 仅主窗口在启动时同步一次托盘状态，恢复上次退出时的播放模式显示（歌词窗口不参与，避免覆盖播放状态）
+    if (route.path !== '/desktop-lyric') {
+      playerStore.syncTrayState();
+    }
   }
 });
 

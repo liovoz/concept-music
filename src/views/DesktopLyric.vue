@@ -49,10 +49,17 @@
     <transition name="panel-fade">
       <div v-if="showSettings" class="settings-overlay" @click.self="closeSettings" @mousedown.stop>
         <div class="settings-panel" @click.stop @mousedown.stop>
-          <div class="st-group">
-            <span class="st-label">字号</span>
-            <input type="range" min="24" max="50" v-model="config.fontSize" class="st-range" />
-            <span class="st-value">{{ config.fontSize }}</span>
+          <div class="st-group st-sizes">
+            <div class="st-size-row">
+              <span class="st-label">主歌词</span>
+              <input type="range" min="24" max="50" v-model.number="config.fontSize" class="st-range" />
+              <span class="st-value">{{ config.fontSize }}</span>
+            </div>
+            <div class="st-size-row">
+              <span class="st-label">副歌词</span>
+              <input type="range" min="14" :max="config.fontSize - 6" v-model.number="config.subFontSize" class="st-range" />
+              <span class="st-value">{{ config.subFontSize }}</span>
+            </div>
           </div>
           <div class="st-divider"></div>
           <div class="st-group">
@@ -69,7 +76,7 @@
           </div>
           <div class="st-divider"></div>
           <div class="st-group">
-            <span class="st-label">副歌词</span>
+            <span class="st-label">显示副歌词</span>
             <button class="st-toggle" :class="{ 'st-toggle-on': config.showSub }" @click="config.showSub = !config.showSub">
               <span class="st-toggle-knob"></span>
             </button>
@@ -102,9 +109,21 @@ const isPlaying = ref(false);
 
 const config = reactive({
   fontSize: 34,
+  subFontSize: 28,
   colorTheme: 'white',
   showSub: true
 });
+
+// 副歌词字号约束：始终比主歌词至少小 6px
+const clampSubFontSize = () => {
+  const maxSub = config.fontSize - 6;
+  if (typeof config.subFontSize !== 'number' || Number.isNaN(config.subFontSize)) {
+    config.subFontSize = maxSub;
+    return;
+  }
+  if (config.subFontSize > maxSub) config.subFontSize = maxSub;
+  if (config.subFontSize < 14) config.subFontSize = 14;
+};
 
 const themes = [
   { id: 'white', color: '#f8fafc', main: '#f8fafc', sub: 'rgba(203, 213, 225, 0.78)', glow: 'rgba(148, 163, 184, 0.22)' },
@@ -121,7 +140,7 @@ const lyricMainStyle = computed(() => ({
   textShadow: `0 1px 2px rgba(15, 23, 42, 0.58), 0 10px 28px rgba(15, 23, 42, 0.34), 0 0 18px ${activeTheme.value.glow}`
 }));
 const lyricSubStyle = computed(() => ({
-  fontSize: `${Math.max(14, config.fontSize - 14)}px`,
+  fontSize: `${Math.max(14, Math.min(Number(config.subFontSize), config.fontSize - 6))}px`,
   color: activeTheme.value.sub,
   textShadow: '0 1px 2px rgba(15, 23, 42, 0.48), 0 6px 18px rgba(15, 23, 42, 0.26)'
 }));
@@ -214,6 +233,8 @@ onMounted(() => {
     const saved = localStorage.getItem('kg_desktop_lyric_config');
     if (saved) Object.assign(config, JSON.parse(saved));
   } catch (e) {}
+  // 旧配置无 subFontSize 字段时，初始化为“主歌词 - 6px”，并统一钳制差值约束
+  clampSubFontSize();
 
   let el = document.getElementById('desktop-lyric-root');
   while (el && el !== document) {
@@ -246,6 +267,11 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+});
+
+// 主歌词调小时，若副歌词超出上限，自动压回至主歌词 - 6px
+watch(() => config.fontSize, () => {
+  clampSubFontSize();
 });
 
 watch(config, (v) => {
@@ -429,6 +455,18 @@ watch(config, (v) => {
 }
 
 .st-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.st-sizes {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.st-size-row {
   display: flex;
   align-items: center;
   gap: 10px;
