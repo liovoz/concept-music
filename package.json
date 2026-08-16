@@ -1,7 +1,7 @@
 {
   "name": "concept-music",
   "private": true,
-  "version": "3.3.0",
+  "version": "3.3.2",
   "type": "module",
   "packageManager": "npm@10.8.2",
   "main": "electron/main.js",
@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "axios": "^1.6.8",
+    "builder-util-runtime": "9.5.1",
     "electron-updater": "^6.1.8",
     "fs-extra": "^11.2.0",
     "lodash.escaperegexp": "^4.1.2",

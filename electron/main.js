@@ -8,12 +8,14 @@ import { fork } from 'child_process';
 import fs from 'fs';
 import http from 'http'; 
 import pkg from 'electron-updater';
+import builderUtilRuntime from 'builder-util-runtime';
 import { TrayManager } from './trayManager.js';
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
 app.commandLine.appendSwitch('disable-http-cache');
 
 const { autoUpdater } = pkg;
+const { CancellationToken } = builderUtilRuntime;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEV_FRONTEND_URL = 'http://127.0.0.1:5173';
@@ -267,11 +269,20 @@ function initAutoUpdater() {
 
   const doDownloadUpdate = () => {
     isDownloadCancelled = false;
-    downloadCancellationToken = new AbortController();
-    autoUpdater.downloadUpdate(downloadCancellationToken.signal).catch(err => {
+    // electron-updater 要求传入 builder-util-runtime 的 CancellationToken（下载器内部会调用其 createPromise），
+    // 传 DOM AbortSignal 会导致下载发起瞬间即抛 TypeError
+    downloadCancellationToken = new CancellationToken();
+    autoUpdater.downloadUpdate(downloadCancellationToken).catch(err => {
       const errMsg = (err && err.message) || '';
       if (errMsg.includes('aborted') || errMsg.includes('cancel')) {
-        // 用户主动取消：由 error 事件统一发送 cancelled 状态
+        // 用户主动取消：CancellationError 不会触发 error 事件，在此统一发送 cancelled 状态
+        downloadCancellationToken = null;
+        if (isDownloadCancelled) {
+          isDownloadCancelled = false;
+          updatePhase = null;
+          downloadRetryCount = 0;
+          sendToWindow({ type: 'cancelled' });
+        }
         return;
       }
       console.error('[Updater] download failed:', errMsg);
@@ -292,7 +303,7 @@ function initAutoUpdater() {
   ipcMain.on('cancel-download', () => {
     if (downloadCancellationToken) {
       isDownloadCancelled = true;
-      downloadCancellationToken.abort();
+      downloadCancellationToken.cancel();
       downloadCancellationToken = null;
       downloadRetryCount = 0;
     } else {
