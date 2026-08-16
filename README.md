@@ -27,9 +27,11 @@
 
 ## 环境要求
 
-- Windows 10/11 x64
-- Node.js 20 或更高版本
+- Windows 10/11 x64（依赖安装与开发启动同样兼容 macOS / Linux）
+- Node.js 推荐 22 LTS（最低要求 20；仓库根目录提供 `.nvmrc`）
 - npm 10 或更高版本
+
+本项目不含需要本地编译的原生依赖，`npm install` 无需 Python、Visual Studio Build Tools 等编译工具链。不建议使用 Node.js 24 及以上版本：npm 官方已提示 Node 24 与部分 node-gyp 版本存在兼容问题，在残留依赖环境中容易触发原生模块编译报错。
 
 ## 快速开始
 
@@ -93,6 +95,24 @@ npm run check:setup -- --repair
 ```bash
 npm install
 ```
+
+## 安装问题排查
+
+如果 `npm install` 报出 `node-gyp`、`Python`、`bufferutil`、`node-sass` 等错误，通常是此前失败安装遗留的脏状态导致（这些包并非本项目依赖）。请清理后重装：
+
+```powershell
+# Windows PowerShell
+Remove-Item -Recurse -Force node_modules, server\node_modules
+npm install
+```
+
+```bash
+# macOS / Linux
+rm -rf node_modules server/node_modules
+npm install
+```
+
+如果仍然失败，请确认 Node.js 为 22 LTS（或 >=20），并检查网络能否访问 `.npmrc` 中配置的 npmmirror 镜像。
 
 ## 仓库上传注意
 

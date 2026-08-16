@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "start": "node scripts/start-electron-dev.mjs",
     "start:electron": "electron .",
+    "preinstall": "node scripts/check-node-version.mjs",
     "postinstall": "node scripts/postinstall.mjs",
     "check:setup": "node scripts/check-setup.mjs",
     "pack": "vite build && electron-builder",

@@ -1,0 +1,38 @@
+name: Install Check
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  install-check:
+    name: npm install on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Verify project setup
+        run: npm run check:setup

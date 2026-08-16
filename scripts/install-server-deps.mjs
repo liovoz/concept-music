@@ -14,12 +14,15 @@ function resolveNpmCommand() {
     return {
       command: process.execPath,
       argsPrefix: [npmExecPath],
+      useShell: false,
     };
   }
 
   return {
     command: process.platform === 'win32' ? 'npm.cmd' : 'npm',
     argsPrefix: [],
+    // Node >= 18.20/20.12 forbids spawning .cmd/.bat without a shell (CVE-2024-27980)
+    useShell: process.platform === 'win32',
   };
 }
 
@@ -29,17 +32,21 @@ export function installServerDependencies() {
   }
 
   const useCi = process.env.CI === 'true' && fs.existsSync(path.join(serverDir, 'package-lock.json'));
-  const npmArgs = [useCi ? 'ci' : 'install', '--prefix', serverDir];
+  const npmArgs = [useCi ? 'ci' : 'install'];
   const npm = resolveNpmCommand();
 
   console.log(`[setup] Installing server dependencies with npm ${useCi ? 'ci' : 'install'}...`);
 
   return new Promise((resolve, reject) => {
+    // Run inside serverDir so npm treats server as its own project root;
+    // using rootDir here can make npm re-resolve the root package.json and
+    // re-trigger the root postinstall (infinite recursion).
     const child = spawn(npm.command, [...npm.argsPrefix, ...npmArgs], {
-      cwd: rootDir,
+      cwd: serverDir,
       env: process.env,
       stdio: 'inherit',
       windowsHide: true,
+      shell: npm.useShell,
     });
 
     child.on('error', reject);
