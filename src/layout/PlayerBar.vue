@@ -54,14 +54,14 @@
     </div>
 
     <div class="flex flex-col items-center justify-center flex-1 max-w-2xl px-4">
-      <div class="flex items-center space-x-6" :class="{ 'opacity-50 pointer-events-none': !store.currentSong }">
-        <button @click="store.togglePlayMode" class="text-gray-400 hover:text-blue-600 transition-colors no-drag relative" v-tooltip="playModeTip">
+      <div class="flex items-center space-x-5" :class="{ 'opacity-50 pointer-events-none': !store.currentSong }">
+        <button @click="store.togglePlayMode" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all no-drag relative" v-tooltip="playModeTip">
            <AppIcon v-if="store.playMode === 'sequence'" name="mode-sequence" class="w-4 h-4" />
            <AppIcon v-else-if="store.playMode === 'loop'" name="mode-loop" class="w-4 h-4" />
            <AppIcon v-else name="mode-random" class="w-4 h-4" />
         </button>
 
-        <button @click="store.playPrev" class="text-gray-500 hover:text-blue-600 transition-colors no-drag"><AppIcon name="prev" class="w-4 h-4" /></button>
+        <button @click="store.playPrev" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all no-drag" v-tooltip="'上一首'"><AppIcon name="prev" class="w-5 h-5" /></button>
         
         <button @click="store.togglePlay" class="w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-[0_4px_12px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_16px_rgba(37,99,235,0.4)] no-drag transform active:scale-95 transition-all">
           <AppIcon v-if="store.isLoading" name="spinner" spin class="h-5 w-5" />
@@ -69,7 +69,7 @@
           <AppIcon v-else name="play" class="w-5 h-5 ml-[2px]" />
         </button>
         
-        <button @click="store.playNext(false)" class="text-gray-500 hover:text-blue-600 transition-colors no-drag"><AppIcon name="next" class="w-4 h-4" /></button>
+        <button @click="store.playNext(false)" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all no-drag" v-tooltip="'下一首'"><AppIcon name="next" class="w-5 h-5" /></button>
       </div>
       
       <div class="w-full flex items-center space-x-3 mt-2 text-[11px] font-medium" :class="store.peakMode ? 'text-purple-400' : 'text-gray-400', { 'opacity-50 pointer-events-none': !store.currentSong }">
@@ -86,12 +86,12 @@
 
     <div class="flex items-center justify-end w-[360px] space-x-4 text-gray-500 dark:text-slate-400 pr-2">
        
-       <button @click="store.toggleDesktopLyric" class="no-drag cursor-pointer font-bold tracking-wider transition-colors flex items-center text-xs px-3 py-1.5 rounded-md border relative flex-shrink-0" :class="store.isDesktopLyricVisible ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-blue-600'" v-tooltip="'开启/关闭桌面歌词'">
+       <button @click="store.toggleDesktopLyric" class="no-drag cursor-pointer font-bold tracking-wide transition-all min-w-[32px] h-7 px-2 flex items-center justify-center text-[13px] rounded-md border relative flex-shrink-0" :class="store.isDesktopLyricVisible ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-400/30 dark:text-blue-300' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400'" v-tooltip="'开启/关闭桌面歌词'">
          词
        </button>
 
        <div v-if="store.currentSong" ref="qualityMenuRef" class="relative flex flex-col items-center justify-center no-drag z-[60]">
-         <div @click="qualityMenuOpen = !qualityMenuOpen" class="cursor-pointer font-bold tracking-wider uppercase transition-colors flex items-center text-xs px-3 py-1.5 rounded-md border border-transparent hover:border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-blue-600" v-tooltip="'音质选择'">
+         <div @click="qualityMenuOpen = !qualityMenuOpen" class="cursor-pointer font-bold tracking-wide uppercase transition-all h-7 px-2.5 flex items-center text-[13px] rounded-md border border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400" v-tooltip="'音质选择'">
            {{ qualityDisplayName }}
          </div>
          

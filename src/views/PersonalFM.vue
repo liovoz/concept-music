@@ -114,7 +114,7 @@
               </button>
 
               <button @click="handleNext" class="w-11 h-11 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-100 flex items-center justify-center transition-all active:scale-90 no-drag" v-tooltip="'下一首'">
-                <AppIcon name="next" class="w-4 h-4" />
+                <AppIcon name="next" class="w-5 h-5" />
               </button>
 
               <button
