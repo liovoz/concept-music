@@ -12,7 +12,7 @@
       >
         <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200">
           <img v-if="userStore.isLoggedIn && userStore.userInfo" :src="userStore.userInfo.avatar" :alt="userStore.userInfo.nickname || '用户头像'" class="w-full h-full object-cover" />
-          <svg v-else class="w-full h-full text-gray-400 p-1.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+          <AppIcon v-else name="artists" class="w-full h-full text-gray-400 p-1.5" />
         </div>
         
         <div class="ml-3 flex-1 min-w-0 pr-6">
@@ -32,7 +32,7 @@
           </div>
         </div>
 
-        <button v-if="userStore.isLoggedIn" @click.stop="showLogoutConfirm = true" class="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all" v-tooltip="'退出登录'"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg></button>
+        <button v-if="userStore.isLoggedIn" @click.stop="showLogoutConfirm = true" class="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all" v-tooltip="'退出登录'"><AppIcon name="logout" class="w-3.5 h-3.5" /></button>
 
         <transition name="pop-down">
           <div 
@@ -46,7 +46,7 @@
               </div>
               <div class="h-px w-full bg-gray-100"></div>
               <div class="text-[11px] font-bold text-gray-800 flex items-center">
-                <svg class="w-3 h-3 mr-1.5 text-orange-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <AppIcon name="star-solid" class="w-3 h-3 mr-1.5 text-orange-400" />
                 {{ userStore.vipLevelName }}
               </div>
               <div class="text-[10px] text-gray-500 font-medium bg-gray-50 rounded-lg p-2 leading-relaxed">
@@ -63,11 +63,11 @@
       <div v-if="userStore.dayVipState.claimed" class="w-full py-1.5 rounded-lg bg-gray-50 text-gray-400 text-[10px] font-bold flex items-center justify-center border border-gray-100 shadow-inner cursor-not-allowed">
         ✅ 今日 1天VIP 已入账
         <div class="ml-1 cursor-help pointer-events-auto" v-tooltip="'每日 0 点刷新领取次数'">
-          <svg class="w-3.5 h-3.5 text-gray-300 hover:text-gray-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <AppIcon name="info" class="w-3.5 h-3.5 text-gray-300 hover:text-gray-500 transition-colors" />
         </div>
       </div>
       <button v-else @click="handleClaimOneDayVip" :disabled="userStore.isDayVipProcessing" class="w-full py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-600 text-[10px] font-bold flex items-center justify-center transition-all hover:bg-purple-100 hover:shadow-sm disabled:opacity-50">
-        <svg v-if="userStore.isDayVipProcessing" class="animate-spin h-3 w-3 mr-1.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <AppIcon v-if="userStore.isDayVipProcessing" name="spinner" spin class="h-3 w-3 mr-1.5" />
         <span v-else class="mr-1.5">👑</span>
         免费领 1 天畅听 VIP
       </button>
@@ -79,7 +79,7 @@
         ⏳ {{ formattedCooldown }} 后可领 ({{ userStore.vipState.count }}/8)
       </div>
       <button v-else @click="handleClaimDailyVip" :disabled="userStore.isVipProcessing" class="w-full py-1.5 rounded-lg border border-orange-200 bg-orange-50 text-orange-600 text-[10px] font-bold flex items-center justify-center transition-all hover:bg-orange-100 hover:shadow-sm disabled:opacity-50">
-        <svg v-if="userStore.isVipProcessing" class="animate-spin h-3 w-3 mr-1.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <AppIcon v-if="userStore.isVipProcessing" name="spinner" spin class="h-3 w-3 mr-1.5" />
         <span v-else class="mr-1.5">🎁</span>
         {{ claimBtnText }}
       </button>
@@ -88,39 +88,26 @@
     <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
       <nav class="flex flex-col space-y-1 px-3">
         <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">在线音乐</div>
-        <div @click="$router.push('/')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>首页</div>
-        <div @click="$router.push('/rank')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>排行榜</div>
-        <div @click="$router.push('/new-songs')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/new-songs' ? 'font-medium bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/new-songs' ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>新歌速递</div>
-        <div @click="$router.push('/fm')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/fm' ? 'font-medium bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/fm' ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>私人FM</div>
-        <div @click="$router.push('/artists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/artists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/artists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>歌手</div>
-        <div @click="$router.push('/playlist-category')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/playlist-category' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/playlist-category' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>歌单广场</div>
+        <div @click="$router.push('/')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="home" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />首页</div>
+        <div @click="$router.push('/rank')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="rank" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />排行榜</div>
+        <div @click="$router.push('/new-songs')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/new-songs' ? 'font-medium bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="new-songs" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/new-songs' ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-500'" />新歌速递</div>
+        <div @click="$router.push('/fm')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/fm' ? 'font-medium bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="personal-fm" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/fm' ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'" />私人FM</div>
+        <div @click="$router.push('/artists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/artists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="artists" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/artists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />歌手</div>
+        <div @click="$router.push('/playlist-category')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/playlist-category' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="playlist-category" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/playlist-category' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />歌单广场</div>
         <div class="px-3 pt-4 pb-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">我的音乐</div>
-        <div @click="$router.push('/history')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/history' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/history' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>听歌足迹</div>
-        <div @click="goToLikedMusic" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="isLikedMusicActive ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="isLikedMusicActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>我喜欢的音乐</div>
-        <div @click="$router.push('/my-playlists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/my-playlists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><svg class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/my-playlists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>私人歌单</div>
+        <div @click="$router.push('/history')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/history' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="history" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/history' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />听歌足迹</div>
+        <div @click="goToLikedMusic" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="isLikedMusicActive ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="heart" class="w-4 h-4 mr-3 transition-colors" :class="isLikedMusicActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />我喜欢的音乐</div>
+        <div @click="$router.push('/my-playlists')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/my-playlists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="my-playlists" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/my-playlists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />私人歌单</div>
         <div
           @click="$router.push('/import/netease')"
           class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group"
           :class="$route.path.startsWith('/import/netease') ? 'font-medium bg-red-100 text-red-600' : 'text-gray-600 hover:bg-gray-200'"
         >
-          <svg
+          <AppIcon
+            name="netease-cloud"
             class="w-4 h-4 mr-3 flex-shrink-0 transition-colors"
             :class="$route.path.startsWith('/import/netease') ? 'text-red-600' : 'text-gray-400 group-hover:text-gray-500'"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.15"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M4 6h8.5" />
-            <path d="M4 11h7" />
-            <path d="M4 16h5.5" />
-            <path d="M16.5 5.5v10" />
-            <path d="M16.5 5.5 20 4.6v3l-3.5.9" />
-            <path d="M16.5 15.5a2.4 2.4 0 1 1-1.7-2.3" />
-          </svg>
+          />
           网易歌单
         </div>
       </nav>
@@ -129,7 +116,7 @@
     <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 dark:border-slate-800 pt-3">
       <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">系统</div>
       <div @click="checkForUpdates" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors text-gray-600 hover:bg-gray-200 group">
-        <svg class="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <AppIcon name="info" class="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
         关于
       </div>
     </nav>
@@ -138,7 +125,7 @@
       <transition name="fade-scale">
         <div v-if="showLogoutConfirm" ref="logoutModalRef" tabindex="-1" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag outline-none" @keydown.escape="showLogoutConfirm = false" @click.self="showLogoutConfirm = false">
           <div class="bg-white w-[320px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
-            <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4"><svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div>
+            <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4"><AppIcon name="warning" class="w-6 h-6 text-red-500" /></div>
             <h3 class="text-lg font-bold text-gray-800 mb-2">退出登录</h3>
             <p class="text-sm text-gray-500 mb-6">确定要退出当前账号吗？</p>
             <div class="flex space-x-3 w-full">
@@ -155,7 +142,7 @@
         <div v-if="userStore.showVipUpgradeModal" ref="vipUpgradeModalRef" tabindex="-1" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag outline-none" @click.self="userStore.closeVipUpgradeModal()" @keydown.escape="userStore.closeVipUpgradeModal()">
           <div class="bg-white w-[340px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
             <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-4">
-              <svg class="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <AppIcon name="star-solid" class="w-6 h-6 text-orange-500" />
             </div>
             <h3 class="text-lg font-bold text-gray-800 mb-2">开通 VIP</h3>
             <p class="text-sm text-gray-500 mb-5">当前歌曲为 VIP 专享，开通 VIP 即可畅听完整版及无损音质。</p>

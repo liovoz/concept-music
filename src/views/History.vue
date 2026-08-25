@@ -11,13 +11,13 @@
         <div class="absolute inset-0 bg-white/40 backdrop-blur-md z-0 rounded-3xl"></div>
         <div class="relative z-10 flex flex-col items-center text-center">
           <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-blue-100">
-            <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <AppIcon name="history" class="w-10 h-10 text-blue-500" />
           </div>
           <h2 class="text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">听歌足迹</h2>
           <p class="text-sm text-gray-500 mb-8 max-w-sm leading-relaxed">安全登录后，我们将为您自动记录听歌足迹，帮您找回那些不经意间触动心弦的旋律。</p>
           <button @click="userStore.openLoginModal()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag flex items-center">
             立即安全登录
-            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            <AppIcon name="chevron-right" class="w-4 h-4 ml-2" />
           </button>
         </div>
       </div>
@@ -32,7 +32,7 @@
             <p class="text-xs text-gray-500 mt-2 font-medium">这里记录了每一首曾陪伴过您的音乐</p>
           </div>
           <button v-if="currentSongs.length > 0" @click="playAll" class="flex-shrink-0 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag">
-             <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+             <AppIcon name="play" class="w-5 h-5 mr-1" />
              播放全部
           </button>
         </div>
@@ -55,13 +55,13 @@
         </div>
 
         <div v-else-if="isError && page === 1" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100 mt-4">
-          <svg class="w-16 h-16 mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
           <p class="text-base font-bold text-red-600 mb-2">获取历史记录失败</p>
           <button @click="fetchData" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
         </div>
 
         <div v-else-if="currentSongs.length === 0" class="flex-1 flex flex-col items-center justify-center py-32 text-gray-400 mt-4">
-          <svg class="w-20 h-20 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <AppIcon name="history" class="w-20 h-20 mb-4 text-gray-200" />
           <p class="text-sm font-medium tracking-widest">暂无听歌足迹，快去发现页听点好音乐吧</p>
         </div>
 
@@ -72,7 +72,7 @@
             <div class="w-1/4 hidden sm:block pr-4 min-w-0">歌手</div>
             <div class="w-1/4 hidden md:block pr-4 min-w-0">专辑</div>
             <div class="w-24 text-right pr-4 flex-shrink-0" v-if="activeTab === 'rank'">播放次数</div>
-            <div class="w-16 text-right pr-4 flex-shrink-0" v-else>时长</div>
+            <div class="w-16 text-right pr-4 flex-shrink-0" v-else>{{ $t ? '时长' : '时长' }}</div>
           </div>
           
           <div class="space-y-1">
@@ -82,7 +82,7 @@
                 {{ (index + 1).toString().padStart(2, '0') }}
               </div>
               <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 flex-shrink-0" @click.stop="handlePlay(song)">
-                 <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                 <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
               </div>
               
               <div class="flex-1 flex items-center pl-2 pr-4 min-w-0" v-tooltip="song._title">
@@ -108,7 +108,7 @@
 
           <div v-if="activeTab === 'recent'" ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 text-xs font-medium">
             <div v-if="isLoadingMore" class="flex items-center text-blue-500">
-              <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
               正在获取更多记录...
             </div>
             <div v-else-if="!recentHasMore && recentSongs.length > 0" class="text-gray-300 flex items-center space-x-2">

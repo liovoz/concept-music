@@ -27,7 +27,7 @@
         </div>
 
         <div class="flex items-center text-[10px] text-gray-400 dark:text-slate-500 font-medium min-w-0">
-          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <AppIcon name="info" class="w-3.5 h-3.5 mr-1" />
           <span class="truncate">{{ activeTasteProfile.description }}</span>
         </div>
       </div>
@@ -68,7 +68,7 @@
       </div>
 
       <div v-else-if="isError && fmQueue.length === 0" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 dark:text-red-300 bg-red-50/50 dark:bg-red-950/20 rounded-3xl border border-red-100 dark:border-red-500/20">
-        <svg class="w-16 h-16 mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">调频失败，请检查网络</p>
         <button @click="fetchAndShow" class="mt-4 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新调频</button>
       </div>
@@ -97,25 +97,24 @@
             </p>
 
             <div class="mb-4 px-3 py-2 inline-flex items-start rounded-xl text-xs font-bold bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-300/20 text-emerald-700 dark:text-emerald-200 max-w-full">
-              <svg class="w-3.5 h-3.5 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 11a8 8 0 0116 0v3a4 4 0 01-4 4h-3l-4 3v-3H8a4 4 0 01-4-4v-3z"></path></svg>
+              <AppIcon name="info" class="w-3.5 h-3.5 mr-1.5 mt-0.5 flex-shrink-0" />
               <span class="leading-relaxed">{{ recommendationReason }}</span>
             </div>
 
             <div v-if="isPeakPreview" class="mb-4 px-3 py-1.5 inline-flex items-center rounded-full text-xs font-bold"
               :class="climaxInfo ? 'bg-purple-50 border border-purple-200 text-purple-600 dark:bg-purple-500/15 dark:border-purple-300/25 dark:text-purple-200' : 'bg-yellow-50 border border-yellow-200 text-yellow-600 dark:bg-yellow-500/15 dark:border-yellow-300/25 dark:text-yellow-200'">
-              <svg v-if="climaxInfo" class="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-              <svg v-else class="w-3.5 h-3.5 mr-1.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+              <AppIcon v-if="climaxInfo" name="check" class="w-3.5 h-3.5 mr-1.5" />
+              <AppIcon v-else name="spinner" spin class="w-3.5 h-3.5 mr-1.5" />
               <span>{{ climaxInfo ? '高潮模式 · 正在播放高潮片段' : '高潮模式 · 正在定位高潮位置...' }}</span>
             </div>
 
             <div class="flex items-center space-x-4">
               <button @click="handlePlay" class="w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shadow-lg shadow-purple-200 dark:shadow-purple-950/40 transition-all active:scale-90 no-drag">
-                <svg v-if="isCurrentPlaying" class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
-                <svg v-else class="w-7 h-7 ml-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                <AppIcon :name="isCurrentPlaying ? 'pause' : 'play'" class="w-7 h-7" :class="isCurrentPlaying ? '' : 'ml-1'" />
               </button>
 
               <button @click="handleNext" class="w-11 h-11 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-100 flex items-center justify-center transition-all active:scale-90 no-drag" v-tooltip="'下一首'">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11.555 5.168A1 1 0 0010 6v2.798l-5.445-3.63A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/></svg>
+                <AppIcon name="next" class="w-4 h-4" />
               </button>
 
               <button
@@ -124,16 +123,13 @@
                 :class="isPeakPreview ? 'bg-purple-600 text-white shadow-md shadow-purple-200 dark:shadow-purple-950/40' : 'bg-gray-100 text-gray-400 hover:bg-purple-50 hover:text-purple-500 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-purple-500/15 dark:hover:text-purple-200'"
                 v-tooltip="isPeakPreview ? '关闭 30s 速听' : '开启 30s 速听'"
               >
-                <svg class="w-[19px] h-[19px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 2h4M12 6V3M12 14l3-3"/>
-                  <circle cx="12" cy="14" r="8"/>
-                </svg>
+                <AppIcon name="timer-30s" class="w-[19px] h-[19px]" />
               </button>
 
               <div class="relative">
                 <button @click="toggleFeedback" :disabled="isDisliking" class="w-11 h-11 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-500/15 text-gray-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-300 flex items-center justify-center transition-all active:scale-90 no-drag disabled:opacity-50" v-tooltip="'不喜欢，换一首'">
-                  <svg v-if="!isDisliking" class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                  <svg v-else class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                  <AppIcon v-if="!isDisliking" name="ban" class="w-[18px] h-[18px]" />
+                  <AppIcon v-else name="spinner" spin class="w-4 h-4" />
                 </button>
                 <div v-if="isFeedbackOpen" class="absolute left-1/2 top-14 z-30 w-64 -translate-x-1/2 rounded-2xl bg-gray-950 text-white shadow-2xl shadow-gray-900/20 border border-white/10 p-3 text-left">
                   <div class="text-sm font-bold mb-1">这首哪里不对？</div>
@@ -154,7 +150,7 @@
               <button @click="handleLike" class="w-11 h-11 rounded-full transition-all active:scale-90 no-drag flex items-center justify-center"
                 :class="isCurrentLiked ? 'bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/15 dark:text-red-300 dark:hover:bg-red-500/20' : 'bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-400 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-red-500/15 dark:hover:text-red-300'"
                 v-tooltip="isCurrentLiked ? '取消喜欢' : '喜欢'">
-                <svg class="w-[18px] h-[18px]" :fill="isCurrentLiked ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                <AppIcon :name="isCurrentLiked ? 'heart-solid' : 'heart'" class="w-[18px] h-[18px]" />
               </button>
             </div>
           </div>
@@ -188,7 +184,7 @@
                 {{ (idx + 1).toString().padStart(2, '0') }}
               </div>
               <div class="w-10 text-center hidden group-hover:flex justify-center text-purple-600 flex-shrink-0" @click.stop="playFromQueue(idx)">
-                <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
               </div>
 
               <div class="flex-1 flex items-center pl-2 pr-4 min-w-0">
@@ -215,7 +211,7 @@
 
           <div v-if="fmQueue.length > 0 && remainingCount <= 3 && !isLoadingMore" class="w-full flex justify-center mt-6">
             <button @click="loadMore" :disabled="isLoadingMore" class="px-6 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/15 dark:hover:bg-purple-500/20 text-purple-600 dark:text-purple-200 border border-purple-200 dark:border-purple-300/25 rounded-full text-xs font-bold transition-all no-drag flex items-center disabled:opacity-50">
-              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <AppIcon name="refresh" class="w-4 h-4 mr-1.5" />
               加载更多推荐
             </button>
           </div>
@@ -274,7 +270,7 @@
 
               <div class="flex flex-wrap items-center gap-3">
                 <button @click="fetchAndShow" class="px-7 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm font-bold shadow-lg shadow-purple-200 dark:shadow-purple-950/40 transition-all active:scale-95 no-drag flex items-center">
-                  <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                  <AppIcon name="personal-fm" class="w-5 h-5 mr-2" />
                   开启私人电台
                 </button>
                 <button
@@ -282,10 +278,7 @@
                   class="px-5 py-3 rounded-full text-sm font-bold border transition-all active:scale-95 no-drag flex items-center"
                   :class="isPeakPreview ? 'bg-purple-50 border-purple-200 text-purple-600 dark:bg-purple-500/15 dark:border-purple-300/25 dark:text-purple-200' : 'bg-white border-gray-200 text-gray-500 hover:text-purple-600 hover:border-purple-200 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:text-purple-200 dark:hover:border-purple-300/30'"
                 >
-                  <svg class="w-[18px] h-[18px] mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 2h4M12 6V3M12 14l3-3"/>
-                    <circle cx="12" cy="14" r="8"/>
-                  </svg>
+                  <AppIcon name="timer-30s" class="w-[18px] h-[18px] mr-2" />
                   30s 速听
                 </button>
               </div>

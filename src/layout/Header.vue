@@ -7,7 +7,7 @@
 
     <div class="flex-1 flex justify-center relative">
       <div class="relative w-80 group no-drag">
-        <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <AppIcon name="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
         
         <input 
           ref="searchInput"
@@ -31,7 +31,7 @@
           class="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center w-5 h-5 rounded-full hover:bg-gray-200"
           v-tooltip="'清空内容'"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          <AppIcon name="close" class="w-3.5 h-3.5" />
         </button>
 
         <transition name="fade">
@@ -41,11 +41,11 @@
               <div v-if="history.length > 0" class="pb-2 border-b border-gray-100">
                 <div class="px-4 py-2 flex items-center justify-between">
                   <span class="text-xs text-gray-400 font-medium flex items-center">
-                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <AppIcon name="history" class="w-3.5 h-3.5 mr-1.5" />
                     搜索历史
                   </span>
                   <button @mousedown.prevent="clearHistory" class="text-xs text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex items-center">
-                    <svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <AppIcon name="trash" class="w-3 h-3 mr-0.5" />
                     清空
                   </button>
                 </div>
@@ -61,7 +61,7 @@
                       @mousedown.prevent.stop="removeHistory(item)"
                       class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-gray-300 transition-all"
                     >
-                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                      <AppIcon name="close" class="w-2.5 h-2.5" />
                     </button>
                   </span>
                 </div>
@@ -69,12 +69,12 @@
 
               <div>
                 <div class="px-4 py-2 flex items-center">
-                  <svg class="w-3.5 h-3.5 mr-1.5 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 23c-3.866 0-7-2.686-7-6 0-2.418 1.272-4.336 2.38-5.843C8.328 10.07 9 9.24 9 8c0-1.657 1.343-3 3-3s3 1.343 3 3c0 1.24.672 2.07 1.62 3.157C17.728 12.664 19 14.582 19 17c0 3.314-3.134 6-7 6z"/></svg>
+                  <AppIcon name="flame" class="w-3.5 h-3.5 mr-1.5 text-orange-500" />
                   <span class="text-xs text-gray-400 font-medium">热搜榜</span>
                 </div>
                 
                 <div v-if="isHotLoading" class="text-blue-500 text-xs py-4 flex items-center justify-center font-medium">
-                  <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <AppIcon name="spinner" spin class="w-4 h-4 mr-2" />
                   正在获取热搜...
                 </div>
                 
@@ -93,7 +93,7 @@
                     >{{ index + 1 }}</span>
                     <span class="text-sm truncate flex-1" :class="index < 3 ? 'font-semibold' : ''">{{ item.word }}</span>
                     <span v-if="item.score" class="text-xs text-gray-400 ml-2 flex-shrink-0">{{ formatScore(item.score) }}</span>
-                    <svg v-if="index < 3" class="w-3.5 h-3.5 ml-1 text-orange-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 23c-3.866 0-7-2.686-7-6 0-2.418 1.272-4.336 2.38-5.843C8.328 10.07 9 9.24 9 8c0-1.657 1.343-3 3-3s3 1.343 3 3c0 1.24.672 2.07 1.62 3.157C17.728 12.664 19 14.582 19 17c0 3.314-3.134 6-7 6z"/></svg>
+                    <AppIcon v-if="index < 3" name="flame" class="w-3.5 h-3.5 ml-1 text-orange-500 flex-shrink-0" />
                   </div>
                 </div>
 
@@ -105,7 +105,7 @@
 
             <template v-else>
               <div v-if="isSuggestLoading" class="text-blue-500 text-xs py-4 flex items-center justify-center font-medium">
-                <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <AppIcon name="spinner" spin class="w-4 h-4 mr-2" />
                 正在获取搜索建议...
               </div>
 
@@ -113,7 +113,7 @@
                 
                 <div v-if="suggestGroups.songs.length">
                   <div class="px-4 py-1.5 flex items-center">
-                    <svg class="w-3.5 h-3.5 mr-1.5 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                    <AppIcon name="music" class="w-3.5 h-3.5 mr-1.5 text-blue-500" />
                     <span class="text-xs text-gray-400 font-medium">歌曲</span>
                   </div>
                   <div 
@@ -125,7 +125,7 @@
                     class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center group/item"
                     :class="selectedIndex === getSuggestFlatIndex('song', i) ? 'bg-gray-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'"
                   >
-                    <svg class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('song', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <AppIcon name="search" class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('song', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" />
                     <span class="truncate">{{ item.name }}</span>
                     <span v-if="item.artist" class="text-xs text-gray-400 ml-2 truncate flex-shrink-0">- {{ item.artist }}</span>
                   </div>
@@ -133,7 +133,7 @@
 
                 <div v-if="suggestGroups.artists.length">
                   <div class="px-4 py-1.5 flex items-center border-t border-gray-50">
-                    <svg class="w-3.5 h-3.5 mr-1.5 text-purple-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <AppIcon name="artists" class="w-3.5 h-3.5 mr-1.5 text-purple-500" />
                     <span class="text-xs text-gray-400 font-medium">歌手</span>
                   </div>
                   <div 
@@ -145,14 +145,14 @@
                     class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center group/item"
                     :class="selectedIndex === getSuggestFlatIndex('artist', i) ? 'bg-gray-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'"
                   >
-                    <svg class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('artist', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <AppIcon name="artists" class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('artist', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" />
                     <span class="truncate">{{ item.name }}</span>
                   </div>
                 </div>
 
                 <div v-if="suggestGroups.albums.length">
                   <div class="px-4 py-1.5 flex items-center border-t border-gray-50">
-                    <svg class="w-3.5 h-3.5 mr-1.5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/></svg>
+                    <AppIcon name="album" class="w-3.5 h-3.5 mr-1.5 text-green-500" />
                     <span class="text-xs text-gray-400 font-medium">专辑</span>
                   </div>
                   <div 
@@ -164,7 +164,7 @@
                     class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center group/item"
                     :class="selectedIndex === getSuggestFlatIndex('album', i) ? 'bg-gray-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'"
                   >
-                    <svg class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('album', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                    <AppIcon name="album" class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('album', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" />
                     <span class="truncate">{{ item.name }}</span>
                     <span v-if="item.artist" class="text-xs text-gray-400 ml-2 truncate flex-shrink-0">- {{ item.artist }}</span>
                   </div>
@@ -189,17 +189,12 @@
         v-tooltip="isDark ? '切换到浅色模式' : '切换到深色模式'"
         :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
       >
-        <svg v-if="isDark" class="w-4 h-4 transition-transform duration-200 group-active:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364-.707.707M6.343 17.657l-.707.707m12.728 0-.707-.707M6.343 6.343l-.707-.707"></path>
-          <circle cx="12" cy="12" r="4" stroke-width="2"></circle>
-        </svg>
-        <svg v-else class="w-4 h-4 transition-transform duration-200 group-active:-rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
-        </svg>
+        <AppIcon v-if="isDark" name="sun" class="w-4 h-4 transition-transform duration-200 group-active:rotate-45" />
+        <AppIcon v-else name="moon" class="w-4 h-4 transition-transform duration-200 group-active:-rotate-12" />
       </button>
-      <button @click="minimize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
-      <button @click="maximize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke-width="2"></rect></svg></button>
-      <button @click="close" class="hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+      <button @click="minimize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50 no-drag"><AppIcon name="minimize" class="w-4 h-4" /></button>
+      <button @click="maximize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50 no-drag"><AppIcon name="maximize" class="w-4 h-4" /></button>
+      <button @click="close" class="hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50 no-drag"><AppIcon name="close" class="w-4 h-4" /></button>
     </div>
   </header>
 
@@ -213,7 +208,7 @@
           <div class="flex flex-col space-y-3 mb-5">
             <div @click="closeChoice = 'minimize'" class="flex items-center p-3.5 rounded-xl border-2 cursor-pointer transition-all no-drag" :class="closeChoice === 'minimize' ? 'border-blue-500 bg-blue-50/50' : 'border-gray-100 hover:border-gray-200'">
               <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mr-3" :class="closeChoice === 'minimize' ? 'bg-blue-100' : 'bg-gray-100'">
-                <svg class="w-5 h-5" :class="closeChoice === 'minimize' ? 'text-blue-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <AppIcon name="my-playlists" class="w-5 h-5" :class="closeChoice === 'minimize' ? 'text-blue-600' : 'text-gray-400'" />
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold" :class="closeChoice === 'minimize' ? 'text-blue-700' : 'text-gray-700'">最小化到托盘</p>
@@ -226,7 +221,7 @@
 
             <div @click="closeChoice = 'quit'" class="flex items-center p-3.5 rounded-xl border-2 cursor-pointer transition-all no-drag" :class="closeChoice === 'quit' ? 'border-red-500 bg-red-50/50' : 'border-gray-100 hover:border-gray-200'">
               <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mr-3" :class="closeChoice === 'quit' ? 'bg-red-100' : 'bg-gray-100'">
-                <svg class="w-5 h-5" :class="closeChoice === 'quit' ? 'text-red-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <AppIcon name="logout" class="w-5 h-5" :class="closeChoice === 'quit' ? 'text-red-500' : 'text-gray-400'" />
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold" :class="closeChoice === 'quit' ? 'text-red-700' : 'text-gray-700'">退出软件</p>

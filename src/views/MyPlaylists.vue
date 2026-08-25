@@ -12,13 +12,13 @@
         <div class="absolute inset-0 bg-white/40 backdrop-blur-md z-0 rounded-3xl"></div>
         <div class="relative z-10 flex flex-col items-center text-center">
           <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-blue-100">
-            <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <AppIcon name="my-playlists" class="w-10 h-10 text-blue-500" />
           </div>
           <h2 class="text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">私人歌单</h2>
           <p class="text-sm text-gray-500 mb-8 max-w-sm leading-relaxed">登录概念音乐，一键同步您精心收集的所有私人歌单，让好音乐随时陪伴。</p>
           <button @click="userStore.openLoginModal()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag flex items-center">
             立即安全登录
-            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            <AppIcon name="chevron-right" class="w-4 h-4 ml-2" />
           </button>
         </div>
       </div>
@@ -45,18 +45,18 @@
         </div>
 
         <div v-else-if="isError" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100 mt-4">
-          <svg class="w-16 h-16 mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
           <p class="text-base font-bold text-red-600 mb-2">获取歌单失败</p><p class="text-xs text-red-400 max-w-lg text-center">{{ errorMessage }}</p>
           <button @click="fetchUserPlaylists" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
         </div>
 
         <div v-else-if="playlists.length === 0" class="flex-1 flex flex-col items-center justify-center py-32 text-gray-400 mt-4">
-          <svg class="w-20 h-20 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          <AppIcon name="my-playlists" class="w-20 h-20 mb-4 text-gray-200" />
           <p class="text-sm font-medium tracking-widest">你还没有创建或收藏任何歌单</p>
         </div>
         
         <div v-else-if="filteredPlaylists.length === 0" class="flex-1 flex flex-col items-center justify-center py-32 text-gray-400 mt-4">
-          <svg class="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <AppIcon name="search" class="w-16 h-16 mb-4 text-gray-200" />
           <p class="text-sm font-medium tracking-widest">{{ activeTab === 'created' ? '您还没有创建过私人歌单' : '您还没有收藏过他人的歌单' }}</p>
         </div>
 
@@ -66,12 +66,12 @@
               <div class="relative w-full aspect-square rounded-2xl overflow-hidden fix-clip shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1.5 bg-gray-100 border border-gray-50/50">
                 <img :src="playlist._cover" :alt="playlist.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 <div class="absolute top-2 right-2 bg-black/30 backdrop-blur-md text-white px-2.5 py-1 rounded-full flex items-center shadow-sm">
-                  <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M9 19V6l12-3v13M9 19a2 2 0 11-4 0 2 2 0 014 0zm12-3a2 2 0 11-4 0 2 2 0 014 0zM9 10l12-3"></path></svg>
+                  <AppIcon name="music" class="w-3 h-3 mr-1" />
                   <span class="text-[10px] font-bold tracking-wider">{{ playlist._trackCount }}首</span>
                 </div>
                 <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-lg border border-white/30 transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                    <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                    <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
                   </div>
                 </div>
               </div>
@@ -85,7 +85,7 @@
 
           <div ref="loadMoreTrigger" class="w-full h-24 flex items-center justify-center mt-6 pb-8 text-xs font-medium">
             <div v-if="isLoadingMore" class="flex items-center text-blue-500">
-              <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
               正在获取更多歌单...
             </div>
             <div v-else-if="!hasMore && filteredPlaylists.length > 0" class="text-gray-300 flex items-center space-x-2">

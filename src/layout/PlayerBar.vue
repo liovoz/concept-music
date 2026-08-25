@@ -6,9 +6,9 @@
     
     <transition name="fade">
       <div v-if="store.isError" class="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg shadow-md text-xs font-medium flex items-center z-[60]">
-        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+        <AppIcon name="danger" class="w-4 h-4 mr-2" />
         {{ store.errorMessage }}
-        <button @click="store.clearError" class="ml-3 text-red-400 hover:text-red-700 no-drag"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        <button @click="store.clearError" class="ml-3 text-red-400 hover:text-red-700 no-drag"><AppIcon name="close" class="w-3 h-3" /></button>
       </div>
     </transition>
 
@@ -19,11 +19,11 @@
         v-tooltip="'展开/收起歌词'"
       >
         <img v-if="store.currentSong && store.currentSong.cover" :src="store.currentSong.cover" :alt="store.currentSong.name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <svg v-else class="w-6 h-6 transition-transform duration-500 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19a2 2 0 11-4 0 2 2 0 014 0zm12-3a2 2 0 11-4 0 2 2 0 014 0zM9 10l12-3"></path></svg>
+        <AppIcon v-else name="album" class="w-6 h-6 transition-transform duration-500 group-hover:scale-105" />
         
         <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]">
-          <svg v-if="!store.isLyricsVisible" class="w-5 h-5 text-white drop-shadow-md transform translate-y-1 group-hover:translate-y-0 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
-          <svg v-else class="w-5 h-5 text-white drop-shadow-md transform -translate-y-1 group-hover:translate-y-0 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+          <AppIcon v-if="!store.isLyricsVisible" name="chevron-up" class="w-5 h-5 text-white drop-shadow-md transform translate-y-1 group-hover:translate-y-0 transition-all duration-300" />
+          <AppIcon v-else name="chevron-down" class="w-5 h-5 text-white drop-shadow-md transform -translate-y-1 group-hover:translate-y-0 transition-all duration-300" />
         </div>
       </div>
       
@@ -47,8 +47,8 @@
 
       <div class="ml-4 flex-shrink-0" v-if="store.currentSong">
          <button @click="userStore.toggleLikeSong(store.currentSong)" class="no-drag p-1.5 rounded-full transition-all focus:outline-none transform active:scale-90" v-tooltip="isCurrentLiked ? '取消喜欢' : '添加喜欢'">
-            <svg v-if="isCurrentLiked" class="w-5 h-5 text-red-500 drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            <svg v-else class="w-5 h-5 text-gray-400 hover:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            <AppIcon v-if="isCurrentLiked" name="heart-solid" class="w-5 h-5 text-red-500 drop-shadow-sm" />
+            <AppIcon v-else name="heart" class="w-5 h-5 text-gray-400 hover:text-red-400" />
          </button>
       </div>
     </div>
@@ -56,37 +56,20 @@
     <div class="flex flex-col items-center justify-center flex-1 max-w-2xl px-4">
       <div class="flex items-center space-x-6" :class="{ 'opacity-50 pointer-events-none': !store.currentSong }">
         <button @click="store.togglePlayMode" class="text-gray-400 hover:text-blue-600 transition-colors no-drag relative" v-tooltip="playModeTip">
-           <svg v-if="store.playMode === 'sequence'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-             <path d="m17 2 4 4-4 4" />
-             <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
-             <path d="m7 22-4-4 4-4" />
-             <path d="M21 13v1a4 4 0 0 1-4 4H3" />
-           </svg>
-           <svg v-else-if="store.playMode === 'loop'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-             <path d="m17 2 4 4-4 4" />
-             <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
-             <path d="m7 22-4-4 4-4" />
-             <path d="M21 13v1a4 4 0 0 1-4 4H3" />
-             <path d="M11 10.75 12 10v4" />
-           </svg>
-           <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-             <path d="m18 14 4 4-4 4" />
-             <path d="m18 2 4 4-4 4" />
-             <path d="M2 18h1.5a5 5 0 0 0 4-2l5-8a5 5 0 0 1 4-2H22" />
-             <path d="M2 6h1.5a5 5 0 0 1 4 2l.6 1" />
-             <path d="M13.4 15.2a5 5 0 0 0 3.1 2.8H22" />
-           </svg>
+           <AppIcon v-if="store.playMode === 'sequence'" name="mode-sequence" class="w-4 h-4" />
+           <AppIcon v-else-if="store.playMode === 'loop'" name="mode-loop" class="w-4 h-4" />
+           <AppIcon v-else name="mode-random" class="w-4 h-4" />
         </button>
 
-        <button @click="store.playPrev" class="text-gray-500 hover:text-blue-600 transition-colors no-drag"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/></svg></button>
+        <button @click="store.playPrev" class="text-gray-500 hover:text-blue-600 transition-colors no-drag"><AppIcon name="prev" class="w-4 h-4" /></button>
         
         <button @click="store.togglePlay" class="w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-[0_4px_12px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_16px_rgba(37,99,235,0.4)] no-drag transform active:scale-95 transition-all">
-          <svg v-if="store.isLoading" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          <svg v-else-if="store.isPlaying" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clip-rule="evenodd"/></svg>
-          <svg v-else class="w-6 h-6 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+          <AppIcon v-if="store.isLoading" name="spinner" spin class="h-5 w-5" />
+          <AppIcon v-else-if="store.isPlaying" name="pause" class="w-5 h-5" />
+          <AppIcon v-else name="play" class="w-5 h-5 ml-[2px]" />
         </button>
         
-        <button @click="store.playNext(false)" class="text-gray-500 hover:text-blue-600 transition-colors no-drag"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11.555 5.168A1 1 0 0010 6v2.798l-5.445-3.63A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/></svg></button>
+        <button @click="store.playNext(false)" class="text-gray-500 hover:text-blue-600 transition-colors no-drag"><AppIcon name="next" class="w-4 h-4" /></button>
       </div>
       
       <div class="w-full flex items-center space-x-3 mt-2 text-[11px] font-medium" :class="store.peakMode ? 'text-purple-400' : 'text-gray-400', { 'opacity-50 pointer-events-none': !store.currentSong }">
@@ -136,7 +119,7 @@
        </div>
 
        <button ref="playlistBtnRef" @click="store.togglePlaylist" class="no-drag transition-colors relative hover:text-blue-600 flex-shrink-0" v-tooltip="'播放列表'">
-         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+         <AppIcon name="queue" class="w-5 h-5" />
        </button>
 
        <div class="flex items-center space-x-2 group w-40 flex-shrink-0">
@@ -147,9 +130,7 @@
              :class="store.volumeBoostEnabled ? 'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-400/30' : 'text-gray-400 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-slate-800'"
              v-tooltip="boostTip"
            >
-             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-               <path stroke-linecap="round" stroke-linejoin="round" d="M13 2L4 14h7l-1 8 10-13h-7l0-7z"></path>
-             </svg>
+             <AppIcon name="new-songs" class="w-4 h-4" />
            </button>
            <div class="absolute bottom-full left-1/2 -translate-x-1/2 pb-2 transition-all duration-200 origin-bottom z-[70]" :class="boostMenuOpen ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'">
              <div class="w-44 rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.14)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] p-2">
@@ -168,16 +149,16 @@
            </div>
          </div>
          <button @click="store.toggleMute" class="no-drag text-gray-400 hover:text-blue-600 transition-colors focus:outline-none" v-tooltip="store.volume === 0 ? '恢复音量' : '静音'">
-           <svg v-if="store.volume === 0" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
-           <svg v-else-if="store.volume < 0.5" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072"></path></svg>
-           <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-         </button>
-         <div class="flex-1 relative flex items-center h-4 no-drag">
-           <input type="range" min="0" max="1" step="0.01" :value="store.volume" @input="(e) => store.setVolume(Number(e.target.value))" class="w-full absolute z-10 opacity-0 cursor-pointer h-full m-0">
-           <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden pointer-events-none transition-all group-hover:h-2">
-             <div class="h-full bg-blue-600 rounded-full pointer-events-none" :style="{ width: (store.volume * 100) + '%' }"></div>
-           </div>
-         </div>
+            <AppIcon v-if="store.volume === 0" name="volume-mute" class="w-4 h-4" />
+            <AppIcon v-else-if="store.volume < 0.5" name="volume-low" class="w-4 h-4" />
+            <AppIcon v-else name="volume-high" class="w-4 h-4" />
+          </button>
+          <div class="flex-1 relative flex items-center h-4 no-drag">
+            <input type="range" min="0" max="1" step="0.01" :value="store.volume" @input="(e) => store.setVolume(Number(e.target.value))" class="w-full absolute z-10 opacity-0 cursor-pointer h-full m-0">
+            <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden pointer-events-none transition-all group-hover:h-2">
+              <div class="h-full bg-blue-600 rounded-full pointer-events-none" :style="{ width: (store.volume * 100) + '%' }"></div>
+            </div>
+          </div>
        </div>
     </div>
 
@@ -190,7 +171,7 @@
         
         <div class="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col">
           <div v-if="store.playlist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-400">
-            <svg class="w-12 h-12 mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19a2 2 0 11-4 0 2 2 0 014 0zm12-3a2 2 0 11-4 0 2 2 0 014 0zM9 10l12-3"></path></svg>
+            <AppIcon name="album" class="w-12 h-12 mb-3 text-gray-200" />
             <p class="text-xs font-medium">你还没有添加任何歌曲</p>
           </div>
           <div v-else class="space-y-1">
@@ -205,7 +186,7 @@
             >
               <div class="flex items-center flex-1 overflow-hidden">
                 <div class="w-4 h-4 mr-3 flex items-center justify-center flex-shrink-0">
-                  <svg v-if="store.currentSong?.hash === song.hash && store.isPlaying" class="w-4 h-4 text-blue-600 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"/></svg>
+                  <AppIcon v-if="store.currentSong?.hash === song.hash && store.isPlaying" name="volume-high" class="w-4 h-4 text-blue-600 animate-pulse" />
                   <span v-else class="text-xs text-gray-400 dark:text-slate-400 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400">{{ index + 1 }}</span>
                 </div>
                 <div class="flex-1 pl-2 text-xs font-medium flex flex-col justify-center overflow-hidden">
@@ -218,8 +199,8 @@
                 </div>
               </div>
               <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-                <button @click.stop="store.playSong(song)" class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg></button>
-                <button @click.stop="store.removeFromPlaylist(index)" class="text-gray-400 dark:text-slate-500 hover:text-red-500 p-1 no-drag"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <button @click.stop="store.playSong(song)" class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag"><AppIcon name="play" class="w-4 h-4" /></button>
+                <button @click.stop="store.removeFromPlaylist(index)" class="text-gray-400 dark:text-slate-500 hover:text-red-500 p-1 no-drag"><AppIcon name="close" class="w-4 h-4" /></button>
               </div>
             </div>
           </div>
@@ -236,13 +217,13 @@
         <div class="absolute inset-0 backdrop-blur-3xl -z-10" :class="isDark ? 'bg-slate-950/80' : 'bg-white/60'"></div>
         
         <div v-if="store.isCurrentSongPreview" class="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-orange-100/90 backdrop-blur-md border border-orange-200 text-orange-600 px-6 py-2 rounded-full text-xs font-bold shadow-lg flex items-center transition-all">
-          <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          <AppIcon name="warning" class="w-4 h-4 mr-2" />
           当前为试听片段，由于服务端直接从高潮部分截断，歌词时间轴可能无法与音频完全匹配
         </div>
 
         <div class="relative w-full h-16 flex items-center justify-between px-8 drag-region z-50">
           <button @click="store.toggleLyrics" class="no-drag w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200/50 dark:hover:bg-slate-800/80 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 transition-colors" v-tooltip="'收起歌词'">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+            <AppIcon name="chevron-down" class="w-7 h-7" />
           </button>
         </div>
 

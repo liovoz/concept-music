@@ -7,7 +7,7 @@
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
       <button @click="$router.back()" class="mb-6 flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors no-drag w-fit">
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        <AppIcon name="chevron-left" class="w-4 h-4 mr-1" />
         返回
       </button>
 
@@ -41,7 +41,7 @@
       </div>
 
       <div v-if="isError" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100">
-        <svg class="w-16 h-16 mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">获取歌手信息失败</p>
         <button @click="fetchArtistData" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
@@ -49,7 +49,7 @@
       <div v-else-if="activeTab === 'songs'" class="w-full flex-1 flex flex-col min-w-0">
         <div class="mb-4 flex items-center justify-between">
           <button @click="playAllSongs" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag" :class="{'opacity-50 pointer-events-none': isLoading || songs.length === 0}">
-            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+            <AppIcon name="play" class="w-4 h-4 mr-1" />
             {{ songSort === 'hot' ? '播放全部热门单曲' : '播放全部最新单曲' }}
           </button>
           <div class="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
@@ -62,7 +62,7 @@
           <div v-for="i in 10" :key="i" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-xl"><div class="w-8 h-4 bg-gray-200 rounded animate-pulse"></div><div class="flex-1 ml-4 h-4 bg-gray-200 rounded animate-pulse max-w-md"></div></div>
         </div>
         <div v-else-if="songs.length === 0" class="flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
-           <svg class="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+           <AppIcon name="rank" class="w-16 h-16 mb-4 text-gray-200" />
            <p class="text-sm font-medium tracking-widest text-gray-400">该歌手暂无热歌数据</p>
         </div>
         <div v-else class="space-y-1 w-full">
@@ -72,7 +72,7 @@
           <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 flex-shrink-0" @click.stop="handlePlay(song)">
-               <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+               <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
             
             <div class="flex-1 pl-2 pr-4 overflow-hidden min-w-0">
@@ -90,7 +90,7 @@
             <div class="w-16 text-xs text-gray-400 text-right pr-4 font-mono flex-shrink-0">{{ song._duration }}</div>
           </div>
           <div ref="loadMoreTrigger" class="w-full h-16 flex items-center justify-center mt-2 text-xs font-medium">
-            <div v-if="isLoadingMore" class="flex items-center text-blue-500"><svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>加载中...</div>
+            <div v-if="isLoadingMore" class="flex items-center text-blue-500"><AppIcon name="spinner" spin class="h-4 w-4 mr-2" />加载中...</div>
             <div v-else-if="!hasMoreSongs" class="text-gray-300">没有更多歌曲了</div>
           </div>
         </div>
@@ -101,7 +101,7 @@
           <div v-for="i in 12" :key="i" class="flex flex-col space-y-3"><div class="w-full aspect-square bg-gray-100 rounded-2xl animate-pulse"></div><div class="w-3/4 h-4 bg-gray-100 rounded animate-pulse"></div></div>
         </div>
         <div v-else-if="albums.length === 0" class="flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
-           <svg class="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+           <AppIcon name="playlist-category" class="w-16 h-16 mb-4 text-gray-200" />
            <p class="text-sm font-medium tracking-widest text-gray-400">该歌手暂无专辑数据</p>
         </div>
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
@@ -112,7 +112,7 @@
               
               <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                 <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-lg border border-white/30 transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                  <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                  <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
                 </div>
               </div>
             </div>

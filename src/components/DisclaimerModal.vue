@@ -4,9 +4,9 @@
       <div v-if="isVisible" class="fixed inset-0 z-[100000] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm no-drag p-4">
         <div class="bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-[480px] max-w-full max-h-[85vh] flex flex-col overflow-hidden transform transition-all">
 
-          <div class="px-6 py-5 border-b border-gray-100 flex items-center shrink-0">
+          <div class="px-6 py-5 border-b border-gray-100 flex items-center bg-gray-50/50">
             <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mr-3 shadow-inner">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <AppIcon name="warning" class="w-5 h-5" />
             </div>
             <h3 class="text-lg font-bold text-gray-800 tracking-wide">免责声明</h3>
           </div>

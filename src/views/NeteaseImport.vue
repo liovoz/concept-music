@@ -25,7 +25,7 @@
               class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 no-drag"
               v-tooltip="'清空'"
             >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <AppIcon name="close" class="w-3.5 h-3.5" />
             </button>
           </div>
           <button
@@ -33,7 +33,7 @@
             :disabled="isImporting || !inputValue.trim()"
             class="h-11 px-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md shadow-red-100 dark:shadow-none transition-all transform active:scale-95 flex items-center no-drag disabled:opacity-50 disabled:pointer-events-none"
           >
-            <svg v-if="isImporting" class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+            <AppIcon v-if="isImporting" name="spinner" spin class="h-4 w-4 mr-2" />
             导入
           </button>
         </div>
@@ -65,7 +65,7 @@
               class="w-7 h-7 ml-2 rounded-full flex items-center justify-center flex-shrink-0 text-gray-300 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-colors"
               v-tooltip="'移除保存'"
             >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <AppIcon name="close" class="w-3.5 h-3.5" />
             </span>
           </button>
         </div>
@@ -89,7 +89,7 @@
       </div>
 
       <div v-else-if="isError" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/70 dark:bg-red-950/20 rounded-3xl border border-red-100 dark:border-red-900/40">
-        <svg class="w-14 h-14 mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <AppIcon name="warning" class="w-14 h-14 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 dark:text-red-300 mb-2">{{ errorMessage }}</p>
         <button @click="openPlaylist(currentId)" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
@@ -97,14 +97,7 @@
       <div v-else-if="!playlistInfo.id" class="w-full flex-1 flex items-center justify-center py-20">
         <div class="w-full max-w-[520px] rounded-2xl border border-gray-100 bg-white/80 px-8 py-9 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
           <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-500 shadow-inner dark:bg-red-500/10 dark:text-red-300">
-            <svg class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-              <path d="M5 7h8" />
-              <path d="M5 12h6" />
-              <path d="M5 17h5" />
-              <path d="M17 6v9.5" />
-              <path d="M17 6l4-1v3l-4 1" />
-              <path d="M17 15.5a2.5 2.5 0 1 1-1.8-2.4" />
-            </svg>
+            <AppIcon name="netease-cloud" class="h-8 w-8" />
           </div>
           <h3 class="text-lg font-extrabold text-gray-900 dark:text-slate-50">还没有导入网易歌单</h3>
           <p class="mx-auto mt-2 max-w-sm text-sm font-medium leading-6 text-gray-500 dark:text-slate-400">
@@ -132,11 +125,11 @@
 
             <div class="flex items-center space-x-3">
               <button @click="playAll" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 dark:shadow-none transition-all transform active:scale-95 flex items-center no-drag" :class="{ 'opacity-50 pointer-events-none': songs.length === 0 }">
-                <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                <AppIcon name="play" class="w-5 h-5 mr-1" />
                 播放全部
               </button>
               <button @click="store.addSongsToPlaylist(playPayloads, { silent: false })" class="px-6 py-2.5 rounded-full text-sm font-bold transition-all transform active:scale-95 flex items-center no-drag bg-blue-50 text-blue-600 hover:bg-blue-100 shadow-sm border border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-300">
-                <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+                <AppIcon name="plus" class="w-5 h-5 mr-1.5" />
                 加入队列
               </button>
             </div>
@@ -144,7 +137,7 @@
         </div>
 
         <div v-if="songs.length === 0" class="w-full flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
-          <svg class="w-20 h-20 mb-4 text-gray-200 dark:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm12-3a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 10l12-3"/></svg>
+          <AppIcon name="music" class="w-20 h-20 mb-4 text-gray-200 dark:text-slate-800" />
           <p class="text-sm font-medium tracking-widest">暂无歌曲</p>
         </div>
 
@@ -161,7 +154,7 @@
             <div v-for="(song, index) in songs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
               <div class="w-10 text-center text-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
               <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
-                <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
               </div>
 
               <div class="flex-1 pl-2 text-sm text-gray-800 dark:text-slate-100 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
@@ -179,7 +172,7 @@
 
           <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 text-xs font-medium">
             <div v-if="isLoadingMore" class="flex items-center text-blue-500">
-              <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+              <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
               正在获取更多歌曲...
             </div>
             <div v-else-if="!hasMore && songs.length > 0" class="text-gray-300 dark:text-slate-700 flex items-center space-x-2">
@@ -208,10 +201,7 @@
           <div class="w-full max-w-[520px] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
             <div class="flex items-center gap-3 border-b border-gray-100 bg-red-50/70 px-6 py-5 dark:border-slate-800 dark:bg-red-500/10">
               <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-500 text-white shadow-sm">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 18V5l12-2v13"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
-                </svg>
+                <AppIcon name="netease-cloud" class="h-5 w-5" />
               </div>
               <div class="min-w-0">
                 <h3 id="netease-notice-title" class="text-lg font-extrabold text-gray-900 dark:text-slate-50">网易歌单使用须知</h3>

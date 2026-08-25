@@ -7,10 +7,10 @@
       <div v-if="store.dialogState.visible" ref="dialogRef" tabindex="-1" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/30 backdrop-blur-sm no-drag outline-none" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
         <div class="bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-[380px] flex flex-col overflow-hidden transform transition-all">
           
-          <div class="px-6 py-5 border-b border-gray-50 flex items-center">
+          <div class="px-6 py-5 border-b border-gray-100 flex items-center bg-gray-50/50">
              <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 shadow-inner" :class="dialogTone.iconWrap">
-               <svg v-if="store.dialogState.type === 'danger'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 9v3.5m0 3h.01M10.3 4.2 2.1 18a2 2 0 0 0 1.72 3h16.36a2 2 0 0 0 1.72-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/></svg>
-               <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+               <AppIcon v-if="store.dialogState.type === 'danger'" name="danger" class="w-5 h-5" />
+               <AppIcon v-else name="info" class="w-5 h-5" />
              </div>
              <h3 class="text-lg font-bold text-gray-800 tracking-wide">{{ store.dialogState.title }}</h3>
           </div>

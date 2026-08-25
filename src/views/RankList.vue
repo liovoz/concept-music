@@ -30,14 +30,14 @@
       </div>
 
       <div v-else-if="isError" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100 mt-4">
-        <svg class="w-16 h-16 mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">获取排行榜失败</p>
         <p class="text-xs text-red-400 max-w-lg text-center">{{ errorMessage }}</p>
         <button @click="fetchRankData" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="ranks.length === 0" class="flex-1 flex flex-col items-center justify-center py-32 text-gray-400 mt-4">
-        <svg class="w-20 h-20 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <AppIcon name="rank" class="w-20 h-20 mb-4 text-gray-200" />
         <p class="text-sm font-medium tracking-widest">暂无排行榜数据</p>
       </div>
 
@@ -52,12 +52,12 @@
             <div class="relative w-[110px] h-[110px] rounded-xl overflow-hidden fix-clip flex-shrink-0 bg-gray-100 border border-gray-50">
               <img :src="rank._cover" :alt="rank._name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
               <div class="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
-                <svg class="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <AppIcon name="play" class="w-2.5 h-2.5 mr-1" />
                 <span class="text-[9px] font-bold tracking-wider">{{ formatPlayCount(rank._playCount) }}</span>
               </div>
               <div class="absolute inset-0 bg-black/10 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                 <div class="w-10 h-10 rounded-full bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                  <svg class="w-5 h-5 text-blue-600 ml-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                  <AppIcon name="play" class="w-5 h-5 text-blue-600 ml-1" />
                 </div>
               </div>
             </div>

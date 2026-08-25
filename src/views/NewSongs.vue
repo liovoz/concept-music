@@ -12,7 +12,7 @@
           <p class="text-xs text-gray-500 mt-2 font-medium">发现最新上架的好音乐</p>
         </div>
         <button v-if="songs.length > 0" @click="playAll" class="flex-shrink-0 px-5 py-1.5 bg-gray-50 hover:bg-emerald-50 text-gray-600 hover:text-emerald-600 border border-gray-100 rounded-full text-xs font-bold transition-colors no-drag flex items-center">
-          <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+          <AppIcon name="play" class="w-4 h-4 mr-1" />
           播放全部
         </button>
       </div>
@@ -35,13 +35,13 @@
       </div>
 
       <div v-else-if="isError && songs.length === 0" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100 mt-4">
-        <svg class="w-16 h-16 mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">获取新歌失败</p>
         <button @click="fetchSongs()" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="songs.length === 0 && !isLoading" class="flex-1 flex flex-col items-center justify-center py-32 text-gray-400 mt-4">
-        <svg class="w-20 h-20 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+        <AppIcon name="music" class="w-20 h-20 mb-4 text-gray-200" />
         <p class="text-sm font-medium tracking-widest">暂无新歌数据</p>
       </div>
 
@@ -62,7 +62,7 @@
               {{ (index + 1).toString().padStart(2, '0') }}
             </div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-emerald-600 flex-shrink-0" @click.stop="handlePlay(song)">
-              <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+              <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
 
             <div class="flex-1 flex items-center pl-2 pr-4 min-w-0" v-tooltip="song._title">
@@ -86,7 +86,7 @@
 
         <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 text-xs font-medium">
           <div v-if="isLoadingMore" class="flex items-center text-emerald-500">
-            <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
             正在获取更多新歌...
           </div>
           <div v-else-if="!hasMore && songs.length > 0" class="text-gray-300 flex items-center space-x-2">

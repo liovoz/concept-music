@@ -8,31 +8,30 @@
     <div class="lyric-toolbar" v-show="isHovered && !showSettings">
       <template v-if="isLocked">
         <button class="tb-btn tb-btn-unlock" @click.stop="unlockLyric" title="解锁">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6-6h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6a2 2 0 012-2z"/></svg>
+          <AppIcon name="unlock" class="w-4 h-4" />
         </button>
         <span class="tb-label">点击解锁</span>
       </template>
       <template v-else>
         <button class="tb-btn" @click.stop="openSettings" title="设置">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+          <AppIcon name="settings" class="w-4 h-4" />
         </button>
         <span class="tb-sep"></span>
         <button class="tb-btn" @click.stop="sendCommand('prev')" title="上一首">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/></svg>
+          <AppIcon name="prev" class="w-4 h-4" />
         </button>
         <button class="tb-btn tb-btn-play" @click.stop="sendCommand('togglePlay')" title="播放/暂停">
-          <svg v-if="isPlaying" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-          <svg v-else width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5.14v13.72a1 1 0 001.5.86l11.04-6.86a1 1 0 000-1.72L9.5 4.28A1 1 0 008 5.14z"/></svg>
+          <AppIcon :name="isPlaying ? 'pause' : 'play'" class="w-4 h-4" />
         </button>
         <button class="tb-btn" @click.stop="sendCommand('next')" title="下一首">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path d="M11.555 5.168A1 1 0 0010 6v2.798l-5.445-3.63A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"/></svg>
+          <AppIcon name="next" class="w-4 h-4" />
         </button>
         <span class="tb-sep"></span>
         <button class="tb-btn" @click.stop="lockLyric" title="锁定穿透">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+          <AppIcon name="lock" class="w-4 h-4" />
         </button>
         <button class="tb-btn tb-btn-close" @click.stop="closeLyricWindow" title="关闭">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+          <AppIcon name="close" class="w-4 h-4" />
         </button>
       </template>
     </div>

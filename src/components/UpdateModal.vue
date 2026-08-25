@@ -5,7 +5,7 @@
         <div class="bg-white/95 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-[420px] flex flex-col overflow-hidden relative">
 
           <button v-if="canClose" @click="closeModal" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors bg-black/20 hover:bg-black/40 rounded-full p-1.5 no-drag focus:outline-none z-10">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <AppIcon name="close" class="w-4 h-4" />
           </button>
 
           <div class="h-36 bg-gradient-to-br from-blue-500 to-indigo-600 relative flex items-center justify-center overflow-hidden">
@@ -30,14 +30,14 @@
 
               <template v-if="status === 'idle'">
                 <button @click="checkForUpdates" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag focus:outline-none flex items-center justify-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                  <AppIcon name="refresh" class="w-4 h-4" />
                   检查更新
                 </button>
               </template>
 
               <template v-else-if="status === 'checking'">
                 <div class="flex flex-col items-center py-2">
-                  <svg class="animate-spin h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <AppIcon name="spinner" spin class="h-8 w-8 text-blue-500 mb-3" />
                   <p class="text-sm text-gray-500">正在检查更新，请稍候...</p>
                 </div>
               </template>
@@ -45,7 +45,7 @@
               <template v-else-if="status === 'not-available'">
                 <div class="flex flex-col items-center py-2">
                   <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center mb-3">
-                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <AppIcon name="check" class="w-5 h-5 text-green-500" />
                   </div>
                   <p class="text-sm text-gray-600 font-medium">当前已是最新版本</p>
                   <p class="text-xs text-gray-400 mt-1">无需更新，继续享受音乐吧</p>
@@ -55,7 +55,7 @@
               <template v-else-if="status === 'available'">
                 <div class="flex flex-col items-center py-2">
                   <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mb-3">
-                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
+                    <AppIcon name="download" class="w-5 h-5 text-blue-500" />
                   </div>
                   <p class="text-sm text-gray-900 font-bold mb-4">发现新版本 v{{ updateInfo.version }}</p>
                   <div class="w-full flex space-x-3">
@@ -88,7 +88,7 @@
               <template v-else-if="status === 'downloaded'">
                 <div class="flex flex-col items-center py-2">
                   <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center mb-3">
-                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <AppIcon name="check" class="w-5 h-5 text-green-500" />
                   </div>
                   <p class="text-sm text-gray-900 font-bold">更新下载完成</p>
                   <p class="text-xs text-gray-400 mt-1 mb-4">重启软件即可体验新功能</p>
@@ -101,7 +101,7 @@
               <template v-else-if="status === 'error'">
                 <div class="flex flex-col items-center py-2">
                   <div class="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mb-3">
-                    <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <AppIcon name="danger" class="w-5 h-5 text-red-400" />
                   </div>
                   <p class="text-sm text-gray-900 font-bold">{{ isDownloadError ? '下载更新失败' : '检查更新失败' }}</p>
                   <p class="text-xs text-gray-400 mt-1 mb-3">{{ errorMsg }}</p>
@@ -122,7 +122,7 @@
               <template v-else-if="status === 'cancelled'">
                 <div class="flex flex-col items-center py-2">
                   <div class="w-10 h-10 bg-yellow-50 rounded-full flex items-center justify-center mb-3">
-                    <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                    <AppIcon name="ban" class="w-5 h-5 text-yellow-500" />
                   </div>
                   <p class="text-sm text-gray-900 font-bold">下载已取消</p>
                   <p class="text-xs text-gray-400 mt-1 mb-4">更新下载已中断</p>

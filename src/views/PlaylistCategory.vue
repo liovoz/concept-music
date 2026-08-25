@@ -92,13 +92,13 @@
               <img :src="formatImg(playlist.imgurl || playlist.flexible_cover || playlist.pic)" :alt="playlist.specialname" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
 
               <div class="absolute top-2 right-2 bg-black/30 backdrop-blur-md text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
-                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <AppIcon name="play" class="w-3 h-3 mr-1" />
                 <span class="text-[10px] font-bold tracking-wider">{{ formatPlayCount(playlist.play_count) }}</span>
               </div>
 
               <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                 <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-lg border border-white/30 transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                  <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+                  <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
                 </div>
               </div>
             </div>
@@ -117,7 +117,7 @@
         <div v-else-if="!hasMore" class="w-full flex flex-col items-center justify-center mt-2 mb-8">
           <div class="group px-10 py-6 bg-gray-50/50 border border-gray-100 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60">
             <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-              <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+              <AppIcon name="music" class="w-5 h-5 text-gray-300" />
             </div>
             <div class="flex items-center space-x-3">
               <span class="w-8 h-px bg-gray-200"></span>
@@ -131,7 +131,7 @@
       </div>
 
       <div v-else class="flex-1 flex flex-col items-center justify-center py-20 text-gray-400">
-        <svg class="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+        <AppIcon name="music" class="w-16 h-16 mb-4 text-gray-200" />
         <p class="text-sm font-bold">暂无歌单</p>
         <p class="text-xs mt-1">换个分类试试</p>
       </div>

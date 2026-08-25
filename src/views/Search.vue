@@ -16,13 +16,13 @@
         </div>
         
         <button v-if="songs.length > 0" @click="playAll" class="flex-shrink-0 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag">
-          <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+          <AppIcon name="play" class="w-5 h-5 mr-1" />
           播放当前结果
         </button>
       </div>
 
       <div v-if="isError" class="flex flex-col items-center justify-center py-20 text-red-500 bg-red-50 rounded-2xl border border-red-100 shadow-inner">
-        <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <AppIcon name="warning" class="w-12 h-12 mb-4" />
         <p class="text-sm font-bold">{{ errorMessage }}</p>
         <p class="text-xs text-red-400 mt-2 max-w-sm text-center">系统尝试了多种通道仍被服务端拦截，这通常是因为网络波动。</p>
         <button @click="fetchSearch" class="mt-6 px-8 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md shadow-red-200 transition-all active:scale-95 no-drag flex items-center">
@@ -32,7 +32,7 @@
 
       <div v-else-if="!isLoading && songs.length === 0 && page === 1 && isDrmRestricted" class="flex flex-col items-center justify-center py-28 text-gray-600 bg-blue-50/50 rounded-3xl border border-blue-100/50">
         <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm mb-5">
-           <svg class="w-10 h-10 text-blue-500 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+           <AppIcon name="lock" class="w-10 h-10 text-blue-500 opacity-80" />
         </div>
         <p class="text-base font-bold text-gray-800 tracking-wide">版权风控保护</p>
         <p class="text-sm text-gray-500 mt-2 max-w-md text-center leading-relaxed">服务端已对匿名用户隐藏了“{{ currentKeyword }}”的搜索结果。<br>请安全登录后解锁完整曲库与版权资源。</p>
@@ -42,7 +42,7 @@
       </div>
 
       <div v-else-if="!isLoading && songs.length === 0 && page === 1" class="flex flex-col items-center justify-center py-32 text-gray-400">
-        <svg class="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <AppIcon name="search" class="w-16 h-16 mb-4 text-gray-200" />
         <p class="text-sm font-medium">很抱歉，全网均未找到与“{{ currentKeyword }}”相关的歌曲</p>
         <p class="text-xs mt-2">请尝试更换搜索词，或检查输入是否有误</p>
       </div>
@@ -67,7 +67,7 @@
           <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 flex-shrink-0" @click.stop="handlePlay(song)">
-               <svg class="w-5 h-5 ml-[2px]" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
+               <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
             
             <div class="flex-1 flex items-center pl-2 pr-4 min-w-0" v-tooltip="song._title">
@@ -96,7 +96,7 @@
 
         <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 text-xs font-medium">
           <div v-if="isLoadingMore" class="flex items-center text-blue-500">
-            <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
             正在获取更多结果...
           </div>
           <div v-else-if="!hasMore && songs.length > 0" class="text-gray-300 flex items-center space-x-2">

@@ -31,13 +31,13 @@
       </div>
 
       <div v-else-if="isError && displayedArtists.length === 0" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100">
-        <svg class="w-16 h-16 mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">获取歌手列表失败</p>
         <button @click="fetchArtists" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="allArtists.length === 0 && !isLoading" class="flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
-        <svg class="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        <AppIcon name="artists" class="w-16 h-16 mb-4 text-gray-200" />
         <p class="text-sm font-medium tracking-widest text-gray-400">该分类暂无歌手数据</p>
       </div>
 
@@ -55,7 +55,7 @@
 
         <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-6 text-xs font-medium">
           <div v-if="isLoadingMore" class="flex items-center text-blue-500">
-            <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
             正在加载更多歌手...
           </div>
           <div v-else-if="!hasMore && displayedArtists.length > 0" class="text-gray-300 flex items-center space-x-2">
