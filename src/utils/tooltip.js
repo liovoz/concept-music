@@ -10,16 +10,67 @@ export const tooltipState = reactive({
   y: 0,
   isBottom: false,
   maxHeight: 320,
-  hoveringTooltip: false,
   activeEl: null
 });
 
 let hideTimer = null;
+let showTimer = null;
+let globalListenersAttached = false;
 
 export const hideTooltip = () => {
+  if (hideTimer) {
+    clearTimeout(hideTimer);
+    hideTimer = null;
+  }
+  if (showTimer) {
+    clearTimeout(showTimer);
+    showTimer = null;
+  }
   tooltipState.visible = false;
   tooltipState.activeEl = null;
-  tooltipState.hoveringTooltip = false;
+};
+
+const handleGlobalPointerMove = (e) => {
+  if (!tooltipState.visible || !tooltipState.activeEl) return;
+  
+  if (!document.body.contains(tooltipState.activeEl)) {
+    hideTooltip();
+    return;
+  }
+
+  const rect = tooltipState.activeEl.getBoundingClientRect();
+  const buffer = 6;
+  const isInside = (
+    e.clientX >= rect.left - buffer &&
+    e.clientX <= rect.right + buffer &&
+    e.clientY >= rect.top - buffer &&
+    e.clientY <= rect.bottom + buffer
+  );
+
+  if (!isInside) {
+    hideTooltip();
+  }
+};
+
+const handleGlobalDismiss = () => {
+  if (tooltipState.visible) {
+    hideTooltip();
+  }
+};
+
+const ensureGlobalListeners = () => {
+  if (globalListenersAttached || typeof window === 'undefined') return;
+  globalListenersAttached = true;
+
+  window.addEventListener('pointermove', handleGlobalPointerMove, { passive: true });
+  window.addEventListener('scroll', handleGlobalDismiss, { capture: true, passive: true });
+  window.addEventListener('mousedown', handleGlobalDismiss, { capture: true, passive: true });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') handleGlobalDismiss();
+  }, { passive: true });
+  window.addEventListener('blur', handleGlobalDismiss);
+  document.addEventListener('mouseleave', handleGlobalDismiss);
+  document.addEventListener('visibilitychange', handleGlobalDismiss);
 };
 
 const isElementOverflowing = (el) => {
@@ -34,67 +85,73 @@ const isElementOverflowing = (el) => {
   return false;
 };
 
+const positionTooltip = (el, text) => {
+  const rect = el.getBoundingClientRect();
+  const windowHeight = window.innerHeight;
+  const windowWidth = window.innerWidth;
+
+  let posX = rect.left + rect.width / 2;
+  const padding = 20;
+  if (posX < padding) posX = padding;
+  if (posX > windowWidth - padding) posX = windowWidth - padding;
+
+  const bottomSafeArea = 110;
+  const verticalPadding = 16;
+  const gap = 10;
+  const approxLineCount = Math.ceil(text.length / 32);
+  const estimatedHeight = Math.min(520, Math.max(48, approxLineCount * 20 + 28));
+  const availableBelow = Math.max(0, windowHeight - bottomSafeArea - rect.bottom - gap);
+  const availableAbove = Math.max(0, rect.top - verticalPadding - gap);
+  const shouldOpenAbove = availableBelow < estimatedHeight && availableAbove > availableBelow;
+
+  let posY = 0;
+  let isBottom = false;
+  let maxHeight = 0;
+
+  if (shouldOpenAbove) {
+    posY = rect.top - gap;
+    isBottom = true;
+    maxHeight = Math.max(80, Math.min(520, availableAbove));
+  } else {
+    posY = rect.bottom + gap;
+    isBottom = false;
+    maxHeight = Math.max(80, Math.min(520, availableBelow || windowHeight - bottomSafeArea - posY));
+  }
+
+  tooltipState.activeEl = el;
+  tooltipState.text = text;
+  tooltipState.x = posX;
+  tooltipState.y = posY;
+  tooltipState.isBottom = isBottom;
+  tooltipState.maxHeight = maxHeight;
+  tooltipState.visible = true;
+};
+
 export const tooltipDirective = {
   mounted(el, binding) {
+    ensureGlobalListeners();
     el.setAttribute('data-tooltip', binding.value || '');
 
     el._mouseenter = () => {
-      if (hideTimer) clearTimeout(hideTimer);
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
       const text = el.getAttribute('data-tooltip');
       if (!text) return;
 
       const textContent = el.textContent.trim();
-      if (textContent.length > 0) {
-        if (!isElementOverflowing(el)) return; 
+      // 只有当提示文本与元素内部文字完全一致（如单行省略歌名/专辑名）时，才要求溢出才显示；对于操作按钮说明等显式提示，无条件显示
+      if (textContent.length > 0 && text === textContent) {
+        if (!isElementOverflowing(el)) return;
       }
 
-      tooltipState.activeEl = el;
-      tooltipState.text = text;
-      
-      const rect = el.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      let posX = rect.left + rect.width / 2;
-      // ✨ 核心修复：将 180 像素的流氓推挤边距缩小到合理的 20，避免图标的提示框远走高飞
-      const padding = 20; 
-      if (posX < padding) posX = padding;
-      if (posX > window.innerWidth - padding) posX = window.innerWidth - padding;
-
-      const bottomSafeArea = 110;
-      const verticalPadding = 16;
-      const gap = 10;
-      const approxLineCount = Math.ceil(text.length / 32);
-      const estimatedHeight = Math.min(520, Math.max(48, approxLineCount * 20 + 28));
-      const availableBelow = Math.max(0, windowHeight - bottomSafeArea - rect.bottom - gap);
-      const availableAbove = Math.max(0, rect.top - verticalPadding - gap);
-      const shouldOpenAbove = availableBelow < estimatedHeight && availableAbove > availableBelow;
-
-      let posY = 0;
-      let isBottom = false;
-      let maxHeight = 0;
-
-      if (shouldOpenAbove) {
-        posY = rect.top - gap;
-        isBottom = true;
-        maxHeight = Math.max(80, Math.min(520, availableAbove));
-      } else {
-        posY = rect.bottom + gap;
-        isBottom = false;
-        maxHeight = Math.max(80, Math.min(520, availableBelow || windowHeight - bottomSafeArea - posY));
-      }
-
-      tooltipState.x = posX;
-      tooltipState.y = posY;
-      tooltipState.isBottom = isBottom;
-      tooltipState.maxHeight = maxHeight;
-      tooltipState.visible = true;
+      positionTooltip(el, text);
     };
 
     el._mouseleave = () => {
       if (tooltipState.activeEl === el) {
-        hideTimer = setTimeout(() => {
-          if (!tooltipState.hoveringTooltip) hideTooltip();
-        }, 120);
+        hideTooltip();
       }
     };
 
@@ -102,27 +159,25 @@ export const tooltipDirective = {
     el.addEventListener('mouseenter', el._mouseenter);
     el.addEventListener('mouseleave', el._mouseleave);
   },
-  
+
   updated(el, binding) {
     const nextText = binding.value || '';
     el.setAttribute('data-tooltip', nextText);
     if (tooltipState.visible && tooltipState.activeEl === el) {
       if (!nextText) {
-        tooltipState.visible = false;
-        tooltipState.activeEl = null;
+        hideTooltip();
       } else if (tooltipState.text !== nextText) {
         tooltipState.text = nextText;
       }
     }
     if (el.getAttribute('title')) el.removeAttribute('title');
   },
-  
+
   unmounted(el) {
     el.removeEventListener('mouseenter', el._mouseenter);
     el.removeEventListener('mouseleave', el._mouseleave);
     if (tooltipState.activeEl === el) {
-      tooltipState.visible = false;
-      tooltipState.activeEl = null;
+      hideTooltip();
     }
   }
 };

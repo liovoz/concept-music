@@ -270,7 +270,20 @@
                     @click="seekToLyric(line.time)"
                     class="transition-all duration-300 ease-out origin-center cursor-pointer flex flex-col items-center justify-center text-center group mb-4 lg:mb-5 w-full"
                     :class="index === activeLyricIndex ? 'scale-[1.03]' : 'hover:scale-[1.01]'">
-                  <span class="leading-relaxed px-4 transition-colors duration-300"
+                  <!-- 激活行且有逐字数据 -->
+                  <div v-if="index === activeLyricIndex && line.words && line.words.length > 0"
+                       class="leading-relaxed px-4 text-center lyric-inapp-karaoke font-bold text-xl lg:text-2xl text-gray-400/50 dark:text-slate-500/60">
+                    <span v-for="(w, wIdx) in line.words" :key="wIdx" class="k-inapp-char-box">
+                      <span class="k-inapp-char-base">{{ w.text }}</span>
+                      <span class="k-inapp-char-fill text-gray-900 dark:text-slate-50"
+                            :style="{ width: `${getInAppCharProgress(w)}%` }">
+                        {{ w.text }}
+                      </span>
+                    </span>
+                  </div>
+                  <!-- 非激活行或无逐字数据的行 -->
+                  <span v-else
+                        class="leading-relaxed px-4 transition-colors duration-300"
                         :class="index === activeLyricIndex ? 'text-gray-900 dark:text-slate-50 font-bold text-xl lg:text-2xl' : 'text-gray-400 dark:text-slate-500 font-normal text-lg lg:text-xl hover:text-gray-500 dark:hover:text-slate-300'">
                     {{ line.text }}
                   </span>
@@ -461,6 +474,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (discAnimFrame) cancelAnimationFrame(discAnimFrame);
+  stopInAppLyricAnim();
   document.removeEventListener('mousedown', handleClickOutside);
   window.removeEventListener('keydown', handleGlobalKeyDown);
   window.removeEventListener('resize', updateTitleOverflow);
@@ -881,6 +895,40 @@ const syncLyricToDesktop = () => {
   }
 };
 
+const inAppPlayTime = ref(0);
+let inAppAnimFrame = null;
+let lastAudioTime = 0;
+let lastAudioTimestamp = performance.now();
+
+const getInAppCharProgress = (w) => {
+  const t = inAppPlayTime.value;
+  if (!w || !w.duration || t <= w.startTime) return 0;
+  if (t >= w.endTime) return 100;
+  const p = ((t - w.startTime) / w.duration) * 100;
+  return Math.max(0, Math.min(100, p));
+};
+
+const startInAppLyricAnim = () => {
+  if (inAppAnimFrame) return;
+  const loop = () => {
+    if (!store.isLyricsVisible || !store.isPlaying) {
+      inAppAnimFrame = null;
+      return;
+    }
+    const elapsed = (performance.now() - lastAudioTimestamp) / 1000;
+    inAppPlayTime.value = lastAudioTime + elapsed;
+    inAppAnimFrame = requestAnimationFrame(loop);
+  };
+  inAppAnimFrame = requestAnimationFrame(loop);
+};
+
+const stopInAppLyricAnim = () => {
+  if (inAppAnimFrame) {
+    cancelAnimationFrame(inAppAnimFrame);
+    inAppAnimFrame = null;
+  }
+};
+
 watch(activeLyricIndex, () => {
   scrollToActiveLyric();
   syncLyricToDesktop();
@@ -890,7 +938,24 @@ watch(() => store.isPlaying, () => {
   syncLyricToDesktop();
 });
 
-watch(() => store.currentTime, () => {
+watch([() => store.isLyricsVisible, () => store.isPlaying], ([visible, playing]) => {
+  if (visible && playing) {
+    lastAudioTime = store.currentTime;
+    lastAudioTimestamp = performance.now();
+    inAppPlayTime.value = store.currentTime;
+    startInAppLyricAnim();
+  } else {
+    stopInAppLyricAnim();
+    inAppPlayTime.value = store.currentTime;
+  }
+});
+
+watch(() => store.currentTime, (t) => {
+  lastAudioTime = t;
+  lastAudioTimestamp = performance.now();
+  if (!store.isPlaying || !store.isLyricsVisible) {
+    inAppPlayTime.value = t;
+  }
   if (store.isDesktopLyricVisible) {
     syncLyricToDesktop();
   }
@@ -950,6 +1015,39 @@ const openLyricsPage = () => {
 .custom-scrollbar-hidden::-webkit-scrollbar { display: none; }
 .custom-scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
 .mask-gradient { -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); }
+
+.lyric-inapp-karaoke {
+  position: relative;
+  display: block;
+  text-align: center;
+  max-width: 100%;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.k-inapp-char-box {
+  position: relative;
+  display: inline-block;
+  white-space: pre;
+  vertical-align: baseline;
+}
+
+.k-inapp-char-base {
+  display: inline;
+  color: inherit;
+}
+
+.k-inapp-char-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+  will-change: width;
+}
+
 .player-title-viewport {
   display: inline-flex;
   max-width: 190px;

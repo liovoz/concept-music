@@ -33,10 +33,8 @@
       <div 
         v-if="tooltipState.visible"
         :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px', maxHeight: tooltipState.maxHeight + 'px' }"
-        class="fixed z-[99998] max-w-md overflow-y-auto overscroll-contain px-4 py-2.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] text-xs text-gray-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap pointer-events-auto font-medium custom-scrollbar"
+        class="fixed z-[99998] max-w-md overflow-y-auto overscroll-contain px-4 py-2.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] text-xs text-gray-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap pointer-events-none font-medium custom-scrollbar"
         :class="tooltipState.isBottom ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2'"
-        @mouseenter="tooltipState.hoveringTooltip = true"
-        @mouseleave="hideTooltip"
       >
         {{ tooltipState.text }}
       </div>
@@ -45,7 +43,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, provide } from 'vue';
+import { onMounted, onUnmounted, ref, provide, watch } from 'vue';
 import Header from './layout/Header.vue';
 import Sidebar from './layout/Sidebar.vue';
 import PlayerBar from './layout/PlayerBar.vue';
@@ -60,6 +58,10 @@ const getRouteComponentKey = (Component) => {
   if (typeof route.meta?.stableComponentKey === 'string') return route.meta.stableComponentKey;
   return isCached(Component) ? Component.name : route.fullPath;
 };
+
+watch(() => route.path, () => {
+  hideTooltip();
+});
 import GlobalDialog from './components/GlobalDialog.vue';
 import SongContextMenu from './components/SongContextMenu.vue';
 import UpdateModal from './components/UpdateModal.vue';
