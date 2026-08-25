@@ -37,7 +37,30 @@
     </div>
 
     <div class="lyric-body" :class="{ 'lyric-body-hidden': showSettings }">
-      <div class="lyric-line lyric-main" :style="lyricMainStyle">
+      <!-- 开启逐字过渡模式且有逐字数据 -->
+      <div
+        v-if="config.karaokeMode && currentWords.length > 0"
+        class="lyric-line lyric-main lyric-karaoke"
+        :style="lyricMainBaseStyle"
+      >
+        <span
+          v-for="(w, idx) in currentWords"
+          :key="idx"
+          class="k-char-box"
+        >
+          <span class="k-char-base">{{ w.text }}</span>
+          <span
+            class="k-char-fill"
+            :style="{
+              width: `${getCharProgress(w)}%`,
+              color: activeTheme.main,
+              textShadow: lyricMainGlow
+            }"
+          >{{ w.text }}</span>
+        </span>
+      </div>
+      <!-- 关闭逐字过渡模式或静态文本 -->
+      <div v-else class="lyric-line lyric-main" :style="lyricMainStyle">
         {{ currentText }}
       </div>
       <div v-if="config.showSub && (currentTranslation || nextText)" class="lyric-line lyric-sub" :style="lyricSubStyle">
@@ -75,6 +98,13 @@
           </div>
           <div class="st-divider"></div>
           <div class="st-group">
+            <span class="st-label">逐字过渡</span>
+            <button class="st-toggle" :class="{ 'st-toggle-on': config.karaokeMode }" @click="config.karaokeMode = !config.karaokeMode">
+              <span class="st-toggle-knob"></span>
+            </button>
+          </div>
+          <div class="st-divider"></div>
+          <div class="st-group">
             <span class="st-label">显示副歌词</span>
             <button class="st-toggle" :class="{ 'st-toggle-on': config.showSub }" @click="config.showSub = !config.showSub">
               <span class="st-toggle-knob"></span>
@@ -106,11 +136,20 @@ const nextText = ref('');
 const currentTranslation = ref('');
 const isPlaying = ref(false);
 
+const currentWords = ref([]);
+const lineStartTime = ref(0);
+const lineDuration = ref(0);
+const lastSyncPlayTime = ref(0);
+const lastSyncTimestamp = ref(0);
+const currentPlayTime = ref(0);
+let animationFrameId = null;
+
 const config = reactive({
   fontSize: 34,
   subFontSize: 28,
   colorTheme: 'white',
-  showSub: true
+  showSub: true,
+  karaokeMode: true
 });
 
 // 副歌词字号约束：始终比主歌词至少小 6px
@@ -138,11 +177,48 @@ const lyricMainStyle = computed(() => ({
   color: activeTheme.value.main,
   textShadow: `0 1px 2px rgba(15, 23, 42, 0.58), 0 10px 28px rgba(15, 23, 42, 0.34), 0 0 18px ${activeTheme.value.glow}`
 }));
+const lyricMainBaseStyle = computed(() => ({
+  fontSize: `${config.fontSize}px`,
+  color: activeTheme.value.sub,
+  textShadow: '0 1px 2px rgba(15, 23, 42, 0.58), 0 6px 18px rgba(15, 23, 42, 0.34)'
+}));
+const lyricMainGlow = computed(() => {
+  return `0 1px 2px rgba(15, 23, 42, 0.58), 0 10px 28px rgba(15, 23, 42, 0.34), 0 0 18px ${activeTheme.value.glow}`;
+});
 const lyricSubStyle = computed(() => ({
   fontSize: `${Math.max(14, Math.min(Number(config.subFontSize), config.fontSize - 6))}px`,
   color: activeTheme.value.sub,
   textShadow: '0 1px 2px rgba(15, 23, 42, 0.48), 0 6px 18px rgba(15, 23, 42, 0.26)'
 }));
+
+const getCharProgress = (w) => {
+  const t = currentPlayTime.value;
+  if (!w || !w.duration || t <= w.startTime) return 0;
+  if (t >= w.endTime) return 100;
+  const p = ((t - w.startTime) / w.duration) * 100;
+  return Math.max(0, Math.min(100, p));
+};
+
+const startAnimation = () => {
+  if (animationFrameId) return;
+  const loop = () => {
+    if (!isPlaying.value || !config.karaokeMode) {
+      animationFrameId = null;
+      return;
+    }
+    const elapsed = (performance.now() - lastSyncTimestamp.value) / 1000;
+    currentPlayTime.value = lastSyncPlayTime.value + elapsed;
+    animationFrameId = requestAnimationFrame(loop);
+  };
+  animationFrameId = requestAnimationFrame(loop);
+};
+
+const stopAnimation = () => {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+};
 
 const updateLyricHotArea = async () => {
   await nextTick();
@@ -232,6 +308,9 @@ onMounted(() => {
     const saved = localStorage.getItem('kg_desktop_lyric_config');
     if (saved) Object.assign(config, JSON.parse(saved));
   } catch (e) {}
+  if (typeof config.karaokeMode !== 'boolean') {
+    config.karaokeMode = true;
+  }
   // 旧配置无 subFontSize 字段时，初始化为“主歌词 - 6px”，并统一钳制差值约束
   clampSubFontSize();
 
@@ -246,10 +325,25 @@ onMounted(() => {
 
   if (window.lyricAPI) {
     window.lyricAPI.onSync((data) => {
-      currentText.value = data.currentText;
-      nextText.value = data.nextText;
+      currentText.value = data.currentText || '';
+      nextText.value = data.nextText || '';
       currentTranslation.value = data.currentTranslation || '';
-      isPlaying.value = data.isPlaying;
+      isPlaying.value = !!data.isPlaying;
+
+      lineStartTime.value = data.lineStartTime || 0;
+      lineDuration.value = data.lineDuration || 0;
+      currentWords.value = Array.isArray(data.words) ? data.words : [];
+
+      lastSyncPlayTime.value = typeof data.currentTime === 'number' ? data.currentTime : 0;
+      lastSyncTimestamp.value = performance.now();
+      currentPlayTime.value = lastSyncPlayTime.value;
+
+      if (isPlaying.value && config.karaokeMode) {
+        startAnimation();
+      } else {
+        stopAnimation();
+      }
+
       updateLyricHotArea();
     });
 
@@ -266,6 +360,17 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  stopAnimation();
+});
+
+watch([() => isPlaying.value, () => config.karaokeMode], ([playing, karaoke]) => {
+  if (playing && karaoke) {
+    lastSyncTimestamp.value = performance.now();
+    startAnimation();
+  } else {
+    stopAnimation();
+  }
+  updateLyricHotArea();
 });
 
 // 主歌词调小时，若副歌词超出上限，自动压回至主歌词 - 6px
@@ -423,6 +528,38 @@ watch(config, (v) => {
   font-weight: 700;
   -webkit-line-clamp: 2;
   letter-spacing: 0;
+}
+
+.lyric-karaoke {
+  position: relative;
+  display: block;
+  text-align: center;
+  max-width: 100%;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.34;
+}
+
+.k-char-box {
+  position: relative;
+  display: inline-block;
+  white-space: pre;
+  vertical-align: baseline;
+}
+
+.k-char-base {
+  display: inline;
+}
+
+.k-char-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+  will-change: width;
 }
 
 .lyric-sub {

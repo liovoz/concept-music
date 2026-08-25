@@ -614,23 +614,67 @@ const parseLyrics = (lyricStr, translationArr) => {
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i].trim();
     if (!line) continue;
-    line = line.replace(/<\d+,\d+,\d+(?:,\d+)?>/g, '');
 
     const krcMatch = line.match(krcExp);
     if (krcMatch) {
-      const timeInSeconds = (parseInt(krcMatch[1], 10) / 1000) + offset;
-      const text = line.replace(krcExp, '').trim();
+      const lineStartSec = (parseInt(krcMatch[1], 10) / 1000) + offset;
+      const lineDurationSec = Math.max(0.1, parseInt(krcMatch[2], 10) / 1000);
+      const afterKrc = line.replace(krcExp, '');
+
+      const words = [];
+      const wordRegex = /<(\d+),(\d+),\d*>([^<]*)/g;
+      let match;
+      while ((match = wordRegex.exec(afterKrc)) !== null) {
+        const relStartMs = parseInt(match[1], 10);
+        const durMs = parseInt(match[2], 10);
+        const wordText = match[3];
+        if (wordText) {
+          const wStart = lineStartSec + (relStartMs / 1000);
+          const wDur = Math.max(0.01, durMs / 1000);
+          words.push({
+            text: wordText,
+            startTime: wStart,
+            duration: wDur,
+            endTime: wStart + wDur
+          });
+        }
+      }
+
+      const text = words.length > 0
+        ? words.map(w => w.text).join('').trim()
+        : afterKrc.replace(/<\d+,\d+,\d+(?:,\d+)?>/g, '').trim();
+
       if (text) {
-        const translation = getTranslationForLine(translationArr, timeInSeconds, lineIndex);
-        result.push({ time: timeInSeconds, text, translation });
+        let finalWords = words;
+        if (finalWords.length === 0) {
+          const chars = Array.from(text);
+          if (chars.length > 0) {
+            const charDur = lineDurationSec / chars.length;
+            finalWords = chars.map((ch, cIdx) => ({
+              text: ch,
+              startTime: lineStartSec + (cIdx * charDur),
+              duration: charDur,
+              endTime: lineStartSec + ((cIdx + 1) * charDur)
+            }));
+          }
+        }
+        const translation = getTranslationForLine(translationArr, lineStartSec, lineIndex);
+        result.push({
+          time: lineStartSec,
+          duration: lineDurationSec,
+          text,
+          words: finalWords,
+          translation
+        });
         lineIndex++;
       }
-      continue; 
+      continue;
     }
 
     const matches = [...line.matchAll(lrcExp)];
     if (matches.length > 0) {
-      const text = line.replace(lrcExp, '').trim();
+      const cleanLine = line.replace(/<\d+,\d+,\d+(?:,\d+)?>/g, '');
+      const text = cleanLine.replace(lrcExp, '').trim();
       if (text) {
         matches.forEach(match => {
           const min = parseInt(match[1], 10);
@@ -642,13 +686,42 @@ const parseLyrics = (lyricStr, translationArr) => {
           else ms = parseInt(msStr, 10);
           const timeInSeconds = (min * 60) + sec + (ms / 1000) + offset;
           const translation = getTranslationForLine(translationArr, timeInSeconds, lineIndex);
-          result.push({ time: timeInSeconds, text, translation });
+          result.push({
+            time: timeInSeconds,
+            duration: 0,
+            text,
+            words: [],
+            translation
+          });
         });
         lineIndex++;
       }
     }
   }
-  return result.sort((a, b) => a.time - b.time);
+
+  result.sort((a, b) => a.time - b.time);
+
+  for (let i = 0; i < result.length; i++) {
+    if (!result[i].duration || result[i].duration <= 0) {
+      const next = result[i + 1];
+      const dur = next ? Math.max(0.5, Math.min(10, next.time - result[i].time)) : 4.5;
+      result[i].duration = dur;
+    }
+    if (!result[i].words || result[i].words.length === 0) {
+      const chars = Array.from(result[i].text);
+      if (chars.length > 0) {
+        const charDur = result[i].duration / chars.length;
+        result[i].words = chars.map((ch, cIdx) => ({
+          text: ch,
+          startTime: result[i].time + (cIdx * charDur),
+          duration: charDur,
+          endTime: result[i].time + ((cIdx + 1) * charDur)
+        }));
+      }
+    }
+  }
+
+  return result;
 };
 
 const getTranslationForLine = (translationArr, time, lineIndex) => {
@@ -764,22 +837,47 @@ const syncLyricToDesktop = () => {
     let curr = '听见好时光';
     let next = '概念音乐 Desktop';
     let trans = '';
+    let words = [];
+    let lineStartTime = 0;
+    let lineDuration = 0;
     
     if (parsedLyrics.value.length > 0 && activeLyricIndex.value >= 0) {
-       curr = parsedLyrics.value[activeLyricIndex.value]?.text || curr;
-       next = parsedLyrics.value[activeLyricIndex.value + 1]?.text || '';
-       trans = parsedLyrics.value[activeLyricIndex.value]?.translation || '';
+      const curLine = parsedLyrics.value[activeLyricIndex.value];
+      const nextLine = parsedLyrics.value[activeLyricIndex.value + 1];
+      curr = curLine?.text || curr;
+      next = nextLine?.text || '';
+      trans = curLine?.translation || '';
+      if (Array.isArray(curLine?.words)) {
+        words = curLine.words.map(w => ({
+          text: String(w.text || ''),
+          startTime: Number(w.startTime || 0),
+          duration: Number(w.duration || 0),
+          endTime: Number(w.endTime || 0)
+        }));
+      }
+      lineStartTime = Number(curLine?.time ?? 0);
+      lineDuration = Number(curLine?.duration ?? (nextLine ? Math.max(0.5, nextLine.time - curLine.time) : 5));
     } else if (store.currentSong) {
-       curr = store.currentSong.name;
-       next = store.currentSong.singer || '';
+      curr = store.currentSong.name || curr;
+      next = store.currentSong.singer || '';
     }
     
-    window.lyricAPI.sync({
-      currentText: curr,
-      nextText: next,
-      currentTranslation: trans,
-      isPlaying: store.isPlaying
-    });
+    try {
+      window.lyricAPI.sync({
+        currentText: String(curr),
+        nextText: String(next),
+        currentTranslation: String(trans),
+        isPlaying: Boolean(store.isPlaying),
+        currentTime: Number(store.currentTime || 0),
+        lineStartTime,
+        lineDuration,
+        words,
+        lineIndex: activeLyricIndex.value,
+        sentAt: Date.now()
+      });
+    } catch (err) {
+      console.error('syncLyricToDesktop error:', err);
+    }
   }
 };
 
@@ -792,14 +890,24 @@ watch(() => store.isPlaying, () => {
   syncLyricToDesktop();
 });
 
+watch(() => store.currentTime, () => {
+  if (store.isDesktopLyricVisible) {
+    syncLyricToDesktop();
+  }
+});
+
 watch(() => store.isDesktopLyricVisible, (visible) => {
-  if (visible) syncLyricToDesktop();
+  if (visible) {
+    if (parsedLyrics.value.length === 0) fetchLyrics();
+    syncLyricToDesktop();
+  }
 });
 
 watch(() => store.currentSong?.hash, (newHash) => {
   parsedLyrics.value = [];
   lyricError.value = '';
   updateTitleOverflow();
+  syncLyricToDesktop();
   if (newHash && (store.isLyricsVisible || store.isDesktopLyricVisible)) fetchLyrics();
 });
 
@@ -811,15 +919,12 @@ watch(() => store.isLyricsVisible, async (visible) => {
   }
 });
 
-watch(() => store.isDesktopLyricVisible, (visible) => {
-  if (visible && parsedLyrics.value.length === 0) fetchLyrics();
-});
-
 watch(parsedLyrics, async (newLyrics) => {
   if (store.isLyricsVisible && newLyrics.length > 0) {
     await nextTick();
     setTimeout(() => { scrollToActiveLyric(); }, 150);
   }
+  syncLyricToDesktop();
 });
 
 const seekToLyric = (time) => {
