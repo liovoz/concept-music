@@ -326,6 +326,17 @@ export const usePlayerStore = defineStore('player', {
     playAllHydrationSession: null,
     isPlaylistVisible: false,
     isLyricsVisible: false,
+    isImmersiveLyrics: false,
+    immersiveLyricMode: (() => {
+      const mode = localStorage.getItem('kg_immersive_lyric_mode');
+      return ['vinyl', 'fluid', 'poster', 'cinematic'].includes(mode) ? mode : 'vinyl';
+    })(),
+    immersiveFontSize: localStorage.getItem('kg_immersive_font_size') || 'lg',
+    immersiveShowTranslation: localStorage.getItem('kg_immersive_translation') !== 'false',
+    immersiveBgMode: (() => {
+      const mode = localStorage.getItem('kg_immersive_bg_mode');
+      return ['fluid', 'starry', 'pure'].includes(mode) ? mode : 'fluid';
+    })(),
     isDesktopLyricVisible: false, // ✨ 新增：桌面歌词显示状态
     playMode: getStoredPlayMode(), 
     
@@ -727,7 +738,74 @@ export const usePlayerStore = defineStore('player', {
     },
 
     togglePlaylist() { this.isPlaylistVisible = !this.isPlaylistVisible; },
-    toggleLyrics() { this.isLyricsVisible = !this.isLyricsVisible; },
+    toggleLyrics() { 
+      this.isLyricsVisible = !this.isLyricsVisible; 
+      if (!this.isLyricsVisible && this.isImmersiveLyrics) {
+        this.exitImmersiveLyrics();
+      }
+    },
+
+    toggleImmersiveLyrics() {
+      if (this.isImmersiveLyrics) {
+        this.exitImmersiveLyrics();
+      } else {
+        this.enterImmersiveLyrics();
+      }
+    },
+
+    enterImmersiveLyrics() {
+      this.isLyricsVisible = true;
+      this.isImmersiveLyrics = true;
+      if (window.windowControls?.setFullScreen) {
+        window.windowControls.setFullScreen(true);
+      } else if (document.documentElement?.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    },
+
+    exitImmersiveLyrics() {
+      this.isImmersiveLyrics = false;
+      this.isLyricsVisible = false;
+      if (window.windowControls?.setFullScreen) {
+        window.windowControls.setFullScreen(false);
+      } else if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    },
+
+    setImmersiveLyricMode(mode) {
+      if (['vinyl', 'fluid', 'poster', 'cinematic'].includes(mode)) {
+        this.immersiveLyricMode = mode;
+        localStorage.setItem('kg_immersive_lyric_mode', mode);
+      }
+    },
+
+    setImmersiveFontSize(size) {
+      if (['md', 'lg', 'xl'].includes(size)) {
+        this.immersiveFontSize = size;
+        localStorage.setItem('kg_immersive_font_size', size);
+      }
+    },
+
+    toggleImmersiveTranslation() {
+      this.immersiveShowTranslation = !this.immersiveShowTranslation;
+      localStorage.setItem('kg_immersive_translation', this.immersiveShowTranslation ? 'true' : 'false');
+    },
+
+    setImmersiveBgMode(mode) {
+      const validModes = ['fluid', 'starry', 'pure'];
+      if (validModes.includes(mode)) {
+        this.immersiveBgMode = mode;
+        localStorage.setItem('kg_immersive_bg_mode', mode);
+      }
+    },
+
+    cycleImmersiveBgMode() {
+      const modes = ['fluid', 'starry', 'pure'];
+      const idx = modes.indexOf(this.immersiveBgMode);
+      const nextMode = modes[(idx + 1) % modes.length];
+      this.setImmersiveBgMode(nextMode);
+    },
 
     addToPlaylist(song) {
       if (!song || !song.hash) return;
@@ -1707,7 +1785,12 @@ export const usePlayerStore = defineStore('player', {
 
     playPrev() {
       if (this.playlist.length === 0) return;
-      if (this.playlist.length === 1) { activeAudio.currentTime = 0; const p = activeAudio.play(); if (p !== undefined) p.catch(() => {}); return; }
+      if (this.playlist.length === 1 || this.playMode === 'loop') { 
+        activeAudio.currentTime = 0; 
+        const p = activeAudio.play(); 
+        if (p !== undefined) p.catch(() => {}); 
+        return; 
+      }
 
       let prevIndex;
       if (this.playMode === 'random') {
@@ -1730,14 +1813,8 @@ export const usePlayerStore = defineStore('player', {
     playNext(isAuto = false) {
       if (this.playlist.length === 0) return;
       
-      if (this.playlist.length === 1) {
+      if (this.playlist.length === 1 || this.playMode === 'loop') {
          activeAudio.currentTime = 0; const p = activeAudio.play(); if (p !== undefined) p.catch(() => {}); return; 
-      }
-
-      if (isAuto && this.playMode === 'loop') {
-        activeAudio.currentTime = 0;
-        const p = activeAudio.play(); if (p !== undefined) p.catch(() => {});
-        return;
       }
 
       const userStore = useUserStore();

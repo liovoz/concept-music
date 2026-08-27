@@ -52,6 +52,18 @@ const handleGlobalPointerMove = (e) => {
   }
 };
 
+const handleGlobalScroll = (e) => {
+  if (!tooltipState.visible || !tooltipState.activeEl) return;
+  const target = e.target;
+  if (target === window || target === document || target === document.documentElement || target === document.body) {
+    hideTooltip();
+    return;
+  }
+  if (target && typeof target.contains === 'function' && target.contains(tooltipState.activeEl)) {
+    hideTooltip();
+  }
+};
+
 const handleGlobalDismiss = () => {
   if (tooltipState.visible) {
     hideTooltip();
@@ -63,7 +75,7 @@ const ensureGlobalListeners = () => {
   globalListenersAttached = true;
 
   window.addEventListener('pointermove', handleGlobalPointerMove, { passive: true });
-  window.addEventListener('scroll', handleGlobalDismiss, { capture: true, passive: true });
+  window.addEventListener('scroll', handleGlobalScroll, { capture: true, passive: true });
   window.addEventListener('mousedown', handleGlobalDismiss, { capture: true, passive: true });
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') handleGlobalDismiss();
@@ -85,15 +97,30 @@ const isElementOverflowing = (el) => {
   return false;
 };
 
+const estimateTextWidth = (str) => {
+  let w = 0;
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    w += (code > 255) ? 12.5 : 7.2;
+  }
+  return Math.min(360, Math.max(50, w + 24));
+};
+
 const positionTooltip = (el, text) => {
   const rect = el.getBoundingClientRect();
   const windowHeight = window.innerHeight;
   const windowWidth = window.innerWidth;
 
   let posX = rect.left + rect.width / 2;
-  const padding = 20;
-  if (posX < padding) posX = padding;
-  if (posX > windowWidth - padding) posX = windowWidth - padding;
+  const padding = 10;
+  const estimatedWidth = estimateTextWidth(text);
+  const halfWidth = estimatedWidth / 2;
+
+  if (posX - halfWidth < padding) {
+    posX = halfWidth + padding;
+  } else if (posX + halfWidth > windowWidth - padding) {
+    posX = windowWidth - halfWidth - padding;
+  }
 
   const bottomSafeArea = 110;
   const verticalPadding = 16;

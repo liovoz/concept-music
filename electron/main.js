@@ -639,6 +639,28 @@ const createWindow = () => {
   mainWindow.once('ready-to-show', () => mainWindow.show());
   ipcMain.on('window-min', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize(); });
   ipcMain.on('window-max', () => { if (mainWindow && !mainWindow.isDestroyed()) { if (mainWindow.isMaximized()) mainWindow.unmaximize(); else mainWindow.maximize(); } });
+  ipcMain.on('window-set-fullscreen', (event, flag) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setFullScreen(Boolean(flag));
+    }
+  });
+  ipcMain.on('window-toggle-fullscreen', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
+    }
+  });
+  ipcMain.handle('window-is-fullscreen', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      return mainWindow.isFullScreen();
+    }
+    return false;
+  });
+  mainWindow.on('enter-full-screen', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('window-fullscreen-changed', true);
+  });
+  mainWindow.on('leave-full-screen', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('window-fullscreen-changed', false);
+  });
   ipcMain.on('window-close', () => {
     if (trayManager && !trayManager.getIsQuitting()) {
       trayManager.handleWindowClose();

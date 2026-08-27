@@ -33,7 +33,7 @@
       <div 
         v-if="tooltipState.visible"
         :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px', maxHeight: tooltipState.maxHeight + 'px' }"
-        class="fixed z-[99998] max-w-md overflow-y-auto overscroll-contain px-4 py-2.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] text-xs text-gray-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap pointer-events-none font-medium custom-scrollbar"
+        class="fixed z-[99998] w-max max-w-xs sm:max-w-sm overflow-y-auto overscroll-contain px-3 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.5)] text-xs text-gray-700 dark:text-slate-200 leading-normal whitespace-normal break-words pointer-events-none font-medium custom-scrollbar"
         :class="tooltipState.isBottom ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2'"
       >
         {{ tooltipState.text }}

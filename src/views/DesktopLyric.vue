@@ -53,8 +53,7 @@
             class="k-char-fill"
             :style="{
               width: `${getCharProgress(w)}%`,
-              color: activeTheme.main,
-              textShadow: lyricMainGlow
+              color: activeTheme.main
             }"
           >{{ w.text }}</span>
         </span>
@@ -172,6 +171,7 @@ const themes = [
 ];
 
 const activeTheme = computed(() => themes.find(t => t.id === config.colorTheme) || themes[0]);
+
 const lyricMainStyle = computed(() => ({
   fontSize: `${config.fontSize}px`,
   color: activeTheme.value.main,
@@ -182,9 +182,6 @@ const lyricMainBaseStyle = computed(() => ({
   color: activeTheme.value.sub,
   textShadow: '0 1px 2px rgba(15, 23, 42, 0.58), 0 6px 18px rgba(15, 23, 42, 0.34)'
 }));
-const lyricMainGlow = computed(() => {
-  return `0 1px 2px rgba(15, 23, 42, 0.58), 0 10px 28px rgba(15, 23, 42, 0.34), 0 0 18px ${activeTheme.value.glow}`;
-});
 const lyricSubStyle = computed(() => ({
   fontSize: `${Math.max(14, Math.min(Number(config.subFontSize), config.fontSize - 6))}px`,
   color: activeTheme.value.sub,
@@ -522,6 +519,8 @@ watch(config, (v) => {
   line-height: 1.34;
   display: -webkit-box;
   -webkit-box-orient: vertical;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .lyric-main {
@@ -560,6 +559,7 @@ watch(config, (v) => {
   white-space: pre;
   pointer-events: none;
   will-change: width;
+  text-shadow: none !important;
 }
 
 .lyric-sub {

@@ -20,6 +20,7 @@ const createListenerManager = (channel) => {
 
 const closeDialogMgr = createListenerManager('trigger-close-dialog');
 const windowRestoredMgr = createListenerManager('window-restored');
+const fullscreenChangeMgr = createListenerManager('window-fullscreen-changed');
 const updaterEventMgr = createListenerManager('updater-event');
 const lyricSyncMgr = createListenerManager('update-lyric');
 const lyricControlMgr = createListenerManager('main-lyric-control');
@@ -34,6 +35,12 @@ contextBridge.exposeInMainWorld('windowControls', {
   maximize: () => ipcRenderer.send('window-max'),
   close: () => ipcRenderer.send('window-close'),
   hideToTray: () => ipcRenderer.send('window-hide-to-tray'),
+  setFullScreen: (flag) => ipcRenderer.send('window-set-fullscreen', flag),
+  toggleFullScreen: () => ipcRenderer.send('window-toggle-fullscreen'),
+  isFullScreen: () => ipcRenderer.invoke('window-is-fullscreen'),
+  onFullScreenChange: (callback) => {
+    fullscreenChangeMgr.set((_event, isFs) => callback(isFs));
+  },
   onCloseDialogTrigger: (callback) => {
     closeDialogMgr.set(callback);
   },

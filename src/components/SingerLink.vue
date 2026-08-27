@@ -3,7 +3,7 @@
     <template v-for="(singer, index) in displaySingers" :key="singer.id || index">
       <span
         @click.stop="handleClick(singer)"
-        class="inline-block truncate transition-colors duration-200 text-xs text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap"
+        class="inline-block truncate transition-colors duration-200 text-gray-500 dark:text-slate-400 overflow-hidden text-ellipsis whitespace-nowrap"
         :class="[sizeClass, underlineClass, disabledClass]"
         v-tooltip="disabled ? disabledTooltip : ''"
       >
@@ -52,9 +52,13 @@ const props = defineProps({
 
 const router = useRouter();
 
-const sizeClass = computed(() => props.size === 'small' ? 'text-[11px]' : 'text-xs');
+const sizeClass = computed(() => {
+  if (props.size === 'small') return 'text-[11px]';
+  if (props.size === 'sm' || props.size === 'medium' || props.size === 'md') return 'text-sm';
+  return 'text-xs';
+});
 const underlineClass = computed(() => props.showUnderline ? 'hover:underline' : '');
-const disabledClass = computed(() => props.disabled ? 'cursor-default hover:text-gray-500' : 'cursor-pointer hover:text-blue-600');
+const disabledClass = computed(() => props.disabled ? 'cursor-default hover:text-gray-500 dark:hover:text-slate-400' : 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400');
 
 const displaySingers = computed(() => {
   if (props.singers && props.singers.length > 0) {
