@@ -1,6 +1,7 @@
 import { Tray, Menu, nativeImage, globalShortcut, app } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { trayIcons } from './trayIcons.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,32 +36,42 @@ export class TrayManager {
   }
 
   _buildMenu() {
-    const playPauseLabel = this.isPlaying ? '⏸ 暂停' : '▶ 播放';
+    const playPauseLabel = this.isPlaying ? '暂停' : '播放';
+    const playPauseIcon = this.isPlaying ? trayIcons.get('pause') : trayIcons.get('play');
+
     const playModeLabels = {
-      sequence: '🔀 列表循环',
-      loop: '🔁 单曲循环',
-      random: '🎲 随机播放'
+      sequence: '列表循环',
+      loop: '单曲循环',
+      random: '随机播放'
     };
-    const playModeLabel = playModeLabels[this.playMode] || '🔀 列表循环';
-    const lyricLabel = this.lyricVisible ? '🎤 桌面歌词 ✓' : '🎤 桌面歌词';
+    const playModeIcons = {
+      sequence: trayIcons.get('seq'),
+      loop: trayIcons.get('loop'),
+      random: trayIcons.get('rnd')
+    };
+
+    const currentModeLabel = playModeLabels[this.playMode] || '列表循环';
+    const currentModeIcon = playModeIcons[this.playMode] || trayIcons.get('seq');
+    const lyricLabel = this.lyricVisible ? '桌面歌词 ✓' : '桌面歌词';
+    const lyricIcon = this.lyricVisible ? trayIcons.get('lyricsOn') : trayIcons.get('lyrics');
 
     return Menu.buildFromTemplate([
-      { label: playPauseLabel, click: () => this._sendAction('toggle-play') },
-      { label: '⏮ 上一首', click: () => this._sendAction('prev') },
-      { label: '⏭ 下一首', click: () => this._sendAction('next') },
+      { label: playPauseLabel, icon: playPauseIcon, click: () => this._sendAction('toggle-play') },
+      { label: '上一首', icon: trayIcons.get('prev'), click: () => this._sendAction('prev') },
+      { label: '下一首', icon: trayIcons.get('next'), click: () => this._sendAction('next') },
       { type: 'separator' },
-      { label: '📋 显示主窗口', click: () => this._showWindow() },
-      { label: lyricLabel, click: () => this._sendAction('toggle-lyric') },
-      { label: playModeLabel, submenu: [
-        { label: '🔀 列表循环', type: 'radio', checked: this.playMode === 'sequence', click: () => this._sendAction('set-mode-sequence') },
-        { label: '🔁 单曲循环', type: 'radio', checked: this.playMode === 'loop', click: () => this._sendAction('set-mode-loop') },
-        { label: '🎲 随机播放', type: 'radio', checked: this.playMode === 'random', click: () => this._sendAction('set-mode-random') }
+      { label: '显示主窗口', icon: trayIcons.get('win'), click: () => this._showWindow() },
+      { label: lyricLabel, icon: lyricIcon, click: () => this._sendAction('toggle-lyric') },
+      { label: currentModeLabel, icon: currentModeIcon, submenu: [
+        { label: '列表循环', icon: trayIcons.get('seq'), type: 'radio', checked: this.playMode === 'sequence', click: () => this._sendAction('set-mode-sequence') },
+        { label: '单曲循环', icon: trayIcons.get('loop'), type: 'radio', checked: this.playMode === 'loop', click: () => this._sendAction('set-mode-loop') },
+        { label: '随机播放', icon: trayIcons.get('rnd'), type: 'radio', checked: this.playMode === 'random', click: () => this._sendAction('set-mode-random') }
       ]},
       { type: 'separator' },
-      { label: 'ℹ️ 关于概念音乐', click: () => this._sendAction('show-about') },
-      { label: '🔄 检查更新', click: () => this._checkUpdate() },
+      { label: '关于概念音乐', icon: trayIcons.get('about'), click: () => this._showAbout() },
+      { label: '检查更新', icon: trayIcons.get('update'), click: () => this._checkUpdate() },
       { type: 'separator' },
-      { label: '❌ 退出', click: () => this.forceQuit() }
+      { label: '退出', icon: trayIcons.get('quit'), click: () => this.forceQuit() }
     ]);
   }
 
@@ -102,6 +113,11 @@ export class TrayManager {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send('tray-action', action);
     }
+  }
+
+  _showAbout() {
+    this._showWindow();
+    this._sendAction('show-about');
   }
 
   _checkUpdate() {
@@ -180,7 +196,11 @@ export class TrayManager {
   }
 
   updateLyricState(visible) {
-    this.lyricVisible = visible;
+    this.lyricVisible = Boolean(visible);
+    this._refreshMenu();
+  }
+
+  updateTheme(theme) {
     this._refreshMenu();
   }
 

@@ -1,7 +1,7 @@
 // ====================
 // 文件：electron/main.js
 // ====================
-import { app, BrowserWindow, ipcMain, dialog, protocol, net, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol, net, screen, nativeTheme } from 'electron';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { fork } from 'child_process';
@@ -341,6 +341,7 @@ function closeLyricWindow({ destroy = false } = {}) {
   lyricLocked = false;
   lyricLockedHoverCount = 0;
   lyricHotArea = null;
+  if (trayManager) trayManager.updateLyricState(false);
   if (lyricWindow && !lyricWindow.isDestroyed()) {
     if (destroy) lyricWindow.destroy();
     else lyricWindow.close();
@@ -456,6 +457,7 @@ function createLyricWindow() {
     lyricWindow.show();
     startLyricMouseTracker();
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('lyric-window-ready');
+    if (trayManager) trayManager.updateLyricState(true);
   });
   lyricWindow.on('closed', () => {
     stopLyricMouseTracker();
@@ -466,6 +468,7 @@ function createLyricWindow() {
     lyricLockedHoverCount = 0;
     lyricHotArea = null;
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('lyric-window-closed');
+    if (trayManager) trayManager.updateLyricState(false);
   });
 }
 
@@ -707,6 +710,12 @@ app.whenReady().then(async () => {
   ipcMain.on('update-tray-play-state', (event, isPlaying) => { if (trayManager) trayManager.updatePlayState(isPlaying); });
   ipcMain.on('update-tray-play-mode', (event, mode) => { if (trayManager) trayManager.updatePlayMode(mode); });
   ipcMain.on('update-tray-lyric-state', (event, visible) => { if (trayManager) trayManager.updateLyricState(visible); });
+  ipcMain.on('set-theme', (event, theme) => {
+    if (['dark', 'light', 'system'].includes(theme)) {
+      nativeTheme.themeSource = theme;
+    }
+    if (trayManager) trayManager.updateTheme(theme);
+  });
   initAutoUpdater();
   if (app.isPackaged) {
     mainWindow.loadURL('app://localhost/');

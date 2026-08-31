@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('windowControls', {
   setFullScreen: (flag) => ipcRenderer.send('window-set-fullscreen', flag),
   toggleFullScreen: () => ipcRenderer.send('window-toggle-fullscreen'),
   isFullScreen: () => ipcRenderer.invoke('window-is-fullscreen'),
+  setTheme: (theme) => ipcRenderer.send('set-theme', theme),
   onFullScreenChange: (callback) => {
     fullscreenChangeMgr.set((_event, isFs) => callback(isFs));
   },
@@ -101,6 +102,7 @@ contextBridge.exposeInMainWorld('trayAPI', {
   updatePlayState: (isPlaying) => ipcRenderer.send('update-tray-play-state', isPlaying),
   updatePlayMode: (mode) => ipcRenderer.send('update-tray-play-mode', mode),
   updateLyricState: (visible) => ipcRenderer.send('update-tray-lyric-state', visible),
+  setTheme: (theme) => ipcRenderer.send('set-theme', theme),
   onTrayAction: (callback) => {
     trayActionMgr.set((event, action) => callback(action));
   }

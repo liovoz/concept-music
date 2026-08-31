@@ -631,9 +631,14 @@ export const usePlayerStore = defineStore('player', {
           if (cmd === 'close') this.toggleDesktopLyric();
         });
         
-        // 监听桌面歌词窗口被原生关闭的事件，同步状态
-        window.lyricAPI.onClosed(() => {
+        // 监听桌面歌词窗口被原生开启/关闭的事件，同步状态
+        window.lyricAPI.onReady?.(() => {
+          this.isDesktopLyricVisible = true;
+          this.syncTrayState();
+        });
+        window.lyricAPI.onClosed?.(() => {
           this.isDesktopLyricVisible = false;
+          this.syncTrayState();
         });
       }
     },

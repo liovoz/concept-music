@@ -12,6 +12,16 @@ const applyThemeClass = (value) => {
   document.documentElement.classList.toggle(THEME_DARK, value === THEME_DARK);
 };
 
+const syncThemeToNative = (val) => {
+  if (typeof window !== 'undefined') {
+    if (window.windowControls?.setTheme) {
+      window.windowControls.setTheme(val);
+    } else if (window.trayAPI?.setTheme) {
+      window.trayAPI.setTheme(val);
+    }
+  }
+};
+
 export const initTheme = () => {
   if (initialized) return;
   initialized = true;
@@ -22,6 +32,7 @@ export const initTheme = () => {
   }
 
   applyThemeClass(theme.value);
+  syncThemeToNative(theme.value);
 };
 
 export const useTheme = () => {
@@ -35,6 +46,7 @@ export const useTheme = () => {
       localStorage.setItem(STORAGE_KEY, theme.value);
     }
     applyThemeClass(theme.value);
+    syncThemeToNative(theme.value);
   };
 
   const toggleTheme = () => {
