@@ -4,23 +4,23 @@
 <template>
   <Teleport to="body">
     <transition name="dialog-fade">
-      <div v-if="store.dialogState.visible" ref="dialogRef" tabindex="-1" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/30 backdrop-blur-sm no-drag outline-none" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
-        <div class="bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-[380px] flex flex-col overflow-hidden transform transition-all">
+      <div v-if="store.dialogState.visible" ref="dialogRef" tabindex="-1" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm no-drag outline-none" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
+        <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-800 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] w-[380px] flex flex-col overflow-hidden transform transition-all text-gray-800 dark:text-slate-100">
           
-          <div class="px-6 py-5 border-b border-gray-100 flex items-center bg-gray-50/50">
+          <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-800 flex items-center bg-gray-50/50 dark:bg-slate-800/40">
              <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 shadow-inner" :class="dialogTone.iconWrap">
                <AppIcon v-if="store.dialogState.type === 'danger'" name="danger" class="w-5 h-5" />
                <AppIcon v-else name="info" class="w-5 h-5" />
              </div>
-             <h3 class="text-lg font-bold text-gray-800 tracking-wide">{{ store.dialogState.title }}</h3>
+             <h3 class="text-base font-bold text-gray-800 dark:text-white tracking-wide">{{ store.dialogState.title }}</h3>
           </div>
           
-          <div class="px-7 py-6 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap font-medium max-h-[60vh] overflow-y-auto custom-scrollbar break-all text-left">
+          <div class="px-7 py-6 text-sm text-gray-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium max-h-[60vh] overflow-y-auto custom-scrollbar break-all text-left">
             {{ store.dialogState.message }}
           </div>
           
-          <div class="px-6 py-4 bg-gray-50/50 flex items-center justify-end space-x-3">
-            <button @click="store.closeDialog(false)" class="px-5 py-2 rounded-full text-xs font-bold text-gray-500 hover:bg-gray-200/80 hover:text-gray-800 transition-colors no-drag focus:outline-none">
+          <div class="px-6 py-4 bg-gray-50/50 dark:bg-slate-800/40 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end space-x-3">
+            <button @click="store.closeDialog(false)" class="px-5 py-2 rounded-full text-xs font-bold text-gray-500 dark:text-slate-400 hover:bg-gray-200/80 dark:hover:bg-slate-800 hover:text-gray-800 dark:hover:text-slate-200 transition-colors no-drag focus:outline-none">
               {{ store.dialogState.cancelText }}
             </button>
             <button @click="store.closeDialog(true)" class="px-6 py-2 rounded-full text-xs font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center min-w-[100px] no-drag focus:outline-none" :class="dialogTone.confirmButton">

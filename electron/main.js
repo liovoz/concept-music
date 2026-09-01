@@ -1,7 +1,4 @@
-// ====================
-// 文件：electron/main.js
-// ====================
-import { app, BrowserWindow, ipcMain, dialog, protocol, net, screen, nativeTheme } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol, net, screen, nativeTheme, shell } from 'electron';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { fork } from 'child_process';
@@ -12,7 +9,6 @@ import builderUtilRuntime from 'builder-util-runtime';
 import { TrayManager } from './trayManager.js';
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
-app.commandLine.appendSwitch('disable-http-cache');
 
 const { autoUpdater } = pkg;
 const { CancellationToken } = builderUtilRuntime;
@@ -639,6 +635,13 @@ const createWindow = () => {
     icon: getAppIconPath(),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, webSecurity: true }
   });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
   mainWindow.once('ready-to-show', () => mainWindow.show());
   ipcMain.on('window-min', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize(); });
   ipcMain.on('window-max', () => { if (mainWindow && !mainWindow.isDestroyed()) { if (mainWindow.isMaximized()) mainWindow.unmaximize(); else mainWindow.maximize(); } });
@@ -715,6 +718,108 @@ app.whenReady().then(async () => {
       nativeTheme.themeSource = theme;
     }
     if (trayManager) trayManager.updateTheme(theme);
+  });
+  ipcMain.handle('settings-get-autostart', () => {
+    try {
+      return app.getLoginItemSettings().openAtLogin;
+    } catch (e) {
+      return false;
+    }
+  });
+  ipcMain.handle('settings-set-autostart', (event, enable) => {
+    try {
+      app.setLoginItemSettings({
+        openAtLogin: Boolean(enable),
+        openAsHidden: true
+      });
+      return app.getLoginItemSettings().openAtLogin;
+    } catch (e) {
+      return false;
+    }
+  });
+  function getDirSize(dirPath) {
+    let size = 0;
+    try {
+      if (!fs.existsSync(dirPath)) return 0;
+      const files = fs.readdirSync(dirPath, { withFileTypes: true });
+      for (const file of files) {
+        const filePath = path.join(dirPath, file.name);
+        if (file.isDirectory()) {
+          size += getDirSize(filePath);
+        } else if (file.isFile()) {
+          try {
+            const stats = fs.statSync(filePath);
+            size += stats.size;
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+    return size;
+  }
+
+  function getAppTotalCacheSize() {
+    try {
+      const userData = app.getPath('userData');
+      const cacheDirs = ['Cache', 'Code Cache', 'GPUCache', 'DawnCache'];
+      let total = 0;
+      for (const dir of cacheDirs) {
+        total += getDirSize(path.join(userData, dir));
+      }
+      return total;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function clearAppCacheDirs() {
+    try {
+      const userData = app.getPath('userData');
+      const cacheDirs = ['Cache', 'Code Cache', 'GPUCache', 'DawnCache'];
+      for (const dir of cacheDirs) {
+        const fullPath = path.join(userData, dir);
+        try {
+          if (fs.existsSync(fullPath)) {
+            fs.rmSync(fullPath, { recursive: true, force: true });
+          }
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
+
+  ipcMain.handle('settings-get-cache-size', async () => {
+    try {
+      let size = getAppTotalCacheSize();
+      if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.session) {
+        const sessionSize = await mainWindow.webContents.session.getCacheSize();
+        size = Math.max(size, sessionSize);
+      }
+      return size;
+    } catch (e) {}
+    return 0;
+  });
+  ipcMain.handle('settings-clear-cache', async () => {
+    try {
+      if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.session) {
+        await mainWindow.webContents.session.clearCache();
+      }
+      clearAppCacheDirs();
+      return true;
+    } catch (e) {}
+    return false;
+  });
+  ipcMain.handle('settings-get-shortcuts-enabled', () => {
+    return trayManager ? trayManager.getShortcutsEnabled() : true;
+  });
+  ipcMain.handle('settings-set-shortcuts-enabled', (event, enable) => {
+    if (trayManager) {
+      trayManager.setShortcutsEnabled(enable);
+    }
+    return true;
+  });
+  ipcMain.on('open-external', (event, url) => {
+    if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
+      shell.openExternal(url);
+    }
   });
   initAutoUpdater();
   if (app.isPackaged) {

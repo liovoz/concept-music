@@ -84,6 +84,13 @@ export const ICONS = {
     strokeWidth: 2,
     content: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>'
   },
+  'minimize-tray': {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    content: '<path d="M3 15V5a2 2 0 0 1 2-2h10"/><rect x="8" y="8" width="13" height="13" rx="2.5"/>'
+  },
   'netease-cloud': {
     viewBox: '1.2 1.2 21.6 21.6',
     fill: 'currentColor',
@@ -515,5 +522,12 @@ export const ICONS = {
     stroke: 'currentColor',
     strokeWidth: 2,
     content: '<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>'
+  },
+  'keyboard': {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    content: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8"/>'
   }
 };

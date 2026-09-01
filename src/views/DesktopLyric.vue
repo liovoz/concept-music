@@ -353,11 +353,22 @@ onMounted(() => {
     });
   }
 
+  const handleStorageChange = (e) => {
+    if (e.key === 'kg_desktop_lyric_config' && e.newValue) {
+      try {
+        Object.assign(config, JSON.parse(e.newValue));
+        clampSubFontSize();
+      } catch (err) {}
+    }
+  };
+  window.addEventListener('storage', handleStorageChange);
+
   updateLyricHotArea();
 });
 
 onUnmounted(() => {
   stopAnimation();
+  window.removeEventListener('storage', handleStorageChange);
 });
 
 watch([() => isPlaying.value, () => config.karaokeMode], ([playing, karaoke]) => {

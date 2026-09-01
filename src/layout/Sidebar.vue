@@ -115,9 +115,9 @@
 
     <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 dark:border-slate-800 pt-3">
       <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">系统</div>
-      <div @click="checkForUpdates" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors text-gray-600 hover:bg-gray-200 group">
-        <AppIcon name="info" class="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
-        关于
+      <div @click="openSettings" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800 group">
+        <AppIcon name="settings" class="w-4 h-4 mr-3 text-gray-400 dark:text-slate-400 group-hover:text-blue-500 transition-colors" />
+        设置
       </div>
     </nav>
 
@@ -146,7 +146,7 @@
             </div>
             <h3 class="text-lg font-bold text-gray-800 mb-2">开通 VIP</h3>
             <p class="text-sm text-gray-500 mb-5">当前歌曲为 VIP 专享，开通 VIP 即可畅听完整版及无损音质。</p>
-            <div class="flex flex-col space-y-2 w-full">
+            <div class="flex space-x-3 w-full">
               <button @click="handleVipUpgradeClaim" class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-sm font-bold shadow-md transition-all">
                 🎁 去领取免费 VIP
               </button>
@@ -171,7 +171,7 @@ const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 const playerStore = usePlayerStore(); 
-const updateModalRef = inject('updateModalRef', null);
+const settingsModalRef = inject('settingsModalRef', null);
 
 const showLogoutConfirm = ref(false);
 const isVipCardVisible = ref(false);
@@ -211,9 +211,9 @@ const handleGatewayDown = (e) => {
    playerStore.showToast(`⚠️ ${msg}`);
 };
 
-const checkForUpdates = () => {
-  if (updateModalRef.value) {
-    updateModalRef.value.showModal();
+const openSettings = () => {
+  if (settingsModalRef?.value) {
+    settingsModalRef.value.showModal();
   }
 };
 

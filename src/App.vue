@@ -26,8 +26,8 @@
     <GlobalToast />
     <GlobalDialog />
     <SongContextMenu />
-    <DisclaimerModal @accepted="onDisclaimerAccepted" />
-    <UpdateModal ref="updateModalRef" />
+    <DisclaimerModal ref="disclaimerModalRef" @accepted="onDisclaimerAccepted" />
+    <SettingsModal ref="settingsModalRef" />
 
     <transition name="fade-tooltip">
       <div 
@@ -64,7 +64,7 @@ watch(() => route.path, () => {
 });
 import GlobalDialog from './components/GlobalDialog.vue';
 import SongContextMenu from './components/SongContextMenu.vue';
-import UpdateModal from './components/UpdateModal.vue';
+import SettingsModal from './components/SettingsModal.vue';
 import DisclaimerModal from './components/DisclaimerModal.vue';
 import { useUserStore } from './store/userStore';
 import { usePlayerStore } from './store/playerStore';
@@ -72,7 +72,8 @@ import { hideTooltip, tooltipState } from './utils/tooltip';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
-const updateModalRef = ref(null);
+const settingsModalRef = ref(null);
+const disclaimerModalRef = ref(null);
 
 const disclaimerAccepted = localStorage.getItem('kg_desktop_disclaimer_accepted') === 'true';
 
@@ -80,7 +81,8 @@ const onDisclaimerAccepted = () => {
   userStore.verifySession();
 };
 
-provide('updateModalRef', updateModalRef);
+provide('settingsModalRef', settingsModalRef);
+provide('disclaimerModalRef', disclaimerModalRef);
 
 const handleTrayAction = (action) => {
   switch (action) {
@@ -93,11 +95,11 @@ const handleTrayAction = (action) => {
     case 'set-mode-loop': playerStore.setPlayMode('loop'); break;
     case 'set-mode-random': playerStore.setPlayMode('random'); break;
     case 'show-about':
-      if (updateModalRef.value) updateModalRef.value.showModal();
+      if (settingsModalRef.value) settingsModalRef.value.showModal('about');
       break;
     case 'check-update':
-      if (updateModalRef.value) {
-        updateModalRef.value.showModal();
+      if (settingsModalRef.value) {
+        settingsModalRef.value.showModal('about');
         setTimeout(() => {
           if (window.updaterAPI) window.updaterAPI.checkForUpdates();
         }, 300);

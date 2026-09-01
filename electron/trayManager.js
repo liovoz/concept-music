@@ -1,10 +1,36 @@
 import { Tray, Menu, nativeImage, globalShortcut, app } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { trayIcons } from './trayIcons.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function getPersistentShortcutsEnabled() {
+  try {
+    const file = path.join(app.getPath('userData'), 'desktop_settings.json');
+    if (fs.existsSync(file)) {
+      const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (typeof data.shortcutsEnabled === 'boolean') {
+        return data.shortcutsEnabled;
+      }
+    }
+  } catch (e) {}
+  return true;
+}
+
+function savePersistentShortcutsEnabled(enabled) {
+  try {
+    const file = path.join(app.getPath('userData'), 'desktop_settings.json');
+    let data = {};
+    if (fs.existsSync(file)) {
+      data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    }
+    data.shortcutsEnabled = Boolean(enabled);
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {}
+}
 
 export class TrayManager {
   constructor(mainWindow, ipcMain, options = {}) {
@@ -18,6 +44,7 @@ export class TrayManager {
     this.isQuitting = false;
     this.hasShownBalloon = false;
     this.lyricVisible = false;
+    this.shortcutsEnabled = getPersistentShortcutsEnabled();
   }
 
   init(iconPath) {
@@ -32,7 +59,23 @@ export class TrayManager {
       this._toggleWindow();
     });
 
-    this._registerShortcuts();
+    if (this.shortcutsEnabled) {
+      this._registerShortcuts();
+    }
+  }
+
+  setShortcutsEnabled(enabled) {
+    this.shortcutsEnabled = Boolean(enabled);
+    savePersistentShortcutsEnabled(this.shortcutsEnabled);
+    if (this.shortcutsEnabled) {
+      this._registerShortcuts();
+    } else {
+      this._unregisterShortcuts();
+    }
+  }
+
+  getShortcutsEnabled() {
+    return this.shortcutsEnabled !== false;
   }
 
   _buildMenu() {

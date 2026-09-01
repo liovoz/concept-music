@@ -122,32 +122,7 @@
          <AppIcon name="queue" class="w-5 h-5" />
        </button>
 
-       <div class="flex items-center space-x-2 group w-40 flex-shrink-0">
-         <div ref="boostMenuRef" class="relative flex-shrink-0">
-           <button
-             @click="boostMenuOpen = !boostMenuOpen"
-             class="no-drag w-7 h-7 rounded-md flex items-center justify-center transition-all focus:outline-none"
-             :class="store.volumeBoostEnabled ? 'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-400/30' : 'text-gray-400 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-slate-800'"
-             v-tooltip="boostTip"
-           >
-             <AppIcon name="new-songs" class="w-4 h-4" />
-           </button>
-           <div class="absolute bottom-full left-1/2 -translate-x-1/2 pb-2 transition-all duration-200 origin-bottom z-[70]" :class="boostMenuOpen ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'">
-             <div class="w-44 rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.14)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] p-2">
-               <button @click="store.toggleVolumeBoost()" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors no-drag" :class="store.volumeBoostEnabled ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-50 dark:text-slate-300 dark:hover:bg-slate-800'">
-                 <span>音量增强</span>
-                 <span class="relative inline-flex h-4 w-7 items-center rounded-full transition-colors" :class="store.volumeBoostEnabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-slate-600'">
-                   <span class="inline-block h-3 w-3 rounded-full bg-white transition-transform" :class="store.volumeBoostEnabled ? 'translate-x-3.5' : 'translate-x-0.5'"></span>
-                 </span>
-               </button>
-               <div class="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-gray-100 dark:bg-slate-800 p-1">
-                 <button v-for="level in boostLevels" :key="level.value" @click="store.setVolumeBoostLevel(level.value); store.setVolumeBoostEnabled(true)" class="no-drag rounded-md px-2 py-1.5 text-[11px] font-black transition-all" :class="store.volumeBoostEnabled && store.volumeBoostLevel === level.value ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-gray-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-300'">
-                   {{ level.label }}
-                 </button>
-               </div>
-             </div>
-           </div>
-         </div>
+       <div class="flex items-center space-x-2 group w-32 flex-shrink-0">
          <button @click="store.toggleMute" class="no-drag text-gray-400 hover:text-blue-600 transition-colors focus:outline-none" v-tooltip="store.volume === 0 ? '恢复音量' : '静音'">
             <AppIcon v-if="store.volume === 0" name="volume-mute" class="w-4 h-4" />
             <AppIcon v-else-if="store.volume < 0.5" name="volume-low" class="w-4 h-4" />
@@ -977,14 +952,7 @@ const playlistPanelRef = ref(null);
 const playlistBtnRef = ref(null);
 const qualityMenuRef = ref(null);
 const qualityMenuOpen = ref(false);
-const boostMenuRef = ref(null);
-const boostMenuOpen = ref(false);
 const playlistHoverIndex = ref(-1);
-const boostLevels = [
-  { value: 1.25, label: '125%' },
-  { value: 1.5, label: '150%' },
-  { value: 2, label: '200%' }
-];
 
 const qualityOptions = QUALITY_CONFIG.map(q => ({
   ...q,
@@ -1010,11 +978,6 @@ const handleQualitySelect = (quality) => {
   store.switchQuality(quality.key);
 };
 
-const boostTip = computed(() => {
-  if (boostMenuOpen.value) return '';
-  return store.volumeBoostEnabled ? `音量增强：${Math.round(store.volumeBoostLevel * 100)}%` : '音量增强：关';
-});
-
 const goToArtist = (id) => {
   if (!id || id === '0') return store.showToast('暂无该歌手详情信息');
   if (store.isLyricsVisible) store.toggleLyrics();
@@ -1036,8 +999,7 @@ const handleClickOutside = (event) => {
     const isClickInsidePanel = playlistPanelRef.value?.contains(event.target);
     const isClickOnBtn = playlistBtnRef.value?.contains(event.target);
     const isClickOnQualityMenu = qualityMenuRef.value?.contains(event.target);
-    const isClickOnBoostMenu = boostMenuRef.value?.contains(event.target);
-    if (!isClickInsidePanel && !isClickOnBtn && !isClickOnQualityMenu && !isClickOnBoostMenu) {
+    if (!isClickInsidePanel && !isClickOnBtn && !isClickOnQualityMenu) {
       store.isPlaylistVisible = false;
     }
   }
@@ -1045,12 +1007,6 @@ const handleClickOutside = (event) => {
     const isClickOnQualityMenu = qualityMenuRef.value?.contains(event.target);
     if (!isClickOnQualityMenu) {
       qualityMenuOpen.value = false;
-    }
-  }
-  if (boostMenuOpen.value) {
-    const isClickOnBoostMenu = boostMenuRef.value?.contains(event.target);
-    if (!isClickOnBoostMenu) {
-      boostMenuOpen.value = false;
     }
   }
 };

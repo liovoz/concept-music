@@ -132,6 +132,15 @@ onUnmounted(() => {
     timer = null;
   }
 });
+
+const showModal = () => {
+  countdown.value = 0;
+  isVisible.value = true;
+};
+
+defineExpose({
+  showModal
+});
 </script>
 
 <style scoped>

@@ -107,3 +107,14 @@ contextBridge.exposeInMainWorld('trayAPI', {
     trayActionMgr.set((event, action) => callback(action));
   }
 });
+
+contextBridge.exposeInMainWorld('settingsAPI', {
+  getAutoStart: () => ipcRenderer.invoke('settings-get-autostart'),
+  setAutoStart: (enabled) => ipcRenderer.invoke('settings-set-autostart', enabled),
+  clearCache: () => ipcRenderer.invoke('settings-clear-cache'),
+  getCacheSize: () => ipcRenderer.invoke('settings-get-cache-size'),
+  getShortcutsEnabled: () => ipcRenderer.invoke('settings-get-shortcuts-enabled'),
+  setShortcutsEnabled: (enabled) => ipcRenderer.invoke('settings-set-shortcuts-enabled', enabled),
+  openExternal: (url) => ipcRenderer.send('open-external', url)
+});
+
