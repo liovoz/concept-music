@@ -10,6 +10,8 @@ const VIP_DETAIL_PROBE_REDACT_KEYS = /token|cookie|authorization|password|secret
 const AUTH_TOKEN_REFRESH_INTERVAL = 5 * 60 * 1000;
 
 let authTokenRefreshPromise = null;
+let autoVipTimer = null;
+let autoVipNextHourlyTime = 0;
 
 const sanitizeVipProbePayload = (value, seen = new WeakSet()) => {
   if (value === null || typeof value !== 'object') return value;
@@ -191,7 +193,8 @@ export const useUserStore = defineStore('user', {
     isVipProcessing: false,
     isDayVipProcessing: false,
     _lastVipPollTime: 0,
-    _lastAuthTokenRefreshTime: 0
+    _lastAuthTokenRefreshTime: 0,
+    autoClaimVip: localStorage.getItem('kg_desktop_auto_claim_vip') === 'true'
   }),
 
   actions: {
@@ -199,6 +202,106 @@ export const useUserStore = defineStore('user', {
     closeLoginModal() { this.showLoginModal = false; },
     openVipUpgradeModal() { this.showVipUpgradeModal = true; },
     closeVipUpgradeModal() { this.showVipUpgradeModal = false; },
+
+    setAutoClaimVip(enable) {
+      this.autoClaimVip = Boolean(enable);
+      try {
+        localStorage.setItem('kg_desktop_auto_claim_vip', String(this.autoClaimVip));
+      } catch (e) {}
+      if (this.autoClaimVip) {
+        this.startAutoVipScheduler();
+        this.triggerAutoClaimCheck(true);
+      } else {
+        this.stopAutoVipScheduler();
+      }
+    },
+
+    _calculateNextVipTriggerTime(baseLastTime = 0, isCooldown = true) {
+      const COOLDOWN_MS = 60 * 60 * 1000;
+      // 15 到 60 秒随机抖动延时，打乱请求特征，防平台风控
+      const randomJitter = Math.floor(Math.random() * 45000 + 15000);
+      if (isCooldown && baseLastTime > 0) {
+        return baseLastTime + COOLDOWN_MS + randomJitter;
+      }
+      return Date.now() + Math.floor(Math.random() * 7000 + 3000);
+    },
+
+    startAutoVipScheduler() {
+      if (autoVipTimer) return;
+      if (!this.autoClaimVip || !this.isLoggedIn) return;
+
+      const now = Date.now();
+      const COOLDOWN_MS = 60 * 60 * 1000;
+      const lastTime = Number(this.vipState?.lastTime || 0);
+      if (lastTime > 0 && (now - lastTime < COOLDOWN_MS)) {
+        autoVipNextHourlyTime = this._calculateNextVipTriggerTime(lastTime, true);
+      } else {
+        autoVipNextHourlyTime = this._calculateNextVipTriggerTime(0, false);
+      }
+
+      autoVipTimer = setInterval(() => {
+        this.checkAndExecuteAutoClaim();
+      }, 10000);
+    },
+
+    stopAutoVipScheduler() {
+      if (autoVipTimer) {
+        clearInterval(autoVipTimer);
+        autoVipTimer = null;
+      }
+      autoVipNextHourlyTime = 0;
+    },
+
+    triggerAutoClaimCheck(immediate = false) {
+      if (!this.autoClaimVip || !this.isLoggedIn) return;
+      if (immediate) {
+        autoVipNextHourlyTime = Date.now() + 1000;
+      }
+      setTimeout(() => {
+        if (this.autoClaimVip && this.isLoggedIn) {
+          this.checkAndExecuteAutoClaim();
+        }
+      }, immediate ? 600 : 3500);
+    },
+
+    async checkAndExecuteAutoClaim() {
+      if (!this.autoClaimVip || !this.isLoggedIn) {
+        this.stopAutoVipScheduler();
+        return;
+      }
+
+      try {
+        // 1. 跨天重置检测
+        this.checkVipReset();
+        this.checkDayVipReset();
+
+        const now = Date.now();
+
+        // 2. 自动领取 1 天 VIP (每日 1 次)
+        if (!this.dayVipState?.claimed && !this.isDayVipProcessing) {
+          try {
+            await this.claimOneDayVip({ silent: true });
+          } catch (e) {}
+        }
+
+        // 3. 自动领取 3 小时 VIP (每日最多 8 次，间隔 60m + 随机抖动)
+        const count = Number(this.vipState?.count || 0);
+        if (count < 8 && !this.isVipProcessing) {
+          const COOLDOWN_MS = 60 * 60 * 1000;
+          const lastTime = Number(this.vipState?.lastTime || 0);
+          const timeSinceLast = now - lastTime;
+
+          if (timeSinceLast >= COOLDOWN_MS && now >= autoVipNextHourlyTime) {
+            try {
+              await this.claimDailyVip({ silent: true });
+            } catch (e) {
+            } finally {
+              autoVipNextHourlyTime = this._calculateNextVipTriggerTime(this.vipState?.lastTime || Date.now(), true);
+            }
+          }
+        }
+      } catch (err) {}
+    },
 
     async refreshAuthTokens(options = {}) {
       const { force = false, allowLoggedOut = false } = options;
@@ -381,7 +484,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async claimOneDayVip() {
+    async claimOneDayVip(options = {}) {
       if (!this.isLoggedIn) return { success: false, msg: '请先登录' };
       
       this.checkDayVipReset();
@@ -465,7 +568,7 @@ export const useUserStore = defineStore('user', {
 
            await this.refreshAuthTokens({ force: true });
            await this.fetchVipDetail({ notifyPlayer: false });
-           await this.fetchUserInfo({ notifyPlayer: false });
+           await this.fetchUserInfo({ notifyPlayer: false, skipSchedulerTrigger: true });
 
            const isVip = this.userInfo?.vip > 0;
            if (!wasVip && isVip) {
@@ -485,7 +588,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async claimDailyVip() {
+    async claimDailyVip(options = {}) {
       if (!this.isLoggedIn) return { success: false, msg: '请先登录' };
       this.checkVipReset();
       if (this.vipState.count >= 8) return { success: false, msg: '今日额度已达上限' };
@@ -516,7 +619,7 @@ export const useUserStore = defineStore('user', {
           const oldTime = this.vipExpirationTime;
           await this.refreshAuthTokens({ force: true });
           await this.fetchVipDetail({ notifyPlayer: false });
-          await this.fetchUserInfo({ notifyPlayer: false });
+          await this.fetchUserInfo({ notifyPlayer: false, skipSchedulerTrigger: true });
 
           const isVip = this.userInfo?.vip > 0;
           if (!wasVip && isVip) {
@@ -686,7 +789,7 @@ export const useUserStore = defineStore('user', {
 
     async fetchUserInfo(options = {}) {
       try {
-        const { notifyPlayer = true, forceAuthRefresh = false } = options;
+        const { notifyPlayer = true, forceAuthRefresh = false, skipSchedulerTrigger = false } = options;
         await request.get('/register/dev', { silent: true }).catch(() => {});
         await this.refreshAuthTokens({ allowLoggedOut: true, force: forceAuthRefresh });
 
@@ -722,6 +825,11 @@ export const useUserStore = defineStore('user', {
           if (notifyPlayer && playerStore.currentSong && this.userInfo.vip > 0) {
              playerStore.handleAuthCapabilityChanged('login');
           }
+
+          if (!skipSchedulerTrigger && this.autoClaimVip) {
+             this.startAutoVipScheduler();
+             this.triggerAutoClaimCheck(false);
+          }
           
         } else {
           throw new Error('用户失效');
@@ -751,6 +859,7 @@ export const useUserStore = defineStore('user', {
 
     logout() {
       try {
+        this.stopAutoVipScheduler();
         const playerStore = usePlayerStore();
         playerStore.downgradeForLogout();
 
