@@ -93,6 +93,27 @@
                 :style="{ backgroundColor: t.color }"
                 @click="config.colorTheme = t.id"
               ></button>
+              <button
+                class="st-color-dot st-color-custom"
+                :class="{ 'st-color-active': config.colorTheme === 'custom' }"
+                title="自定义调色盘"
+              >
+                <img 
+                  v-if="rainbowRingDataUrl" 
+                  :src="rainbowRingDataUrl" 
+                  class="w-full h-full block pointer-events-none select-none" 
+                  alt="rainbow ring"
+                />
+                <input
+                  ref="colorInputRef"
+                  type="color"
+                  v-model="config.customColor"
+                  @change="config.colorTheme = 'custom'"
+                  @input="config.colorTheme = 'custom'"
+                  class="st-color-input-overlay"
+                  title="点击打开调色盘"
+                />
+              </button>
             </div>
           </div>
           <div class="st-divider"></div>
@@ -134,6 +155,49 @@ const currentText = ref('听见好时光');
 const nextText = ref('');
 const currentTranslation = ref('');
 const isPlaying = ref(false);
+const colorInputRef = ref(null);
+
+const rainbowRingDataUrl = computed(() => {
+  if (typeof document === 'undefined') return '';
+  try {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !ctx.createConicGradient) return '';
+    const cx = size / 2, cy = size / 2;
+    const outerR = size / 2 - 0.5;
+    const innerR = (size / 2) * 0.35;
+    const grad = ctx.createConicGradient(-Math.PI / 2, cx, cy);
+    grad.addColorStop(0, '#ff3b30');
+    grad.addColorStop(0.14, '#ff9500');
+    grad.addColorStop(0.28, '#ffcc00');
+    grad.addColorStop(0.42, '#34c759');
+    grad.addColorStop(0.56, '#00c7be');
+    grad.addColorStop(0.70, '#007aff');
+    grad.addColorStop(0.84, '#5856d6');
+    grad.addColorStop(0.93, '#af52de');
+    grad.addColorStop(0.98, '#ff2d55');
+    grad.addColorStop(1, '#ff3b30');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fill();
+    return canvas.toDataURL('image/png');
+  } catch (e) {
+    return '';
+  }
+});
+
+const triggerColorPick = () => {
+  config.colorTheme = 'custom';
+  if (colorInputRef.value) {
+    colorInputRef.value.click();
+  }
+};
 
 const currentWords = ref([]);
 const lineStartTime = ref(0);
@@ -147,6 +211,7 @@ const config = reactive({
   fontSize: 34,
   subFontSize: 28,
   colorTheme: 'white',
+  customColor: '#38bdf8',
   showSub: true,
   karaokeMode: true
 });
@@ -162,6 +227,31 @@ const clampSubFontSize = () => {
   if (config.subFontSize < 14) config.subFontSize = 14;
 };
 
+const hexToRgb = (hex) => {
+  let c = (hex || '').replace(/^#/, '').trim();
+  if (c.length === 3) {
+    c = c.split('').map(x => x + x).join('');
+  }
+  if (c.length !== 6) return [56, 189, 248];
+  const num = parseInt(c, 16);
+  if (Number.isNaN(num)) return [56, 189, 248];
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+};
+
+const getCustomTheme = (hex) => {
+  const [r, g, b] = hexToRgb(hex);
+  const subR = Math.round(r * 0.6 + 255 * 0.4);
+  const subG = Math.round(g * 0.6 + 255 * 0.4);
+  const subB = Math.round(b * 0.6 + 255 * 0.4);
+  return {
+    id: 'custom',
+    color: hex || '#38bdf8',
+    main: hex || '#38bdf8',
+    sub: `rgba(${subR}, ${subG}, ${subB}, 0.75)`,
+    glow: `rgba(${r}, ${g}, ${b}, 0.35)`
+  };
+};
+
 const themes = [
   { id: 'white', color: '#f8fafc', main: '#f8fafc', sub: 'rgba(203, 213, 225, 0.78)', glow: 'rgba(148, 163, 184, 0.22)' },
   { id: 'red', color: '#fb7185', main: '#fda4af', sub: 'rgba(254, 205, 211, 0.72)', glow: 'rgba(251, 113, 133, 0.34)' },
@@ -170,7 +260,12 @@ const themes = [
   { id: 'purple', color: '#a78bfa', main: '#c4b5fd', sub: 'rgba(221, 214, 254, 0.72)', glow: 'rgba(167, 139, 250, 0.34)' }
 ];
 
-const activeTheme = computed(() => themes.find(t => t.id === config.colorTheme) || themes[0]);
+const activeTheme = computed(() => {
+  if (config.colorTheme === 'custom') {
+    return getCustomTheme(config.customColor);
+  }
+  return themes.find(t => t.id === config.colorTheme) || themes[0];
+});
 
 const lyricMainStyle = computed(() => ({
   fontSize: `${config.fontSize}px`,
@@ -642,16 +737,22 @@ watch(config, (v) => {
 
 .st-colors {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
 .st-color-dot {
   width: 22px;
   height: 22px;
+  min-width: 22px;
+  min-height: 22px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s;
+  box-sizing: border-box;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .st-color-dot:hover {
@@ -661,6 +762,28 @@ watch(config, (v) => {
 .st-color-active {
   border-color: #fff;
   transform: scale(1.2);
+}
+
+.st-color-custom {
+  background: transparent;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+}
+
+.st-color-input-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
 
 .st-toggle {

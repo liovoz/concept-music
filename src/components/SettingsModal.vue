@@ -353,7 +353,7 @@
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
                     <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">主题配色方案</h3>
                   </div>
-                  <div class="grid grid-cols-5 gap-2">
+                  <div class="grid grid-cols-6 gap-2">
                     <button
                       v-for="t in lyricThemes"
                       :key="t.id"
@@ -361,11 +361,72 @@
                       class="py-2.5 rounded-lg border flex flex-col items-center justify-center transition-all group"
                       :class="lyricConfig.colorTheme === t.id 
                         ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs ring-1 ring-blue-500' 
-                        : 'border-gray-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100'"
+                        : 'border-gray-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/50'"
                     >
                       <div class="w-4 h-4 rounded-full mb-1 border border-black/10 shadow-xs" :style="{ backgroundColor: t.color }"></div>
                       <span class="text-[11px] font-bold text-gray-600 dark:text-slate-300">{{ t.label }}</span>
                     </button>
+
+                    <!-- 自定义调色盘按钮 -->
+                    <button
+                      @click="selectCustomColorTheme"
+                      class="py-2.5 rounded-lg border flex flex-col items-center justify-center transition-all group relative"
+                      :class="lyricConfig.colorTheme === 'custom' 
+                        ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs ring-1 ring-blue-500' 
+                        : 'border-gray-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/50'"
+                    >
+                      <div class="w-4 h-4 rounded-full mb-1 border border-black/10 shadow-xs flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
+                        <img 
+                          v-if="rainbowRingDataUrl" 
+                          :src="rainbowRingDataUrl" 
+                          class="w-full h-full block pointer-events-none select-none" 
+                          alt="rainbow ring"
+                        />
+                      </div>
+                      <span class="text-[11px] font-bold text-gray-600 dark:text-slate-300">自定义</span>
+                    </button>
+                  </div>
+
+                  <!-- 选中自定义时的无极调色盘控制器 -->
+                  <div 
+                    v-if="lyricConfig.colorTheme === 'custom'" 
+                    class="flex items-center justify-between p-3 rounded-lg bg-slate-50/90 dark:bg-slate-800/60 border border-blue-100 dark:border-slate-700/80 transition-all"
+                  >
+                    <div class="flex items-center space-x-3">
+                      <div class="relative flex items-center justify-center w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-slate-600 shadow-inner group">
+                        <input 
+                          type="color" 
+                          v-model="lyricConfig.customColor" 
+                          class="absolute -inset-2 w-12 h-12 cursor-pointer opacity-0"
+                          title="点击打开调色盘"
+                        />
+                        <div 
+                          class="w-full h-full rounded-full pointer-events-none transition-transform group-hover:scale-110" 
+                          :style="{ backgroundColor: lyricConfig.customColor || '#38bdf8' }"
+                        ></div>
+                      </div>
+                      <div>
+                        <div class="flex items-center space-x-1.5">
+                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">无极调色盘</p>
+                          <span class="text-[10px] px-1.5 py-0.2 bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded font-medium">拾色器</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">点击色块选取任意颜色，或在右侧输入 HEX 色值</p>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                      <div class="flex items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-gray-700 dark:text-slate-200 focus-within:border-blue-500 shadow-xs">
+                        <span class="text-gray-400 mr-1 select-none">#</span>
+                        <input 
+                          type="text" 
+                          :value="lyricConfig.customColor ? lyricConfig.customColor.replace(/^#/, '') : '38bdf8'"
+                          @input="handleCustomHexInput($event.target.value)"
+                          class="w-16 bg-transparent outline-none uppercase font-mono text-xs text-gray-800 dark:text-slate-200"
+                          maxlength="6"
+                          placeholder="38bdf8"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </section>
 
@@ -843,14 +904,72 @@ const lyricConfig = reactive({
   fontSize: 34,
   subFontSize: 28,
   colorTheme: 'white',
+  customColor: '#38bdf8',
   showSub: true,
   karaokeMode: true
 });
+const selectCustomColorTheme = () => {
+  lyricConfig.colorTheme = 'custom';
+  if (!lyricConfig.customColor) {
+    lyricConfig.customColor = '#38bdf8';
+  }
+};
+const handleCustomHexInput = (val) => {
+  let clean = (val || '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
+  if (clean.length === 6 || clean.length === 3) {
+    lyricConfig.customColor = '#' + clean;
+    lyricConfig.colorTheme = 'custom';
+  }
+};
+const rainbowRingDataUrl = computed(() => {
+  if (typeof document === 'undefined') return '';
+  try {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !ctx.createConicGradient) return '';
+    const cx = size / 2, cy = size / 2;
+    const outerR = size / 2 - 0.5;
+    const innerR = (size / 2) * 0.35;
+    const grad = ctx.createConicGradient(-Math.PI / 2, cx, cy);
+    grad.addColorStop(0, '#ff3b30');
+    grad.addColorStop(0.14, '#ff9500');
+    grad.addColorStop(0.28, '#ffcc00');
+    grad.addColorStop(0.42, '#34c759');
+    grad.addColorStop(0.56, '#00c7be');
+    grad.addColorStop(0.70, '#007aff');
+    grad.addColorStop(0.84, '#5856d6');
+    grad.addColorStop(0.93, '#af52de');
+    grad.addColorStop(0.98, '#ff2d55');
+    grad.addColorStop(1, '#ff3b30');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fill();
+    return canvas.toDataURL('image/png');
+  } catch (e) {
+    return '';
+  }
+});
+
 const loadLyricConfig = () => {
   try {
     const saved = localStorage.getItem('kg_desktop_lyric_config');
     if (saved) Object.assign(lyricConfig, JSON.parse(saved));
   } catch (e) {}
+};
+
+const handleLyricStorageChange = (e) => {
+  if (e.key === 'kg_desktop_lyric_config' && e.newValue) {
+    try {
+      const parsed = JSON.parse(e.newValue);
+      Object.assign(lyricConfig, parsed);
+    } catch (err) {}
+  }
 };
 watch(lyricConfig, (v) => {
   const maxSub = v.fontSize - 6;
@@ -996,6 +1115,7 @@ const closeModal = () => {
 
 let isListeningUpdater = false;
 onMounted(() => {
+  window.addEventListener('storage', handleLyricStorageChange);
   if (window.updaterAPI && !isListeningUpdater) {
     isListeningUpdater = true;
     window.updaterAPI.onUpdateEvent((data) => {
@@ -1028,6 +1148,10 @@ onMounted(() => {
       }
     });
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('storage', handleLyricStorageChange);
 });
 
 defineExpose({
