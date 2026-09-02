@@ -3,13 +3,20 @@ import { computed, ref } from 'vue';
 const STORAGE_KEY = 'kg_desktop_theme';
 const THEME_DARK = 'dark';
 const THEME_LIGHT = 'light';
+const THEME_SYSTEM = 'system';
 
 const theme = ref(THEME_LIGHT);
 let initialized = false;
 
+const getIsSystemDark = () => {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+
 const applyThemeClass = (value) => {
   if (typeof document === 'undefined') return;
-  document.documentElement.classList.toggle(THEME_DARK, value === THEME_DARK);
+  const isDarkEffective = value === THEME_DARK || (value === THEME_SYSTEM && getIsSystemDark());
+  document.documentElement.classList.toggle(THEME_DARK, isDarkEffective);
 };
 
 const syncThemeToNative = (val) => {
@@ -28,7 +35,25 @@ export const initTheme = () => {
 
   if (typeof localStorage !== 'undefined') {
     const savedTheme = localStorage.getItem(STORAGE_KEY);
-    theme.value = savedTheme === THEME_DARK ? THEME_DARK : THEME_LIGHT;
+    if ([THEME_LIGHT, THEME_DARK, THEME_SYSTEM].includes(savedTheme)) {
+      theme.value = savedTheme;
+    } else {
+      theme.value = THEME_LIGHT;
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => {
+      if (theme.value === THEME_SYSTEM) {
+        applyThemeClass(THEME_SYSTEM);
+      }
+    };
+    if (mql.addEventListener) {
+      mql.addEventListener('change', onChange);
+    } else if (mql.addListener) {
+      mql.addListener(onChange);
+    }
   }
 
   applyThemeClass(theme.value);
@@ -38,10 +63,13 @@ export const initTheme = () => {
 export const useTheme = () => {
   initTheme();
 
-  const isDark = computed(() => theme.value === THEME_DARK);
+  const isDark = computed(() => {
+    return theme.value === THEME_DARK || (theme.value === THEME_SYSTEM && getIsSystemDark());
+  });
 
   const setTheme = (value) => {
-    theme.value = value === THEME_DARK ? THEME_DARK : THEME_LIGHT;
+    const valid = [THEME_LIGHT, THEME_DARK, THEME_SYSTEM].includes(value) ? value : THEME_LIGHT;
+    theme.value = valid;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, theme.value);
     }

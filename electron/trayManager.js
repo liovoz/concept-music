@@ -212,7 +212,11 @@ export class TrayManager {
       this.tray = null;
     }
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.destroy();
+      try {
+        this.mainWindow.close();
+      } catch (e) {
+        try { this.mainWindow.destroy(); } catch (_) {}
+      }
     }
   }
 

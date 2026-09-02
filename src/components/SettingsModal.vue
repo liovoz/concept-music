@@ -299,7 +299,7 @@
                       <button
                         v-for="lvl in [1.25, 1.5, 2]"
                         :key="lvl"
-                        @click="playerStore.setVolumeBoostLevel(lvl)"
+                        @click="handleSetVolumeBoostLevel(lvl)"
                         class="px-3 py-1 rounded-lg text-xs font-bold transition-all"
                         :class="playerStore.volumeBoostLevel === lvl 
                           ? 'bg-purple-600 text-white shadow-sm' 
@@ -324,7 +324,8 @@
                         <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">当歌曲资源失效或播放失败时，自动播放下一首</p>
                       </div>
                       <button 
-                        @click="playerStore.setAutoSkipOnError(!playerStore.autoSkipOnError)"
+                        type="button"
+                        @click="toggleAutoSkip"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
                         :class="playerStore.autoSkipOnError ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
                       >
@@ -341,7 +342,8 @@
                         <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">启动软件时恢复上次的播放列表、歌曲与播放进度</p>
                       </div>
                       <button 
-                        @click="playerStore.setRememberState(!playerStore.rememberState)"
+                        type="button"
+                        @click="toggleRememberState"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
                         :class="playerStore.rememberState ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
                       >
@@ -982,8 +984,27 @@ const handleClearAppCache = () => {
 };
 
 // --- 2. 播放与音频 ---
-const toggleVolumeBoost = () => {
-  playerStore.toggleVolumeBoost();
+const toggleVolumeBoost = async () => {
+  const next = !playerStore.volumeBoostEnabled;
+  await playerStore.setVolumeBoostEnabled(next);
+  playerStore.showToast(next ? '已开启音量增益增强' : '已关闭音量增益增强');
+};
+
+const handleSetVolumeBoostLevel = (lvl) => {
+  playerStore.setVolumeBoostLevel(lvl);
+  playerStore.showToast(`已设置增益倍率为 ${Math.round(lvl * 100)}% (${lvl}x)`);
+};
+
+const toggleAutoSkip = () => {
+  const next = !playerStore.autoSkipOnError;
+  playerStore.setAutoSkipOnError(next);
+  playerStore.showToast(next ? '已开启故障自动跳过' : '已关闭故障自动跳过');
+};
+
+const toggleRememberState = () => {
+  const next = !playerStore.rememberState;
+  playerStore.setRememberState(next);
+  playerStore.showToast(next ? '已开启记忆播放列表与进度' : '已关闭记忆功能（下次启动将清空列表）');
 };
 
 // --- 3. 桌面歌词 ---
@@ -1191,6 +1212,7 @@ const showModal = (tab = 'general') => {
   initAutoStart();
   initGlobalShortcuts();
   refreshCacheSize();
+  playerStore.initAudioSettings?.();
 
   if (window.updaterAPI) {
     window.updaterAPI.getAppVersion().then(ver => {

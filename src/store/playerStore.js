@@ -83,6 +83,12 @@ const getInitialRememberState = () => {
   return localStorage.getItem(REMEMBER_STATE_KEY) !== 'false';
 };
 
+const syncAudioSettingsToNative = (patch) => {
+  if (typeof window !== 'undefined' && window.settingsAPI?.setAudioSettings) {
+    window.settingsAPI.setAudioSettings(patch).catch(() => {});
+  }
+};
+
 let persistStateTimer = null;
 let lastPersistProgressTime = 0;
 
@@ -688,17 +694,60 @@ export const usePlayerStore = defineStore('player', {
       });
     },
 
-    initAudio() {
-      this.applyAudioOutputSettings();
+    async initAudioSettings() {
+      if (typeof window !== 'undefined' && window.settingsAPI?.getAudioSettings) {
+        try {
+          const nativeSettings = await window.settingsAPI.getAudioSettings();
+          if (nativeSettings) {
+            if (typeof nativeSettings.autoSkipOnError === 'boolean') {
+              this.autoSkipOnError = nativeSettings.autoSkipOnError;
+              localStorage.setItem(AUTO_SKIP_KEY, String(this.autoSkipOnError));
+            }
+            if (typeof nativeSettings.rememberState === 'boolean') {
+              this.rememberState = nativeSettings.rememberState;
+              localStorage.setItem(REMEMBER_STATE_KEY, String(this.rememberState));
+              if (!this.rememberState) {
+                this.clearPersistedState();
+              }
+            }
+            if (typeof nativeSettings.volumeBoostEnabled === 'boolean') {
+              this.volumeBoostEnabled = nativeSettings.volumeBoostEnabled;
+              localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, this.volumeBoostEnabled ? 'true' : 'false');
+              if (!this.volumeBoostEnabled) {
+                this.applyAudioOutputSettings();
+              }
+            }
+            if (typeof nativeSettings.volumeBoostLevel === 'number' && VOLUME_BOOST_LEVELS.includes(nativeSettings.volumeBoostLevel)) {
+              this.volumeBoostLevel = nativeSettings.volumeBoostLevel;
+              localStorage.setItem(VOLUME_BOOST_LEVEL_KEY, String(this.volumeBoostLevel));
+            }
+          }
+        } catch (e) {}
+      }
+    },
+
+    async initAudio() {
+      // 1. 优先前置完成原生磁盘配置同步，杜绝异步竞态
+      await this.initAudioSettings();
+
+      // 2. 根据对齐后的增益状态配置输出
+      if (this.volumeBoostEnabled) {
+        await this.ensureBoostAudioOutput();
+      } else {
+        this.applyAudioOutputSettings();
+      }
+
       if (!audioEventsBound) {
         this.bindAudioEvents(audioA);
         this.bindAudioEvents(audioB);
         audioEventsBound = true;
       }
-      if (this.volumeBoostEnabled) this.ensureBoostAudioOutput();
 
+      // 3. 严格遵循 rememberState：若为 true 才恢复，若为 false 确保清理残留
       if (this.rememberState && this.playlist.length === 0 && !this.currentSong) {
         this.restorePlaybackState();
+      } else if (!this.rememberState) {
+        this.clearPersistedState();
       }
 
       if (typeof window !== 'undefined' && !window.__kg_beforeunload_bound) {
@@ -706,6 +755,8 @@ export const usePlayerStore = defineStore('player', {
         window.addEventListener('beforeunload', () => {
           if (this.rememberState) {
             this.persistPlaybackState();
+          } else {
+            this.clearPersistedState();
           }
         });
       }
@@ -733,11 +784,13 @@ export const usePlayerStore = defineStore('player', {
     setAutoSkipOnError(enabled) {
       this.autoSkipOnError = !!enabled;
       localStorage.setItem(AUTO_SKIP_KEY, String(this.autoSkipOnError));
+      syncAudioSettingsToNative({ autoSkipOnError: this.autoSkipOnError });
     },
 
     setRememberState(enabled) {
       this.rememberState = !!enabled;
       localStorage.setItem(REMEMBER_STATE_KEY, String(this.rememberState));
+      syncAudioSettingsToNative({ rememberState: this.rememberState });
       if (!this.rememberState) {
         this.clearPersistedState();
       } else {
@@ -746,7 +799,10 @@ export const usePlayerStore = defineStore('player', {
     },
 
     persistPlaybackState() {
-      if (!this.rememberState) return;
+      if (!this.rememberState) {
+        this.clearPersistedState();
+        return;
+      }
       try {
         const sanitizedPlaylist = (this.playlist || [])
           .map(sanitizeSongForStorage)
@@ -879,6 +935,7 @@ export const usePlayerStore = defineStore('player', {
     async setVolumeBoostEnabled(enabled) {
       this.volumeBoostEnabled = !!enabled;
       localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, this.volumeBoostEnabled ? 'true' : 'false');
+      syncAudioSettingsToNative({ volumeBoostEnabled: this.volumeBoostEnabled });
       if (this.volumeBoostEnabled) await this.ensureBoostAudioOutput();
       else this.applyAudioOutputSettings();
     },
@@ -887,6 +944,7 @@ export const usePlayerStore = defineStore('player', {
       const nextLevel = VOLUME_BOOST_LEVELS.includes(Number(level)) ? Number(level) : 1.5;
       this.volumeBoostLevel = nextLevel;
       localStorage.setItem(VOLUME_BOOST_LEVEL_KEY, nextLevel.toString());
+      syncAudioSettingsToNative({ volumeBoostLevel: this.volumeBoostLevel });
       if (this.volumeBoostEnabled) this.ensureBoostAudioOutput();
       else this.applyAudioOutputSettings();
     },

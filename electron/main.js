@@ -817,6 +817,48 @@ app.whenReady().then(async () => {
     }
     return true;
   });
+  function getDesktopSettingsPath() {
+    return path.join(app.getPath('userData'), 'desktop_settings.json');
+  }
+  function readDesktopSettings() {
+    try {
+      const p = getDesktopSettingsPath();
+      if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+    } catch (e) {}
+    return {};
+  }
+  function writeDesktopSettings(patch) {
+    try {
+      const p = getDesktopSettingsPath();
+      let data = {};
+      if (fs.existsSync(p)) {
+        try { data = JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) {}
+      }
+      Object.assign(data, patch);
+      fs.writeFileSync(p, JSON.stringify(data, null, 2), 'utf8');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  ipcMain.handle('settings-get-audio-settings', () => {
+    const data = readDesktopSettings();
+    return {
+      autoSkipOnError: typeof data.autoSkipOnError === 'boolean' ? data.autoSkipOnError : null,
+      rememberState: typeof data.rememberState === 'boolean' ? data.rememberState : null,
+      volumeBoostEnabled: typeof data.volumeBoostEnabled === 'boolean' ? data.volumeBoostEnabled : null,
+      volumeBoostLevel: typeof data.volumeBoostLevel === 'number' ? data.volumeBoostLevel : null
+    };
+  });
+  ipcMain.handle('settings-set-audio-settings', (event, settings) => {
+    if (!settings || typeof settings !== 'object') return false;
+    const patch = {};
+    if (typeof settings.autoSkipOnError === 'boolean') patch.autoSkipOnError = settings.autoSkipOnError;
+    if (typeof settings.rememberState === 'boolean') patch.rememberState = settings.rememberState;
+    if (typeof settings.volumeBoostEnabled === 'boolean') patch.volumeBoostEnabled = settings.volumeBoostEnabled;
+    if (typeof settings.volumeBoostLevel === 'number') patch.volumeBoostLevel = settings.volumeBoostLevel;
+    return writeDesktopSettings(patch);
+  });
   ipcMain.on('open-external', (event, url) => {
     if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
       shell.openExternal(url);

@@ -1252,8 +1252,8 @@ const handleGlobalKeyDown = (e) => {
   }
 };
 
-onMounted(() => {
-  store.initAudio();
+onMounted(async () => {
+  await store.initAudio();
   document.addEventListener('mousedown', handleClickOutside);
   window.addEventListener('keydown', handleGlobalKeyDown);
   window.addEventListener('resize', updateTitleOverflow);
