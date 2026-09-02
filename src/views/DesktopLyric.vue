@@ -458,12 +458,21 @@ onMounted(() => {
   };
   window.addEventListener('storage', handleStorageChange);
 
+  const handleKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+      e.preventDefault();
+      closeLyricWindow();
+    }
+  };
+  window.addEventListener('keydown', handleKeyDown);
+
   updateLyricHotArea();
 });
 
 onUnmounted(() => {
   stopAnimation();
   window.removeEventListener('storage', handleStorageChange);
+  window.removeEventListener('keydown', handleKeyDown);
 });
 
 watch([() => isPlaying.value, () => config.karaokeMode], ([playing, karaoke]) => {

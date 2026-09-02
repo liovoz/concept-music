@@ -431,6 +431,7 @@ function createLyricWindow() {
     resizable: false,
     hasShadow: false,
     show: false,
+    focusable: false,
     icon: getAppIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -450,7 +451,7 @@ function createLyricWindow() {
   else lyricWindow.loadURL(`${DEV_FRONTEND_URL}/#/desktop-lyric`);
 
   lyricWindow.once('ready-to-show', () => {
-    lyricWindow.show();
+    lyricWindow.showInactive();
     startLyricMouseTracker();
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('lyric-window-ready');
     if (trayManager) trayManager.updateLyricState(true);

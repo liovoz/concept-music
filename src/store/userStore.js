@@ -424,10 +424,12 @@ export const useUserStore = defineStore('user', {
           if (this.userInfo) {
              this.userInfo.vip = isVip ? 1 : 0;
              localStorage.setItem('kg_desktop_userInfo', JSON.stringify(this.userInfo));
-             if (notifyPlayer && oldVip !== isVip) {
-               const playerStore = usePlayerStore();
-               playerStore.handleAuthCapabilityChanged(isVip ? 'vip-upgrade' : 'vip-downgrade');
-             }
+              if (notifyPlayer && oldVip !== isVip) {
+                const playerStore = usePlayerStore();
+                if (playerStore.isPlaying) {
+                  playerStore.handleAuthCapabilityChanged(isVip ? 'vip-upgrade' : 'vip-downgrade');
+                }
+              }
           }
         } else {
           logVipDetailProbe('/user/vip/detail empty data', res);
@@ -822,7 +824,7 @@ export const useUserStore = defineStore('user', {
           this.checkDayVipReset();
           
           const playerStore = usePlayerStore();
-          if (notifyPlayer && playerStore.currentSong && this.userInfo.vip > 0) {
+          if (notifyPlayer && playerStore.currentSong && playerStore.isPlaying && this.userInfo.vip > 0) {
              playerStore.handleAuthCapabilityChanged('login');
           }
 
@@ -853,7 +855,7 @@ export const useUserStore = defineStore('user', {
 
       if (this.isLoggedIn) {
         await new Promise(resolve => setTimeout(resolve, 600)); 
-        await this.fetchUserInfo();
+        await this.fetchUserInfo({ notifyPlayer: false });
       }
     },
 

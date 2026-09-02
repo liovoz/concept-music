@@ -1205,30 +1205,50 @@ const handleGlobalKeyDown = (e) => {
     }
   }
 
+  // 1. 播放 / 暂停 (Space)
   if (e.code === 'Space' || e.key === 'MediaPlayPause') {
     e.preventDefault();
     store.togglePlay();
     return;
   }
 
-  if (store.isImmersiveLyrics) {
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault();
+  // 2. 桌面歌词开启/关闭 (Ctrl + D)
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+    e.preventDefault();
+    store.toggleDesktopLyric();
+    return;
+  }
+
+  // 3. 快进 / 快退 5秒 (← / →)
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    if (store.currentSong) {
       store.seek(Math.max(0, store.currentTime - 5));
-      resetIdleTimer();
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      store.seek(Math.min(store.duration, store.currentTime + 5));
-      resetIdleTimer();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      store.setVolume(Math.min(1, store.volume + 0.05));
-      resetIdleTimer();
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      store.setVolume(Math.max(0, store.volume - 0.05));
-      resetIdleTimer();
+      if (store.isImmersiveLyrics) resetIdleTimer();
     }
+    return;
+  }
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    if (store.currentSong) {
+      store.seek(Math.min(store.duration, store.currentTime + 5));
+      if (store.isImmersiveLyrics) resetIdleTimer();
+    }
+    return;
+  }
+
+  // 4. 音量增加 / 减小 (↑ / ↓)
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    store.setVolume(Math.min(1, store.volume + 0.05));
+    if (store.isImmersiveLyrics) resetIdleTimer();
+    return;
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    store.setVolume(Math.max(0, store.volume - 0.05));
+    if (store.isImmersiveLyrics) resetIdleTimer();
+    return;
   }
 };
 

@@ -324,13 +324,13 @@
                         <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">当歌曲资源失效或播放失败时，自动播放下一首</p>
                       </div>
                       <button 
-                        @click="autoSkipOnError = !autoSkipOnError"
+                        @click="playerStore.setAutoSkipOnError(!playerStore.autoSkipOnError)"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="autoSkipOnError ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        :class="playerStore.autoSkipOnError ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
                       >
                         <span 
                           class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                          :class="autoSkipOnError ? 'translate-x-5' : 'translate-x-0'"
+                          :class="playerStore.autoSkipOnError ? 'translate-x-5' : 'translate-x-0'"
                         />
                       </button>
                     </div>
@@ -338,16 +338,16 @@
                     <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/70 dark:bg-slate-800/50">
                       <div>
                         <p class="text-xs font-bold text-gray-800 dark:text-slate-200">记忆播放列表与进度</p>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">启动软件时恢复上次的播放列表与播放模式</p>
+                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">启动软件时恢复上次的播放列表、歌曲与播放进度</p>
                       </div>
                       <button 
-                        @click="rememberState = !rememberState"
+                        @click="playerStore.setRememberState(!playerStore.rememberState)"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="rememberState ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        :class="playerStore.rememberState ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
                       >
                         <span 
                           class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                          :class="rememberState ? 'translate-x-5' : 'translate-x-0'"
+                          :class="playerStore.rememberState ? 'translate-x-5' : 'translate-x-0'"
                         />
                       </button>
                     </div>
@@ -985,14 +985,6 @@ const handleClearAppCache = () => {
 const toggleVolumeBoost = () => {
   playerStore.toggleVolumeBoost();
 };
-const autoSkipOnError = ref(localStorage.getItem('kg_desktop_auto_skip') !== 'false');
-watch(autoSkipOnError, (val) => {
-  localStorage.setItem('kg_desktop_auto_skip', String(val));
-});
-const rememberState = ref(localStorage.getItem('kg_desktop_remember_state') !== 'false');
-watch(rememberState, (val) => {
-  localStorage.setItem('kg_desktop_remember_state', String(val));
-});
 
 // --- 3. 桌面歌词 ---
 const lyricThemes = [

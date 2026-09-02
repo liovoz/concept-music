@@ -71,6 +71,50 @@ const getStoredPlayMode = () => {
   return PLAY_MODES.includes(saved) ? saved : 'sequence';
 };
 
+const AUTO_SKIP_KEY = 'kg_desktop_auto_skip';
+const REMEMBER_STATE_KEY = 'kg_desktop_remember_state';
+const PLAYER_STATE_STORAGE_KEY = 'kg_desktop_player_state';
+
+const getInitialAutoSkip = () => {
+  return localStorage.getItem(AUTO_SKIP_KEY) !== 'false';
+};
+
+const getInitialRememberState = () => {
+  return localStorage.getItem(REMEMBER_STATE_KEY) !== 'false';
+};
+
+let persistStateTimer = null;
+let lastPersistProgressTime = 0;
+
+const sanitizeSongForStorage = (song) => {
+  if (!song || typeof song !== 'object') return null;
+  return {
+    hash: song.hash || song._hash || '',
+    name: song.name || song._title || '',
+    singer: song.singer || song._singer || '',
+    singer_id: song.singer_id || song._singer_id || 0,
+    _singers: song._singers || song.artists || (song.singer ? [{ id: String(song.singer_id || ''), name: song.singer }] : []),
+    album: song.album || song._album || '',
+    album_id: song.album_id || song._album_id || 0,
+    album_audio_id: song.album_audio_id || song._album_audio_id || 0,
+    cover: song.cover || song._cover || '',
+    duration: song.duration || 0,
+    is_vip: !!(song.is_vip || song._is_vip),
+    is_paid: !!(song.is_paid || song._is_paid),
+    qualities: song.qualities || null,
+    source: song.source || song._source || ''
+  };
+};
+
+const schedulePersistState = (store, delay = 400) => {
+  if (!store || !store.rememberState) return;
+  if (persistStateTimer) clearTimeout(persistStateTimer);
+  persistStateTimer = setTimeout(() => {
+    persistStateTimer = null;
+    store.persistPlaybackState();
+  }, delay);
+};
+
 let audioContext = null;
 let audioGraphInitialized = false;
 const audioOutputNodes = new WeakMap();
@@ -356,6 +400,10 @@ export const usePlayerStore = defineStore('player', {
     _errorSkipTimer: null,
     _vipActionTimer: null,
     failedSong: null,
+    autoSkipOnError: getInitialAutoSkip(),
+    rememberState: getInitialRememberState(),
+    consecutiveErrorCount: 0,
+    _pendingRestoreSeekTime: 0,
 
     peakMode: false,
     peakStartOffset: 0,
@@ -454,14 +502,28 @@ export const usePlayerStore = defineStore('player', {
         }
       } else {
         if (isErrorEnd) {
-          this.showToast('音频流发生异常中断，自动为您跳至下一首');
-          if (this._errorSkipTimer) clearTimeout(this._errorSkipTimer);
-          this._errorSkipTimer = setTimeout(() => { 
-            this._errorSkipTimer = null;
-            this.currentTime = 0;
-            this.playNext(true); 
-          }, 2000);
+          if (this.autoSkipOnError) {
+            this.consecutiveErrorCount = (this.consecutiveErrorCount || 0) + 1;
+            const maxErrors = Math.min(Math.max(3, this.playlist.length), 5);
+            if (this.consecutiveErrorCount >= maxErrors) {
+              this.consecutiveErrorCount = 0;
+              this.showToast('连续多首歌曲播放故障，已停止自动跳过');
+              this.isPlaying = false;
+              return;
+            }
+            this.showToast('音频流发生异常中断，自动为您跳至下一首');
+            if (this._errorSkipTimer) clearTimeout(this._errorSkipTimer);
+            this._errorSkipTimer = setTimeout(() => { 
+              this._errorSkipTimer = null;
+              this.currentTime = 0;
+              this.playNext(true); 
+            }, 1500);
+          } else {
+            this.showToast('音频流发生异常中断，已暂停播放');
+            this.isPlaying = false;
+          }
         } else {
+          this.consecutiveErrorCount = 0;
           this.currentTime = 0;
           this.playNext(true);
         }
@@ -479,7 +541,17 @@ export const usePlayerStore = defineStore('player', {
             this.handleSongEnd(false);
           }
         } else {
-          this.currentTime = activeAudio.currentTime; 
+          if (activeAudio.currentTime > 0 || !this._pendingRestoreSeekTime) {
+            this.currentTime = activeAudio.currentTime; 
+          } 
+
+          if (this.rememberState && this.isPlaying) {
+            const now = Date.now();
+            if (now - lastPersistProgressTime > 3000) {
+              lastPersistProgressTime = now;
+              this.persistPlaybackState();
+            }
+          }
 
           if (this.peakMode && this.peakStartOffset > 0 && this.peakDuration > 0) {
             const elapsed = this.currentTime - this.peakStartOffset;
@@ -554,12 +626,14 @@ export const usePlayerStore = defineStore('player', {
         if (e.target !== activeAudio) return;
         this.isLoading = false; 
         this.isPlaying = true; 
+        this.consecutiveErrorCount = 0;
         this.syncTrayState();
       });
       
       audioInstance.addEventListener('pause', (e) => { 
         if (e.target !== activeAudio) return;
         this.isPlaying = false; 
+        if (this.rememberState) this.persistPlaybackState();
         this.syncTrayState();
       });
       
@@ -623,6 +697,19 @@ export const usePlayerStore = defineStore('player', {
       }
       if (this.volumeBoostEnabled) this.ensureBoostAudioOutput();
 
+      if (this.rememberState && this.playlist.length === 0 && !this.currentSong) {
+        this.restorePlaybackState();
+      }
+
+      if (typeof window !== 'undefined' && !window.__kg_beforeunload_bound) {
+        window.__kg_beforeunload_bound = true;
+        window.addEventListener('beforeunload', () => {
+          if (this.rememberState) {
+            this.persistPlaybackState();
+          }
+        });
+      }
+
       if (window.lyricAPI) {
         window.lyricAPI.onControl((cmd) => {
           if (cmd === 'togglePlay') this.togglePlay();
@@ -640,6 +727,81 @@ export const usePlayerStore = defineStore('player', {
           this.isDesktopLyricVisible = false;
           this.syncTrayState();
         });
+      }
+    },
+
+    setAutoSkipOnError(enabled) {
+      this.autoSkipOnError = !!enabled;
+      localStorage.setItem(AUTO_SKIP_KEY, String(this.autoSkipOnError));
+    },
+
+    setRememberState(enabled) {
+      this.rememberState = !!enabled;
+      localStorage.setItem(REMEMBER_STATE_KEY, String(this.rememberState));
+      if (!this.rememberState) {
+        this.clearPersistedState();
+      } else {
+        this.persistPlaybackState();
+      }
+    },
+
+    persistPlaybackState() {
+      if (!this.rememberState) return;
+      try {
+        const sanitizedPlaylist = (this.playlist || [])
+          .map(sanitizeSongForStorage)
+          .filter(Boolean);
+        const sanitizedCurrentSong = sanitizeSongForStorage(this.currentSong);
+        const stateToSave = {
+          playlist: sanitizedPlaylist,
+          currentSong: sanitizedCurrentSong,
+          currentTime: Number.isFinite(this.currentTime) ? Math.max(0, this.currentTime) : 0,
+          duration: Number.isFinite(this.duration) ? Math.max(0, this.duration) : 0,
+          currentQuality: this.currentQuality || 'standard',
+          isCurrentSongPreview: !!this.isCurrentSongPreview,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(PLAYER_STATE_STORAGE_KEY, JSON.stringify(stateToSave));
+      } catch (e) {
+        console.warn('Failed to persist player state:', e);
+      }
+    },
+
+    clearPersistedState() {
+      try {
+        localStorage.removeItem(PLAYER_STATE_STORAGE_KEY);
+      } catch (e) {}
+    },
+
+    restorePlaybackState() {
+      if (!this.rememberState) return false;
+      try {
+        const raw = localStorage.getItem(PLAYER_STATE_STORAGE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || !Array.isArray(data.playlist) || data.playlist.length === 0) return false;
+
+        this.playlist = data.playlist;
+        if (data.currentSong && data.currentSong.hash) {
+          const matched = this.playlist.find(s => s.hash === data.currentSong.hash) || data.currentSong;
+          this.currentSong = matched;
+          this.currentTime = Math.max(0, Number(data.currentTime) || 0);
+          this.duration = Math.max(0, Number(data.duration) || getExpectedDuration(matched) || 0);
+          this.currentQuality = data.currentQuality || 'standard';
+          this.isCurrentSongPreview = !!data.isCurrentSongPreview;
+        } else if (this.playlist.length > 0) {
+          this.currentSong = this.playlist[0];
+          this.currentTime = 0;
+          this.duration = getExpectedDuration(this.playlist[0]) || 0;
+          this.currentQuality = 'standard';
+          this.isCurrentSongPreview = false;
+        }
+        this.isPlaying = false;
+        this.syncTrayState();
+        return true;
+      } catch (e) {
+        console.warn('Failed to restore player state:', e);
+        return false;
       }
     },
 
@@ -815,7 +977,10 @@ export const usePlayerStore = defineStore('player', {
     addToPlaylist(song) {
       if (!song || !song.hash) return;
       const exists = this.playlist.find(s => s.hash === song.hash);
-      if (!exists) this.playlist.push(song);
+      if (!exists) {
+        this.playlist.push(song);
+        if (this.rememberState) schedulePersistState(this);
+      }
     },
 
     addSongsToPlaylist(songs = [], options = {}) {
@@ -833,7 +998,10 @@ export const usePlayerStore = defineStore('player', {
         added++;
       });
 
-      if (added > 0) this.triggerPreload();
+      if (added > 0) {
+        this.triggerPreload();
+        if (this.rememberState) schedulePersistState(this);
+      }
       if (!options.silent) {
         const skippedText = skipped > 0 ? `，已跳过 ${skipped} 首重复歌曲` : '';
         this.showToast(added > 0 ? `已添加 ${added} 首歌曲${skippedText}` : '歌曲已在播放列表中');
@@ -854,6 +1022,7 @@ export const usePlayerStore = defineStore('player', {
 
       if (unique.length === 0) return { added: 0, skipped: incoming.length, total: incoming.length };
       this.playlist = unique;
+      if (this.rememberState) schedulePersistState(this);
       const startIndex = Math.max(0, Math.min(options.startIndex || 0, unique.length - 1));
       this.playSong(unique[startIndex]);
       if (!options.silent) this.showToast(`已加入 ${unique.length} 首歌曲并开始播放`);
@@ -876,6 +1045,7 @@ export const usePlayerStore = defineStore('player', {
 
       const rest = this.playlist.filter(song => song && song.hash && !seen.has(song.hash));
       this.playlist = [...front, ...rest];
+      if (this.rememberState) schedulePersistState(this);
       const sessionId = options.createHydrationSession ? (options.sessionId || `play-all-${Date.now()}-${Math.random().toString(36).slice(2)}`) : null;
       if (sessionId) {
         this.playAllHydrationSession = {
@@ -947,6 +1117,7 @@ export const usePlayerStore = defineStore('player', {
         seenHashes: Array.from(seen)
       };
       this.triggerPreload();
+      if (this.rememberState) schedulePersistState(this);
       return { added: unique.length, skipped: incoming.length - unique.length, total: incoming.length };
     },
 
@@ -960,6 +1131,7 @@ export const usePlayerStore = defineStore('player', {
       this.playlist.push(song);
       if (!options.silent) this.showToast('已添加到播放列表');
       this.triggerPreload();
+      if (this.rememberState) schedulePersistState(this);
       return true;
     },
 
@@ -983,6 +1155,7 @@ export const usePlayerStore = defineStore('player', {
       this.playlist.splice(insertIndex, 0, song);
       this.showToast('已添加到下一首播放');
       this.triggerPreload();
+      if (this.rememberState) schedulePersistState(this);
       return true;
     },
 
@@ -1503,10 +1676,12 @@ export const usePlayerStore = defineStore('player', {
           
           this.clearError();
           this.isLoading = false;
+          this.consecutiveErrorCount = 0;
 
           preloadState.hash = null;
           this.triggerPreload();
           this.syncTrayState();
+          if (this.rememberState) this.persistPlaybackState();
           return;
       }
 
@@ -1554,6 +1729,24 @@ export const usePlayerStore = defineStore('player', {
           }
         }
         setTimeout(() => this.clearError(), 5000);
+
+        if (this.autoSkipOnError && autoPlay && this.playlist && this.playlist.length > 1) {
+          this.consecutiveErrorCount = (this.consecutiveErrorCount || 0) + 1;
+          const maxErrors = Math.min(Math.max(3, this.playlist.length), 5);
+          if (this.consecutiveErrorCount >= maxErrors) {
+            this.consecutiveErrorCount = 0;
+            this.showToast('连续多首歌曲资源失效，已停止自动跳过');
+            return;
+          }
+          this.showToast('当前歌曲资源失效，自动为您播放下一首');
+          if (this._errorSkipTimer) clearTimeout(this._errorSkipTimer);
+          this._errorSkipTimer = setTimeout(() => {
+            this._errorSkipTimer = null;
+            this.playNext(true);
+          }, 1500);
+        } else {
+          this.consecutiveErrorCount = 0;
+        }
       };
 
       try {
@@ -1567,12 +1760,14 @@ export const usePlayerStore = defineStore('player', {
 
         if (res?.url) {
           this.failedSong = null;
+          this.consecutiveErrorCount = 0;
           this.currentSong = songInfo;
           this.currentQuality = res.quality;
           this.isCurrentSongPreview = res.isPreview; 
           setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this));
           if (maintainTime === 0) this.currentTime = 0;
           if (res.isPreview && autoPlay) this.showToast(getPreviewToastMessage(userStore));
+          if (this.rememberState) this.persistPlaybackState();
         } else {
           triggerFallback('所有音质接口均拒绝访问');
           return;
@@ -1583,7 +1778,36 @@ export const usePlayerStore = defineStore('player', {
             actualTime = 59.5; 
         }
 
-        if (actualTime > 0) activeAudio.currentTime = actualTime;
+        if (actualTime > 0) {
+          this.currentTime = actualTime;
+          this._pendingRestoreSeekTime = actualTime;
+          const targetSeek = actualTime;
+          let seekApplied = false;
+          const applySeek = () => {
+            if (seekApplied) return;
+            try {
+              if (Number.isFinite(activeAudio.duration) && activeAudio.duration > 0) {
+                activeAudio.currentTime = Math.min(targetSeek, Math.max(0, activeAudio.duration - 0.5));
+              } else {
+                activeAudio.currentTime = targetSeek;
+              }
+              seekApplied = true;
+              this._pendingRestoreSeekTime = 0;
+            } catch (e) {}
+          };
+
+          if (activeAudio.readyState >= 1) {
+            applySeek();
+          } else {
+            activeAudio.addEventListener('loadedmetadata', applySeek, { once: true });
+            activeAudio.addEventListener('canplay', applySeek, { once: true });
+            activeAudio.addEventListener('playing', applySeek, { once: true });
+          }
+          activeAudio.addEventListener('seeked', () => { this._pendingRestoreSeekTime = 0; }, { once: true });
+          try { activeAudio.currentTime = targetSeek; } catch (e) {}
+        } else {
+          this._pendingRestoreSeekTime = 0;
+        }
 
         if (autoPlay) {
           const playPromise = activeAudio.play();
@@ -1690,8 +1914,15 @@ export const usePlayerStore = defineStore('player', {
 
     async reloadCurrentSongForVip() {
       if (!this.currentSong) return;
-      const savedTime = activeAudio.currentTime;
       const wasPlaying = this.isPlaying;
+      if (!wasPlaying && !activeAudio.src) {
+        const bestQuality = this.getBestAvailableQuality(this.currentSong);
+        if (bestQuality) this.currentQuality = bestQuality;
+        return;
+      }
+      const savedTime = (Number.isFinite(activeAudio.currentTime) && activeAudio.currentTime > 0)
+        ? activeAudio.currentTime
+        : (Number.isFinite(this.currentTime) ? this.currentTime : 0);
       const songRef = this.currentSong;
       if (this._vipActionTimer) clearTimeout(this._vipActionTimer);
       this._vipActionTimer = setTimeout(async () => {
@@ -1720,10 +1951,18 @@ export const usePlayerStore = defineStore('player', {
              this.currentQuality = res.quality;
              this.isCurrentSongPreview = res.isPreview;
              setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this));
-             if (res.isPreview && savedTime > 59) {
-               activeAudio.currentTime = 59.5;
-             } else {
-               activeAudio.currentTime = savedTime;
+             const targetTime = res.isPreview && savedTime > 59 ? 59.5 : savedTime;
+             if (targetTime > 0) {
+               const applySeek = () => {
+                 try { activeAudio.currentTime = targetTime; } catch (e) {}
+               };
+               if (activeAudio.readyState >= 1) {
+                 applySeek();
+               } else {
+                 activeAudio.addEventListener('loadedmetadata', applySeek, { once: true });
+                 activeAudio.addEventListener('canplay', applySeek, { once: true });
+               }
+               try { activeAudio.currentTime = targetTime; } catch (e) {}
              }
              if (wasPlaying) {
                const p = activeAudio.play();
@@ -1747,7 +1986,7 @@ export const usePlayerStore = defineStore('player', {
         this.hasDfid = false;
         return;
       }
-      if (this.currentSong) {
+      if (this.currentSong && (this.isPlaying || activeAudio.src)) {
         this.reloadCurrentSongForVip();
       }
     },
@@ -1763,7 +2002,12 @@ export const usePlayerStore = defineStore('player', {
       if (this.isPlaying) {
         activeAudio.pause();
         this.isPlaying = false;
+        if (this.rememberState) this.persistPlaybackState();
       } else {
+        if (!activeAudio.src) {
+          this.playSong(this.currentSong, null, this.currentTime, true);
+          return;
+        }
         const playPromise = activeAudio.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => { this.isPlaying = false; });
@@ -1782,13 +2026,17 @@ export const usePlayerStore = defineStore('player', {
       if (this.duration > 0 && time > this.duration) {
         time = this.duration;
       }
-      activeAudio.currentTime = time;
+      if (activeAudio.src) {
+        activeAudio.currentTime = time;
+      }
       this.currentTime = time;
+      if (this.rememberState) schedulePersistState(this, 300);
     },
 
     clearError() { this.isError = false; this.errorMessage = ''; this.failedSong = null; },
 
     playPrev() {
+      this.consecutiveErrorCount = 0;
       if (this.playlist.length === 0) return;
       if (this.playlist.length === 1 || this.playMode === 'loop') { 
         activeAudio.currentTime = 0; 
@@ -1816,6 +2064,7 @@ export const usePlayerStore = defineStore('player', {
     },
 
     playNext(isAuto = false) {
+      if (!isAuto) this.consecutiveErrorCount = 0;
       if (this.playlist.length === 0) return;
       
       if (this.playlist.length === 1 || this.playMode === 'loop') {
@@ -1901,6 +2150,7 @@ export const usePlayerStore = defineStore('player', {
       const isCurrentSong = this.currentSong && this.currentSong.hash === removedHash;
       
       this.playlist.splice(index, 1);
+      if (this.rememberState) schedulePersistState(this);
       
       if (isCurrentSong) {
         activeAudio.pause();
@@ -1961,12 +2211,14 @@ export const usePlayerStore = defineStore('player', {
       preloadState.hash = null;
       if (this._vipActionTimer) { clearTimeout(this._vipActionTimer); this._vipActionTimer = null; }
       this.syncTrayState();
+      this.clearPersistedState();
     },
 
     clearNeteaseImportPlaybackState() {
       this.cancelPlayAllHydration();
       clearUrlResolutionState();
       this.playlist = this.playlist.filter(song => !isNeteaseImportSong(song));
+      if (this.rememberState) schedulePersistState(this);
 
       if (!isNeteaseImportSong(this.currentSong)) {
         this.triggerPreload();
