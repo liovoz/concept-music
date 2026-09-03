@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, protocol, net, screen, nativeTheme, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol, net, screen, nativeTheme, shell, safeStorage, session } from 'electron';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { fork } from 'child_process';
@@ -60,7 +60,19 @@ function loadVaultCookies() {
   try {
     const vaultPath = getVaultPath();
     if (fs.existsSync(vaultPath)) {
-      vaultMemoryCache = JSON.parse(fs.readFileSync(vaultPath, 'utf8'));
+      const raw = fs.readFileSync(vaultPath);
+      let content = null;
+      if (safeStorage && safeStorage.isEncryptionAvailable()) {
+        try {
+          content = safeStorage.decryptString(raw);
+        } catch (_) {
+          // 若解密失败，可能是旧版明文格式，继续向下尝试读取
+        }
+      }
+      if (!content) {
+        content = raw.toString('utf8');
+      }
+      vaultMemoryCache = JSON.parse(content);
       return vaultMemoryCache;
     }
   } catch (e) { console.error('读取金库失败:', e); }
@@ -97,7 +109,14 @@ function saveVaultCookies(newCookiesArray) {
     }
   });
   if (changed) {
-    try { fs.writeFileSync(getVaultPath(), JSON.stringify(vaultMemoryCache), 'utf8'); } catch (e) {}
+    try {
+      const dataStr = JSON.stringify(vaultMemoryCache);
+      if (safeStorage && safeStorage.isEncryptionAvailable()) {
+        fs.writeFileSync(getVaultPath(), safeStorage.encryptString(dataStr));
+      } else {
+        fs.writeFileSync(getVaultPath(), dataStr, 'utf8');
+      }
+    } catch (e) {}
   }
 }
 ipcMain.on('clear-vault', () => {
@@ -152,7 +171,7 @@ async function startLocalServer() {
     let serverErrorLog = '';
     serverProcess = fork(serverPath, [], {
       cwd: serverCwd, 
-      env: { ...process.env, PORT: 10420, platform: 'lite', ELECTRON_RUN_AS_NODE: '1' },
+      env: { ...process.env, PORT: 10420, HOST: '127.0.0.1', platform: 'lite', ELECTRON_RUN_AS_NODE: '1' },
       silent: true 
     });
     serverProcess.stderr.on('data', (data) => {
@@ -228,7 +247,11 @@ function initAutoUpdater() {
   let isDownloadCancelled = false;
 
   autoUpdater.on('checking-for-update', () => { updatePhase = 'checking'; sendToWindow({ type: 'checking', isManualCheck }); });
-  autoUpdater.on('update-available', (info) => { updatePhase = null; sendToWindow({ type: 'available', info, isManualCheck }); });
+  autoUpdater.on('update-available', (info) => {
+    updatePhase = null;
+    const isPortable = Boolean(process.env.PORTABLE_EXECUTABLE_DIR);
+    sendToWindow({ type: 'available', info, isManualCheck, isPortable });
+  });
   autoUpdater.on('update-not-available', (info) => { updatePhase = null; sendToWindow({ type: 'not-available', info, isManualCheck }); isManualCheck = false; });
   autoUpdater.on('error', (err) => {
     const message = (err && err.message) || '';
@@ -295,7 +318,16 @@ function initAutoUpdater() {
     });
   };
 
-  ipcMain.on('download-update', () => { downloadRetryCount = 0; updatePhase = 'downloading'; doDownloadUpdate(); });
+  ipcMain.on('download-update', () => {
+    if (Boolean(process.env.PORTABLE_EXECUTABLE_DIR)) {
+      shell.openExternal('https://github.com/liovoz/concept-music/releases/latest');
+      sendToWindow({ type: 'cancelled' });
+      return;
+    }
+    downloadRetryCount = 0;
+    updatePhase = 'downloading';
+    doDownloadUpdate();
+  });
   ipcMain.on('cancel-download', () => {
     if (downloadCancellationToken) {
       isDownloadCancelled = true;
@@ -530,15 +562,23 @@ ipcMain.on('set-mouse-auto', () => {
   }
 });
 
+let activeLyricDragCleanup = null;
+
 ipcMain.on('lyric-window-drag', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (!win) return;
+
+  if (activeLyricDragCleanup) {
+    try { activeLyricDragCleanup(); } catch (_) {}
+  }
+
   lyricForceInteractive = true;
   const initialCursorPos = screen.getCursorScreenPoint();
   const initialWindowPos = win.getPosition();
   let lastX = initialWindowPos[0];
   let lastY = initialWindowPos[1];
   let dragging = true;
+
   const onMove = () => {
     if (!dragging || win.isDestroyed()) { stopDrag(); return; }
     const currentCursorPos = screen.getCursorScreenPoint();
@@ -550,10 +590,20 @@ ipcMain.on('lyric-window-drag', (event) => {
       lastY = newY;
     }
   };
+
+  const moveInterval = setInterval(onMove, 16);
+  let dragTimeout = null;
+
   const stopDrag = () => {
+    if (!dragging) return;
     dragging = false;
+    activeLyricDragCleanup = null;
     screen.off('display-metrics-changed', onMove);
     clearInterval(moveInterval);
+    if (dragTimeout) {
+      clearTimeout(dragTimeout);
+      dragTimeout = null;
+    }
     if (!win || win.isDestroyed()) return;
     lyricForceInteractive = false;
     lyricInteractive = false;
@@ -573,22 +623,38 @@ ipcMain.on('lyric-window-drag', (event) => {
       win.webContents.send('lyric-mouse-leave');
     }
   };
-  const moveInterval = setInterval(onMove, 16);
+
+  activeLyricDragCleanup = stopDrag;
   screen.on('display-metrics-changed', onMove);
   ipcMain.once('lyric-window-drag-stop', () => { stopDrag(); });
+  win.once('closed', stopDrag);
+  dragTimeout = setTimeout(() => { if (dragging) stopDrag(); }, 30000);
 });
 
-// --- API 请求中心与常规逻辑 (保持原样) ---
+// --- API 请求中心与常规逻辑 ---
 ipcMain.handle('native-api-request', async (event, config) => {
-  let targetPath = config.url;
+  let targetPath = typeof config?.url === 'string' ? config.url : '';
   if (targetPath.startsWith('/api/')) targetPath = targetPath.replace(/^\/api/, '');
   else if (targetPath.startsWith('/')) targetPath = targetPath.substring(1);
-  let queryString = '';
+
+  let fullUrlObj;
+  try {
+    fullUrlObj = new URL(targetPath, 'http://127.0.0.1:10420/');
+  } catch (e) {
+    return { status: 400, data: { errcode: 400, error_msg: 'Invalid target URL' } };
+  }
+  if (fullUrlObj.origin !== 'http://127.0.0.1:10420') {
+    return { status: 403, data: { errcode: 403, error_msg: 'Forbidden target origin' } };
+  }
+
   if (config.params) {
     const params = new URLSearchParams(config.params);
-    queryString = `?${params.toString()}`;
+    for (const [k, v] of params.entries()) {
+      fullUrlObj.searchParams.append(k, v);
+    }
   }
-  const targetUrl = `http://127.0.0.1:10420/${targetPath}${queryString}`;
+
+  const targetUrl = fullUrlObj.toString();
   const headersObj = { ...(config.headers || {}) };
   delete headersObj['Origin']; delete headersObj['Referer']; delete headersObj['Host'];
   const vaultCookies = loadVaultCookies();
@@ -613,16 +679,30 @@ ipcMain.handle('native-api-request', async (event, config) => {
       req.end();
     });
   };
+
+  const reqMethod = (config.method || 'GET').toUpperCase();
+  const isIdempotent = ['GET', 'HEAD'].includes(reqMethod);
+  const maxAttempts = isIdempotent ? 5 : 1;
   let attempt = 0; let finalResult = null; let lastErr = null;
-  while (attempt < 5) {
+
+  while (attempt < maxAttempts) {
     try {
       let res = await makeRequest();
       if (res.statusCode === 502 || res.statusCode === 504) {
+        if (!isIdempotent) {
+          finalResult = res;
+          break;
+        }
         attempt++; lastErr = new Error(`Server returned ${res.statusCode}`);
-        await new Promise(r => setTimeout(r, 500 * Math.pow(1.5, attempt - 1))); continue;
+        await new Promise(r => setTimeout(r, 500 * Math.pow(1.5, attempt - 1)));
+        continue;
       }
       finalResult = res; break;
-    } catch (e) { attempt++; lastErr = e; await new Promise(r => setTimeout(r, 500)); }
+    } catch (e) {
+      attempt++; lastErr = e;
+      if (!isIdempotent) break;
+      await new Promise(r => setTimeout(r, 500));
+    }
   }
   if (!finalResult) return { status: 502, data: { errcode: 502, error_msg: lastErr?.message || 'Timeout' } };
   if (finalResult.statusCode < 400 && finalResult.setCookies.length > 0) saveVaultCookies(finalResult.setCookies);
@@ -639,9 +719,8 @@ const createWindow = () => {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
       shell.openExternal(url);
-      return { action: 'deny' };
     }
-    return { action: 'allow' };
+    return { action: 'deny' };
   });
   mainWindow.once('ready-to-show', () => mainWindow.show());
   ipcMain.on('window-min', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize(); });
@@ -691,13 +770,25 @@ app.whenReady().then(async () => {
   if (process.platform === 'linux' || process.platform === 'win32') {
     try { app.setIcon(getAppIconPath()); } catch(e) {}
   }
+  const distRoot = path.resolve(__dirname, '../dist');
   protocol.handle('app', async (request) => {
-    const url = new URL(request.url);
-    let relativePath = decodeURIComponent(url.pathname);
-    if (relativePath === '/') relativePath = '/index.html';
-    let absolutePath = path.join(__dirname, '../dist', relativePath);
-    if (!fs.existsSync(absolutePath) || fs.statSync(absolutePath).isDirectory()) absolutePath = path.join(__dirname, '../dist/index.html');
-    return net.fetch(pathToFileURL(absolutePath).toString());
+    try {
+      const url = new URL(request.url);
+      let relativePath = decodeURIComponent(url.pathname);
+      if (relativePath === '/' || !relativePath) relativePath = '/index.html';
+      const cleanRelative = relativePath.replace(/^[/\\]+/, '');
+      let absolutePath = path.resolve(distRoot, cleanRelative);
+
+      if (!absolutePath.startsWith(distRoot + path.sep) && absolutePath !== distRoot) {
+        absolutePath = path.join(distRoot, 'index.html');
+      } else if (!fs.existsSync(absolutePath) || fs.statSync(absolutePath).isDirectory()) {
+        absolutePath = path.join(distRoot, 'index.html');
+      }
+
+      return net.fetch(pathToFileURL(absolutePath).toString());
+    } catch (err) {
+      return net.fetch(pathToFileURL(path.join(distRoot, 'index.html')).toString());
+    }
   });
   createWindow();      
   await startLocalServer(); 
@@ -731,7 +822,9 @@ app.whenReady().then(async () => {
     try {
       app.setLoginItemSettings({
         openAtLogin: Boolean(enable),
-        openAsHidden: true
+        openAsHidden: true,
+        path: process.execPath,
+        args: []
       });
       return app.getLoginItemSettings().openAtLogin;
     } catch (e) {
@@ -800,13 +893,21 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('settings-clear-cache', async () => {
     try {
-      if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.session) {
-        await mainWindow.webContents.session.clearCache();
+      const targetSession = (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.session)
+        ? mainWindow.webContents.session
+        : session.defaultSession;
+      if (targetSession) {
+        await targetSession.clearCache();
+        await targetSession.clearStorageData({
+          storages: ['cachestorage', 'shadercache', 'serviceworkers']
+        });
       }
       clearAppCacheDirs();
       return true;
-    } catch (e) {}
-    return false;
+    } catch (e) {
+      console.error('[Settings] Clear cache failed:', e);
+      return false;
+    }
   });
   ipcMain.handle('settings-get-shortcuts-enabled', () => {
     return trayManager ? trayManager.getShortcutsEnabled() : true;

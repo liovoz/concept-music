@@ -3,6 +3,8 @@ const vm = require('node:vm');
 const http = require('node:http');
 const https = require('node:https');
 
+const path = require('node:path');
+
 const EVENT_NAMES = {
   request: 'request',
   inited: 'inited',
@@ -84,22 +86,49 @@ const normalizeUrl = (value) => {
   return '';
 };
 
+// 内存脚本编译缓存池，避免高频切歌时重复读取磁盘和重复编译
+const scriptCache = new Map();
+
+const getCachedScript = (filePath, fileName) => {
+  const stat = fs.statSync(filePath);
+  const cached = scriptCache.get(filePath);
+  if (cached && cached.mtimeMs === stat.mtimeMs) {
+    return cached.script;
+  }
+
+  const code = fs.readFileSync(filePath, 'utf8');
+  const script = new vm.Script(code, {
+    filename: fileName || path.basename(filePath),
+    displayErrors: true,
+    timeout: 3000,
+  });
+
+  scriptCache.set(filePath, { mtimeMs: stat.mtimeMs, script });
+  return script;
+};
+
 const buildSourceContext = (source) => {
   const handlers = new Map();
   const messages = [];
 
+  const safeConsole = {
+    log: (...args) => console.log('[LX-Source]', ...args),
+    warn: (...args) => console.warn('[LX-Source]', ...args),
+    error: (...args) => console.error('[LX-Source]', ...args),
+    info: (...args) => console.info('[LX-Source]', ...args),
+  };
+
   const sandbox = {
-    console,
+    console: safeConsole,
     Promise,
     URL,
     URLSearchParams,
     TextEncoder,
     TextDecoder,
-    Buffer,
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
+    setTimeout: (...args) => setTimeout(...args),
+    clearTimeout: (t) => clearTimeout(t),
+    setInterval: (...args) => setInterval(...args),
+    clearInterval: (t) => clearInterval(t),
     encodeURIComponent,
     decodeURIComponent,
     encodeURI,
@@ -107,6 +136,13 @@ const buildSourceContext = (source) => {
     btoa: (str) => Buffer.from(String(str), 'binary').toString('base64'),
     atob: (str) => Buffer.from(String(str), 'base64').toString('binary'),
   };
+
+  // 严格屏蔽宿主敏感变量与模块系统
+  Object.defineProperty(sandbox, 'process', { value: undefined, writable: false, configurable: false });
+  Object.defineProperty(sandbox, 'require', { value: undefined, writable: false, configurable: false });
+  Object.defineProperty(sandbox, 'module', { value: undefined, writable: false, configurable: false });
+  Object.defineProperty(sandbox, 'exports', { value: undefined, writable: false, configurable: false });
+  Object.defineProperty(sandbox, 'global', { value: undefined, writable: false, configurable: false });
 
   sandbox.globalThis = sandbox;
   sandbox.lx = {
@@ -130,14 +166,8 @@ const buildSourceContext = (source) => {
 };
 
 const runSource = async (source, payload, timeoutMs = 12000) => {
-  const code = fs.readFileSync(source.path, 'utf8');
+  const script = getCachedScript(source.path, source.file || source.id);
   const { context, handlers, messages } = buildSourceContext(source);
-
-  const script = new vm.Script(code, {
-    filename: source.file || source.path,
-    displayErrors: true,
-    timeout: 3000,
-  });
 
   script.runInContext(context, { timeout: 3000 });
 

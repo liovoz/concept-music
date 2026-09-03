@@ -1,9 +1,14 @@
+const http = require('http');
+const https = require('https');
 const axios = require('axios');
 const { cryptoMd5 } = require('./crypto');
 const { signKey, signatureAndroidParams, signatureRegisterParams, signatureWebParams } = require('./helper');
 const { parseCookieString } = require('./util');
 const { appid, clientver, liteAppid, liteClientver } = require('./config.json');
 const { resolveProxy } = require('./runtime');
+
+const sharedHttpAgent = new http.Agent({ keepAlive: true, maxSockets: 64 });
+const sharedHttpsAgent = new https.Agent({ keepAlive: true, maxSockets: 64 });
 
 /**
  * @typedef {{status: number;body: any, cookie: string[], headers?: Record<string, string>}} UseAxiosResponse
@@ -99,6 +104,8 @@ const createRequest = (options) => {
       headers: Object.assign({}, options?.headers || {}, headers),
       withCredentials: true,
       responseType: options.responseType,
+      httpAgent: sharedHttpAgent,
+      httpsAgent: sharedHttpsAgent,
     };
 
     const proxyConfig = resolveProxy();

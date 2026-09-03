@@ -148,6 +148,7 @@ const { startPlayAllHydration, cancelPlayAllHydration } = usePlayAllHydration();
 const playlistInfo = ref({});
 const songs = ref([]);
 const rawPlaylistData = ref(null);
+const playlistDetailCache = new Map();
 
 const isLoading = ref(true);
 const isError = ref(false);
@@ -175,9 +176,18 @@ watch(() => route.params.id, (newId, oldId) => {
   if (newId && newId !== oldId && route.path.startsWith('/playlist/')) {
     cancelPlayAllHydration();
     store.cancelPlayAllHydration();
-    isLoading.value = true;
-    songs.value = [];
-    playlistInfo.value = {};
+    const cached = playlistDetailCache.get(String(newId));
+    if (cached && cached.songs && cached.songs.length > 0) {
+      playlistInfo.value = cached.info || {};
+      rawPlaylistData.value = cached.raw || null;
+      songs.value = cached.songs || [];
+      hasMore.value = cached.hasMore ?? true;
+      isLoading.value = false;
+    } else {
+      isLoading.value = true;
+      songs.value = [];
+      playlistInfo.value = {};
+    }
     fetchDetail().then(() => setupObserver());
   }
 });
@@ -431,35 +441,61 @@ const extractPlaylistInfo = (res) => {
 };
 
 const fetchDetail = async () => {
-  const id = route.params.id;
-  isLoading.value = true;
-  isError.value = false;
+  const id = String(route.params.id);
   page.value = 1;
   hasMore.value = true;
-  songs.value = [];
+
+  // 1. SWR 优先展示内存缓存（0 秒秒开）
+  const cached = playlistDetailCache.get(id);
+  if (cached && cached.songs && cached.songs.length > 0) {
+    playlistInfo.value = cached.info || {};
+    rawPlaylistData.value = cached.raw || null;
+    songs.value = cached.songs || [];
+    hasMore.value = cached.hasMore ?? true;
+    isLoading.value = false;
+    isError.value = false;
+  } else {
+    isLoading.value = true;
+    isError.value = false;
+    songs.value = [];
+  }
 
   try {
-    await request.get('/register/dev').catch(() => {});
-    
-    let infoRes = null;
-    try {
-      infoRes = await request.get('/playlist/detail', { params: { ids: id, timestamp: Date.now() } });
-    } catch (e) { console.warn('获取歌单详情抛出异常 (已隔离):', e); }
-    
-    playlistInfo.value = extractPlaylistInfo(infoRes);
-    rawPlaylistData.value = infoRes; 
-    
-    const targetFetchId = playlistInfo.value.list_create_gid || id;
+    // 2. 并行并发请求歌单详情与歌曲列表，消除串行网络等待
+    const [infoRes, songsRes] = await Promise.all([
+      request.get('/playlist/detail', { params: { ids: id } }).catch((e) => {
+        console.warn('获取歌单详情抛出异常 (已隔离):', e);
+        return null;
+      }),
+      request.get('/playlist/track/all', { params: { id, page: 1 } }).catch((e) => {
+        console.warn('获取歌曲列表抛出异常 (已隔离):', e);
+        return null;
+      })
+    ]);
 
-    let songsRes = null;
-    try {
-      songsRes = await request.get('/playlist/track/all', { params: { id: targetFetchId, page: page.value, timestamp: Date.now() } });
-    } catch (e) { console.warn('获取歌曲列表抛出异常 (已隔离):', e); }
-    
-    if (songsRes) {
-      const rawSongs = extractSongs(songsRes);
+    const resolvedInfo = extractPlaylistInfo(infoRes);
+    if (resolvedInfo.name || resolvedInfo.cover || resolvedInfo.intro) {
+      playlistInfo.value = resolvedInfo;
+      rawPlaylistData.value = infoRes;
+    }
+
+    let rawSongs = extractSongs(songsRes);
+
+    // 若按当前 id 未查出歌曲且详情中指示了真正的 GID，则补查一次
+    const gid = resolvedInfo.list_create_gid;
+    if ((!rawSongs || rawSongs.length === 0) && gid && String(gid) !== String(id)) {
+      try {
+        const gidSongsRes = await request.get('/playlist/track/all', { params: { id: gid, page: 1 } });
+        const fallbackSongs = extractSongs(gidSongsRes);
+        if (fallbackSongs.length > 0) {
+          rawSongs = fallbackSongs;
+        }
+      } catch (_) {}
+    }
+
+    if (rawSongs && rawSongs.length > 0) {
       let normalized = normalizeSongs(rawSongs, defaultImg);
-      
+
       const isLikedList = String(route.params.id) === String(userStore.likedPlaylistGlobalId) || 
                           (playlistInfo.value.name && (playlistInfo.value.name.includes('默认收藏') || playlistInfo.value.name.includes('我喜欢')));
                           
@@ -469,14 +505,29 @@ const fetchDetail = async () => {
           return userStore.likedHashes.includes(h);
         });
       }
-      
+
       songs.value = normalized;
       if (rawSongs.length < 30) hasMore.value = false;
-    } else {
-      throw new Error('歌曲列表接口阻断');
+
+      // 写入 SWR 缓存（上限 50 个歌单防内存占用）
+      if (playlistDetailCache.size > 50) {
+        const firstKey = playlistDetailCache.keys().next().value;
+        playlistDetailCache.delete(firstKey);
+      }
+      playlistDetailCache.set(id, {
+        info: { ...playlistInfo.value },
+        raw: rawPlaylistData.value,
+        songs: [...normalized],
+        hasMore: hasMore.value,
+        cachedAt: Date.now()
+      });
+    } else if (songs.value.length === 0) {
+      songs.value = [];
     }
   } catch (error) {
-    isError.value = true;
+    if (songs.value.length === 0) {
+      isError.value = true;
+    }
   } finally {
     isLoading.value = false;
   }
@@ -486,12 +537,12 @@ const loadMore = async () => {
   if (!hasMore.value || isLoadingMore.value) return;
   isLoadingMore.value = true;
   page.value += 1;
-  const id = route.params.id;
+  const id = String(route.params.id);
   
   const targetFetchId = playlistInfo.value.list_create_gid || id;
 
   try {
-    const songsRes = await request.get('/playlist/track/all', { params: { id: targetFetchId, page: page.value, timestamp: Date.now() } });
+    const songsRes = await request.get('/playlist/track/all', { params: { id: targetFetchId, page: page.value } });
     const newRawSongs = extractSongs(songsRes);
     if (newRawSongs.length === 0) hasMore.value = false;
     else {
@@ -508,6 +559,12 @@ const loadMore = async () => {
       
       songs.value.push(...normalized);
       if (newRawSongs.length < 30) hasMore.value = false;
+
+      const cached = playlistDetailCache.get(id);
+      if (cached) {
+        cached.songs = [...songs.value];
+        cached.hasMore = hasMore.value;
+      }
     }
   } catch (error) {
     hasMore.value = false;

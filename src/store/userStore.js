@@ -736,8 +736,13 @@ export const useUserStore = defineStore('user', {
     },
 
     async toggleLikeSong(song) {
-      if (!this.isLoggedIn) return this.openLoginModal();
+      if (!song) return;
       const playerStore = usePlayerStore();
+      if (song.source === 'netease-import' || String(song.hash || '').startsWith('netease:')) {
+        playerStore.showToast('网易导入歌曲暂不支持添加到我喜欢');
+        return;
+      }
+      if (!this.isLoggedIn) return this.openLoginModal();
       
       if (!this.likedListId) {
         playerStore.showToast('未能获取到默认收藏夹，请重新登录同步数据');

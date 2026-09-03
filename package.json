@@ -25,9 +25,6 @@
     "axios": "^1.6.8",
     "builder-util-runtime": "9.5.1",
     "electron-updater": "^6.1.8",
-    "fs-extra": "^11.2.0",
-    "lodash.escaperegexp": "^4.1.2",
-    "lodash.isequal": "^4.5.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-router": "^4.6.4"
@@ -59,17 +56,20 @@
           "**/*",
           "!node_modules/.cache",
           "!node_modules/**/.cache/**",
+          "!node_modules/.bin",
+          "!node_modules/.bin/**",
+          "!node_modules/@esbuild/**",
+          "!node_modules/esbuild/**",
+          "!node_modules/@types/**",
+          "!node_modules/nodemon/**",
+          "!node_modules/pkg/**",
+          "!node_modules/typescript/**",
+          "!node_modules/ts-node/**",
+          "!node_modules/prettier/**",
           "!.github/**",
           "!docs/**",
-          "!Dockerfile",
-          "!.dockerignore",
-          "!vercel.json",
-          "!nodemon.json",
-          "!tsconfig.json",
-          "!.prettierrc.json",
           "!README.md",
-          "!LICENSE",
-          "!interface.d.ts"
+          "!LICENSE"
         ]
       },
       {

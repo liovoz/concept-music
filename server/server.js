@@ -125,7 +125,8 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
     res.set({
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS',
-      'Access-Control-Allow-Headers': 'Range,Content-Type',
+      'Access-Control-Allow-Headers': 'Range,Content-Type,Accept-Ranges',
+      'Access-Control-Expose-Headers': 'Content-Length,Content-Range,Accept-Ranges',
       'Accept-Ranges': upstreamRes.headers['accept-ranges'] || 'bytes',
       'Cache-Control': 'no-store',
       'Content-Type': contentType,
@@ -170,8 +171,14 @@ async function getModulesDefinitions(modulesPath, specificRoute, doRequire = tru
       const identifier = fileName.split('.').shift();
       const route = parseRoute(fileName);
       const modulePath = path.resolve(modulesPath, fileName);
-      const module = doRequire ? require(modulePath) : modulePath;
-      return { identifier, route, module };
+      let loadedModule = null;
+      const getModule = () => {
+        if (!loadedModule) {
+          loadedModule = doRequire ? require(modulePath) : modulePath;
+        }
+        return loadedModule;
+      };
+      return { identifier, route, getModule, module: getModule };
     });
 }
 
@@ -186,17 +193,42 @@ async function consturctServer(moduleDefs) {
   app.set('trust proxy', true);
 
   /**
-   * CORS & Preflight request
+   * CORS & Preflight request (仅允许受信任的本地 Electron 应用源)
    */
+  const allowedOrigins = [
+    'app://localhost',
+    'http://127.0.0.1:5173',
+    'http://localhost:5173'
+  ];
+
   app.use((req, res, next) => {
+    // /audio/proxy 专用于 HTML5 Audio 与 Web Audio 流式跨域代理，由专用路由处理流式 CORS 与 Range 头
+    if (req.path === '/audio/proxy') {
+      return next();
+    }
+
     if (req.path !== '/' && !req.path.includes('.')) {
-      res.set({
-        'Access-Control-Allow-Credentials': true,
-        'Access-Control-Allow-Origin': CORS_ALLOW_ORIGIN || req.headers.origin || '*',
-        'Access-Control-Allow-Headers': 'Authorization,X-Requested-With,Content-Type,Cache-Control',
-        'Access-Control-Allow-Methods': 'PUT,POST,GET,DELETE,OPTIONS',
-        'Content-Type': 'application/json; charset=utf-8',
-      });
+      const origin = req.headers.origin;
+      let matchedOrigin = null;
+      if (CORS_ALLOW_ORIGIN) {
+        matchedOrigin = CORS_ALLOW_ORIGIN;
+      } else if (origin && allowedOrigins.includes(origin)) {
+        matchedOrigin = origin;
+      }
+
+      if (matchedOrigin) {
+        res.set({
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Origin': matchedOrigin,
+          'Access-Control-Allow-Headers': 'Authorization,X-Requested-With,Content-Type,Cache-Control',
+          'Access-Control-Allow-Methods': 'PUT,POST,GET,DELETE,OPTIONS',
+          'Content-Type': 'application/json; charset=utf-8',
+        });
+      } else {
+        res.set({
+          'Content-Type': 'application/json; charset=utf-8',
+        });
+      }
     }
     req.method === 'OPTIONS' ? res.status(204).end() : next();
   });
@@ -257,7 +289,8 @@ async function consturctServer(moduleDefs) {
     res.set({
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS',
-      'Access-Control-Allow-Headers': 'Range,Content-Type',
+      'Access-Control-Allow-Headers': 'Range,Content-Type,Accept-Ranges',
+      'Access-Control-Expose-Headers': 'Content-Length,Content-Range,Accept-Ranges',
     }).status(204).end();
   });
 
@@ -292,7 +325,8 @@ async function consturctServer(moduleDefs) {
         };
       }
       try {
-        const moduleResponse = await moduleDef.module(query, (config) => {
+        const moduleFn = typeof moduleDef.getModule === 'function' ? moduleDef.getModule() : moduleDef.module;
+        const moduleResponse = await moduleFn(query, (config) => {
           let ip = req.ip;
           if (ip.substring(0, 7) === '::ffff:') {
             ip = ip.substring(7);
@@ -347,6 +381,24 @@ async function consturctServer(moduleDefs) {
     });
   }
 
+  const CORE_MODULES = [
+    'playlist_detail',
+    'playlist_track_all',
+    'song_url',
+    'search',
+    'search_hot',
+    'song_lyric'
+  ];
+  setImmediate(() => {
+    for (const mod of moduleDefinitions) {
+      if (CORE_MODULES.includes(mod.identifier)) {
+        try {
+          if (typeof mod.getModule === 'function') mod.getModule();
+        } catch (_) {}
+      }
+    }
+  });
+
   return app;
 }
 
@@ -356,7 +408,7 @@ async function consturctServer(moduleDefs) {
  */
 async function startService() {
   const port = Number(process.env.PORT || '3000');
-  const host = process.env.HOST || '';
+  const host = process.env.HOST || '127.0.0.1';
 
   const app = await consturctServer();
 
@@ -364,7 +416,7 @@ async function startService() {
   const appExt = app;
 
   appExt.service = app.listen(port, host, () => {
-    console.log(`server running @ http://${host || 'localhost'}:${port}`);
+    console.log(`server running @ http://${host}:${port}`);
   });
 
   return appExt;

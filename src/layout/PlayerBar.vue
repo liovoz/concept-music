@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <div class="ml-4 flex-shrink-0" v-if="store.currentSong">
+      <div class="ml-4 flex-shrink-0" v-if="store.currentSong && !isNeteaseImportSong(store.currentSong)">
          <button @click="userStore.toggleLikeSong(store.currentSong)" class="no-drag p-1.5 rounded-full transition-all focus:outline-none transform active:scale-90" v-tooltip="isCurrentLiked ? '取消喜欢' : '添加喜欢'">
             <AppIcon v-if="isCurrentLiked" name="heart-solid" class="w-5 h-5 text-red-500 drop-shadow-sm" />
             <AppIcon v-else name="heart" class="w-5 h-5 text-gray-400 hover:text-red-400" />
@@ -138,20 +138,20 @@
     </div>
 
     <transition name="slide-up">
-      <div v-if="store.isPlaylistVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.55)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-slate-100" tabindex="-1" @keydown.escape="store.isPlaylistVisible = false">
+      <div v-show="store.isPlaylistVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.55)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-slate-100" tabindex="-1" @keydown.escape="store.isPlaylistVisible = false">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/60">
           <h3 class="font-bold text-gray-800 text-sm">当前播放队列 <span class="text-gray-400 font-normal ml-1">({{ store.playlist.length }}首)</span></h3>
           <button @click="store.clearPlaylist" class="text-xs text-gray-500 hover:text-blue-600 transition-colors no-drag">清空</button>
         </div>
         
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col">
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col" @scroll.passive="handlePlaylistScroll">
           <div v-if="store.playlist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-400">
             <AppIcon name="album" class="w-12 h-12 mb-3 text-gray-200" />
             <p class="text-xs font-medium">你还没有添加任何歌曲</p>
           </div>
           <div v-else class="space-y-1">
             <div
-              v-for="(song, index) in store.playlist"
+              v-for="(song, index) in displayedPlaylist"
               :key="song.hash + '_' + index"
               @contextmenu="handlePlaylistContextMenu($event, song, index)"
               @mouseenter="playlistHoverIndex = index"
@@ -177,6 +177,9 @@
                 <button @click.stop="store.playSong(song)" class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag"><AppIcon name="play" class="w-4 h-4" /></button>
                 <button @click.stop="store.removeFromPlaylist(index)" class="text-gray-400 dark:text-slate-500 hover:text-red-500 p-1 no-drag"><AppIcon name="close" class="w-4 h-4" /></button>
               </div>
+            </div>
+            <div v-if="displayedPlaylist.length < store.playlist.length" class="text-[10px] text-center text-gray-400 dark:text-slate-500 py-1.5">
+              向下滚动加载更多歌曲 (已显示 {{ displayedPlaylist.length }}/{{ store.playlist.length }})
             </div>
           </div>
         </div>
@@ -849,6 +852,7 @@
 
               <!-- 喜欢按钮 -->
               <button 
+                v-if="!isNeteaseImportSong(store.currentSong)"
                 @click.stop="store.currentSong && userStore.toggleLikeSong(store.currentSong)" 
                 class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/15 transition-all active:scale-90 no-drag"
                 :class="{ 'opacity-50 pointer-events-none': !store.currentSong }"
@@ -953,6 +957,30 @@ const playlistBtnRef = ref(null);
 const qualityMenuRef = ref(null);
 const qualityMenuOpen = ref(false);
 const playlistHoverIndex = ref(-1);
+const visiblePlaylistLimit = ref(60);
+
+const displayedPlaylist = computed(() => {
+  if (!store.playlist || store.playlist.length <= 60) return store.playlist;
+  return store.playlist.slice(0, visiblePlaylistLimit.value);
+});
+
+const handlePlaylistScroll = (e) => {
+  const target = e.target;
+  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 100) {
+    if (visiblePlaylistLimit.value < store.playlist.length) {
+      visiblePlaylistLimit.value = Math.min(store.playlist.length, visiblePlaylistLimit.value + 40);
+    }
+  }
+};
+
+watch(() => store.isPlaylistVisible, (visible) => {
+  if (visible) {
+    const currentIndex = store.playlist.findIndex(s => s.hash === store.currentSong?.hash);
+    if (currentIndex >= 0 && currentIndex >= visiblePlaylistLimit.value) {
+      visiblePlaylistLimit.value = Math.min(store.playlist.length, currentIndex + 30);
+    }
+  }
+});
 
 const qualityOptions = QUALITY_CONFIG.map(q => ({
   ...q,

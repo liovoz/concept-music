@@ -13,4 +13,11 @@ async function start() {
   require('./server').startService();
 }
 
+// 当由 Electron 主进程 fork 启动时，监听 IPC 断开事件自动退出，防止孤儿僵尸进程占用端口
+if (process.send) {
+  process.on('disconnect', () => {
+    process.exit(0);
+  });
+}
+
 start();
