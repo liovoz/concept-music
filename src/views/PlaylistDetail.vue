@@ -35,7 +35,7 @@
               播放全部
             </button>
             
-            <button v-if="!isCreatedByMe" @click="toggleCollect" :disabled="isCollectLoading" class="px-6 py-2.5 rounded-full text-sm font-bold transition-all transform active:scale-95 flex items-center no-drag" 
+            <button v-if="!isCreatedByMe && !isSystemPlaylist" @click="toggleCollect" :disabled="isCollectLoading" class="px-6 py-2.5 rounded-full text-sm font-bold transition-all transform active:scale-95 flex items-center no-drag" 
                 :class="[
                     isCollected ? 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-red-500' : 'bg-blue-50 text-blue-600 hover:bg-blue-100 shadow-sm border border-blue-100',
                     {'opacity-50 pointer-events-none': isCollectLoading || (isLoading && page === 1)}
@@ -44,6 +44,14 @@
               <AppIcon v-else-if="isCollected" name="heart-solid" class="w-5 h-5 mr-1.5" />
               <AppIcon v-else name="heart" class="w-5 h-5 mr-1.5" />
               {{ isCollectLoading ? '' : (isCollected ? '已收藏' : '收藏歌单') }}
+            </button>
+            <button
+              v-else-if="isCreatedByMe && !isSystemPlaylist"
+              @click="openDeletePlaylistModal"
+              class="px-6 py-2.5 rounded-full text-sm font-bold transition-all transform active:scale-95 flex items-center no-drag bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200"
+            >
+              <AppIcon name="trash" class="w-4 h-4 mr-1.5" />
+              删除歌单
             </button>
           </div>
         </div>
@@ -77,7 +85,7 @@
         </div>
         
         <div class="space-y-1 w-full">
-          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
+          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song, index)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
@@ -104,7 +112,17 @@
               </span>
             </div>
             
-            <div class="w-12 sm:w-16 text-xs text-gray-400 text-right pr-4 font-mono flex-shrink-0">{{ song._duration }}</div>
+            <div class="w-12 sm:w-16 text-xs text-gray-400 text-right pr-4 font-mono flex-shrink-0 flex items-center justify-end">
+              <span :class="{'group-hover:hidden': isCreatedByMe}">{{ song._duration }}</span>
+              <button
+                v-if="isCreatedByMe"
+                @click.stop="removeSongFromList(song, index)"
+                class="hidden group-hover:flex items-center justify-center p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                v-tooltip="'从歌单中删除'"
+              >
+                <AppIcon name="trash" class="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -124,6 +142,41 @@
     </div>
     
     <BackToTop targetId="playlist-scroll-container" />
+
+    <!-- 删除自建歌单确认对话框 -->
+    <Teleport to="body">
+      <div v-if="showDeletePlaylistModal" class="fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-drag" @click.self="showDeletePlaylistModal = false">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+          <div class="flex items-center space-x-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
+              <AppIcon name="trash" class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-gray-800">删除自建歌单</h3>
+              <p class="text-xs text-gray-500 mt-0.5">此操作将永久删除该歌单</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100 mb-5">
+            确定要删除歌单「<span class="font-bold text-gray-800">{{ playlistInfo.name }}</span>」吗？删除后将无法恢复该歌单。
+          </p>
+
+          <div class="flex items-center justify-end space-x-3">
+            <button @click="showDeletePlaylistModal = false" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              取消
+            </button>
+            <button
+              @click="handleDeleteCurrentPlaylist"
+              :disabled="isDeletePlaylistLoading"
+              class="px-5 py-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
+            >
+              <AppIcon v-if="isDeletePlaylistLoading" name="spinner" spin class="w-3.5 h-3.5 mr-1.5" />
+              <span>{{ isDeletePlaylistLoading ? '正在删除...' : '确认删除' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -133,7 +186,7 @@ import { useRoute, useRouter } from 'vue-router';
 import request from '../utils/request';
 import { usePlayerStore } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
-import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
+import { normalizeSongs, buildPlayPayload, isDefaultPlaylistName, isFavoritePlaylistName } from '../utils/songHelper';
 import { openSongContextMenu } from '../utils/songContextMenu';
 import { usePlayAllHydration } from '../composables/usePlayAllHydration';
 import BackToTop from '../components/BackToTop.vue';
@@ -196,6 +249,153 @@ const isCreatedByMe = computed(() => {
   return userStore.createdListIds.includes(String(route.params.id));
 });
 
+// 真正的心动“我喜欢”歌单
+const isFavoriteList = computed(() => {
+  const currentId = String(route.params.id || '');
+  const likedGlobalId = String(userStore.likedPlaylistGlobalId || '');
+  const likedListId = String(userStore.likedListId || '');
+
+  if (currentId && (currentId === likedGlobalId || currentId === likedListId)) {
+    return true;
+  }
+
+  const name = playlistInfo.value?.name || '';
+  if (name && isFavoritePlaylistName(name)) {
+    return true;
+  }
+
+  return false;
+});
+
+// 系统受保护不可删除的歌单（包含“我喜欢”与“默认收藏”）
+const isSystemPlaylist = computed(() => {
+  if (isFavoriteList.value) return true;
+
+  const currentId = String(route.params.id || '');
+  const name = playlistInfo.value?.name || '';
+  if (name && isDefaultPlaylistName(name)) {
+    return true;
+  }
+
+  const foundInStore = userStore.userCreatedPlaylists.find(p => 
+    String(p.gid) === currentId || String(p.listid) === currentId
+  );
+  if (foundInStore) {
+    if (foundInStore.isDefault || isDefaultPlaylistName(foundInStore.name)) {
+      return true;
+    }
+  }
+
+  return false;
+});
+
+const isLikedList = isFavoriteList;
+
+const resolvedListId = computed(() => {
+  const targetId = String(route.params.id);
+  if (targetId === String(userStore.likedPlaylistGlobalId)) return userStore.likedListId;
+  let listid = userStore.playlistMap[targetId] || userStore.collectedMap[targetId];
+  if (!listid && rawPlaylistData.value) {
+    const searchListId = (obj) => {
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+      if (!listid) listid = obj.listid || obj.specialid;
+      Object.values(obj).forEach(val => searchListId(val));
+    };
+    searchListId(rawPlaylistData.value);
+  }
+  return listid || targetId;
+});
+
+const showDeletePlaylistModal = ref(false);
+const isDeletePlaylistLoading = ref(false);
+
+const openDeletePlaylistModal = () => {
+  if (!userStore.isLoggedIn) return userStore.openLoginModal();
+  showDeletePlaylistModal.value = true;
+};
+
+const handleDeleteCurrentPlaylist = async () => {
+  if (isDeletePlaylistLoading.value) return;
+  isDeletePlaylistLoading.value = true;
+  try {
+    const res = await userStore.deleteCustomPlaylist({
+      listid: resolvedListId.value,
+      gid: String(route.params.id),
+      isCollected: false
+    });
+    if (res.success) {
+      showDeletePlaylistModal.value = false;
+      router.push('/my-playlists');
+    }
+  } finally {
+    isDeletePlaylistLoading.value = false;
+  }
+};
+
+const removeSongFromList = async (song, index) => {
+  if (!userStore.isLoggedIn) return userStore.openLoginModal();
+  const listid = resolvedListId.value;
+  const fileid = song._fileid || song.fileid || song.FileID || song.id;
+  const hash = song._hash || song.hash;
+
+  if (isFavoriteList.value) {
+    await userStore.toggleLikeSong(song);
+    songs.value.splice(index, 1);
+    updateCustomPlaylistCoverFromSongs();
+    return;
+  }
+
+  if (!fileid) {
+    store.showToast('缺失歌曲唯一文件标识，正在尝试刷新歌单...');
+    fetchDetail();
+    return;
+  }
+
+  const res = await userStore.removeSongFromCustomPlaylist({
+    listid,
+    fileid,
+    hash
+  });
+
+  if (res.success) {
+    songs.value.splice(index, 1);
+    updateCustomPlaylistCoverFromSongs();
+    const cached = playlistDetailCache.get(String(route.params.id));
+    if (cached) {
+      cached.songs = [...songs.value];
+    }
+  }
+};
+
+const handleSongRemoved = (event) => {
+  const detail = event.detail || {};
+  if (detail.index >= 0 && detail.index < songs.value.length) {
+    songs.value.splice(detail.index, 1);
+    updateCustomPlaylistCoverFromSongs();
+    const cached = playlistDetailCache.get(String(route.params.id));
+    if (cached) {
+      cached.songs = [...songs.value];
+    }
+  } else if (detail.hash) {
+    const idx = songs.value.findIndex(s => (s._hash || s.hash || '').toUpperCase() === (detail.hash || '').toUpperCase());
+    if (idx >= 0) {
+      songs.value.splice(idx, 1);
+      updateCustomPlaylistCoverFromSongs();
+      const cached = playlistDetailCache.get(String(route.params.id));
+      if (cached) {
+        cached.songs = [...songs.value];
+      }
+    }
+  }
+};
+
+const handleSongAdded = (event) => {
+  const detail = event.detail || {};
+  if (detail.listid && (String(detail.listid) === String(resolvedListId.value) || String(detail.listid) === String(route.params.id))) {
+    fetchDetail();
+  }
+};
+
 const isCollected = computed(() => {
   const id = String(route.params.id);
   if (userStore.collectedListIds.includes(id) || !!userStore.collectedMap[id]) return true;
@@ -207,14 +407,21 @@ const isCollected = computed(() => {
   return false;
 });
 
+const updateCustomPlaylistCoverFromSongs = () => {
+  if (isCreatedByMe.value && !isFavoriteList.value) {
+    const latestCover = songs.value.length > 0 && songs.value[0]._cover ? songs.value[0]._cover : '';
+    userStore.setCustomPlaylistCover(String(route.params.id), latestCover);
+    userStore.setCustomPlaylistCover(String(resolvedListId.value), latestCover);
+  }
+};
+
 const playlistCover = computed(() => {
-  const isLikedList = String(route.params.id) === String(userStore.likedPlaylistGlobalId) || 
-                      (playlistInfo.value.name && (playlistInfo.value.name.includes('默认收藏') || playlistInfo.value.name.includes('我喜欢')));
-  
-  if (isLikedList) {
+  if (isFavoriteList.value || isSystemPlaylist.value || isCreatedByMe.value) {
      if (songs.value.length > 0 && songs.value[0]._cover) {
         return songs.value[0]._cover;
      }
+     const cachedCover = userStore.customPlaylistCovers[String(route.params.id)] || userStore.customPlaylistCovers[String(resolvedListId.value)];
+     if (cachedCover) return cachedCover;
      return defaultImg; 
   }
   
@@ -349,10 +556,7 @@ const toggleCollect = async () => {
 };
 
 watch(() => [...userStore.likedHashes], (newHashes, oldHashes) => {
-  const isLikedList = String(route.params.id) === String(userStore.likedPlaylistGlobalId) || 
-                      (playlistInfo.value.name && (playlistInfo.value.name.includes('默认收藏') || playlistInfo.value.name.includes('我喜欢')));
-  
-  if (isLikedList) {
+  if (isFavoriteList.value) {
     const isAdding = newHashes.length > (oldHashes ? oldHashes.length : 0);
 
     if (!isAdding) {
@@ -496,10 +700,7 @@ const fetchDetail = async () => {
     if (rawSongs && rawSongs.length > 0) {
       let normalized = normalizeSongs(rawSongs, defaultImg);
 
-      const isLikedList = String(route.params.id) === String(userStore.likedPlaylistGlobalId) || 
-                          (playlistInfo.value.name && (playlistInfo.value.name.includes('默认收藏') || playlistInfo.value.name.includes('我喜欢')));
-                          
-      if (isLikedList) {
+      if (isFavoriteList.value && userStore.likedHashes.length > 0 && String(route.params.id) === String(userStore.likedPlaylistGlobalId)) {
         normalized = normalized.filter(song => {
           const h = (song._hash || '').toUpperCase();
           return userStore.likedHashes.includes(h);
@@ -507,6 +708,7 @@ const fetchDetail = async () => {
       }
 
       songs.value = normalized;
+      updateCustomPlaylistCoverFromSongs();
       if (rawSongs.length < 30) hasMore.value = false;
 
       // 写入 SWR 缓存（上限 50 个歌单防内存占用）
@@ -547,10 +749,7 @@ const loadMore = async () => {
     if (newRawSongs.length === 0) hasMore.value = false;
     else {
       let normalized = normalizeSongs(newRawSongs, defaultImg);
-      const isLikedList = String(route.params.id) === String(userStore.likedPlaylistGlobalId) || 
-                          (playlistInfo.value.name && (playlistInfo.value.name.includes('默认收藏') || playlistInfo.value.name.includes('我喜欢')));
-                          
-      if (isLikedList) {
+      if (isFavoriteList.value && userStore.likedHashes.length > 0 && String(route.params.id) === String(userStore.likedPlaylistGlobalId)) {
         normalized = normalized.filter(song => {
           const h = (song._hash || '').toUpperCase();
           return userStore.likedHashes.includes(h);
@@ -581,11 +780,17 @@ const setupObserver = () => {
   if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value);
 };
 
-onMounted(() => { fetchDetail().then(() => { setupObserver(); }); });
+onMounted(() => {
+  fetchDetail().then(() => { setupObserver(); });
+  window.addEventListener('song-context-menu:song-removed', handleSongRemoved);
+  window.addEventListener('song-context-menu:song-added', handleSongAdded);
+});
 onUnmounted(() => {
   cancelPlayAllHydration();
   store.cancelPlayAllHydration();
   if (observer) observer.disconnect();
+  window.removeEventListener('song-context-menu:song-removed', handleSongRemoved);
+  window.removeEventListener('song-context-menu:song-added', handleSongAdded);
 });
 
 const handlePlay = (song) => {
@@ -593,9 +798,15 @@ const handlePlay = (song) => {
   store.playSong(buildPlayPayload(song, playlistInfo.value.cover || defaultImg));
 };
 
-const handleSongContextMenu = (event, song) => {
+const handleSongContextMenu = (event, song, index) => {
   if (!song._hash) return;
-  openSongContextMenu(event, buildPlayPayload(song, playlistInfo.value.cover || defaultImg));
+  openSongContextMenu(event, buildPlayPayload(song, playlistInfo.value.cover || defaultImg), {
+    source: isCreatedByMe.value ? 'user-playlist' : 'list',
+    index,
+    listid: resolvedListId.value,
+    playlistName: playlistInfo.value.name || '',
+    fileid: song._fileid || song.fileid || song.FileID || song.id || ''
+  });
 };
 
 const playAll = () => {
@@ -607,8 +818,6 @@ const playAll = () => {
 
   const routeId = String(route.params.id || '');
   const targetFetchId = playlistInfo.value.list_create_gid || routeId;
-  const isLikedList = String(route.params.id) === String(userStore.likedPlaylistGlobalId) ||
-                      (playlistInfo.value.name && (playlistInfo.value.name.includes('默认收藏') || playlistInfo.value.name.includes('我喜欢')));
 
   startPlayAllHydration({
     sessionId: result.sessionId,
@@ -621,7 +830,7 @@ const playAll = () => {
       });
       const rawSongs = extractSongs(songsRes);
       let normalized = normalizeSongs(rawSongs, defaultImg);
-      if (isLikedList) {
+      if (isFavoriteList.value && userStore.likedHashes.length > 0 && String(route.params.id) === String(userStore.likedPlaylistGlobalId)) {
         normalized = normalized.filter(song => userStore.likedHashes.includes((song._hash || '').toUpperCase()));
       }
       return {

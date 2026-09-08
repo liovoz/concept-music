@@ -7,8 +7,8 @@ module.exports = (params, useAxios) => {
   const dataMap = {
     userid,
     token,
-    total_ver: 979,
-    type: 2,
+    total_ver: params?.total_ver !== undefined ? Number(params.total_ver) : 0,
+    type: params?.type !== undefined ? Number(params.type) : 2,
     page: params?.page || 1,
     pagesize: params?.pagesize || 30,
   };

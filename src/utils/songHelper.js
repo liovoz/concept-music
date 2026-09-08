@@ -244,8 +244,11 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
 
     const playableHash = hash128 || hash320 || hashFlac || hashHigh || hashViperClear || hashViperAtmos;
 
+    const fileId = String(song.fileid || song.FileID || song.file_id || song.id || song.audio_info?.fileid || song._fileid || '').trim();
+
     return {
       ...song,
+      _fileid: fileId,
       _hash: playableHash,
       _title: rawTitle,
       _singer: rawSinger,
@@ -268,18 +271,72 @@ export const buildPlayPayload = (song, fallbackCover = 'https://images.unsplash.
   const artists = getSongArtists(song);
   const primaryArtist = artists[0] || {};
   return {
-    hash: song._hash,
-    name: song._title,
-    singer: song._singer,
+    fileid: song._fileid || song.fileid || song.FileID || song.file_id || song.id || '',
+    hash: song._hash || song.hash,
+    name: song._title || song.name,
+    singer: song._singer || song.singer,
     singer_id: song._singer_id || primaryArtist.id || '',
     _singers: artists,
     artists,
-    album: song._album,
+    album: song._album || song.album,
     cover: song._cover || fallbackCover,
-    album_id: song._album_id,
-    album_audio_id: song._album_audio_id,
-    is_vip: song._is_vip,
-    is_paid: song._is_paid,
-    qualities: song._qualities
+    album_id: song._album_id || song.album_id,
+    album_audio_id: song._album_audio_id || song.album_audio_id,
+    is_vip: song._is_vip ?? song.is_vip,
+    is_paid: song._is_paid ?? song.is_paid,
+    qualities: song._qualities || song.qualities
   };
+};
+
+export const isDefaultPlaylistName = (name = '') => {
+  if (!name || typeof name !== 'string') return false;
+  const n = name.trim();
+  return n === '默认收藏' ||
+         n === '我喜欢' ||
+         n === '我喜欢的音乐' ||
+         n.includes('默认收藏') ||
+         n.includes('我喜欢') ||
+         n.includes('喜欢的音乐') ||
+         n === '默认列表';
+};
+
+export const isFavoritePlaylistName = (name = '') => {
+  if (!name || typeof name !== 'string') return false;
+  const n = name.trim();
+  if (n.includes('默认收藏') || n.includes('默认列表')) return false;
+  return n === '我喜欢' ||
+         n === '我喜欢的音乐' ||
+         n.includes('喜欢的音乐') ||
+         n.includes('我喜欢');
+};
+
+export const getFirstSongCover = (res) => {
+  if (!res) return '';
+  let validArr = [];
+  const isRealSong = (item) => item && typeof item === 'object' && (item.hash || item.filehash || item.FileHash);
+  const seen = new WeakSet();
+  const traverse = (data, depth) => {
+    if (depth > 6 || !data || typeof data !== 'object' || validArr.length > 0) return;
+    if (seen.has(data)) return;
+    seen.add(data);
+    if (Array.isArray(data)) {
+      if (data.length > 0 && isRealSong(data[0])) {
+        validArr = data;
+        return;
+      }
+      data.forEach(item => traverse(item, depth + 1));
+      return;
+    }
+    Object.values(data).forEach(val => traverse(val, depth + 1));
+  };
+  traverse(res, 0);
+
+  for (const s of validArr) {
+    let c = s.cover || s.Image || s.pic || s.union_cover || '';
+    if (!c && s.albuminfo && s.albuminfo.cover) c = s.albuminfo.cover;
+    if (c && typeof c === 'string') {
+      return c.replace(/\{size\}/g, '400');
+    }
+  }
+  return '';
 };

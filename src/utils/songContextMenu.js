@@ -8,7 +8,8 @@ export const openSongContextMenu = (event, song, options = {}) => {
       y: event.clientY,
       song,
       source: options.source || 'list',
-      index: options.index ?? -1
+      index: options.index ?? -1,
+      ...options
     }
   }));
 };

@@ -4,6 +4,7 @@
 import { defineStore } from 'pinia';
 import request from '../utils/request';
 import { usePlayerStore } from './playerStore';
+import { isDefaultPlaylistName, isFavoritePlaylistName, getFirstSongCover } from '../utils/songHelper';
 
 const VIP_DETAIL_PROBE_ENABLED = false;
 const VIP_DETAIL_PROBE_REDACT_KEYS = /token|cookie|authorization|password|secret|dfid|mid/i;
@@ -161,6 +162,27 @@ const resolveVipStatusFromDetail = (data, now = Date.now()) => {
   return status;
 };
 
+const findLikedPlaylist = (list) => {
+  if (!Array.isArray(list)) return null;
+  let found = list.find(p => p.name === '我喜欢' || p.name === '我喜欢的音乐');
+  if (!found) {
+    found = list.find(p => (p.name?.includes('喜欢的音乐') || p.name?.includes('我喜欢')) && (p.count > 0 || p.m_count > 0));
+  }
+  if (!found) {
+    found = list.find(p => p.name?.includes('喜欢的音乐') || p.name?.includes('我喜欢'));
+  }
+  if (!found) {
+    found = list.find(p => p.name === '默认收藏' && (p.count > 0 || p.m_count > 0));
+  }
+  if (!found) {
+    found = list.find(p => p.name === '默认收藏');
+  }
+  if (!found) {
+    found = list.find(p => isDefaultPlaylistName(p.name));
+  }
+  return found;
+};
+
 export const useUserStore = defineStore('user', {
   state: () => ({
     isLoggedIn: localStorage.getItem('kg_desktop_isLoggedIn') === 'true',
@@ -176,8 +198,11 @@ export const useUserStore = defineStore('user', {
     
     collectedListIds: [], 
     createdListIds: [],   
+    userCreatedPlaylists: [],
+    isFetchingPlaylists: false,
     playlistMap: {},      
     collectedMap: JSON.parse(localStorage.getItem('kg_desktop_collected_map') || '{}'),
+    customPlaylistCovers: JSON.parse(localStorage.getItem('kg_desktop_playlist_covers') || '{}'),
     
     deletedPlaylistIds: JSON.parse(localStorage.getItem('kg_desktop_deleted_playlists') || '[]'),
     
@@ -661,20 +686,109 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async fetchLikedPlaylistMeta() {
+    setCustomPlaylistCover(key, coverUrl) {
+      if (!key) return;
+      const k = String(key);
+      const c = String(coverUrl || '').replace(/\{size\}/g, '400');
+      this.customPlaylistCovers[k] = c;
       try {
-        const res = await request.get('/user/playlist', { params: { page: 1, pagesize: 1000, timestamp: Date.now() }, silent: true });
+        localStorage.setItem('kg_desktop_playlist_covers', JSON.stringify(this.customPlaylistCovers));
+      } catch (e) {}
+
+      const p = this.userCreatedPlaylists.find(item => String(item.listid) === k || String(item.gid) === k);
+      if (p) {
+        p.cover = c;
+      }
+    },
+
+    async fetchPlaylistLatestCover(id) {
+      if (!id) return '';
+      try {
+        const res = await request.get('/playlist/track/all', {
+          params: { id: String(id), page: 1, pagesize: 5, timestamp: Date.now() },
+          silent: true
+        });
+        return getFirstSongCover(res);
+      } catch (e) {
+        return '';
+      }
+    },
+
+    syncPlaylistsFromRaw(rawInfoList) {
+      if (!Array.isArray(rawInfoList)) return;
+      const currentUserId = String(this.userInfo?.userid || '');
+      const likedList = findLikedPlaylist(rawInfoList);
+      const likedGid = likedList ? String(likedList.global_collection_id || likedList.specialid || likedList.listid) : this.likedPlaylistGlobalId;
+      const likedLid = likedList ? String(likedList.listid) : this.likedListId;
+
+      if (likedList && (!this.likedPlaylistGlobalId || !this.likedListId)) {
+        this.likedPlaylistGlobalId = likedGid;
+        this.likedListId = likedLid;
+      }
+
+      rawInfoList.forEach(p => {
+        const gid = String(p.global_collection_id || p.listid || p.specialid);
+        const lid = String(p.listid);
+
+        if (this.deletedPlaylistIds.includes(gid) || this.deletedPlaylistIds.includes(lid)) return;
+
+        this.playlistMap[gid] = p.listid;
+        const creatorId = String(p.list_create_userid || p.userid || '');
+        const isOwner = Boolean(currentUserId && creatorId && creatorId === currentUserId);
+        const isCreated = isOwner || p.type === 0 || p.source === 0 || (p.type !== 1 && p.source !== 1);
+        const isFav = isFavoritePlaylistName(p.name) || ((gid === String(likedGid) || lid === String(likedLid)) && !p.name?.includes('默认收藏') && !p.name?.includes('默认列表'));
+        const isDefault = isDefaultPlaylistName(p.name) || isFav;
+
+        if (gid === String(likedGid) || isCreated) {
+          if (!this.createdListIds.includes(gid)) this.createdListIds.push(gid);
+          let cachedCover = this.customPlaylistCovers[gid] || this.customPlaylistCovers[lid] || '';
+          let cover = cachedCover || p.pic || '';
+          const userPic = p.create_user_pic || '';
+          const isAvatar = (userPic && cover === userPic) || (typeof cover === 'string' && cover.includes('/avatar/'));
+          if (isCreated && isAvatar) {
+            cover = cachedCover || '';
+          }
+          if (cover && typeof cover === 'string') cover = cover.replace(/\{size\}/g, '400');
+
+          const entry = {
+            listid: lid,
+            gid,
+            name: p.name || p.title || '未命名歌单',
+            count: p.count || p.m_count || 0,
+            cover,
+            isDefault,
+            isFavorite: isFav,
+            isPrivate: p.is_pri === 1
+          };
+
+          const existingIdx = this.userCreatedPlaylists.findIndex(item => item.listid === lid || item.gid === gid || item.name === entry.name);
+          if (existingIdx >= 0) {
+            this.userCreatedPlaylists[existingIdx] = entry;
+          } else {
+            this.userCreatedPlaylists.push(entry);
+          }
+        } else {
+          if (!this.collectedListIds.includes(gid)) this.collectedListIds.push(gid);
+        }
+      });
+    },
+
+    async fetchLikedPlaylistMeta() {
+      this.isFetchingPlaylists = true;
+      try {
+        const res = await request.get('/user/playlist', { params: { page: 1, pagesize: 1000, total_ver: 0, timestamp: Date.now() }, silent: true });
         if (res?.data?.info && Array.isArray(res.data.info)) {
           
           this.collectedListIds = [];
           this.createdListIds = [];
           this.playlistMap = {};
           
-          let likedList = res.data.info.find(p => p.name === '默认收藏');
-          if (!likedList) likedList = res.data.info.find(p => p.name === '我喜欢');
-
+          const likedList = findLikedPlaylist(res.data.info);
           const likedGid = likedList ? String(likedList.global_collection_id || likedList.specialid || likedList.listid) : null;
+          const likedLid = likedList ? String(likedList.listid) : null;
+          const currentUserId = String(this.userInfo?.userid || '');
 
+          const createdLists = [];
           res.data.info.forEach(p => {
              const gid = String(p.global_collection_id || p.listid || p.specialid);
              const lid = String(p.listid);
@@ -682,16 +796,40 @@ export const useUserStore = defineStore('user', {
              if (this.deletedPlaylistIds.includes(gid) || this.deletedPlaylistIds.includes(lid)) return;
 
              this.playlistMap[gid] = p.listid;
-             const isCollected = p.source === 1;
+             const creatorId = String(p.list_create_userid || p.userid || '');
+             const isOwner = Boolean(currentUserId && creatorId && creatorId === currentUserId);
+             const isCreated = isOwner || p.type === 0 || p.source === 0 || (p.type !== 1 && p.source !== 1);
+             const isFav = isFavoritePlaylistName(p.name) || ((gid === String(likedGid) || lid === String(likedLid)) && !p.name?.includes('默认收藏') && !p.name?.includes('默认列表'));
+             const isDefault = isDefaultPlaylistName(p.name) || isFav;
              
-             if (gid === likedGid) {
-                 this.createdListIds.push(gid);
-             } else if (!isCollected) {
+             if (gid === String(likedGid) || isCreated) {
                  this.createdListIds.push(gid);
              } else {
                  this.collectedListIds.push(gid);
              }
+
+             if (isCreated || gid === String(likedGid)) {
+                let cachedCover = this.customPlaylistCovers[gid] || this.customPlaylistCovers[lid] || '';
+                let cover = cachedCover || p.pic || '';
+                const userPic = p.create_user_pic || '';
+                const isAvatar = (userPic && cover === userPic) || (typeof cover === 'string' && cover.includes('/avatar/'));
+                if (isCreated && isAvatar) {
+                  cover = cachedCover || '';
+                }
+                if (cover && typeof cover === 'string') cover = cover.replace(/\{size\}/g, '400');
+               createdLists.push({
+                 listid: lid,
+                 gid,
+                 name: p.name || p.title || '未命名歌单',
+                 count: p.count || p.m_count || 0,
+                 cover,
+                 isDefault,
+                 isFavorite: isFav,
+                 isPrivate: p.is_pri === 1
+               });
+             }
           });
+          this.userCreatedPlaylists = createdLists;
 
           if (likedList) {
             this.likedPlaylistGlobalId = likedList.global_collection_id || likedList.listid;
@@ -732,7 +870,10 @@ export const useUserStore = defineStore('user', {
             } catch (e) {}
           }
         }
-      } catch (e) {}
+      } catch (e) {
+      } finally {
+        this.isFetchingPlaylists = false;
+      }
     },
 
     async toggleLikeSong(song) {
@@ -791,6 +932,234 @@ export const useUserStore = defineStore('user', {
         }
       } catch (e) {
         playerStore.showToast(e.message || '操作失败，请检查网络');
+      }
+    },
+
+    async createCustomPlaylist(options = {}) {
+      if (!this.isLoggedIn) {
+        this.openLoginModal();
+        return { success: false, msg: '请先登录' };
+      }
+      const title = (options.name || '').trim();
+      if (!title) return { success: false, msg: '歌单名称不能为空' };
+
+      const playerStore = usePlayerStore();
+      try {
+        const isPri = options.isPrivate ? 1 : 0;
+        const res = await request.get('/playlist/add', {
+          params: {
+            name: title,
+            type: 0,
+            source: 0,
+            is_pri: isPri,
+            timestamp: Date.now()
+          }
+        });
+
+        if (res && (res.status === 1 || res.error_code === 0 || res.data)) {
+          playerStore.showToast('🎉 新建歌单成功');
+
+          const newListId = String(res?.data?.info?.listid || res?.data?.listid || Date.now());
+          const newGid = String(res?.data?.info?.global_collection_id || res?.data?.global_collection_id || newListId);
+          const optimisticEntry = {
+            listid: newListId,
+            gid: newGid,
+            name: title,
+            count: 0,
+            cover: '',
+            isDefault: false,
+            isPrivate: isPri === 1
+          };
+          if (!this.userCreatedPlaylists.some(p => p.name === title || (p.listid && p.listid === newListId))) {
+            this.userCreatedPlaylists.unshift(optimisticEntry);
+          }
+          if (!this.createdListIds.includes(newGid)) {
+            this.createdListIds.unshift(newGid);
+          }
+          this.playlistMap[newGid] = newListId;
+
+          await this.fetchLikedPlaylistMeta();
+          return { success: true, data: res.data };
+        } else {
+          const errMsg = res?.error_msg || res?.message || '新建歌单失败';
+          playerStore.showToast(errMsg);
+          return { success: false, msg: errMsg };
+        }
+      } catch (e) {
+        const errMsg = e.message || '网络异常，新建歌单失败';
+        playerStore.showToast(errMsg);
+        return { success: false, msg: errMsg };
+      }
+    },
+
+    async deleteCustomPlaylist(playlist = {}) {
+      if (!this.isLoggedIn) {
+        this.openLoginModal();
+        return { success: false, msg: '请先登录' };
+      }
+      const listid = String(playlist.listid || '');
+      const gid = String(playlist.gid || playlist.global_collection_id || playlist._id || '');
+      if (!listid && !gid) return { success: false, msg: '未获取到歌单ID' };
+
+      const playerStore = usePlayerStore();
+      if (
+        (gid && (gid === String(this.likedPlaylistGlobalId) || gid === String(this.likedListId))) ||
+        (listid && (listid === String(this.likedPlaylistGlobalId) || listid === String(this.likedListId))) ||
+        isDefaultPlaylistName(playlist.name)
+      ) {
+        playerStore.showToast('系统默认歌单不可删除');
+        return { success: false, msg: '系统默认歌单不可删除' };
+      }
+
+      const targetListId = listid || this.playlistMap[gid] || gid;
+      const isCreated = this.createdListIds.includes(gid) || this.createdListIds.includes(listid) ||
+        this.userCreatedPlaylists.some(p => p.listid === listid || p.gid === gid);
+      const isCollected = !isCreated && Boolean(
+        playlist.isCollected !== undefined
+          ? playlist.isCollected
+          : (this.collectedListIds.includes(gid) || this.collectedListIds.includes(listid))
+      );
+      try {
+        const res = await request.get('/playlist/del', {
+          params: {
+            listid: targetListId,
+            type: isCollected ? 1 : 0,
+            timestamp: Date.now()
+          }
+        });
+
+        if (res && (res.status === 1 || res.error_code === 0)) {
+          playerStore.showToast(isCollected ? '已取消收藏' : '已删除歌单');
+
+          const idsToNuke = [String(targetListId)];
+          if (gid) idsToNuke.push(gid);
+          if (listid) idsToNuke.push(listid);
+
+          idsToNuke.forEach(id => {
+            if (!this.deletedPlaylistIds.includes(id)) {
+              this.deletedPlaylistIds.push(id);
+            }
+            delete this.customPlaylistCovers[id];
+          });
+          localStorage.setItem('kg_desktop_deleted_playlists', JSON.stringify(this.deletedPlaylistIds));
+          try {
+            localStorage.setItem('kg_desktop_playlist_covers', JSON.stringify(this.customPlaylistCovers));
+          } catch (e) {}
+
+          this.createdListIds = this.createdListIds.filter(id => !idsToNuke.includes(id));
+          this.collectedListIds = this.collectedListIds.filter(id => !idsToNuke.includes(id));
+          this.userCreatedPlaylists = this.userCreatedPlaylists.filter(p => !idsToNuke.includes(p.listid) && !idsToNuke.includes(p.gid));
+
+          Object.keys(this.collectedMap).forEach(key => {
+            if (idsToNuke.includes(key) || idsToNuke.includes(this.collectedMap[key])) {
+              delete this.collectedMap[key];
+            }
+          });
+          localStorage.setItem('kg_desktop_collected_map', JSON.stringify(this.collectedMap));
+
+          return { success: true };
+        } else {
+          const errMsg = res?.error_msg || res?.message || '删除歌单失败';
+          playerStore.showToast(errMsg);
+          return { success: false, msg: errMsg };
+        }
+      } catch (e) {
+        const errMsg = e.message || '网络异常，删除歌单失败';
+        playerStore.showToast(errMsg);
+        return { success: false, msg: errMsg };
+      }
+    },
+
+    async addSongToCustomPlaylist(target = {}) {
+      if (!this.isLoggedIn) {
+        this.openLoginModal();
+        return { success: false, msg: '请先登录' };
+      }
+      const { listid, song, playlistName = '' } = target;
+      if (!listid || !song) return { success: false, msg: '缺少参数' };
+
+      const playerStore = usePlayerStore();
+      const hash = (song.hash || song._hash || '').toUpperCase();
+      if (!hash) return { success: false, msg: '歌曲标识不存在' };
+
+      try {
+        const name = (song.name || song._title || '未知歌曲').replace(/\|/g, '').replace(/,/g, '');
+        const albumId = song.album_id || song._album_id || 0;
+        const mixId = song.album_audio_id || song._album_audio_id || 0;
+        const dataStr = `${name}|${hash}|${albumId}|${mixId}`;
+
+        const res = await request.get('/playlist/tracks/add', {
+          params: { listid, data: dataStr, timestamp: Date.now() }
+        });
+
+        if (res && (res.status === 1 || res.error_code === 0)) {
+          const toastMsg = playlistName ? `已添加到「${playlistName}」` : '已添加到歌单';
+          playerStore.showToast(toastMsg);
+
+          const songCover = (song._cover || song.cover || song.pic || '').replace(/\{size\}/g, '400');
+          if (songCover) {
+            this.setCustomPlaylistCover(listid, songCover);
+            const found = this.userCreatedPlaylists.find(p => String(p.listid) === String(listid) || String(p.gid) === String(listid));
+            if (found) {
+              if (found.gid) this.setCustomPlaylistCover(found.gid, songCover);
+              found.cover = songCover;
+              found.count = (found.count || 0) + 1;
+            }
+          }
+
+          if (String(listid) === String(this.likedListId)) {
+            if (!this.likedHashes.includes(hash)) this.likedHashes.push(hash);
+            this.fetchLikedPlaylistMeta();
+          }
+
+          window.dispatchEvent(new CustomEvent('song-context-menu:song-added', {
+            detail: { listid, song }
+          }));
+
+          return { success: true };
+        } else {
+          const errMsg = res?.error_msg || res?.message || '添加歌曲失败';
+          playerStore.showToast(errMsg);
+          return { success: false, msg: errMsg };
+        }
+      } catch (e) {
+        const errMsg = e.message || '网络异常，添加歌曲失败';
+        playerStore.showToast(errMsg);
+        return { success: false, msg: errMsg };
+      }
+    },
+
+    async removeSongFromCustomPlaylist(target = {}) {
+      if (!this.isLoggedIn) {
+        this.openLoginModal();
+        return { success: false, msg: '请先登录' };
+      }
+      const { listid, fileid, hash = '' } = target;
+      if (!listid || !fileid) return { success: false, msg: '缺少歌曲唯一标识' };
+
+      const playerStore = usePlayerStore();
+      try {
+        const res = await request.get('/playlist/tracks/del', {
+          params: { listid, fileids: fileid, timestamp: Date.now() }
+        });
+
+        if (res && (res.status === 1 || res.error_code === 0)) {
+          playerStore.showToast('已从歌单中移除');
+          if (String(listid) === String(this.likedListId) && hash) {
+            const normalizedHash = hash.toUpperCase();
+            this.likedHashes = this.likedHashes.filter(h => h !== normalizedHash);
+            delete this.likedFilesMap[normalizedHash];
+          }
+          return { success: true };
+        } else {
+          const errMsg = res?.error_msg || res?.message || '移除歌曲失败';
+          playerStore.showToast(errMsg);
+          return { success: false, msg: errMsg };
+        }
+      } catch (e) {
+        const errMsg = e.message || '网络异常，移除歌曲失败';
+        playerStore.showToast(errMsg);
+        return { success: false, msg: errMsg };
       }
     },
 
@@ -907,6 +1276,7 @@ export const useUserStore = defineStore('user', {
       
       this.collectedListIds = [];
       this.createdListIds = [];
+      this.userCreatedPlaylists = [];
       this.playlistMap = {};
       this.collectedMap = {};
       this.deletedPlaylistIds = [];

@@ -12,7 +12,7 @@ module.exports = (params, useAxios) => {
       const dataMap = {
         listid: Number(params.listid),
         total_ver: 0,
-        type: 1,
+        type: params.type !== undefined ? Number(params.type) : 1,
       };
 
       const aesEncrypt = playlistAesEncrypt(dataMap);
