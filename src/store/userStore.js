@@ -183,6 +183,22 @@ const findLikedPlaylist = (list) => {
   return found;
 };
 
+const resolveHumanError = (raw, fallback = '操作失败，请稍后重试') => {
+  if (!raw) return fallback;
+  if (typeof raw === 'string') return raw.trim() || fallback;
+  if (typeof raw === 'object') {
+    if (typeof raw.error_msg === 'string' && raw.error_msg.trim()) return raw.error_msg.trim();
+    if (typeof raw.message === 'string' && raw.message.trim()) return raw.message.trim();
+    if (typeof raw.msg === 'string' && raw.msg.trim()) return raw.msg.trim();
+    if (typeof raw.error === 'string' && raw.error.trim()) return raw.error.trim();
+    if (raw.msg && typeof raw.msg === 'object') {
+      const sub = raw.msg.error_msg || raw.msg.message || raw.msg.msg;
+      if (typeof sub === 'string' && sub.trim()) return sub.trim();
+    }
+  }
+  return fallback;
+};
+
 export const useUserStore = defineStore('user', {
   state: () => ({
     isLoggedIn: localStorage.getItem('kg_desktop_isLoggedIn') === 'true',
@@ -227,6 +243,110 @@ export const useUserStore = defineStore('user', {
     closeLoginModal() { this.showLoginModal = false; },
     openVipUpgradeModal() { this.showVipUpgradeModal = true; },
     closeVipUpgradeModal() { this.showVipUpgradeModal = false; },
+
+    async sendSmsCode(mobile) {
+      const cleanMobile = String(mobile || '').trim();
+      if (!/^1[3-9]\d{9}$/.test(cleanMobile)) {
+        return { success: false, msg: '请输入正确的11位中国大陆手机号码' };
+      }
+
+      try {
+        await request.get('/register/dev', { silent: true }).catch(() => {});
+
+        const res = await request.post('/captcha/sent', {
+          mobile: cleanMobile
+        }, {
+          params: { timestamp: Date.now() },
+          silent: true
+        });
+
+        if (res && (res.status === 1 || res.error_code === 0)) {
+          return { success: true, msg: '验证码发送成功，请注意查收短信' };
+        }
+
+        const errMsg = resolveHumanError(res, '验证码发送失败，请稍后重试');
+        const isUnregistered = errMsg.includes('未注册') || errMsg.includes('不存在') || res?.error_code === 20010;
+        return {
+          success: false,
+          msg: errMsg,
+          isUnregistered,
+          raw: res
+        };
+      } catch (error) {
+        const errorData = error.response?.data || error;
+        const errMsg = resolveHumanError(errorData, error.message || '网络连接异常，发送验证码失败');
+        const isUnregistered = errMsg.includes('未注册') || errMsg.includes('不存在');
+        return {
+          success: false,
+          msg: errMsg,
+          isUnregistered,
+          raw: errorData
+        };
+      }
+    },
+
+    async loginWithPhone({ mobile, code, userid } = {}) {
+      const cleanMobile = String(mobile || '').trim();
+      const cleanCode = String(code || '').trim();
+
+      if (!/^1[3-9]\d{9}$/.test(cleanMobile)) {
+        return { success: false, msg: '请输入正确的11位手机号码' };
+      }
+      if (!cleanCode) {
+        return { success: false, msg: '请输入短信验证码' };
+      }
+
+      try {
+        await request.get('/register/dev', { silent: true }).catch(() => {});
+
+        const payload = {
+          mobile: cleanMobile,
+          code: cleanCode
+        };
+        if (userid) {
+          payload.userid = userid;
+        }
+
+        const res = await request.post('/login/cellphone', payload, {
+          params: { timestamp: Date.now() },
+          silent: true
+        });
+
+        const rawUserList = res?.data?.user_list || res?.data?.users || res?.data?.multi_user || (Array.isArray(res?.data) ? res.data : null);
+        if (res && res.data && Array.isArray(rawUserList) && rawUserList.length > 1 && !userid) {
+          return {
+            success: false,
+            needSelectAccount: true,
+            userList: rawUserList,
+            msg: '检测到该手机号绑定了多个账号，请选择需要登录的账号'
+          };
+        }
+
+        if (res && (res.status === 1 || res.error_code === 0 || res.data?.token)) {
+          await this.fetchUserInfo();
+          return { success: true, msg: '登录成功' };
+        }
+
+        const errMsg = resolveHumanError(res, '登录失败，请检查验证码是否正确');
+        const isUnregistered = errMsg.includes('未注册') || errMsg.includes('不存在') || res?.error_code === 20010;
+        return {
+          success: false,
+          msg: errMsg,
+          isUnregistered,
+          raw: res
+        };
+      } catch (error) {
+        const errorData = error.response?.data || error;
+        const errMsg = resolveHumanError(errorData, error.message || '网络连接异常，登录失败');
+        const isUnregistered = errMsg.includes('未注册') || errMsg.includes('不存在');
+        return {
+          success: false,
+          msg: errMsg,
+          isUnregistered,
+          raw: errorData
+        };
+      }
+    },
 
     setAutoClaimVip(enable) {
       this.autoClaimVip = Boolean(enable);

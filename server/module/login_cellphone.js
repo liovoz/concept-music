@@ -8,8 +8,12 @@ let liteT1Iv = '04bd09a46d8add98';
 
 module.exports = (params, useAxios) => {
   const dateTime = Date.now();
-  const encrypt = cryptoAesEncrypt({ mobile: params?.mobile || '', code: params?.code || '' });
-  const mobile = params?.mobile && `${params.mobile.toString().substring(0, 2)}*****${params.mobile.toString().substring(10, 11)}`;
+  const rawMobile = params?.mobile || params?.body?.mobile || '';
+  const rawCode = params?.code || params?.body?.code || '';
+  const rawUserid = params?.userid || params?.body?.userid;
+
+  const encrypt = cryptoAesEncrypt({ mobile: rawMobile, code: rawCode });
+  const mobile = rawMobile && `${rawMobile.toString().substring(0, 2)}*****${rawMobile.toString().substring(10, 11)}`;
   const dfid = params?.cookie?.dfid ?? randomString(24);
   const t2 = cryptoAesEncrypt(
     `${params.cookie?.KUGOU_API_GUID}|0f607264fc6318a92b9e13c65db7cd3c|${params.cookie?.KUGOU_API_MAC}|${params.cookie?.KUGOU_API_DEV}|${dateTime}`,
@@ -28,7 +32,7 @@ module.exports = (params, useAxios) => {
     params: encrypt.str,
   };
 
-  if (params?.userid) dataMap['userid'] = params.userid;
+  if (rawUserid) dataMap['userid'] = rawUserid;
 
   if (isLite) {
     dataMap['dfid'] = dfid;
@@ -58,16 +62,22 @@ module.exports = (params, useAxios) => {
             const getToken = cryptoAesDecrypt(body.data.secu_params, encrypt.key);
             if (typeof getToken === 'object') {
               res.body.data = { ...body.data, ...getToken };
-              Object.keys(getToken).forEach((key) => res.cookie.push(`${key}=${getToken[key]}`));
-            } else {
+              Object.keys(getToken).forEach((key) => {
+                if (getToken[key] !== undefined && getToken[key] !== null) {
+                  res.cookie.push(`${key}=${getToken[key]}`);
+                }
+              });
+            } else if (getToken) {
               res.body.data['token'] = getToken;
             }
           }
-          res.cookie.push(`t1=${res.body.data['t1']}`);
-          res.cookie.push(`token=${res.body.data['token']}`);
-          res.cookie.push(`userid=${res.body.data?.userid || 0}`);
-          res.cookie.push(`vip_type=${res.body.data?.vip_type || 0}`);
-          res.cookie.push(`vip_token=${res.body.data?.vip_token || ''}`);
+          if (res.body.data?.['t1']) res.cookie.push(`t1=${res.body.data['t1']}`);
+          if (res.body.data?.['token']) res.cookie.push(`token=${res.body.data['token']}`);
+          if (res.body.data?.userid) res.cookie.push(`userid=${res.body.data.userid}`);
+          if (res.body.data?.vip_type !== undefined && res.body.data?.vip_type !== null) {
+            res.cookie.push(`vip_type=${res.body.data.vip_type}`);
+          }
+          if (res.body.data?.vip_token) res.cookie.push(`vip_token=${res.body.data.vip_token}`);
         }
         resolve(res);
       })
