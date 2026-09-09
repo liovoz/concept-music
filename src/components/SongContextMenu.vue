@@ -114,15 +114,15 @@
 
     <!-- 快速新建歌单并添加弹窗 -->
     <div v-if="showQuickCreate" class="fixed inset-0 z-[100003] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-drag" @click.self="showQuickCreate = false">
-      <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-gray-100 dark:border-slate-800 w-full max-w-sm p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center space-x-2">
-            <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div class="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <AppIcon name="plus" class="w-3.5 h-3.5" />
             </div>
-            <h3 class="text-sm font-bold text-gray-800">新建歌单并添加歌曲</h3>
+            <h3 class="text-sm font-bold text-gray-800 dark:text-slate-100">新建歌单并添加歌曲</h3>
           </div>
-          <button @click="showQuickCreate = false" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg">
+          <button @click="showQuickCreate = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
             <AppIcon name="close" class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -133,12 +133,12 @@
             maxlength="40"
             placeholder="输入新歌单标题..."
             @keyup.enter="handleQuickCreateAndAdd"
-            class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-xs text-gray-800 transition-all"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all"
             autofocus
           />
         </div>
         <div class="flex items-center justify-end space-x-2.5">
-          <button @click="showQuickCreate = false" class="px-3.5 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+          <button @click="showQuickCreate = false" class="px-3.5 py-1.5 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
             取消
           </button>
           <button

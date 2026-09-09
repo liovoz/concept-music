@@ -946,8 +946,8 @@ app.whenReady().then(async () => {
     const data = readDesktopSettings();
     return {
       autoSkipOnError: typeof data.autoSkipOnError === 'boolean' ? data.autoSkipOnError : null,
-      rememberState: typeof data.rememberState === 'boolean' ? data.rememberState : null,
-      volumeBoostEnabled: typeof data.volumeBoostEnabled === 'boolean' ? data.volumeBoostEnabled : null,
+      rememberState: typeof data.rememberState === 'boolean' ? data.rememberState : false,
+      volumeBoostEnabled: typeof data.volumeBoostEnabled === 'boolean' ? data.volumeBoostEnabled : false,
       volumeBoostLevel: typeof data.volumeBoostLevel === 'number' ? data.volumeBoostLevel : null
     };
   });

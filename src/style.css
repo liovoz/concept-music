@@ -11,6 +11,7 @@
 }
 
 :root.dark {
+  color-scheme: dark;
   --brand-primary: #60a5fa;
   --brand-hover: #3b82f6;
   --brand-light: rgba(37, 99, 235, 0.16);
@@ -91,6 +92,10 @@ html, body, #app {
 .dark .text-gray-300 { color: rgb(100 116 139); }
 .dark .text-gray-200 { color: rgb(71 85 105); }
 .dark .placeholder-gray-400::placeholder { color: rgb(100 116 139); }
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea {
+  color-scheme: dark;
+}
 .dark .shadow-sm,
 .dark .shadow-md,
 .dark .shadow-lg,

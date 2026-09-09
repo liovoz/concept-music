@@ -81,7 +81,7 @@ const getInitialAutoSkip = () => {
 };
 
 const getInitialRememberState = () => {
-  return localStorage.getItem(REMEMBER_STATE_KEY) !== 'false';
+  return localStorage.getItem(REMEMBER_STATE_KEY) === 'true';
 };
 
 const syncAudioSettingsToNative = (patch) => {
@@ -132,11 +132,6 @@ const getStoredBoostLevel = () => {
 };
 
 const getInitialBoostEnabled = () => {
-  if (localStorage.getItem(VOLUME_BOOST_INITIALIZED_KEY) !== 'true') {
-    localStorage.setItem(VOLUME_BOOST_INITIALIZED_KEY, 'true');
-    localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
-    return false;
-  }
   return localStorage.getItem(VOLUME_BOOST_ENABLED_KEY) === 'true';
 };
 

@@ -27,24 +27,25 @@
         
         <div class="flex items-end justify-between mb-6 w-full gap-4">
           <div class="flex-1 min-w-0">
-            <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight truncate">
-              私人歌单 <span class="text-lg text-blue-500 font-bold ml-2">My Playlists</span>
+            <h2 class="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight truncate">
+              私人歌单 <span class="text-lg text-blue-500 dark:text-blue-400 font-bold ml-2">My Playlists</span>
             </h2>
-            <p class="text-xs text-gray-500 mt-2 font-medium">您创建与收藏的所有音乐记忆</p>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-2 font-medium">您创建与收藏的所有音乐记忆</p>
           </div>
           <button
+            v-if="activeTab !== 'collected'"
             @click="openCreateModal"
-            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-full text-xs font-bold shadow-md shadow-blue-200 transition-all flex items-center flex-shrink-0 no-drag"
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-full text-xs font-bold shadow-md shadow-blue-200 dark:shadow-none transition-all flex items-center flex-shrink-0 no-drag"
           >
             <AppIcon name="plus" class="w-3.5 h-3.5 mr-1.5" />
             新建歌单
           </button>
         </div>
 
-        <div class="flex items-center space-x-8 border-b border-gray-100 mb-8">
-          <button @click="activeTab = 'all'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'all' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-800'">全部歌单</button>
-          <button @click="activeTab = 'created'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'created' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-800'">我创建的</button>
-          <button @click="activeTab = 'collected'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'collected' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-800'">我收藏的</button>
+        <div class="flex items-center space-x-8 border-b border-gray-100 dark:border-slate-800 mb-8">
+          <button @click="activeTab = 'all'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'all' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">全部歌单</button>
+          <button @click="activeTab = 'created'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'created' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">我创建的</button>
+          <button @click="activeTab = 'collected'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'collected' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">我收藏的</button>
         </div>
 
         <div v-if="isLoading && page === 1" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
@@ -130,22 +131,22 @@
     <!-- 新建歌单对话框 -->
     <Teleport to="body">
       <div v-if="showCreateModal" class="fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-drag" @click.self="closeCreateModal">
-        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-gray-100 dark:border-slate-800 w-full max-w-md p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
           <div class="flex items-center justify-between mb-5">
             <div class="flex items-center space-x-2.5">
-              <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                 <AppIcon name="my-playlists" class="w-4 h-4" />
               </div>
-              <h3 class="text-base font-bold text-gray-800">新建歌单</h3>
+              <h3 class="text-base font-bold text-gray-800 dark:text-slate-100">新建歌单</h3>
             </div>
-            <button @click="closeCreateModal" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+            <button @click="closeCreateModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
               <AppIcon name="close" class="w-4 h-4" />
             </button>
           </div>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1.5">歌单标题</label>
+              <label class="block text-xs font-bold text-gray-600 dark:text-slate-300 mb-1.5">歌单标题</label>
               <input
                 ref="createInputRef"
                 v-model="newPlaylistName"
@@ -153,24 +154,24 @@
                 maxlength="40"
                 placeholder="请输入歌单标题..."
                 @keyup.enter="handleCreatePlaylist"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm text-gray-800 transition-all placeholder:text-gray-400"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none text-sm text-gray-800 dark:text-slate-100 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
               />
             </div>
 
-            <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+            <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60">
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-gray-700">设为隐私歌单</span>
-                <span class="text-[11px] text-gray-400">设为私密后，其他用户将无法在社区查看该歌单</span>
+                <span class="text-xs font-bold text-gray-700 dark:text-slate-200">设为隐私歌单</span>
+                <span class="text-[11px] text-gray-400 dark:text-slate-400">设为私密后，其他用户将无法在社区查看该歌单</span>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" v-model="newPlaylistIsPrivate" class="sr-only peer" />
-                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                <div class="w-9 h-5 bg-gray-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-slate-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
           </div>
 
           <div class="flex items-center justify-end space-x-3 mt-6">
-            <button @click="closeCreateModal" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <button @click="closeCreateModal" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
               取消
             </button>
             <button
@@ -189,25 +190,25 @@
     <!-- 删除歌单确认对话框 -->
     <Teleport to="body">
       <div v-if="showDeleteModal" class="fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-drag" @click.self="closeDeleteModal">
-        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-gray-100 dark:border-slate-800 w-full max-w-sm p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
           <div class="flex items-center space-x-3 mb-4">
-            <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
+            <div class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/60 text-red-500 dark:text-red-400 flex items-center justify-center flex-shrink-0">
               <AppIcon name="trash" class="w-5 h-5" />
             </div>
             <div>
-              <h3 class="text-base font-bold text-gray-800">
+              <h3 class="text-base font-bold text-gray-800 dark:text-slate-100">
                 {{ isCollectedPlaylist(playlistToDelete) ? '取消收藏歌单' : '删除歌单' }}
               </h3>
-              <p class="text-xs text-gray-500 mt-0.5">此操作将从云端删除相关记录</p>
+              <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">此操作将从云端删除相关记录</p>
             </div>
           </div>
 
-          <p class="text-xs text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100 mb-5">
-            确定要{{ isCollectedPlaylist(playlistToDelete) ? '取消收藏' : '删除' }}歌单「<span class="font-bold text-gray-800">{{ playlistToDelete?.name }}</span>」吗？{{ isCollectedPlaylist(playlistToDelete) ? '取消后可随时重新收藏。' : '删除后将无法恢复该歌单。' }}
+          <p class="text-xs text-gray-600 dark:text-slate-300 leading-relaxed bg-gray-50 dark:bg-slate-800/60 p-3 rounded-xl border border-gray-100 dark:border-slate-700/60 mb-5">
+            确定要{{ isCollectedPlaylist(playlistToDelete) ? '取消收藏' : '删除' }}歌单「<span class="font-bold text-gray-800 dark:text-slate-100">{{ playlistToDelete?.name }}</span>」吗？{{ isCollectedPlaylist(playlistToDelete) ? '取消后可随时重新收藏。' : '删除后将无法恢复该歌单。' }}
           </p>
 
           <div class="flex items-center justify-end space-x-3">
-            <button @click="closeDeleteModal" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <button @click="closeDeleteModal" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
               取消
             </button>
             <button
@@ -280,6 +281,9 @@ const handleCreatePlaylist = async () => {
     });
     if (res.success) {
       closeCreateModal();
+      if (activeTab.value === 'collected') {
+        activeTab.value = 'created';
+      }
       await fetchUserPlaylists();
     }
   } finally {
