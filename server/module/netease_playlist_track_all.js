@@ -25,10 +25,14 @@ module.exports = async (params, useAxios) => {
         .filter(item => item && item.id)
         .map(item => [String(item.id), item])
     );
-    const songs = rawSongs.map(song => ({
-      ...song,
-      privilege: privilegeMap.get(String(song.id)) || null,
-    }));
+    const songs = rawSongs.map(song => {
+      const playlistPriv = privilegeMap.get(String(song.id)) || {};
+      const songPriv = song.privilege || {};
+      return {
+        ...song,
+        privilege: { ...playlistPriv, ...songPriv },
+      };
+    });
 
     return ok({
       code: 200,

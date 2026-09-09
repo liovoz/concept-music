@@ -21,23 +21,28 @@ const normalizeArtists = (artists = []) => {
 const hasQualityInfo = (quality) => {
   if (!quality || typeof quality !== 'object') return false;
   if (quality.br && Number(quality.br) > 0) return true;
+  if (quality.bitrate && Number(quality.bitrate) > 0) return true;
   if (quality.size && Number(quality.size) > 0) return true;
   return Boolean(quality.level || quality.type || quality.name);
 };
 
 const getMaxNeteaseBitrate = (song = {}) => {
   const privilege = song.privilege || {};
+  const chargeRates = Array.isArray(privilege.chargeInfoList)
+    ? privilege.chargeInfoList.map(c => Number(c.rate || 0))
+    : [];
   return Math.max(
     0,
-    Number(song.m?.br || 0),
-    Number(song.h?.br || 0),
-    Number(song.sq?.br || 0),
-    Number(song.hr?.br || 0),
+    Number(song.m?.br || song.mMusic?.bitrate || 0),
+    Number(song.h?.br || song.hMusic?.bitrate || 0),
+    Number(song.sq?.br || song.sqMusic?.bitrate || 0),
+    Number(song.hr?.br || song.hrMusic?.bitrate || 0),
     Number(privilege.maxbr || 0),
     Number(privilege.playMaxbr || 0),
     Number(privilege.pl || 0),
     Number(privilege.fl || 0),
-    Number(privilege.dl || 0)
+    Number(privilege.dl || 0),
+    ...chargeRates
   );
 };
 
@@ -47,20 +52,60 @@ export const buildNeteaseQualities = (song = {}) => {
 
   const qualities = { standard: id };
   const maxBitrate = getMaxNeteaseBitrate(song);
+  const privilege = song.privilege || {};
+  const maxBrLevel = String(privilege.maxBrLevel || privilege.playMaxBrLevel || privilege.downloadMaxBrLevel || '').toLowerCase();
 
+  const hrObj = song.hr || song.hrMusic;
+  const sqObj = song.sq || song.sqMusic;
+  const hObj = song.h || song.hMusic;
+  const jmObj = song.jm || song.jmMusic;
+  const skObj = song.sk || song.skMusic;
+
+  // HQ (320k)
   if (
-    hasQualityInfo(song.h) ||
-    hasQualityInfo(song.sq) ||
-    hasQualityInfo(song.hr) ||
-    maxBitrate >= 320000
+    hasQualityInfo(hObj) ||
+    hasQualityInfo(sqObj) ||
+    hasQualityInfo(hrObj) ||
+    maxBitrate >= 320000 ||
+    ['exhigh', 'lossless', 'hires', 'jymaster', 'sky', 'jyeffect'].includes(maxBrLevel)
   ) {
     qualities.hq = id;
   }
-  if (hasQualityInfo(song.sq) || hasQualityInfo(song.hr) || maxBitrate >= 999000) {
+
+  // SQ (无损 16bit)
+  if (
+    hasQualityInfo(sqObj) ||
+    hasQualityInfo(hrObj) ||
+    maxBitrate >= 999000 ||
+    ['lossless', 'hires', 'jymaster', 'sky', 'jyeffect'].includes(maxBrLevel)
+  ) {
     qualities.sq = id;
   }
-  if (hasQualityInfo(song.hr) || maxBitrate >= 1999000) {
+
+  // High (超高无损 Hi-Res / 24bit)
+  if (
+    hasQualityInfo(hrObj) ||
+    maxBitrate >= 1000000 ||
+    ['hires', 'jymaster', 'sky', 'jyeffect'].includes(maxBrLevel)
+  ) {
     qualities.high = id;
+  }
+
+  // Viper Clear (超清母带 Master)
+  if (
+    hasQualityInfo(jmObj) ||
+    maxBrLevel === 'jymaster'
+  ) {
+    qualities.viper_clear = id;
+    qualities.high = id;
+  }
+
+  // Viper Atmos (全景声 / 沉浸声)
+  if (
+    hasQualityInfo(skObj) ||
+    ['sky', 'jyeffect'].includes(maxBrLevel)
+  ) {
+    qualities.viper_atmos = id;
   }
 
   return qualities;

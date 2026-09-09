@@ -2,6 +2,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const BUILTIN_SOURCE_NAMES = [
+  '屿溪-终章.js',
+  'K×H测试 v1.7.17.js',
   '(推荐)全豆要-聚合音源 v4.1.js',
   '【推荐】长青SVIP音源v1.2.0（全平台支持无损）.js',
   '念心音源-V1.0.1.js',

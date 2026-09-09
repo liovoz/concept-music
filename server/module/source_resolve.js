@@ -2,13 +2,13 @@ const { resolveSources } = require('../util/lx-source-registry');
 const { runSource } = require('../util/lx-source-runner');
 
 const qualityMapWy = {
-  viper_atmos: '24bit',
-  viper_clear: '24bit',
-  high: 'flac',
+  viper_atmos: 'atmos',
+  viper_clear: 'master',
+  high: 'hires',
   sq: 'flac',
   hq: '320k',
   standard: '128k',
-  best: 'flac',
+  best: 'hires',
 };
 
 const qualityMapTx = {
@@ -22,11 +22,12 @@ const qualityMapTx = {
 };
 
 const fallbackChainMap = {
-  atmos: ['master', 'hires', 'flac', '320k', '128k'],
-  master: ['hires', 'flac', '320k', '128k'],
-  hires: ['flac', '320k', '128k'],
-  flac: ['320k', '128k'],
+  atmos: ['master', 'hires', 'flac24bit', '24bit', 'flac', '320k', '128k'],
+  master: ['hires', 'flac24bit', '24bit', 'flac', '320k', '128k'],
+  hires: ['flac24bit', '24bit', 'flac', '320k', '128k'],
+  flac24bit: ['24bit', 'flac', '320k', '128k'],
   '24bit': ['flac', '320k', '128k'],
+  flac: ['320k', '128k'],
   '320k': ['128k'],
   '128k': [],
 };

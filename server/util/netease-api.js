@@ -60,11 +60,41 @@ const getSongDetail = async (useAxios, ids = []) => {
   const list = ids.map(id => String(id || '').trim()).filter(Boolean);
   if (!list.length) return [];
 
+  try {
+    const res = await neteaseGet(useAxios, '/api/v3/song/detail', {
+      c: JSON.stringify(list.map(id => ({ id }))),
+      timestamp: Date.now(),
+    });
+    const songs = Array.isArray(res.body?.songs) ? res.body.songs : [];
+    if (songs.length > 0) {
+      const v3Privileges = Array.isArray(res.body?.privileges) ? res.body.privileges : [];
+      const v3PrivMap = new Map(v3Privileges.map(p => [String(p.id), p]));
+      return songs.map(song => {
+        const priv = v3PrivMap.get(String(song.id)) || {};
+        return {
+          ...song,
+          privilege: { ...priv, ...(song.privilege || {}) },
+          hr: song.hr || song.hrMusic || null,
+          sq: song.sq || song.sqMusic || null,
+          h: song.h || song.hMusic || null,
+        };
+      });
+    }
+  } catch (e) {
+    // fallback to v1 endpoint
+  }
+
   const res = await neteaseGet(useAxios, '/api/song/detail', {
     ids: `[${list.join(',')}]`,
     timestamp: Date.now(),
   });
-  return Array.isArray(res.body?.songs) ? res.body.songs : [];
+  const songs = Array.isArray(res.body?.songs) ? res.body.songs : [];
+  return songs.map(song => ({
+    ...song,
+    hr: song.hr || song.hrMusic || null,
+    sq: song.sq || song.sqMusic || null,
+    h: song.h || song.hMusic || null,
+  }));
 };
 
 const getSongLyric = async (useAxios, id) => {

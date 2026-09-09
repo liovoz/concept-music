@@ -101,7 +101,7 @@
 
              <div v-for="(q, index) in qualityMenuOptions" :key="q.key" @click="handleQualitySelect(q)"
                   class="text-xs py-2.5 font-bold transition-all relative z-10 flex items-center justify-between px-4"
-                  v-tooltip="q.disabled ? '当前网易歌曲未提供该音质' : ''"
+                  v-tooltip="q.disabled ? (isQQImportSong(store.currentSong) ? '当前企鹅歌曲未提供该音质' : '当前网易歌曲未提供该音质') : ''"
                   :class="[
                     index !== qualityOptions.length - 1 ? 'border-b border-gray-50/50' : '',
                     q.disabled ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer',

@@ -266,7 +266,7 @@ const clearSongUrlCache = (hash) => {
 
 export const QUALITY_CONFIG = [
   { key: 'viper_atmos', name: '全景声', param: 'viper_atmos' },
-  { key: 'viper_clear', name: '超清蝰蛇', param: 'viper_clear' },
+  { key: 'viper_clear', name: '超清母带', param: 'viper_clear' },
   { key: 'high', name: '超高无损', param: 'high' },
   { key: 'sq', name: '无损 SQ', param: 'flac' },
   { key: 'hq', name: '高品质 HQ', param: '320' },
@@ -276,23 +276,28 @@ export const QUALITY_CONFIG = [
 const hasNeteaseQualityInfo = (quality) => {
   if (!quality || typeof quality !== 'object') return false;
   if (quality.br && Number(quality.br) > 0) return true;
+  if (quality.bitrate && Number(quality.bitrate) > 0) return true;
   if (quality.size && Number(quality.size) > 0) return true;
   return Boolean(quality.level || quality.type || quality.name);
 };
 
 const getMaxNeteaseBitrate = (song = {}) => {
   const privilege = song.privilege || {};
+  const chargeRates = Array.isArray(privilege.chargeInfoList)
+    ? privilege.chargeInfoList.map(c => Number(c.rate || 0))
+    : [];
   return Math.max(
     0,
-    Number(song.m?.br || 0),
-    Number(song.h?.br || 0),
-    Number(song.sq?.br || 0),
-    Number(song.hr?.br || 0),
+    Number(song.m?.br || song.mMusic?.bitrate || 0),
+    Number(song.h?.br || song.hMusic?.bitrate || 0),
+    Number(song.sq?.br || song.sqMusic?.bitrate || 0),
+    Number(song.hr?.br || song.hrMusic?.bitrate || 0),
     Number(privilege.maxbr || 0),
     Number(privilege.playMaxbr || 0),
     Number(privilege.pl || 0),
     Number(privilege.fl || 0),
-    Number(privilege.dl || 0)
+    Number(privilege.dl || 0),
+    ...chargeRates
   );
 };
 
@@ -307,22 +312,66 @@ const buildNeteaseImportQualities = (song = {}) => {
   const id = getNeteaseImportId(song) || getNeteaseImportId(detail);
   if (!id) return { standard: '' };
 
+  if (song.qualities && Object.keys(song.qualities).length > 0) return song.qualities;
+  if (detail.qualities && Object.keys(detail.qualities).length > 0) return detail.qualities;
+  if (detail._qualities && Object.keys(detail._qualities).length > 0) return detail._qualities;
+
   const qualities = { standard: id };
   const maxBitrate = getMaxNeteaseBitrate(detail);
+  const privilege = detail.privilege || song.privilege || {};
+  const maxBrLevel = String(privilege.maxBrLevel || privilege.playMaxBrLevel || privilege.downloadMaxBrLevel || '').toLowerCase();
 
+  const hrObj = detail.hr || detail.hrMusic;
+  const sqObj = detail.sq || detail.sqMusic;
+  const hObj = detail.h || detail.hMusic;
+  const jmObj = detail.jm || detail.jmMusic;
+  const skObj = detail.sk || detail.skMusic;
+
+  // HQ (320k)
   if (
-    hasNeteaseQualityInfo(detail.h) ||
-    hasNeteaseQualityInfo(detail.sq) ||
-    hasNeteaseQualityInfo(detail.hr) ||
-    maxBitrate >= 320000
+    hasNeteaseQualityInfo(hObj) ||
+    hasNeteaseQualityInfo(sqObj) ||
+    hasNeteaseQualityInfo(hrObj) ||
+    maxBitrate >= 320000 ||
+    ['exhigh', 'lossless', 'hires', 'jymaster', 'sky', 'jyeffect'].includes(maxBrLevel)
   ) {
     qualities.hq = id;
   }
-  if (hasNeteaseQualityInfo(detail.sq) || hasNeteaseQualityInfo(detail.hr) || maxBitrate >= 999000) {
+
+  // SQ (无损 16bit)
+  if (
+    hasNeteaseQualityInfo(sqObj) ||
+    hasNeteaseQualityInfo(hrObj) ||
+    maxBitrate >= 999000 ||
+    ['lossless', 'hires', 'jymaster', 'sky', 'jyeffect'].includes(maxBrLevel)
+  ) {
     qualities.sq = id;
   }
-  if (hasNeteaseQualityInfo(detail.hr) || maxBitrate >= 1999000) {
+
+  // High (超高无损 Hi-Res / 24bit)
+  if (
+    hasNeteaseQualityInfo(hrObj) ||
+    maxBitrate >= 1000000 ||
+    ['hires', 'jymaster', 'sky', 'jyeffect'].includes(maxBrLevel)
+  ) {
     qualities.high = id;
+  }
+
+  // Viper Clear (超清母带 Master)
+  if (
+    hasNeteaseQualityInfo(jmObj) ||
+    maxBrLevel === 'jymaster'
+  ) {
+    qualities.viper_clear = id;
+    qualities.high = id;
+  }
+
+  // Viper Atmos (全景声 / 沉浸声)
+  if (
+    hasNeteaseQualityInfo(skObj) ||
+    ['sky', 'jyeffect'].includes(maxBrLevel)
+  ) {
+    qualities.viper_atmos = id;
   }
 
   return qualities;
