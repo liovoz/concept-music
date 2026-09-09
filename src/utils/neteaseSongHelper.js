@@ -111,17 +111,58 @@ export const buildNeteaseQualities = (song = {}) => {
   return qualities;
 };
 
+export const isNeteaseDomain = (hostname = '') => {
+  return /^(?:[a-zA-Z0-9-]+\.)*(?:163\.com|163cn\.tv|163\.lu)$/i.test(hostname);
+};
+
+export const extractNeteaseShortUrl = (value = '') => {
+  const raw = String(value || '').trim();
+  const matched = raw.match(/https?:\/\/(?:[a-zA-Z0-9-]+\.)*(?:163cn\.tv|163\.lu)\/[a-zA-Z0-9_-]+/i);
+  return matched ? matched[0] : '';
+};
+
 export const extractNeteasePlaylistId = (value = '') => {
   const raw = String(value || '').trim();
   if (!raw) return '';
-  if (/^\d+$/.test(raw)) return raw;
+
+  // 1. 纯数字 ID（网易云歌单 ID 通常为 7-14 位数字，防止 123 等非合法短数字误判）
+  if (/^\d{7,14}$/.test(raw)) {
+    return raw;
+  }
+
+  // 2. 从可能包含文字的分享文本中提取 URL
+  const urlMatch = raw.match(/https?:\/\/[^\s\u4e00-\u9fa5"'<>]+/i);
+  const candidate = urlMatch ? urlMatch[0] : raw;
 
   try {
-    const url = new URL(raw);
-    return url.searchParams.get('id') || '';
+    const url = new URL(candidate);
+    const hostname = url.hostname.toLowerCase();
+
+    if (isNeteaseDomain(hostname)) {
+      let paramId = url.searchParams.get('id');
+      if (!paramId && url.hash) {
+        const hashQuery = url.hash.split('?')[1];
+        if (hashQuery) {
+          const hashParams = new URLSearchParams(hashQuery);
+          paramId = hashParams.get('id');
+        }
+      }
+      if (paramId && /^\d{7,14}$/.test(paramId)) return paramId;
+
+      const pathMatch = (url.pathname + url.hash).match(/playlist\/(\d{7,14})/i);
+      if (pathMatch && pathMatch[1]) return pathMatch[1];
+    }
   } catch (e) {
-    return raw.match(/(?:playlist\?id=|playlist\/|id=)(\d+)/)?.[1] || '';
+    // 允许非标准 URL 匹配
   }
+
+  // 3. 非标准或残缺 URL 容错匹配（必须包含 163.com 且包含合法的 7-14 位 ID）
+  if (/163\.com/i.test(raw)) {
+    const matched = raw.match(/(?:playlist\?id=|playlist\/|id=)(\d{7,14})/i);
+    if (matched && matched[1]) return matched[1];
+  }
+
+  return '';
 };
 
 export const normalizeNeteasePlaylistInfo = (playlist = {}) => ({

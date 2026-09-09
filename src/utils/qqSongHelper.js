@@ -51,26 +51,51 @@ export const buildQQQualities = (song = {}) => {
   return qualities;
 };
 
+export const isQQMusicDomain = (hostname = '') => {
+  return /^(?:[a-zA-Z0-9-]+\.)*(?:qq\.com)$/i.test(hostname);
+};
+
+export const extractQQShortUrl = (value = '') => {
+  const raw = String(value || '').trim();
+  const matched = raw.match(/https?:\/\/(?:[a-zA-Z0-9-]+\.)*qq\.com\/base\/fcgi-bin\/u\?__=[a-zA-Z0-9_-]+/i);
+  return matched ? matched[0] : '';
+};
+
 export const extractQQPlaylistId = (value = '') => {
   const raw = String(value || '').trim();
   if (!raw) return '';
 
-  const direct = raw.match(/^\d+$/);
-  if (direct) return direct[0];
+  // 1. 纯数字 ID（企鹅音乐歌单 ID 通常为 7-14 位数字，防止 123 等非合法短数字误判）
+  if (/^\d{7,14}$/.test(raw)) {
+    return raw;
+  }
+
+  // 2. 从可能包含文字的分享文本中提取 URL
+  const urlMatch = raw.match(/https?:\/\/[^\s\u4e00-\u9fa5"'<>]+/i);
+  const candidate = urlMatch ? urlMatch[0] : raw;
 
   try {
-    const url = new URL(raw);
-    const fromParam = url.searchParams.get('id') || url.searchParams.get('disstid');
-    if (fromParam && /^\d+$/.test(fromParam)) return fromParam;
+    const url = new URL(candidate);
+    const hostname = url.hostname.toLowerCase();
 
-    const fromPath = url.pathname.match(/(?:playlist|taoge|details)\/(\d+)/i)?.[1];
-    if (fromPath && /^\d+$/.test(fromPath)) return fromPath;
+    if (isQQMusicDomain(hostname)) {
+      const pathMatch = url.pathname.match(/(?:playlist|playsquare|taoge|details)\/(\d{7,14})/i);
+      if (pathMatch && pathMatch[1]) return pathMatch[1];
+
+      const paramId = url.searchParams.get('id') || url.searchParams.get('disstid');
+      if (paramId && /^\d{7,14}$/.test(paramId)) return paramId;
+    }
   } catch (e) {
     // 允许非标准 URL 匹配
   }
 
-  const matched = raw.match(/(?:playlist\/|disstid=|id=|taoge\/|details\/)(\d+)/i);
-  return matched?.[1] || '';
+  // 3. 非标准或残缺 URL 容错匹配（必须包含 qq.com 且包含合法的 7-14 位 ID）
+  if (/qq\.com/i.test(raw)) {
+    const matched = raw.match(/(?:playlist\/|playsquare\/|disstid=|id=|taoge\/|details\/)(\d{7,14})/i);
+    if (matched && matched[1]) return matched[1];
+  }
+
+  return '';
 };
 
 export const normalizeQQPlaylistInfo = (playlist = {}) => ({

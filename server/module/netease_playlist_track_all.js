@@ -1,8 +1,11 @@
-const { fail, getPlaylistDetail, getSongDetail, ok, parsePlaylistId } = require('../util/netease-api');
+const { fail, getPlaylistDetail, getSongDetail, ok, parsePlaylistId, resolveNeteaseShortUrl } = require('../util/netease-api');
 
 module.exports = async (params, useAxios) => {
-  const id = parsePlaylistId(params?.id || params?.url);
-  if (!id) return fail(400, '缺少有效的网易云歌单 ID');
+  let id = parsePlaylistId(params?.id || params?.url);
+  if (!id && (params?.url || params?.id)) {
+    id = await resolveNeteaseShortUrl(useAxios, params?.url || params?.id);
+  }
+  if (!id) return fail(400, '缺少有效的网易云歌单链接或 ID');
 
   const limit = Math.max(1, Math.min(Number(params?.limit || params?.pagesize || 50), 200));
   const page = Math.max(1, Number(params?.page || 1));
@@ -11,7 +14,9 @@ module.exports = async (params, useAxios) => {
   try {
     const detail = await getPlaylistDetail(useAxios, id);
     const playlist = detail?.playlist || {};
-    if (!playlist?.id) return fail(404, '未找到该网易云歌单，请检查 ID 是否正确');
+    if (detail?.code !== 200 || !playlist?.id || !playlist?.name?.trim()) {
+      return fail(404, '未找到该网易云歌单，请检查链接或 ID 是否存在');
+    }
     const trackIds = Array.isArray(playlist.trackIds) ? playlist.trackIds : [];
     const ids = trackIds.slice(offset, offset + limit).map(item => item.id).filter(Boolean);
     const rawSongs = ids.length ? await getSongDetail(useAxios, ids) : [];

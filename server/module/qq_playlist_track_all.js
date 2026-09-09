@@ -1,8 +1,11 @@
-const { fail, getPlaylistDetail, ok, parsePlaylistId } = require('../util/qq-api');
+const { fail, getPlaylistDetail, ok, parsePlaylistId, resolveQQShortUrl } = require('../util/qq-api');
 
 module.exports = async (params, useAxios) => {
-  const id = parsePlaylistId(params?.id || params?.url);
-  if (!id) return fail(400, '缺少有效的企鹅歌单 ID');
+  let id = parsePlaylistId(params?.id || params?.url);
+  if (!id && (params?.url || params?.id)) {
+    id = await resolveQQShortUrl(useAxios, params?.url || params?.id);
+  }
+  if (!id) return fail(400, '缺少有效的企鹅歌单链接或 ID');
 
   const limit = Math.max(1, Math.min(Number(params?.limit || params?.pagesize || 50), 200));
   const page = Math.max(1, Number(params?.page || 1));
@@ -11,7 +14,9 @@ module.exports = async (params, useAxios) => {
   try {
     const data = await getPlaylistDetail(useAxios, id, offset, limit);
     const dirinfo = data?.dirinfo || {};
-    if (!dirinfo.id) return fail(404, '未找到该企鹅歌单，请检查 ID 是否正确');
+    if (data?.code !== 0 || !dirinfo.id || !dirinfo.title?.trim()) {
+      return fail(404, '未找到该企鹅歌单，请检查链接或 ID 是否存在');
+    }
 
     const songs = Array.isArray(data.songlist) ? data.songlist : [];
     const total = Number(data.total_song_num || dirinfo.songnum || 0);
@@ -19,7 +24,7 @@ module.exports = async (params, useAxios) => {
 
     const playlist = {
       id: String(dirinfo.id),
-      name: dirinfo.title || '企鹅歌单',
+      name: dirinfo.title,
       cover: dirinfo.picurl || '',
       intro: dirinfo.desc || '',
       trackCount: total,

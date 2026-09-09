@@ -18,26 +18,65 @@ const fail = (status, msg, data = null) => ({
   headers: {},
 });
 
+const isQQMusicDomain = (hostname = '') => {
+  return /^(?:[a-zA-Z0-9-]+\.)*(?:qq\.com)$/i.test(hostname);
+};
+
 const parsePlaylistId = (value = '') => {
   const raw = String(value || '').trim();
   if (!raw) return '';
 
-  const direct = raw.match(/^\d+$/);
-  if (direct) return direct[0];
+  // 1. 纯数字 ID（7-14 位数字，防止 123 等非合法短数字误判）
+  if (/^\d{7,14}$/.test(raw)) {
+    return raw;
+  }
+
+  // 2. 从文本中提取 URL
+  const urlMatch = raw.match(/https?:\/\/[^\s\u4e00-\u9fa5"'<>]+/i);
+  const candidate = urlMatch ? urlMatch[0] : raw;
 
   try {
-    const url = new URL(raw);
-    const fromParam = url.searchParams.get('id') || url.searchParams.get('disstid');
-    if (fromParam && /^\d+$/.test(fromParam)) return fromParam;
+    const url = new URL(candidate);
+    const hostname = url.hostname.toLowerCase();
 
-    const fromPath = url.pathname.match(/(?:playlist|taoge|details)\/(\d+)/i)?.[1];
-    if (fromPath && /^\d+$/.test(fromPath)) return fromPath;
+    if (isQQMusicDomain(hostname)) {
+      const pathMatch = url.pathname.match(/(?:playlist|playsquare|taoge|details)\/(\d{7,14})/i);
+      if (pathMatch && pathMatch[1]) return pathMatch[1];
+
+      const paramId = url.searchParams.get('id') || url.searchParams.get('disstid');
+      if (paramId && /^\d{7,14}$/.test(paramId)) return paramId;
+    }
   } catch (e) {
     // 允许非标准 URL 匹配
   }
 
-  const matched = raw.match(/(?:playlist\/|disstid=|id=|taoge\/|details\/)(\d+)/i);
-  return matched?.[1] || '';
+  // 3. 非标准或残缺 URL 容错匹配（必须包含 qq.com 且包含合法的 7-14 位 ID）
+  if (/qq\.com/i.test(raw)) {
+    const matched = raw.match(/(?:playlist\/|playsquare\/|disstid=|id=|taoge\/|details\/)(\d{7,14})/i);
+    if (matched && matched[1]) return matched[1];
+  }
+
+  return '';
+};
+
+const resolveQQShortUrl = async (useAxios, rawUrl = '') => {
+  const urlMatch = String(rawUrl || '').match(/https?:\/\/[^\s\u4e00-\u9fa5"'<>]+/i);
+  const targetUrl = urlMatch ? urlMatch[0] : String(rawUrl || '').trim();
+  if (!targetUrl || !/qq\.com/i.test(targetUrl)) return '';
+
+  try {
+    const res = await useAxios({
+      url: targetUrl,
+      method: 'GET',
+      headers: QQ_HEADERS,
+      maxRedirects: 5,
+      validateStatus: (status) => status >= 200 && status < 400,
+    });
+    const finalUrl = res.request?.res?.responseUrl || res.headers?.location || '';
+    return parsePlaylistId(finalUrl);
+  } catch (e) {
+    return '';
+  }
 };
 
 const getPlaylistDetail = async (useAxios, id, offset = 0, limit = 50) => {
@@ -120,7 +159,9 @@ const getSongLyric = async (useAxios, songmid = '') => {
 module.exports = {
   ok,
   fail,
+  isQQMusicDomain,
   parsePlaylistId,
+  resolveQQShortUrl,
   getPlaylistDetail,
   getSongLyric,
 };

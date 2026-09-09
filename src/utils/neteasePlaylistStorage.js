@@ -9,7 +9,7 @@ const sortSavedPlaylists = (items = []) => {
 
 const normalizeSavedPlaylist = (item = {}) => {
   const id = String(item.id || '').trim();
-  if (!id) return null;
+  if (!id || !/^\d{7,14}$/.test(id)) return null;
 
   return {
     id,
@@ -39,7 +39,7 @@ export const saveNeteasePlaylistSummary = (playlistInfo = {}) => {
   if (!canUseStorage()) return [];
 
   const id = String(playlistInfo.id || '').trim();
-  if (!id) return loadSavedNeteasePlaylists();
+  if (!id || !/^\d{7,14}$/.test(id)) return loadSavedNeteasePlaylists();
 
   const now = Date.now();
   const saved = loadSavedNeteasePlaylists();
@@ -89,7 +89,7 @@ export const setLastNeteasePlaylistId = (id) => {
 
   const nextId = String(id || '').trim();
   try {
-    if (nextId) window.localStorage.setItem(LAST_PLAYLIST_ID_KEY, nextId);
+    if (nextId && /^\d{7,14}$/.test(nextId)) window.localStorage.setItem(LAST_PLAYLIST_ID_KEY, nextId);
     else window.localStorage.removeItem(LAST_PLAYLIST_ID_KEY);
   } catch (e) {}
 };
@@ -98,7 +98,12 @@ export const getLastNeteasePlaylistId = () => {
   if (!canUseStorage()) return '';
 
   try {
-    return String(window.localStorage.getItem(LAST_PLAYLIST_ID_KEY) || '').trim();
+    const lastId = String(window.localStorage.getItem(LAST_PLAYLIST_ID_KEY) || '').trim();
+    if (!lastId || !/^\d{7,14}$/.test(lastId)) {
+      window.localStorage.removeItem(LAST_PLAYLIST_ID_KEY);
+      return '';
+    }
+    return lastId;
   } catch (e) {
     return '';
   }

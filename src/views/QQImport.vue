@@ -261,6 +261,7 @@ import BackToTop from '../components/BackToTop.vue';
 import {
   buildQQPlayPayload,
   extractQQPlaylistId,
+  extractQQShortUrl,
   normalizeQQPlaylistInfo,
   normalizeQQSongs,
 } from '../utils/qqSongHelper';
@@ -535,11 +536,13 @@ const setError = (message) => {
   errorMessage.value = message;
 };
 
-const getImportErrorMessage = (error, id) => {
+const getImportErrorMessage = (error, target) => {
   const serverMessage = error?.response?.data?.msg || error?.response?.data?.message || '';
   if (serverMessage) return serverMessage;
-  if (error?.code === 'QQ_PLAYLIST_NOT_FOUND') return `未找到 ID 为 ${id} 的企鹅歌单，请检查后重试`;
-  return `导入失败，未找到 ID 为 ${id} 的企鹅歌单或网络暂时异常`;
+  if (error?.code === 'QQ_PLAYLIST_NOT_FOUND') {
+    return target ? `未找到对应企鹅歌单（${target}），请检查后重试` : '未找到该企鹅歌单，请检查后重试';
+  }
+  return '导入失败，未找到该企鹅歌单或网络暂时异常';
 };
 
 const fetchTracks = async (targetPage = 1, targetId = currentId.value) => {
@@ -556,7 +559,7 @@ const fetchTracks = async (targetPage = 1, targetId = currentId.value) => {
   return nextSongs;
 };
 
-const fetchPlaylist = async (id, options = {}) => {
+const fetchPlaylist = async (target, options = {}) => {
   const {
     forceRefresh = false,
     isManualImport = false,
@@ -564,22 +567,29 @@ const fetchPlaylist = async (id, options = {}) => {
     notifyError = true,
     saveSummary = false,
   } = options;
-  if (!id) {
-    const message = '缺少有效的企鹅歌单 ID';
+
+  const isObject = target && typeof target === 'object';
+  const targetId = isObject ? (target.id || '') : (typeof target === 'string' && /^\d+$/.test(target) ? target : '');
+  const targetUrl = isObject ? (target.url || '') : (typeof target === 'string' && !targetId ? target : '');
+
+  if (!targetId && !targetUrl) {
+    const message = '缺少有效的企鹅歌单 ID 或链接';
     setError(message);
     if (notifyError) store.showToast(message);
     return;
   }
 
-  if (!forceRefresh && restoreCachedPlaylist(id)) {
-    setLastQQPlaylistId(id);
-    syncPlaylistScrollPositions(id);
+  if (targetId && !forceRefresh && restoreCachedPlaylist(targetId)) {
+    setLastQQPlaylistId(targetId);
+    syncPlaylistScrollPositions(targetId);
     return;
   }
 
   const requestSeq = ++playlistRequestSeq;
-  currentId.value = id;
-  syncPlaylistScrollPositions(id);
+  if (targetId) {
+    currentId.value = targetId;
+    syncPlaylistScrollPositions(targetId);
+  }
   if (isManualImport) isImporting.value = true;
   else isImporting.value = false;
   isPlaylistLoading.value = true;
@@ -592,9 +602,11 @@ const fetchPlaylist = async (id, options = {}) => {
   store.cancelPlayAllHydration();
 
   try {
-    const detail = await request.get('/qq/playlist/detail', {
-      params: { id, timestamp: Date.now() },
-    });
+    const params = { timestamp: Date.now() };
+    if (targetId) params.id = targetId;
+    if (targetUrl) params.url = targetUrl;
+
+    const detail = await request.get('/qq/playlist/detail', { params });
     if (requestSeq !== playlistRequestSeq) return;
     const nextPlaylistInfo = normalizeQQPlaylistInfo(detail?.playlist || {});
     if (!nextPlaylistInfo.id) {
@@ -602,23 +614,28 @@ const fetchPlaylist = async (id, options = {}) => {
       notFoundError.code = 'QQ_PLAYLIST_NOT_FOUND';
       throw notFoundError;
     }
-    const nextSongs = await fetchTracks(1, id);
+
+    const realId = nextPlaylistInfo.id;
+    currentId.value = realId;
+    syncPlaylistScrollPositions(realId);
+
+    const nextSongs = await fetchTracks(1, realId);
     if (requestSeq !== playlistRequestSeq) return;
     playlistInfo.value = nextPlaylistInfo;
     songs.value = nextSongs;
     if (saveSummary) savedPlaylists.value = saveQQPlaylistSummary(nextPlaylistInfo);
-    setLastQQPlaylistId(nextPlaylistInfo.id || id);
+    setLastQQPlaylistId(realId);
     rememberCurrentPlaylist();
     if (isManualImport) inputValue.value = '';
     nextTick(() => setupObserver());
-    router.replace({ name: 'QQImportDetail', params: { id } });
+    router.replace({ name: 'QQImportDetail', params: { id: realId } });
     if (notifySuccess) {
       const count = nextPlaylistInfo.trackCount || nextSongs.length;
       store.showToast(`已导入「${nextPlaylistInfo.name}」，共 ${count} 首歌曲`);
     }
   } catch (e) {
     if (requestSeq !== playlistRequestSeq) return;
-    const message = getImportErrorMessage(e, id);
+    const message = getImportErrorMessage(e, targetId || targetUrl);
     setError(message);
     if (notifyError) store.showToast(message);
   } finally {
@@ -638,8 +655,8 @@ const openPlaylist = (id) => {
   });
 };
 
-const importPlaylist = (id) => {
-  return fetchPlaylist(id, {
+const importPlaylist = (target) => {
+  return fetchPlaylist(target, {
     forceRefresh: true,
     isManualImport: true,
     notifySuccess: true,
@@ -649,12 +666,28 @@ const importPlaylist = (id) => {
 };
 
 const submitImport = () => {
-  const id = extractQQPlaylistId(inputValue.value);
-  if (!id) {
+  const raw = inputValue.value.trim();
+  if (!raw) {
     store.showToast('请输入有效的企鹅歌单链接或 ID');
     return;
   }
-  importPlaylist(id);
+
+  // 1. 尝试直接提取 7-14 位数字 ID 或标准 QQ 音乐链接中的 ID
+  const directId = extractQQPlaylistId(raw);
+  if (directId) {
+    importPlaylist(directId);
+    return;
+  }
+
+  // 2. 尝试识别 QQ 音乐短链接（如 c6.y.qq.com/base/fcgi-bin/u?__=...）
+  const shortUrl = extractQQShortUrl(raw);
+  if (shortUrl) {
+    importPlaylist({ url: shortUrl });
+    return;
+  }
+
+  // 3. 非合法格式，予以明确拦截提示
+  store.showToast('请输入有效的企鹅歌单链接或 ID（支持 7-14 位数字 ID 或 QQ 音乐歌单分享链接）');
 };
 
 const loadMore = async () => {
