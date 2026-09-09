@@ -7,24 +7,38 @@ const BUILTIN_SOURCE_NAMES = [
   '念心音源-V1.0.1.js',
 ];
 
-const getSourceDirCandidates = () => {
-  const candidates = [
+const getSourceDirCandidates = (subDir = '') => {
+  const baseCandidates = [
     path.resolve(process.cwd(), '..', 'music_source'),
     path.resolve(process.cwd(), 'music_source'),
     path.resolve(__dirname, '..', '..', 'music_source'),
   ];
 
   if (process.resourcesPath) {
-    candidates.unshift(path.join(process.resourcesPath, 'music_source'));
+    baseCandidates.unshift(path.join(process.resourcesPath, 'music_source'));
   }
+
+  const candidates = subDir
+    ? baseCandidates.map(base => path.join(base, subDir))
+    : baseCandidates;
 
   return [...new Set(candidates)];
 };
 
-const findSourceDir = () => getSourceDirCandidates().find(dir => fs.existsSync(dir) && fs.statSync(dir).isDirectory()) || null;
+const findSourceDir = (subDir = '') => getSourceDirCandidates(subDir).find(dir => fs.existsSync(dir) && fs.statSync(dir).isDirectory()) || null;
 
-const listSources = () => {
-  const dir = findSourceDir();
+const listSources = (subDir = '') => {
+  let dir = findSourceDir(subDir);
+  let resolvedSubDir = subDir;
+
+  if (subDir && (!dir || fs.readdirSync(dir).filter(file => file.endsWith('.js')).length === 0)) {
+    const fallbackDir = findSourceDir('');
+    if (fallbackDir && fs.readdirSync(fallbackDir).filter(file => file.endsWith('.js')).length > 0) {
+      dir = fallbackDir;
+      resolvedSubDir = '';
+    }
+  }
+
   if (!dir) return [];
 
   const files = fs.readdirSync(dir)
@@ -35,6 +49,7 @@ const listSources = () => {
       file,
       path: path.join(dir, file),
       builtinOrder: BUILTIN_SOURCE_NAMES.indexOf(file),
+      subDir: resolvedSubDir || '',
     }));
 
   return files.sort((a, b) => {
@@ -45,8 +60,8 @@ const listSources = () => {
   });
 };
 
-const resolveSources = (ids = []) => {
-  const all = listSources();
+const resolveSources = (ids = [], subDir = '') => {
+  const all = listSources(subDir);
   if (!Array.isArray(ids) || ids.length === 0) return all;
 
   const enabled = new Set(ids.map(id => String(id)));

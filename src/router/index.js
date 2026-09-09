@@ -19,6 +19,7 @@ import PersonalFM from '../views/PersonalFM.vue';
 import NewSongs from '../views/NewSongs.vue';
 import PlaylistCategory from '../views/PlaylistCategory.vue';
 import NeteaseImport from '../views/NeteaseImport.vue';
+import QQImport from '../views/QQImport.vue';
 
 const routes = [
   { path: '/', name: 'Discover', component: Discover },
@@ -38,6 +39,8 @@ const routes = [
   { path: '/playlist-category', name: 'PlaylistCategory', component: PlaylistCategory },
   { path: '/import/netease', name: 'NeteaseImport', component: NeteaseImport, meta: { stableComponentKey: 'NeteaseImport' } },
   { path: '/import/netease/:id', name: 'NeteaseImportDetail', component: NeteaseImport, meta: { stableComponentKey: 'NeteaseImport' } },
+  { path: '/import/qq', name: 'QQImport', component: QQImport, meta: { stableComponentKey: 'QQImport' } },
+  { path: '/import/qq/:id', name: 'QQImportDetail', component: QQImport, meta: { stableComponentKey: 'QQImport' } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ];
 

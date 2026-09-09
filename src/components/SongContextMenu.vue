@@ -22,7 +22,7 @@
 
       <div class="my-1 h-px bg-gray-100 dark:bg-slate-700"></div>
 
-      <template v-if="!isNeteaseImportContext">
+      <template v-if="!isExternalImportContext">
         <button class="menu-item" :class="{ liked: isLiked }" @click="toggleLike">
           <AppIcon :name="isLiked ? 'heart-solid' : 'heart'" class="menu-icon" :class="isLiked ? 'text-red-500' : ''" />
           <span>{{ isLiked ? '取消喜欢' : '添加到我喜欢' }}</span>
@@ -214,11 +214,16 @@ const userPlaylists = computed(() => {
 });
 
 const songArtists = computed(() => getSongArtists(song.value));
-const isNeteaseImportContext = computed(() => {
+const isExternalImportContext = computed(() => {
   return source.value === 'netease-import'
+    || source.value === 'qq-import'
     || song.value?.source === 'netease-import'
-    || String(song.value?.hash || '').startsWith('netease:');
+    || song.value?.source === 'qq-import'
+    || String(song.value?.hash || '').startsWith('netease:')
+    || String(song.value?.hash || '').startsWith('qq:')
+    || Boolean(song.value?.qqMid);
 });
+const isNeteaseImportContext = isExternalImportContext;
 
 const close = () => {
   visible.value = false;

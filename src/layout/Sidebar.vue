@@ -110,6 +110,18 @@
           />
           网易歌单
         </div>
+        <div
+          @click="$router.push('/import/qq')"
+          class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors group"
+          :class="$route.path.startsWith('/import/qq') ? 'font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800'"
+        >
+          <AppIcon
+            name="qq-music"
+            class="w-4 h-4 mr-3 flex-shrink-0 transition-colors"
+            :class="$route.path.startsWith('/import/qq') ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-slate-400'"
+          />
+          企鹅歌单
+        </div>
       </nav>
     </div>
 

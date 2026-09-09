@@ -51,11 +51,15 @@ const lxRequest = (url, options = {}, callback = null) => {
       res.on('data', chunk => chunks.push(chunk));
       res.on('end', () => {
         const text = Buffer.concat(chunks).toString('utf8');
+        let parsedBody = text;
+        try {
+          parsedBody = JSON.parse(text);
+        } catch (e) {}
         resolve({
           statusCode: res.statusCode || 0,
           status: res.statusCode || 0,
           headers: res.headers || {},
-          body: text,
+          body: parsedBody,
         });
       });
     });
@@ -118,6 +122,15 @@ const buildSourceContext = (source) => {
     info: (...args) => console.info('[LX-Source]', ...args),
   };
 
+  const originalJsonParse = JSON.parse;
+  const safeJSON = {
+    ...JSON,
+    parse: (str, ...args) => {
+      if (typeof str === 'object' && str !== null) return str;
+      return originalJsonParse(str, ...args);
+    },
+  };
+
   const sandbox = {
     console: safeConsole,
     Promise,
@@ -133,6 +146,7 @@ const buildSourceContext = (source) => {
     decodeURIComponent,
     encodeURI,
     decodeURI,
+    JSON: safeJSON,
     btoa: (str) => Buffer.from(String(str), 'binary').toString('base64'),
     atob: (str) => Buffer.from(String(str), 'base64').toString('binary'),
   };

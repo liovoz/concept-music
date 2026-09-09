@@ -63,6 +63,7 @@ const VOLUME_BOOST_LEVEL_KEY = 'kg_desktop_volume_boost_level';
 const VOLUME_BOOST_INITIALIZED_KEY = 'kg_desktop_volume_boost_initialized';
 const LOCAL_AUDIO_PROXY_BASE = 'http://127.0.0.1:10420';
 const NETEASE_IMPORT_SOURCE = 'netease-import';
+const QQ_IMPORT_SOURCE = 'qq-import';
 
 const PLAY_MODES = ['sequence', 'loop', 'random'];
 const PLAY_MODE_KEY = 'kg_play_mode';
@@ -171,7 +172,13 @@ const setAudioSource = (audio, url, useProxy) => {
   audio._proxyFallbackAttempted = false;
   audio._proxyRestoreTime = 0;
   audio._proxyResumeOnLoad = false;
-  audio.src = useProxy ? buildAudioProxyUrl(rawUrl) : rawUrl;
+  if (useProxy) {
+    audio.crossOrigin = 'anonymous';
+    audio.src = buildAudioProxyUrl(rawUrl);
+  } else {
+    audio.removeAttribute('crossOrigin');
+    audio.src = rawUrl;
+  }
 };
 
 const ensureAudioContext = () => {
@@ -321,10 +328,38 @@ const buildNeteaseImportQualities = (song = {}) => {
   return qualities;
 };
 
+const getQQImportId = (song = {}) => {
+  return String(song.qqMid || song.songmid || song.mid || song.id || song.songId || song.hash || song._hash || '')
+    .replace(/^qq:/, '')
+    .trim();
+};
+
+const buildQQImportQualities = (song = {}) => {
+  const detail = song.sourceSongInfo || song;
+  const id = getQQImportId(song) || getQQImportId(detail);
+  if (!id) return { standard: '' };
+
+  if (song.qualities && Object.keys(song.qualities).length > 0) return song.qualities;
+  if (detail.qualities && Object.keys(detail.qualities).length > 0) return detail.qualities;
+  if (detail._qualities && Object.keys(detail._qualities).length > 0) return detail._qualities;
+
+  const file = detail.file || {};
+  const qualities = { standard: id };
+
+  if (Number(file.size_320mp3 || file.size320 || 0) > 0) qualities.hq = id;
+  if (Number(file.size_flac || file.sizeflac || 0) > 0) qualities.sq = id;
+  if (Number(file.size_hires || 0) > 0) qualities.high = id;
+
+  return qualities;
+};
+
 const extractQualities = (song) => {
   if (!song) return { standard: '', hq: '', sq: '', high: '', viper_clear: '', viper_atmos: '' };
   if (song.source === NETEASE_IMPORT_SOURCE) {
     return buildNeteaseImportQualities(song);
+  }
+  if (song.source === QQ_IMPORT_SOURCE || isQQImportSong(song)) {
+    return buildQQImportQualities(song);
   }
   if (song.qualities && Object.keys(song.qualities).length > 0) return song.qualities;
   return {
@@ -348,6 +383,14 @@ const getExpectedDuration = (song) => {
 
 const isNeteaseImportSong = (song) => {
   return song?.source === NETEASE_IMPORT_SOURCE || String(song?.hash || '').startsWith('netease:');
+};
+
+const isQQImportSong = (song) => {
+  return song?.source === QQ_IMPORT_SOURCE || String(song?.hash || '').startsWith('qq:') || Boolean(song?.qqMid);
+};
+
+const isExternalImportSong = (song) => {
+  return isNeteaseImportSong(song) || isQQImportSong(song);
 };
 
 const getPreviewToastMessage = (userStore) => {
@@ -659,14 +702,14 @@ export const usePlayerStore = defineStore('player', {
             ? activeAudio._proxyRestoreTime
             : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
           const wasPlaying = activeAudio._proxyResumeOnLoad || (this.isPlaying && !activeAudio.paused);
-          this.volumeBoostEnabled = false;
-          localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
-          setAudioSource(activeAudio, activeAudio._rawSourceUrl, false);
           activeAudio._proxyFallbackAttempted = true;
           activeAudio._proxyRestoreTime = savedTime;
           activeAudio._proxyResumeOnLoad = wasPlaying;
+          setAudioSource(activeAudio, activeAudio._rawSourceUrl, false);
           this.applyAudioOutputSettings();
-          this.showToast('音量增强代理不可用，已恢复普通播放');
+          if (!isExternalImportSong(this.currentSong)) {
+            this.showToast('音量增强代理暂时不可用，已恢复普通播放');
+          }
           activeAudio.load();
           activeAudio.addEventListener('loadedmetadata', () => {
             if (savedTime > 0) activeAudio.currentTime = savedTime;
@@ -1219,7 +1262,7 @@ export const usePlayerStore = defineStore('player', {
 
     async fetchSongQualityInfo(song) {
       if (!song) return;
-      if (isNeteaseImportSong(song)) {
+      if (isExternalImportSong(song)) {
         song.qualities = extractQualities(song);
         return;
       }
@@ -1254,7 +1297,7 @@ export const usePlayerStore = defineStore('player', {
 
     async prepareAutoQuality(song, targetQuality = null) {
       if (!song || targetQuality) return;
-      if (isNeteaseImportSong(song)) {
+      if (isExternalImportSong(song)) {
         song.qualities = extractQualities(song);
         return;
       }
@@ -1271,7 +1314,7 @@ export const usePlayerStore = defineStore('player', {
 
     getBestAvailableQuality(song) {
       if (!song || !song.qualities) return 'standard';
-      if (isNeteaseImportSong(song)) {
+      if (isExternalImportSong(song)) {
         for (const q of QUALITY_CONFIG) {
           if (song.qualities[q.key]) return q.key;
         }
@@ -1333,6 +1376,26 @@ export const usePlayerStore = defineStore('player', {
         }
       }
 
+      if (isQQImportSong(songInfo)) {
+        songInfo.qualities = extractQualities(songInfo);
+        const cacheQ = targetQuality && songInfo.qualities?.[targetQuality]
+          ? targetQuality
+          : this.getBestAvailableQuality(songInfo);
+        const dedupeKey = `${songInfo.hash}_${cacheQ}_${QQ_IMPORT_SOURCE}`;
+
+        if (pendingResolves.has(dedupeKey)) {
+          return pendingResolves.get(dedupeKey);
+        }
+
+        const promise = this._resolveQQImportSongUrl(songInfo, cacheQ);
+        pendingResolves.set(dedupeKey, promise);
+        try {
+          return await promise;
+        } finally {
+          pendingResolves.delete(dedupeKey);
+        }
+      }
+
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
       const isVipSong = songInfo.is_vip || songInfo.is_paid;
@@ -1363,7 +1426,39 @@ export const usePlayerStore = defineStore('player', {
       try {
         const res = await request.post('/source/resolve', {
           song: songInfo,
-          quality
+          quality,
+          subDir: 'Netease',
+          platform: 'wy'
+        }, {
+          silent: true,
+          headers: { 'x-apicache-bypass': '1' }
+        });
+
+        if (res?.url && typeof res.url === 'string' && res.url.startsWith('http')) {
+          const finalResult = {
+            url: res.url,
+            quality: quality === 'best' ? (res.quality || 'standard') : quality,
+            isPreview: false,
+            sourceInfo: res.source || null
+          };
+          setCachedUrl(songInfo.hash, quality, finalResult);
+          return finalResult;
+        }
+      } catch (e) {}
+
+      return { url: null, quality: 'standard', isPreview: false };
+    },
+
+    async _resolveQQImportSongUrl(songInfo, quality) {
+      const cached = getCachedUrl(songInfo.hash, quality);
+      if (cached) return cached;
+
+      try {
+        const res = await request.post('/source/resolve', {
+          song: songInfo,
+          quality,
+          subDir: 'QQ',
+          platform: 'tx'
         }, {
           silent: true,
           headers: { 'x-apicache-bypass': '1' }
@@ -1576,7 +1671,7 @@ export const usePlayerStore = defineStore('player', {
 
     canTryFullPlayback(song) {
       if (!song) return false;
-      if (isNeteaseImportSong(song)) return true;
+      if (isExternalImportSong(song)) return true;
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
       if (isVipUser) return true;
@@ -1616,7 +1711,7 @@ export const usePlayerStore = defineStore('player', {
     async triggerPreload() {
       const nextSong = this.calculateNextSong();
       if (!nextSong || preloadState.hash === nextSong.hash) return;
-      if (isNeteaseImportSong(nextSong)) {
+      if (isExternalImportSong(nextSong)) {
         resetPreloadAudio();
         return;
       }
@@ -1659,7 +1754,7 @@ export const usePlayerStore = defineStore('player', {
       
       if (isSongChange && maintainTime === 0) {
         activeAudio.pause();
-        if (isNeteaseImportSong(songInfo)) {
+        if (isExternalImportSong(songInfo)) {
           activeAudio.removeAttribute('src');
           activeAudio._rawSourceUrl = '';
           activeAudio._usingProxy = false;
@@ -1690,7 +1785,7 @@ export const usePlayerStore = defineStore('player', {
       const exists = this.playlist.find(s => s.hash === songInfo.hash);
       if (!exists) this.playlist.push(songInfo);
 
-      if (isNeteaseImportSong(songInfo)) {
+      if (isExternalImportSong(songInfo)) {
         songInfo.qualities = extractQualities(songInfo);
       } else if (!songInfo.qualities) {
         songInfo.qualities = extractQualities(songInfo);
@@ -1700,7 +1795,7 @@ export const usePlayerStore = defineStore('player', {
 
       const autoTargetQuality = targetQuality;
 
-      if (!isNeteaseImportSong(songInfo) && songInfo.hash === preloadState.hash && preloadAudio.src && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
+      if (!isExternalImportSong(songInfo) && songInfo.hash === preloadState.hash && preloadAudio.src && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
           activeAudio.pause();
           activeAudio.currentTime = 0;
           
@@ -1902,13 +1997,19 @@ export const usePlayerStore = defineStore('player', {
           this.showToast('当前网易歌曲未提供该音质');
           return;
         }
+      } else if (isQQImportSong(this.currentSong)) {
+        this.currentSong.qualities = extractQualities(this.currentSong);
+        if (!this.currentSong.qualities?.[targetQuality]) {
+          this.showToast('当前企鹅歌曲未提供该音质');
+          return;
+        }
       }
 
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
       const isVipQuality = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(targetQuality);
 
-      if (isVipQuality && !isVipUser && !isNeteaseImportSong(this.currentSong)) {
+      if (isVipQuality && !isVipUser && !isExternalImportSong(this.currentSong)) {
         if (userStore.isLoggedIn) {
           this.showDialog({
             title: 'VIP 专属音质',
@@ -2279,6 +2380,42 @@ export const usePlayerStore = defineStore('player', {
       if (this.rememberState) schedulePersistState(this);
 
       if (!isNeteaseImportSong(this.currentSong)) {
+        this.triggerPreload();
+        this.syncTrayState();
+        return;
+      }
+
+      activeAudio.pause();
+      activeAudio.removeAttribute('src');
+      activeAudio._rawSourceUrl = '';
+      activeAudio._usingProxy = false;
+      activeAudio._proxyFallbackAttempted = false;
+      activeAudio._proxyRestoreTime = 0;
+      activeAudio._proxyResumeOnLoad = false;
+      activeAudio.load();
+      this.isPlaying = false;
+      this.currentSong = null;
+      this.currentTime = 0;
+      this.duration = 0;
+      this.isLoading = false;
+      this.isCurrentSongPreview = false;
+      this.isError = false;
+      this.errorMessage = '';
+      this.failedSong = null;
+      this.currentQuality = 'standard';
+      this.peakMode = false;
+      this.peakStartOffset = 0;
+      this.peakDuration = 30;
+      this.syncTrayState();
+    },
+
+    clearQQImportPlaybackState() {
+      this.cancelPlayAllHydration();
+      clearUrlResolutionState();
+      this.playlist = this.playlist.filter(song => !isQQImportSong(song));
+      if (this.rememberState) schedulePersistState(this);
+
+      if (!isQQImportSong(this.currentSong)) {
         this.triggerPreload();
         this.syncTrayState();
         return;

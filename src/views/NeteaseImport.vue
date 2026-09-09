@@ -128,9 +128,15 @@
                 <AppIcon name="play" class="w-5 h-5 mr-1" />
                 播放全部
               </button>
-              <button @click="store.addSongsToPlaylist(playPayloads, { silent: false })" class="px-6 py-2.5 rounded-full text-sm font-bold transition-all transform active:scale-95 flex items-center no-drag bg-blue-50 text-blue-600 hover:bg-blue-100 shadow-sm border border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-300">
-                <AppIcon name="plus" class="w-5 h-5 mr-1.5" />
-                加入队列
+              <button
+                @click="handleAddToQueue"
+                :disabled="isAddingToQueue || songs.length === 0"
+                class="px-6 py-2.5 rounded-full text-sm font-bold transition-all transform active:scale-95 flex items-center no-drag bg-blue-50 text-blue-600 hover:bg-blue-100 shadow-sm border border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-300"
+                :class="{ 'opacity-60 cursor-not-allowed': isAddingToQueue || songs.length === 0 }"
+              >
+                <AppIcon v-if="isAddingToQueue" name="spinner" spin class="w-5 h-5 mr-1.5" />
+                <AppIcon v-else name="plus" class="w-5 h-5 mr-1.5" />
+                {{ isAddingToQueue ? '正在加入...' : '加入队列' }}
               </button>
             </div>
           </div>
@@ -294,6 +300,7 @@ const hasMore = ref(false);
 const isImporting = ref(false);
 const isPlaylistLoading = ref(false);
 const isLoadingMore = ref(false);
+const isAddingToQueue = ref(false);
 const isError = ref(false);
 const errorMessage = ref('');
 const loadMoreTrigger = ref(null);
@@ -709,6 +716,70 @@ const playAll = () => {
     appendSongs: (sessionId, payloads) => store.extendPlayAllHydration(sessionId, payloads),
     shouldContinue: () => currentId.value === routeId && store.isPlayAllHydrationActive(result.sessionId),
   });
+};
+
+const handleAddToQueue = async () => {
+  if (isAddingToQueue.value || songs.value.length === 0) return;
+
+  if (!hasMore.value) {
+    store.addSongsToPlaylist(playPayloads.value, { silent: false });
+    return;
+  }
+
+  isAddingToQueue.value = true;
+  const targetId = String(currentId.value);
+  const targetCover = playlistInfo.value.cover || defaultImg;
+
+  const initialResult = store.addSongsToPlaylist(playPayloads.value, { silent: true });
+  let totalAdded = initialResult.added;
+  let totalSkipped = initialResult.skipped;
+  store.showToast(`已先将 ${initialResult.added} 首歌曲加入队列，正在后台载入剩余歌曲...`);
+
+  let currentOffset = songs.value.length;
+  const batchLimit = 200;
+
+  try {
+    let keepFetching = true;
+    while (keepFetching) {
+      const res = await request.get('/netease/playlist/track/all', {
+        params: {
+          id: targetId,
+          offset: currentOffset,
+          limit: batchLimit,
+          timestamp: Date.now(),
+        },
+        silent: true,
+      });
+
+      const normalized = normalizeNeteaseSongs(res?.songs || []);
+      if (normalized.length === 0) break;
+
+      const payloads = normalized.map(song => buildNeteasePlayPayload(song, targetCover));
+      const batchResult = store.addSongsToPlaylist(payloads, { silent: true });
+      totalAdded += batchResult.added;
+      totalSkipped += batchResult.skipped;
+
+      if (currentId.value === targetId) {
+        songs.value.push(...normalized);
+        hasMore.value = !!res?.hasMore;
+        page.value = Math.ceil(songs.value.length / pageSize);
+        rememberCurrentPlaylist();
+      }
+
+      currentOffset += normalized.length;
+      if (!res?.hasMore || normalized.length < batchLimit) {
+        keepFetching = false;
+      }
+    }
+
+    const skippedText = totalSkipped > 0 ? `，已跳过 ${totalSkipped} 首重复歌曲` : '';
+    store.showToast(`已将网易歌单全部歌曲加入播放列表（新增 ${totalAdded} 首${skippedText}）`);
+  } catch (error) {
+    console.error('[NeteaseImport] 后台加入队列失败:', error);
+    store.showToast('部分剩余歌曲加入队列失败，请检查网络');
+  } finally {
+    isAddingToQueue.value = false;
+  }
 };
 
 watch(() => route.params.id, (id) => {

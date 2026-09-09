@@ -49,6 +49,35 @@ const isPrivateAddress = (address) => {
   return true;
 };
 
+const setCorsHeaders = (res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS',
+    'Access-Control-Allow-Headers': 'Range,Content-Type,Accept-Ranges,Origin,User-Agent',
+    'Access-Control-Expose-Headers': 'Content-Length,Content-Range,Accept-Ranges',
+  });
+};
+
+const getUpstreamReferer = (hostname) => {
+  const host = (hostname || '').toLowerCase();
+  if (host.endsWith('qq.com') || host.endsWith('qpic.cn') || host.includes('qqmusic')) {
+    return 'https://y.qq.com/';
+  }
+  if (host.endsWith('kuwo.cn')) {
+    return 'https://www.kuwo.cn/';
+  }
+  if (host.endsWith('126.net') || host.endsWith('163.com')) {
+    return 'https://music.163.com/';
+  }
+  if (host.endsWith('kugou.com')) {
+    return 'https://www.kugou.com/';
+  }
+  if (host.endsWith('migu.cn')) {
+    return 'https://music.migu.cn/';
+  }
+  return undefined;
+};
+
 const validateProxyAudioUrl = async (rawUrl) => {
   let target;
   try {
@@ -73,15 +102,22 @@ const validateProxyAudioUrl = async (rawUrl) => {
     return target;
   }
 
-  const resolved = await dns.lookup(hostname, { all: true });
-  if (!resolved.length || resolved.some(item => isPrivateAddress(item.address))) {
-    throw Object.assign(new Error('Private audio proxy targets are not allowed'), { statusCode: 403 });
+  try {
+    const resolved = await dns.lookup(hostname, { all: true });
+    if (!resolved.length || resolved.some(item => isPrivateAddress(item.address))) {
+      throw Object.assign(new Error('Private audio proxy targets are not allowed'), { statusCode: 403 });
+    }
+  } catch (err) {
+    if (err.statusCode) throw err;
+    // Transient DNS lookup error - let the upstream request attempt proceed
   }
 
   return target;
 };
 
 const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
+  setCorsHeaders(res);
+
   if (redirects > 4) {
     res.status(508).send({ code: 508, msg: 'Too many redirects' });
     return;
@@ -91,17 +127,30 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
   try {
     target = await validateProxyAudioUrl(rawUrl);
   } catch (e) {
+    setCorsHeaders(res);
     res.status(e.statusCode || 502).send({ code: e.statusCode || 502, msg: e.message || 'Audio proxy failed' });
     return;
   }
 
   const client = target.protocol === 'https:' ? https : http;
+  const userAgent = req.headers['user-agent'] && !req.headers['user-agent'].includes('AudioProxy')
+    ? req.headers['user-agent']
+    : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+
+  const upstreamHeaders = {
+    'User-Agent': userAgent,
+    'Accept': '*/*',
+    ...(req.headers.range ? { Range: req.headers.range } : {}),
+  };
+
+  const referer = getUpstreamReferer(target.hostname);
+  if (referer) {
+    upstreamHeaders['Referer'] = referer;
+  }
+
   const upstreamReq = client.request(target, {
     method: 'GET',
-    headers: {
-      'User-Agent': req.headers['user-agent'] || 'ConceptMusic/AudioProxy',
-      ...(req.headers.range ? { Range: req.headers.range } : {}),
-    },
+    headers: upstreamHeaders,
   }, (upstreamRes) => {
     const statusCode = upstreamRes.statusCode || 502;
     const location = upstreamRes.headers.location;
@@ -113,23 +162,23 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
       return;
     }
 
-    const contentType = upstreamRes.headers['content-type'] || 'application/octet-stream';
-    const isAudioLike = /^(audio|video)\//i.test(contentType) || /octet-stream/i.test(contentType);
-    if (!isAudioLike) {
+    const contentType = (upstreamRes.headers['content-type'] || 'application/octet-stream').toLowerCase();
+    const isHtmlOrText = contentType.includes('text/html') || contentType.includes('text/plain') || contentType.includes('application/json');
+    const hasMediaClues = upstreamRes.headers['content-range'] || upstreamRes.headers['accept-ranges'] === 'bytes' || Number(upstreamRes.headers['content-length']) > 10000;
+
+    if (isHtmlOrText && !hasMediaClues) {
       upstreamRes.resume();
+      setCorsHeaders(res);
       res.status(415).send({ code: 415, msg: 'Unsupported proxied media type' });
       return;
     }
 
     res.status(statusCode);
+    setCorsHeaders(res);
     res.set({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS',
-      'Access-Control-Allow-Headers': 'Range,Content-Type,Accept-Ranges',
-      'Access-Control-Expose-Headers': 'Content-Length,Content-Range,Accept-Ranges',
       'Accept-Ranges': upstreamRes.headers['accept-ranges'] || 'bytes',
       'Cache-Control': 'no-store',
-      'Content-Type': contentType,
+      'Content-Type': contentType || 'audio/mpeg',
     });
 
     ['content-length', 'content-range', 'etag', 'last-modified'].forEach((header) => {
@@ -140,8 +189,12 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
   });
 
   upstreamReq.on('error', () => {
-    if (!res.headersSent) res.status(502).send({ code: 502, msg: 'Audio proxy upstream failed' });
-    else res.end();
+    if (!res.headersSent) {
+      setCorsHeaders(res);
+      res.status(502).send({ code: 502, msg: 'Audio proxy upstream failed' });
+    } else {
+      res.end();
+    }
   });
   upstreamReq.end();
 };
@@ -286,12 +339,8 @@ async function consturctServer(moduleDefs) {
   app.use('/docs', express.static(path.join(__dirname, 'docs')));
 
   app.options('/audio/proxy', (_, res) => {
-    res.set({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS',
-      'Access-Control-Allow-Headers': 'Range,Content-Type,Accept-Ranges',
-      'Access-Control-Expose-Headers': 'Content-Length,Content-Range,Accept-Ranges',
-    }).status(204).end();
+    setCorsHeaders(res);
+    res.status(204).end();
   });
 
   app.get('/audio/proxy', (req, res) => {

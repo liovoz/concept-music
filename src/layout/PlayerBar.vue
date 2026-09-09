@@ -40,12 +40,12 @@
           <span v-else-if="store.currentSong?.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
         </div>
         <div class="flex items-center mt-0.5 space-x-2">
-          <SingerLink v-if="store.currentSong" :singers="store.currentSong._singers || store.currentSong.artists" :singer-name="store.currentSong.singer" :singer-id="store.currentSong.singer_id" size="small" :disabled="isNeteaseImportSong(store.currentSong)" disabled-tooltip="网易导入歌曲暂不支持跳转" />
+          <SingerLink v-if="store.currentSong" :singers="store.currentSong._singers || store.currentSong.artists" :singer-name="store.currentSong.singer" :singer-id="store.currentSong.singer_id" size="small" :disabled="isExternalImportSong(store.currentSong)" :disabled-tooltip="getImportDisabledTooltip(store.currentSong)" />
           <span v-else class="text-xs text-gray-500 truncate font-medium">Concept Music Desktop</span>
         </div>
       </div>
 
-      <div class="ml-4 flex-shrink-0" v-if="store.currentSong && !isNeteaseImportSong(store.currentSong)">
+      <div class="ml-4 flex-shrink-0" v-if="store.currentSong && !isExternalImportSong(store.currentSong)">
          <button @click="userStore.toggleLikeSong(store.currentSong)" class="no-drag p-1.5 rounded-full transition-all focus:outline-none transform active:scale-90" v-tooltip="isCurrentLiked ? '取消喜欢' : '添加喜欢'">
             <AppIcon v-if="isCurrentLiked" name="heart-solid" class="w-5 h-5 text-red-500 drop-shadow-sm" />
             <AppIcon v-else name="heart" class="w-5 h-5 text-gray-400 hover:text-red-400" />
@@ -170,7 +170,7 @@
                     <span v-if="song.is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
                     <span v-else-if="song.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
                   </div>
-                  <SingerLink :singers="song._singers || song.artists" :singer-name="song.singer" :singer-id="song.singer_id" size="small" :disabled="isNeteaseImportSong(song)" disabled-tooltip="网易导入歌曲暂不支持跳转" />
+                  <SingerLink :singers="song._singers || song.artists" :singer-name="song.singer" :singer-id="song.singer_id" size="small" :disabled="isExternalImportSong(song)" :disabled-tooltip="getImportDisabledTooltip(song)" />
                 </div>
               </div>
               <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
@@ -240,8 +240,8 @@
                   <span 
                     @click="goToAlbum(store.currentSong)"
                     class="truncate transition-colors" 
-                    :class="!isNeteaseImportSong(store.currentSong) && store.currentSong?.album_id ? 'text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer' : 'text-gray-500 dark:text-slate-400 cursor-default'"
-                    v-tooltip="isNeteaseImportSong(store.currentSong) ? '网易导入歌曲暂不支持跳转' : store.currentSong?.album">
+                    :class="!isExternalImportSong(store.currentSong) && store.currentSong?.album_id ? 'text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer' : 'text-gray-500 dark:text-slate-400 cursor-default'"
+                    v-tooltip="isExternalImportSong(store.currentSong) ? getImportDisabledTooltip(store.currentSong) : store.currentSong?.album">
                     {{ store.currentSong?.album || '未知专辑' }}
                   </span>
                 </div>
@@ -256,8 +256,8 @@
                     :singer-id="store.currentSong.singer_id"
                     size="sm"
                     class="truncate text-sm"
-                    :disabled="isNeteaseImportSong(store.currentSong)"
-                    disabled-tooltip="网易导入歌曲暂不支持跳转"
+                    :disabled="isExternalImportSong(store.currentSong)"
+                    :disabled-tooltip="getImportDisabledTooltip(store.currentSong)"
                   />
                   <span v-else class="text-gray-500 dark:text-slate-400">未知歌手</span>
                 </div>
@@ -852,7 +852,7 @@
 
               <!-- 喜欢按钮 -->
               <button 
-                v-if="!isNeteaseImportSong(store.currentSong)"
+                v-if="!isExternalImportSong(store.currentSong)"
                 @click.stop="store.currentSong && userStore.toggleLikeSong(store.currentSong)" 
                 class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/15 transition-all active:scale-90 no-drag"
                 :class="{ 'opacity-50 pointer-events-none': !store.currentSong }"
@@ -990,7 +990,7 @@ const qualityOptions = QUALITY_CONFIG.map(q => ({
 
 const qualityMenuOptions = computed(() => qualityOptions.map(q => ({
   ...q,
-  disabled: isNeteaseImportSong(store.currentSong) && !store.currentSong?.qualities?.[q.key]
+  disabled: isExternalImportSong(store.currentSong) && !store.currentSong?.qualities?.[q.key]
 })));
 
 const qualityDisplayName = computed(() => {
@@ -999,7 +999,11 @@ const qualityDisplayName = computed(() => {
 
 const handleQualitySelect = (quality) => {
   if (quality.disabled) {
-    store.showToast('当前网易歌曲未提供该音质');
+    if (isQQImportSong(store.currentSong)) {
+      store.showToast('当前企鹅歌曲未提供该音质');
+    } else {
+      store.showToast('当前网易歌曲未提供该音质');
+    }
     return;
   }
   qualityMenuOpen.value = false;
@@ -1014,7 +1018,7 @@ const goToArtist = (id) => {
 };
 
 const goToAlbum = (song) => {
-  if (isNeteaseImportSong(song)) return;
+  if (isExternalImportSong(song)) return;
   const id = song?.album_id;
   if (!id || id === '0') return store.showToast('暂无该专辑详情信息');
   if (store.isLyricsVisible) store.toggleLyrics();
@@ -1542,9 +1546,28 @@ const isNeteaseImportSong = (song) => {
   return song?.source === 'netease-import' || String(song?.hash || '').startsWith('netease:');
 };
 
+const isQQImportSong = (song) => {
+  return song?.source === 'qq-import' || String(song?.hash || '').startsWith('qq:') || Boolean(song?.qqMid);
+};
+
+const isExternalImportSong = (song) => {
+  return isNeteaseImportSong(song) || isQQImportSong(song);
+};
+
+const getImportDisabledTooltip = (song) => {
+  if (isQQImportSong(song)) return '企鹅导入歌曲暂不支持跳转';
+  return '网易导入歌曲暂不支持跳转';
+};
+
 const getNeteaseSongId = (song) => {
   return String(song?.neteaseId || song?.songId || song?.id || song?.hash || '')
     .replace(/^netease:/, '')
+    .trim();
+};
+
+const getQQSongMid = (song) => {
+  return String(song?.qqMid || song?.songmid || song?.mid || song?.hash || '')
+    .replace(/^qq:/, '')
     .trim();
 };
 
@@ -1732,6 +1755,26 @@ const fetchNeteaseLyrics = async (targetHash) => {
   parsedLyrics.value = parsed;
 };
 
+const fetchQQLyrics = async (targetHash) => {
+  const songmid = getQQSongMid(store.currentSong);
+  if (!songmid) throw new Error('缺少企鹅音乐歌曲 ID');
+
+  const res = await request.get('/qq/lyric', {
+    params: { songmid, timestamp: Date.now() },
+    silent: true,
+  });
+
+  if (store.currentSong?.hash !== targetHash) return;
+
+  const rawStr = res?.lrc?.lyric || res?.lyric || '';
+  if (!rawStr) throw new Error('企鹅音乐暂无该歌曲歌词');
+
+  const translationRows = parseTimedLyricRows(res?.tlyric?.lyric || res?.trans || '');
+  const parsed = parseLyrics(rawStr, translationRows);
+  if (parsed.length === 0) throw new Error('未能提取出有效时间轴');
+  parsedLyrics.value = parsed;
+};
+
 const fetchLyrics = async () => {
   if (!store.currentSong) {
     parsedLyrics.value = [];
@@ -1746,6 +1789,11 @@ const fetchLyrics = async () => {
   try {
     if (isNeteaseImportSong(store.currentSong)) {
       await fetchNeteaseLyrics(targetHash);
+      return;
+    }
+
+    if (isQQImportSong(store.currentSong)) {
+      await fetchQQLyrics(targetHash);
       return;
     }
 

@@ -879,8 +879,8 @@ export const useUserStore = defineStore('user', {
     async toggleLikeSong(song) {
       if (!song) return;
       const playerStore = usePlayerStore();
-      if (song.source === 'netease-import' || String(song.hash || '').startsWith('netease:')) {
-        playerStore.showToast('网易导入歌曲暂不支持添加到我喜欢');
+      if (song.source === 'netease-import' || song.source === 'qq-import' || String(song.hash || '').startsWith('netease:') || String(song.hash || '').startsWith('qq:')) {
+        playerStore.showToast(song.source === 'qq-import' || String(song.hash || '').startsWith('qq:') ? '企鹅导入歌曲暂不支持添加到我喜欢' : '网易导入歌曲暂不支持添加到我喜欢');
         return;
       }
       if (!this.isLoggedIn) return this.openLoginModal();
