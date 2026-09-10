@@ -5,8 +5,8 @@ import { defineStore } from 'pinia';
 import request from '../utils/request';
 import { useUserStore } from './userStore'; 
 
-const audioA = new Audio();
-const audioB = new Audio();
+let audioA = new Audio();
+let audioB = new Audio();
 audioA.preload = 'auto';
 audioB.preload = 'auto';
 audioA.crossOrigin = 'anonymous';
@@ -225,6 +225,38 @@ const ensureAudioOutputGraph = () => {
   const nodeB = ensureAudioOutputNode(audioB);
   audioGraphInitialized = !!(nodeA && nodeB);
   return audioGraphInitialized;
+};
+
+const recreateAudioInstances = (store) => {
+  if (audioGraphInitialized) {
+    audioOutputNodes.forEach((nodes) => {
+      try { nodes.source?.disconnect(); } catch (e) {}
+      try { nodes.gain?.disconnect(); } catch (e) {}
+      try { nodes.compressor?.disconnect(); } catch (e) {}
+    });
+    audioOutputNodes.clear();
+    audioGraphInitialized = false;
+  }
+
+  try { audioA.pause(); audioA.removeAttribute('src'); audioA.load(); } catch (e) {}
+  try { audioB.pause(); audioB.removeAttribute('src'); audioB.load(); } catch (e) {}
+
+  audioA = new Audio();
+  audioB = new Audio();
+  audioA.preload = 'auto';
+  audioB.preload = 'auto';
+  audioA.crossOrigin = 'anonymous';
+  audioB.crossOrigin = 'anonymous';
+
+  activeAudio = audioA;
+  preloadAudio = audioB;
+
+  if (store) {
+    store.bindAudioEvents(audioA);
+    store.bindAudioEvents(audioB);
+    audioA.volume = store.volume;
+    audioB.volume = store.volume;
+  }
 };
 
 const resetPreloadAudio = () => {
@@ -746,10 +778,21 @@ export const usePlayerStore = defineStore('player', {
             ? activeAudio._proxyRestoreTime
             : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
           const wasPlaying = activeAudio._proxyResumeOnLoad || (this.isPlaying && !activeAudio.paused);
+          const rawUrl = activeAudio._rawSourceUrl;
           activeAudio._proxyFallbackAttempted = true;
           activeAudio._proxyRestoreTime = savedTime;
           activeAudio._proxyResumeOnLoad = wasPlaying;
-          setAudioSource(activeAudio, activeAudio._rawSourceUrl, false);
+
+          if (audioGraphInitialized) {
+            this.volumeBoostEnabled = false;
+            localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
+            recreateAudioInstances(this);
+            activeAudio._proxyFallbackAttempted = true;
+            activeAudio._proxyRestoreTime = savedTime;
+            activeAudio._proxyResumeOnLoad = wasPlaying;
+          }
+
+          setAudioSource(activeAudio, rawUrl, false);
           this.applyAudioOutputSettings();
           if (!isExternalImportSong(this.currentSong)) {
             this.showToast('音量增强代理暂时不可用，已恢复普通播放');
@@ -1939,7 +1982,7 @@ export const usePlayerStore = defineStore('player', {
           if (this._errorSkipTimer) clearTimeout(this._errorSkipTimer);
           this._errorSkipTimer = setTimeout(() => {
             this._errorSkipTimer = null;
-            this.playNext(true);
+            this.playNext(true, songInfo);
           }, 1500);
         } else {
           this.consecutiveErrorCount = 0;
@@ -2266,7 +2309,7 @@ export const usePlayerStore = defineStore('player', {
       this.playSong(this.playlist[prevIndex]);
     },
 
-    playNext(isAuto = false) {
+    playNext(isAuto = false, baseSong = null) {
       if (!isAuto) this.consecutiveErrorCount = 0;
       if (this.playlist.length === 0) return;
       
@@ -2277,7 +2320,11 @@ export const usePlayerStore = defineStore('player', {
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
 
-      let nextIndex = this.playlist.findIndex(s => s.hash === this.currentSong?.hash);
+      const refSong = baseSong || this.currentSong;
+      let nextIndex = this.playlist.findIndex(s => s.hash === refSong?.hash);
+      if (nextIndex === -1 && this.currentSong) {
+        nextIndex = this.playlist.findIndex(s => s.hash === this.currentSong.hash);
+      }
       if (nextIndex === -1) nextIndex = 0;
 
       if (this.playMode === 'random') {
@@ -2285,6 +2332,7 @@ export const usePlayerStore = defineStore('player', {
         for (let i = 0; i < this.playlist.length; i++) {
           if (i === nextIndex) continue;
           const candidate = this.playlist[i];
+          if (baseSong && candidate.hash === baseSong.hash) continue;
           const isVipSong = candidate.is_vip || candidate.is_paid;
           if (!isVipSong || isVipUser || !isAuto) playableIndices.push(i);
         }
@@ -2319,6 +2367,7 @@ export const usePlayerStore = defineStore('player', {
         if (nextIndex >= this.playlist.length) nextIndex = 0;
 
         const candidate = this.playlist[nextIndex];
+        if (baseSong && candidate.hash === baseSong.hash) continue;
         const isVipSong = candidate.is_vip || candidate.is_paid;
 
         if (isAuto && isVipSong && !isVipUser) {

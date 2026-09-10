@@ -395,6 +395,22 @@ const unlockLyric = () => {
   if (window.lyricAPI) window.lyricAPI.unlockLyric();
 };
 
+const handleStorageChange = (e) => {
+  if (e.key === 'kg_desktop_lyric_config' && e.newValue) {
+    try {
+      Object.assign(config, JSON.parse(e.newValue));
+      clampSubFontSize();
+    } catch (err) {}
+  }
+};
+
+const handleKeyDown = (e) => {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+    e.preventDefault();
+    closeLyricWindow();
+  }
+};
+
 onMounted(() => {
   try {
     const saved = localStorage.getItem('kg_desktop_lyric_config');
@@ -448,22 +464,7 @@ onMounted(() => {
     });
   }
 
-  const handleStorageChange = (e) => {
-    if (e.key === 'kg_desktop_lyric_config' && e.newValue) {
-      try {
-        Object.assign(config, JSON.parse(e.newValue));
-        clampSubFontSize();
-      } catch (err) {}
-    }
-  };
   window.addEventListener('storage', handleStorageChange);
-
-  const handleKeyDown = (e) => {
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
-      e.preventDefault();
-      closeLyricWindow();
-    }
-  };
   window.addEventListener('keydown', handleKeyDown);
 
   updateLyricHotArea();

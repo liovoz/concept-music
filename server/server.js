@@ -152,6 +152,16 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
     method: 'GET',
     headers: upstreamHeaders,
   }, (upstreamRes) => {
+    upstreamRes.on('error', (err) => {
+      console.error('[AudioProxy upstreamRes error]', err?.message);
+      if (!res.headersSent) {
+        setCorsHeaders(res);
+        res.status(502).send({ code: 502, msg: 'Audio proxy upstream failed' });
+      } else {
+        res.end();
+      }
+    });
+
     const statusCode = upstreamRes.statusCode || 502;
     const location = upstreamRes.headers.location;
 
@@ -188,7 +198,8 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
     upstreamRes.pipe(res);
   });
 
-  upstreamReq.on('error', () => {
+  upstreamReq.on('error', (err) => {
+    console.error('[AudioProxy upstreamReq error]', err?.message);
     if (!res.headersSent) {
       setCorsHeaders(res);
       res.status(502).send({ code: 502, msg: 'Audio proxy upstream failed' });
@@ -196,6 +207,13 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
       res.end();
     }
   });
+
+  res.on('close', () => {
+    if (!upstreamReq.destroyed) {
+      upstreamReq.destroy();
+    }
+  });
+
   upstreamReq.end();
 };
 

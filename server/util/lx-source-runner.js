@@ -47,6 +47,7 @@ const lxRequest = (url, options = {}, callback = null) => {
       },
       timeout: Number(options.timeout || 8000),
     }, (res) => {
+      res.on('error', reject);
       const chunks = [];
       res.on('data', chunk => chunks.push(chunk));
       res.on('end', () => {
@@ -131,6 +132,39 @@ const buildSourceContext = (source) => {
     },
   };
 
+  const timers = new Set();
+  const intervals = new Set();
+
+  const customSetTimeout = (fn, delay, ...args) => {
+    const id = setTimeout(() => {
+      timers.delete(id);
+      if (typeof fn === 'function') fn(...args);
+    }, delay);
+    timers.add(id);
+    return id;
+  };
+  const customClearTimeout = (t) => {
+    timers.delete(t);
+    clearTimeout(t);
+  };
+  const customSetInterval = (fn, delay, ...args) => {
+    const id = setInterval(() => {
+      if (typeof fn === 'function') fn(...args);
+    }, delay, ...args);
+    intervals.add(id);
+    return id;
+  };
+  const customClearInterval = (t) => {
+    intervals.delete(t);
+    clearInterval(t);
+  };
+  const cleanupTimers = () => {
+    timers.forEach(t => clearTimeout(t));
+    timers.clear();
+    intervals.forEach(t => clearInterval(t));
+    intervals.clear();
+  };
+
   const sandbox = {
     console: safeConsole,
     Promise,
@@ -138,10 +172,10 @@ const buildSourceContext = (source) => {
     URLSearchParams,
     TextEncoder,
     TextDecoder,
-    setTimeout: (...args) => setTimeout(...args),
-    clearTimeout: (t) => clearTimeout(t),
-    setInterval: (...args) => setInterval(...args),
-    clearInterval: (t) => clearInterval(t),
+    setTimeout: customSetTimeout,
+    clearTimeout: customClearTimeout,
+    setInterval: customSetInterval,
+    clearInterval: customClearInterval,
     encodeURIComponent,
     decodeURIComponent,
     encodeURI,
@@ -176,28 +210,32 @@ const buildSourceContext = (source) => {
     name: `lx-source:${source.file || source.id || 'unknown'}`,
   });
 
-  return { context, handlers, messages };
+  return { context, handlers, messages, cleanupTimers };
 };
 
 const runSource = async (source, payload, timeoutMs = 12000) => {
   const script = getCachedScript(source.path, source.file || source.id);
-  const { context, handlers, messages } = buildSourceContext(source);
+  const { context, handlers, messages, cleanupTimers } = buildSourceContext(source);
 
-  script.runInContext(context, { timeout: 3000 });
+  try {
+    script.runInContext(context, { timeout: 3000 });
 
-  const handler = handlers.get(EVENT_NAMES.request);
-  if (!handler) {
-    throw new Error('音源未注册播放解析能力');
+    const handler = handlers.get(EVENT_NAMES.request);
+    if (!handler) {
+      throw new Error('音源未注册播放解析能力');
+    }
+
+    const result = await withTimeout(Promise.resolve(handler(payload)), timeoutMs, '音源解析超时');
+    const url = normalizeUrl(result);
+
+    if (!/^https?:\/\//i.test(url)) {
+      throw new Error('音源未返回可播放链接');
+    }
+
+    return { url, messages };
+  } finally {
+    cleanupTimers();
   }
-
-  const result = await withTimeout(Promise.resolve(handler(payload)), timeoutMs, '音源解析超时');
-  const url = normalizeUrl(result);
-
-  if (!/^https?:\/\//i.test(url)) {
-    throw new Error('音源未返回可播放链接');
-  }
-
-  return { url, messages };
 };
 
 module.exports = {

@@ -657,22 +657,37 @@ ipcMain.handle('native-api-request', async (event, config) => {
   const targetUrl = fullUrlObj.toString();
   const headersObj = { ...(config.headers || {}) };
   delete headersObj['Origin']; delete headersObj['Referer']; delete headersObj['Host'];
+  const callerCookie = headersObj['Cookie'] || headersObj['cookie'] || '';
+  delete headersObj['cookie'];
   const vaultCookies = loadVaultCookies();
   const cookiePairs = Object.entries(vaultCookies).map(([k, v]) => `${k}=${v}`);
-  if (cookiePairs.length > 0) headersObj['Cookie'] = cookiePairs.join('; ');
+  const combinedCookies = [];
+  if (callerCookie) combinedCookies.push(callerCookie);
+  if (cookiePairs.length > 0) combinedCookies.push(cookiePairs.join('; '));
+  if (combinedCookies.length > 0) {
+    headersObj['Cookie'] = combinedCookies.join('; ');
+  }
   let bodyData = null;
   if (config.data) {
     if (typeof config.data === 'string') bodyData = config.data;
     else { bodyData = JSON.stringify(config.data); headersObj['Content-Type'] = 'application/json'; }
   }
+  const reqTimeout = Number(config.timeout) > 0 ? Number(config.timeout) : 15000;
   const makeRequest = () => {
     return new Promise((resolve, reject) => {
-      const req = http.request(targetUrl, { method: (config.method || 'GET').toUpperCase(), headers: headersObj }, (res) => {
+      const req = http.request(targetUrl, {
+        method: (config.method || 'GET').toUpperCase(),
+        headers: headersObj,
+        timeout: reqTimeout
+      }, (res) => {
         const setCookies = res.headers['set-cookie'] || [];
         const chunks = [];
         res.on('data', chunk => chunks.push(chunk));
         res.on('end', () => { const buffer = Buffer.concat(chunks); resolve({ statusCode: res.statusCode, data: buffer.toString('utf8'), setCookies }); });
         res.on('error', err => reject(err));
+      });
+      req.on('timeout', () => {
+        req.destroy(new Error(`Request timeout after ${reqTimeout}ms`));
       });
       req.on('error', reject);
       if (bodyData) req.write(bodyData);

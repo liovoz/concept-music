@@ -72,12 +72,17 @@ const CONCEPT_VIP_LEVELS = {
   tvip: { rank: 30, level: 'concept_tvip', displayName: '概念版VIP' }
 };
 
-const loadVipStatus = () => {
+const safeParseJson = (key, fallback) => {
   try {
-    return { ...DEFAULT_VIP_STATUS, ...JSON.parse(localStorage.getItem('kg_desktop_vip_status') || '{}') };
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch (e) {
-    return { ...DEFAULT_VIP_STATUS };
+    return fallback;
   }
+};
+
+const loadVipStatus = () => {
+  return { ...DEFAULT_VIP_STATUS, ...safeParseJson('kg_desktop_vip_status', {}) };
 };
 
 const parseVipTime = (value) => {
@@ -202,7 +207,7 @@ const resolveHumanError = (raw, fallback = '操作失败，请稍后重试') => 
 export const useUserStore = defineStore('user', {
   state: () => ({
     isLoggedIn: localStorage.getItem('kg_desktop_isLoggedIn') === 'true',
-    userInfo: JSON.parse(localStorage.getItem('kg_desktop_userInfo') || '{"nickname":"","avatar":"","vip":0}'),
+    userInfo: safeParseJson('kg_desktop_userInfo', { nickname: '', avatar: '', vip: 0 }),
     showLoginModal: false,
     showVipUpgradeModal: false,
     
@@ -217,19 +222,19 @@ export const useUserStore = defineStore('user', {
     userCreatedPlaylists: [],
     isFetchingPlaylists: false,
     playlistMap: {},      
-    collectedMap: JSON.parse(localStorage.getItem('kg_desktop_collected_map') || '{}'),
-    customPlaylistCovers: JSON.parse(localStorage.getItem('kg_desktop_playlist_covers') || '{}'),
+    collectedMap: safeParseJson('kg_desktop_collected_map', {}),
+    customPlaylistCovers: safeParseJson('kg_desktop_playlist_covers', {}),
     
-    deletedPlaylistIds: JSON.parse(localStorage.getItem('kg_desktop_deleted_playlists') || '[]'),
+    deletedPlaylistIds: safeParseJson('kg_desktop_deleted_playlists', []),
     
-    vipState: JSON.parse(localStorage.getItem('kg_desktop_vip_state') || '{"date":"","count":0,"lastTime":0}'),
+    vipState: safeParseJson('kg_desktop_vip_state', { date: '', count: 0, lastTime: 0 }),
     dayVipState: { date: '', uid: '', claimed: false },
     vipExpirationTime: localStorage.getItem('kg_desktop_vip_expire') || '', 
     vipLevelName: localStorage.getItem('kg_desktop_vip_name') || '普通用户',
     vipStatus: loadVipStatus(),
     
-    localHistory: JSON.parse(localStorage.getItem('kg_desktop_local_history') || '[]'),
-    localPlayCounts: JSON.parse(localStorage.getItem('kg_desktop_local_play_counts') || '{}'),
+    localHistory: safeParseJson('kg_desktop_local_history', []),
+    localPlayCounts: safeParseJson('kg_desktop_local_play_counts', {}),
     
     isVipProcessing: false,
     isDayVipProcessing: false,

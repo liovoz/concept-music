@@ -10,7 +10,8 @@ const ipcAdapter = async (config) => {
       method: config.method,
       data: config.data,
       params: config.params,
-      headers: config.headers
+      headers: config.headers,
+      timeout: config.timeout
     }));
   } catch (e) {
     cleanConfig = {
@@ -18,7 +19,8 @@ const ipcAdapter = async (config) => {
       method: String(config.method || 'GET'),
       data: config.data,
       params: config.params,
-      headers: config.headers
+      headers: config.headers,
+      timeout: config.timeout
     };
   }
 
@@ -55,7 +57,7 @@ const request = axios.create({
 
 request.interceptors.request.use(
   (config) => {
-    if (config.method.toLowerCase() === 'get') {
+    if ((config.method || 'get').toLowerCase() === 'get') {
       if (!config.params || !Object.prototype.hasOwnProperty.call(config.params, 'timestamp')) {
         config.params = { ...config.params, timestamp: Date.now() };
       }

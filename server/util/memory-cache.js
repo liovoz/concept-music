@@ -5,6 +5,9 @@ function MemoryCache() {
 
 MemoryCache.prototype.add = function (key, value, time, timeoutCallback) {
   const old = this.cache[key];
+  if (old && old.timeout) {
+    clearTimeout(old.timeout);
+  }
   const instance = this;
 
   const entry = {

@@ -33,6 +33,8 @@ const isVisible = ref(false);
 const route = useRoute();
 const playerStore = usePlayerStore();
 let scrollContainer = null;
+let bindRafId = null;
+let isDestroyed = false;
 
 const findScrollContainer = () => {
   if (props.targetId) {
@@ -64,6 +66,10 @@ const scrollToTop = () => {
 };
 
 const unbind = () => {
+  if (bindRafId) {
+    cancelAnimationFrame(bindRafId);
+    bindRafId = null;
+  }
   if (scrollContainer) {
     scrollContainer.removeEventListener('scroll', handleScroll);
     scrollContainer = null;
@@ -74,7 +80,10 @@ const bind = async () => {
   unbind();
   isVisible.value = false;
   await nextTick();
-  requestAnimationFrame(() => {
+  if (isDestroyed) return;
+  bindRafId = requestAnimationFrame(() => {
+    bindRafId = null;
+    if (isDestroyed) return;
     scrollContainer = findScrollContainer();
     if (scrollContainer) {
       scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
@@ -83,8 +92,14 @@ const bind = async () => {
   });
 };
 
-onMounted(bind);
-onUnmounted(unbind);
+onMounted(() => {
+  isDestroyed = false;
+  bind();
+});
+onUnmounted(() => {
+  isDestroyed = true;
+  unbind();
+});
 watch(() => route.fullPath, bind);
 </script>
 

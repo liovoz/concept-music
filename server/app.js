@@ -20,4 +20,12 @@ if (process.send) {
   });
 }
 
+process.on('uncaughtException', (err) => {
+  console.error('[Server UncaughtException]', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Server UnhandledRejection]', reason);
+});
+
 start();
