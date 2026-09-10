@@ -1,0 +1,506 @@
+<template>
+  <Teleport to="body">
+    <transition name="modal-fade">
+      <div
+        v-if="updateStore.canShowFloatCard"
+        class="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 backdrop-blur-md no-drag p-4 outline-none"
+        @click.self="updateStore.dismissCard('close')"
+      >
+        <div
+          class="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/60 dark:border-slate-800/80 rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.8)] w-[520px] max-w-[94vw] flex flex-col overflow-hidden transform transition-all text-slate-800 dark:text-slate-100 select-none"
+        >
+          <!-- 顶部装饰性极光光晕背景 -->
+          <div class="absolute -top-16 -left-16 w-48 h-48 bg-blue-500/15 dark:bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -top-10 -right-10 w-44 h-44 bg-indigo-500/15 dark:bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- 头部：图标 + 标题 + 版本药丸 + 关闭按钮 -->
+          <div class="relative px-6 pt-6 pb-4 border-b border-slate-100/80 dark:border-slate-800/80 bg-gradient-to-b from-blue-50/50 via-indigo-50/15 to-transparent dark:from-blue-950/25 dark:via-slate-900/50 dark:to-transparent">
+            <!-- 关闭按钮 -->
+            <button
+              @click="updateStore.dismissCard('close')"
+              class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-all duration-150 active:scale-90 border border-slate-200/50 dark:border-slate-700/50"
+              v-tooltip="'关闭 (Esc)'"
+            >
+              <AppIcon name="close" class="w-3.5 h-3.5" />
+            </button>
+
+            <div class="flex items-start space-x-3.5">
+              <!-- 图标徽章：高质感 3D 渐变 -->
+              <div
+                class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0 transition-transform duration-300 hover:scale-105"
+                :class="headerIconStyle.wrap"
+              >
+                <AppIcon :name="headerIconStyle.icon" class="w-6 h-6 text-white" />
+              </div>
+
+              <!-- 标题与版本信息 -->
+              <div class="space-y-1 pr-8">
+                <div class="flex items-center space-x-2">
+                  <h3 class="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                    {{ cardTitle }}
+                  </h3>
+                  <span
+                    v-if="updateStore.updateInfo?.version"
+                    class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-gradient-to-r from-blue-500/10 to-indigo-500/10 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-700/50 shadow-xs flex items-center gap-1"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    v{{ updateStore.updateInfo.version }}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                  {{ headerSubtitle }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 加速通道或容灾状态条 -->
+          <div 
+            v-if="updateStore.channelFallbackNotice || (updateStore.updateChannel !== 'official' && updateStore.updateChannel !== 'auto')" 
+            class="mx-6 mt-3 px-3 py-1.5 rounded-xl bg-blue-500/8 dark:bg-blue-400/10 text-xs text-blue-600 dark:text-blue-300 flex items-center justify-between border border-blue-500/20 font-medium"
+          >
+            <span class="flex items-center gap-2 truncate">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span class="truncate">{{ updateStore.channelFallbackNotice || updateStore.channelName }}</span>
+            </span>
+            <span class="text-[10px] font-bold font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md shrink-0 border border-emerald-500/20">
+              专线加速
+            </span>
+          </div>
+
+          <!-- 内容区 1：发现新版本 (available) -->
+          <div v-if="updateStore.status === 'available'" class="flex flex-col">
+            <div class="px-6 py-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-extrabold tracking-wider text-slate-400 dark:text-slate-400 uppercase flex items-center gap-1.5">
+                  <AppIcon name="sparkles" class="w-3.5 h-3.5 text-blue-500" />
+                  <span>新版特性 / CHANGELOG</span>
+                </span>
+                <span v-if="updateStore.updateInfo?.releaseDate" class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+                  {{ formatDate(updateStore.updateInfo.releaseDate) }}
+                </span>
+              </div>
+
+              <!-- 结构化更新日志卡片列表 -->
+              <div class="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/50 rounded-2xl p-3 max-h-72 overflow-y-auto custom-scrollbar shadow-inner">
+                <!-- 导语描述 -->
+                <div 
+                  v-if="parsedNotesData.lead" 
+                  class="p-3 mb-3 rounded-xl bg-gradient-to-r from-blue-500/8 via-indigo-500/8 to-transparent border border-blue-500/15 text-xs text-slate-700 dark:text-slate-200 leading-relaxed font-normal"
+                  v-html="formatInline(parsedNotesData.lead)"
+                ></div>
+
+                <!-- 章节列表 -->
+                <div v-if="parsedNotesData.sections.length > 0" class="space-y-4">
+                  <div 
+                    v-for="(section, sIdx) in parsedNotesData.sections" 
+                    :key="sIdx" 
+                    class="space-y-2"
+                  >
+                    <!-- 章节标题 -->
+                    <div v-if="section.title" class="flex items-center gap-2 pt-1 border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5 sticky top-0 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md z-10">
+                      <span class="px-2.5 py-0.5 rounded-lg bg-blue-500/10 dark:bg-blue-400/15 text-blue-600 dark:text-blue-300 font-black text-xs">
+                        {{ section.title }}
+                      </span>
+                    </div>
+
+                    <div class="space-y-1.5 pl-0.5">
+                      <template v-for="(item, iIdx) in section.items" :key="iIdx">
+                        <!-- 小节标题（例如：### 1. 企鹅歌单跨平台无缝导入） -->
+                        <div v-if="item.type === 'subtitle'" class="pt-2 pb-0.5 text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                          <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                          <span>{{ item.text }}</span>
+                        </div>
+
+                        <!-- 列表项卡片 -->
+                        <div v-else-if="item.type === 'bullet'" class="flex items-start gap-2.5 p-2 rounded-xl bg-white/70 dark:bg-slate-800/70 border border-slate-100/80 dark:border-slate-800/80 hover:border-blue-200 dark:hover:border-blue-800/60 hover:shadow-xs transition-all">
+                          <span v-if="item.num" class="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-blue-600 dark:text-blue-300 text-[11px] font-bold font-mono flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            {{ item.num.padStart(2, '0') }}
+                          </span>
+                          <span v-else class="w-1.5 h-1.5 rounded-full bg-blue-500/70 mt-2 shrink-0 ml-1 mr-0.5"></span>
+                          <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-normal select-text flex-1" v-html="formatInline(item.text)"></div>
+                        </div>
+
+                        <!-- 普通段落 -->
+                        <p v-else class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed p-1" v-html="formatInline(item.text)"></p>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+
+                <p v-else class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed p-3">
+                  概念音乐发布了全新版本，带来多项性能优化、国内镜像加速通道及体验修复，推荐更新以获取最佳视听体验。
+                </p>
+              </div>
+            </div>
+
+            <!-- 底部操作栏 -->
+            <div class="px-6 py-4 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <!-- 左侧辅助快捷链接 -->
+              <div class="flex items-center space-x-2.5">
+                <button
+                  @click="updateStore.dismissCard('ignore')"
+                  class="text-xs text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 transition-colors font-medium"
+                  v-tooltip="'跳过此版本 (不再提示)'"
+                >
+                  跳过此版本
+                </button>
+                <span class="text-slate-200 dark:text-slate-700 select-none">|</span>
+                <button
+                  @click="openDetails"
+                  class="text-xs text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 transition-colors font-medium"
+                >
+                  线路设置
+                </button>
+              </div>
+
+              <!-- 右侧主/次操作按钮 -->
+              <div class="flex items-center space-x-2.5">
+                <button
+                  @click="updateStore.dismissCard('snooze')"
+                  class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all"
+                  v-tooltip="'稍后提醒 (24小时内不再提示)'"
+                >
+                  稍后提醒
+                </button>
+
+                <button
+                  @click="updateStore.startDownload()"
+                  class="px-6 py-2.5 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center gap-2 group"
+                >
+                  <AppIcon :name="updateStore.isPortable ? 'share' : 'download'" class="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
+                  <span>{{ updateStore.isPortable ? '前往下载 Release' : '立即更新' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 内容区 2：正在下载中 (downloading) -->
+          <div v-else-if="updateStore.status === 'downloading'" class="flex flex-col">
+            <div class="px-6 py-8 space-y-5">
+              <div class="flex justify-between items-center text-xs">
+                <div class="flex items-center space-x-2.5">
+                  <span class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+                  </span>
+                  <span class="font-bold text-slate-800 dark:text-slate-100 text-sm">
+                    正在极速下载安装包...
+                  </span>
+                </div>
+                <span class="text-blue-600 dark:text-blue-400 font-mono text-xs font-black bg-blue-50 dark:bg-blue-900/40 px-2.5 py-1 rounded-lg border border-blue-200/50 dark:border-blue-800/40">
+                  {{ updateStore.progressPercent }}% · {{ updateStore.progressSpeed }}
+                </span>
+              </div>
+
+              <!-- 炫彩渐变微光进度条 -->
+              <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-200/60 dark:border-slate-700/60 shadow-inner">
+                <div
+                  class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 rounded-full transition-all duration-300 relative overflow-hidden shadow-xs"
+                  :style="{ width: updateStore.progressPercent + '%' }"
+                >
+                  <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent w-full h-full animate-[shimmer_1.8s_infinite]"></div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 pt-1">
+                <span class="flex items-center gap-1.5">
+                  <AppIcon name="music" class="w-3.5 h-3.5 text-blue-500" />
+                  <span>下载过程不影响歌曲播放，您可以继续听歌</span>
+                </span>
+                <button
+                  @click="updateStore.cancelDownload()"
+                  class="text-xs font-medium text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+                >
+                  取消下载
+                </button>
+              </div>
+            </div>
+
+            <div class="px-6 py-3.5 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+              <span class="text-slate-400 dark:text-slate-500 text-xs flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                <span>下载完成后将自动提示安装</span>
+              </span>
+              <button
+                @click="updateStore.dismissCard('close')"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-700 active:scale-95 transition-all border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-1.5 shadow-2xs"
+                v-tooltip="'收起窗口，下载将在后台继续进行'"
+              >
+                <AppIcon name="minimize-tray" class="w-3.5 h-3.5 text-slate-400" />
+                <span>收起至后台下载</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 内容区 3：下载完成就绪 (downloaded) -->
+          <div v-else-if="updateStore.status === 'downloaded'" class="flex flex-col">
+            <div class="px-6 py-8 space-y-4 text-center">
+              <div class="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/25">
+                <AppIcon name="check" class="w-8 h-8" />
+              </div>
+              <div class="space-y-1.5">
+                <h4 class="text-base font-black text-slate-900 dark:text-white">
+                  新版本安装包已下载就绪
+                </h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  新版本安装文件已在本地准备就绪！您可以现在立即重启体验新特性，或在下次退出软件时自动应用。
+                </p>
+              </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-2.5">
+              <button
+                @click="updateStore.dismissCard('close')"
+                class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 active:scale-95 transition-all"
+              >
+                稍后重启
+              </button>
+              <button
+                @click="updateStore.quitAndInstall()"
+                class="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/35 transition-all duration-200 flex items-center gap-2"
+              >
+                <AppIcon name="refresh" class="w-3.5 h-3.5" />
+                <span>立即重启并安装</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 内容区 4：错误状态 (error) -->
+          <div v-else-if="updateStore.status === 'error'" class="flex flex-col">
+            <div class="px-6 py-8 space-y-3 text-center">
+              <div class="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-500 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center mx-auto shadow-inner">
+                <AppIcon name="danger" class="w-7 h-7" />
+              </div>
+              <div class="space-y-1">
+                <h4 class="text-sm font-bold text-slate-800 dark:text-white">更新受到网络阻碍</h4>
+                <p class="text-xs text-rose-500 dark:text-rose-400 leading-relaxed max-w-sm mx-auto">
+                  {{ updateStore.errorMsg || '检测更新或下载安装包时超时，请检查网络连接或切换加速线路' }}
+                </p>
+              </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-2.5">
+              <button
+                @click="openDetails"
+                class="px-4 py-2 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+              >
+                切换下载线路
+              </button>
+              <button
+                @click="updateStore.dismissCard('close')"
+                class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </Teleport>
+</template>
+
+<script setup>
+import { computed, inject, onMounted, onUnmounted } from 'vue';
+import { useUpdateStore } from '../store/updateStore';
+
+const updateStore = useUpdateStore();
+const settingsModalRef = inject('settingsModalRef', null);
+
+const onKeyDown = (e) => {
+  if (e.key === 'Escape' && updateStore.canShowFloatCard) {
+    updateStore.dismissCard('close');
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeyDown);
+});
+
+const cardTitle = computed(() => {
+  if (updateStore.status === 'downloaded') return '更新已就绪';
+  if (updateStore.status === 'downloading') return '新版本下载中';
+  if (updateStore.status === 'error') return '更新遇到问题';
+  return '发现新版本';
+});
+
+const headerSubtitle = computed(() => {
+  if (updateStore.status === 'downloaded') {
+    return '安装包已在本地准备就绪，重启软件即可完成更新升级';
+  }
+  if (updateStore.status === 'downloading') {
+    return '正在下载新版本安装包，可收起窗口在后台继续下载';
+  }
+  if (updateStore.status === 'error') {
+    return '检测或下载过程中网络受阻，可尝试在设置中切换镜像源';
+  }
+  return '概念音乐发布了全新版本，推荐立即更新体验最新特性与修复';
+});
+
+const headerIconStyle = computed(() => {
+  if (updateStore.status === 'downloaded') {
+    return {
+      wrap: 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/30',
+      icon: 'check'
+    };
+  }
+  if (updateStore.status === 'downloading') {
+    return {
+      wrap: 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/30',
+      icon: 'download'
+    };
+  }
+  if (updateStore.status === 'error') {
+    return {
+      wrap: 'bg-gradient-to-br from-rose-500 to-red-600 shadow-rose-500/30',
+      icon: 'danger'
+    };
+  }
+  return {
+    wrap: 'bg-gradient-to-br from-blue-600 via-indigo-600 to-sky-500 shadow-blue-500/30',
+    icon: 'sparkles'
+  };
+});
+
+/**
+ * 结构化解析更新日志：支持 GitHub Release 完整 Markdown 规范（多级标题、导语、列表项、代码块、加粗、链接）
+ */
+const parsedNotesData = computed(() => {
+  const notes = updateStore.updateInfo?.releaseNotes;
+  if (!notes) return { lead: '', sections: [] };
+  let rawText = '';
+  if (typeof notes === 'string') rawText = notes.trim();
+  else if (Array.isArray(notes)) {
+    rawText = notes.map((item) => (typeof item === 'string' ? item : item.note || '')).join('\n').trim();
+  }
+  if (!rawText) return { lead: '', sections: [] };
+
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  const sections = [];
+  let currentSection = { title: '', items: [] };
+  let lead = '';
+  let isDownloadSection = false;
+
+  for (const line of lines) {
+    // 忽略下载区域与分割线
+    if (line.startsWith('## 下载') || line.startsWith('## Assets') || line.startsWith('## 资源下载') || line.startsWith('请在本次 Release')) {
+      isDownloadSection = true;
+      continue;
+    }
+    if (isDownloadSection && !line.startsWith('## ')) continue;
+    if (line.startsWith('---')) continue;
+
+    // 忽略顶层独立大标题 (例如 "# v3.6.0" 或 "# Release 3.6.0")
+    if (line.startsWith('# ') && !line.startsWith('## ')) {
+      continue;
+    }
+
+    // 二级大标题：## 🌟 新增功能
+    if (line.startsWith('## ')) {
+      isDownloadSection = false;
+      if (currentSection.title || currentSection.items.length) {
+        sections.push(currentSection);
+      }
+      currentSection = { title: line.replace(/^##\s*/, ''), items: [] };
+    } 
+    // 三级小节标题：### 1. 企鹅歌单...
+    else if (line.startsWith('### ')) {
+      currentSection.items.push({ type: 'subtitle', text: line.replace(/^###\s*/, '') });
+    } 
+    // 无序列表：- 或 * 或 •
+    else if (line.startsWith('- ') || line.startsWith('* ')) {
+      currentSection.items.push({ type: 'bullet', text: line.replace(/^[-*]\s*/, '') });
+    } 
+    // 有序列表：1. 2.
+    else if (/^\d+[.、]/.test(line)) {
+      const match = line.match(/^(\d+)[.、]\s*(.*)$/);
+      currentSection.items.push({
+        type: 'bullet',
+        num: match ? match[1] : '',
+        text: match ? match[2] : line
+      });
+    } 
+    // 普通文本或导语
+    else {
+      if (!currentSection.title && !lead && sections.length === 0) {
+        lead = line;
+      } else {
+        currentSection.items.push({ type: 'paragraph', text: line });
+      }
+    }
+  }
+  if (currentSection.title || currentSection.items.length) {
+    sections.push(currentSection);
+  }
+  return { lead, sections };
+});
+
+const formatInline = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline inline-flex items-center gap-0.5 font-medium">$1</a>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900 dark:text-white">$1</strong>')
+    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 mx-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 font-mono text-[11px] border border-blue-200/50 dark:border-blue-800/40">$1</code>');
+};
+
+const formatDate = (isoStr) => {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  } catch (e) {
+    return '';
+  }
+};
+
+const openDetails = () => {
+  updateStore.dismissCard('close');
+  if (settingsModalRef && settingsModalRef.value) {
+    settingsModalRef.value.showModal('about');
+  }
+};
+</script>
+
+<style scoped>
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.6);
+}
+</style>

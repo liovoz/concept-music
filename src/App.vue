@@ -28,12 +28,13 @@
     <SongContextMenu />
     <DisclaimerModal ref="disclaimerModalRef" @accepted="onDisclaimerAccepted" />
     <SettingsModal ref="settingsModalRef" />
+    <UpdateNotificationCard />
 
     <transition name="fade-tooltip">
       <div 
         v-if="tooltipState.visible"
         :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px', maxHeight: tooltipState.maxHeight + 'px' }"
-        class="fixed z-[99998] w-max max-w-xs sm:max-w-sm overflow-y-auto overscroll-contain px-3 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.5)] text-xs text-gray-700 dark:text-slate-200 leading-normal whitespace-normal break-words pointer-events-none font-medium custom-scrollbar"
+        class="fixed z-[1000001] w-max max-w-xs sm:max-w-sm overflow-y-auto overscroll-contain px-3 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.5)] text-xs text-gray-700 dark:text-slate-200 leading-normal whitespace-normal break-words pointer-events-none font-medium custom-scrollbar"
         :class="tooltipState.isBottom ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2'"
       >
         {{ tooltipState.text }}
@@ -66,12 +67,15 @@ import GlobalDialog from './components/GlobalDialog.vue';
 import SongContextMenu from './components/SongContextMenu.vue';
 import SettingsModal from './components/SettingsModal.vue';
 import DisclaimerModal from './components/DisclaimerModal.vue';
+import UpdateNotificationCard from './components/UpdateNotificationCard.vue';
 import { useUserStore } from './store/userStore';
 import { usePlayerStore } from './store/playerStore';
+import { useUpdateStore } from './store/updateStore';
 import { hideTooltip, tooltipState } from './utils/tooltip';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
+const updateStore = useUpdateStore();
 const settingsModalRef = ref(null);
 const disclaimerModalRef = ref(null);
 
@@ -115,6 +119,7 @@ onMounted(() => {
     // 仅主窗口在启动时同步一次托盘状态，恢复上次退出时的播放模式显示（歌词窗口不参与，避免覆盖播放状态）
     if (route.path !== '/desktop-lyric') {
       playerStore.syncTrayState();
+      updateStore.initUpdater();
     }
   }
 });

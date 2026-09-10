@@ -764,7 +764,7 @@
                         </button>
                         <button 
                           v-if="updateInfo.version" 
-                          @click="openExternalLink('https://github.com/liovoz/concept-music/releases/tag/v' + updateInfo.version)" 
+                          @click="openExternalLink(portableReleaseUrl)" 
                           class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 hover:bg-blue-100 transition-colors"
                         >
                           手动下载 Release
@@ -781,15 +781,61 @@
                   </template>
                 </section>
 
+                <!-- 更新线路与加速通道设置 -->
+                <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                      <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
+                      <p class="text-xs font-bold text-gray-800 dark:text-slate-200">更新下载线路</p>
+                    </div>
+                    <span 
+                      v-if="updateStore.channelFallbackNotice"
+                      class="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md font-medium"
+                    >
+                      ⚡ {{ updateStore.channelFallbackNotice }}
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-gray-400 dark:text-slate-500 ml-3.5">
+                    国内直连 GitHub 容易受阻或限速，推荐保持“自动优选”以在网络异常时自动启用加速
+                  </p>
+                  <div class="grid grid-cols-2 gap-2 pt-1">
+                    <div
+                      v-for="ch in channelOptions"
+                      :key="ch.id"
+                      @click="selectChannel(ch.id)"
+                      class="p-2.5 rounded-lg border cursor-pointer transition-all flex items-center justify-between group"
+                      :class="updateStore.updateChannel === ch.id
+                        ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30'
+                        : 'border-gray-200/70 dark:border-slate-700/60 hover:border-blue-300 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/40'"
+                    >
+                      <div class="min-w-0 pr-2">
+                        <p 
+                          class="text-xs font-bold truncate transition-colors"
+                          :class="updateStore.updateChannel === ch.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-300'"
+                        >
+                          {{ ch.name }}
+                        </p>
+                        <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 truncate">{{ ch.desc }}</p>
+                      </div>
+                      <span
+                        class="w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
+                        :class="updateStore.updateChannel === ch.id ? 'border-blue-600 bg-blue-600' : 'border-gray-300 dark:border-slate-600'"
+                      >
+                        <span v-if="updateStore.updateChannel === ch.id" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
                 <!-- 外部与条款链接卡片 -->
                 <section class="grid grid-cols-3 gap-2.5">
                   <div 
-                    @click="openExternalLink('https://liovoz.xyz')" 
+                    @click="openExternalLink('https://concept.cc.cd')" 
                     class="p-3 rounded-xl bg-white dark:bg-slate-800/90 hover:border-blue-300 dark:hover:border-slate-600 border border-gray-200/70 dark:border-slate-700/60 shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
                   >
                     <div class="min-w-0 pr-1">
                       <p class="text-xs font-bold text-gray-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">官方网站</p>
-                      <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 font-mono truncate">liovoz.xyz</p>
+                      <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 font-mono truncate">concept.cc.cd</p>
                     </div>
                     <AppIcon name="share" class="w-3.5 h-3.5 text-gray-400 group-hover:scale-110 shrink-0 transition-transform" />
                   </div>
@@ -832,6 +878,7 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick, injec
 import { useTheme } from '../composables/useTheme';
 import { usePlayerStore } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
+import { useUpdateStore } from '../store/updateStore';
 import { useSearchHistory } from '../composables/useSearchHistory';
 
 const props = defineProps({
@@ -845,6 +892,7 @@ const modalContainerRef = ref(null);
 const { theme, setTheme } = useTheme();
 const playerStore = usePlayerStore();
 const userStore = useUserStore();
+const updateStore = useUpdateStore();
 const { history, clearHistory, syncHistory } = useSearchHistory();
 const disclaimerModalRef = inject('disclaimerModalRef', null);
 
@@ -1138,53 +1186,48 @@ const localShortcutList = [
 ];
 
 // --- 5. 关于与更新 ---
-const appVersion = ref(__APP_VERSION__ || '1.0.0');
-const updateStatus = ref('idle');
-const updateInfo = ref({});
-const progressInfo = ref({ percent: 0, bytesPerSecond: 0 });
-const errorMsg = ref('');
-const isDownloadError = ref(false);
+const appVersion = computed(() => updateStore.appVersion || (typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'));
+const updateStatus = computed(() => updateStore.status);
+const updateInfo = computed(() => updateStore.updateInfo);
+const progressInfo = computed(() => updateStore.progressInfo);
+const errorMsg = computed(() => updateStore.errorMsg);
+const isDownloadError = computed(() => updateStore.isDownloadError);
 
-const hasUpdateAvailable = computed(() => updateStatus.value === 'available');
+const hasUpdateAvailable = computed(() => updateStore.hasBadge);
 
-const progressSpeed = computed(() => {
-  const bytes = progressInfo.value.bytesPerSecond;
-  if (!bytes) return '计算中...';
-  if (bytes > 1048576) return (bytes / 1048576).toFixed(2) + ' MB/s';
-  return (bytes / 1024).toFixed(2) + ' KB/s';
+const progressSpeed = computed(() => updateStore.progressSpeed);
+const progressPercent = computed(() => updateStore.progressPercent);
+
+const checkForUpdates = () => updateStore.checkForUpdates(true);
+const startDownload = () => updateStore.startDownload();
+const cancelDownload = () => updateStore.cancelDownload();
+const installUpdate = () => updateStore.quitAndInstall();
+const resetToIdle = () => updateStore.resetToIdle();
+
+const channelOptions = [
+  { id: 'auto', name: '自动优选 (推荐)', desc: '官方优先，遇阻断自动切换国内加速' },
+  { id: 'ghfast', name: '国内高速节点 1', desc: 'ghfast.top 专线加速，极速稳定' },
+  { id: 'ghproxy', name: '国内高速节点 2', desc: 'ghproxy.net 稳定备用镜像' },
+  { id: 'official', name: '官方 GitHub 直连', desc: '直接访问 GitHub，适合已开启代理' }
+];
+
+const selectChannel = async (id) => {
+  await updateStore.setChannel(id);
+};
+
+const portableReleaseUrl = computed(() => {
+  const ver = updateInfo.value?.version;
+  const base = ver
+    ? `https://github.com/liovoz/concept-music/releases/tag/v${ver}`
+    : 'https://github.com/liovoz/concept-music/releases/latest';
+  if (updateStore.updateChannel === 'ghfast' || updateStore.updateChannel === 'auto') {
+    return 'https://ghfast.top/' + base;
+  }
+  if (updateStore.updateChannel === 'ghproxy') {
+    return 'https://ghproxy.net/' + base;
+  }
+  return base;
 });
-const progressPercent = computed(() => Math.floor(progressInfo.value.percent || 0));
-
-const checkForUpdates = () => {
-  if (window.updaterAPI) {
-    updateStatus.value = 'checking';
-    window.updaterAPI.checkForUpdates();
-  }
-};
-
-const startDownload = () => {
-  if (window.updaterAPI) {
-    updateStatus.value = 'downloading';
-    progressInfo.value = { percent: 0, bytesPerSecond: 0 };
-    window.updaterAPI.downloadUpdate();
-  }
-};
-
-const cancelDownload = () => {
-  if (window.updaterAPI) {
-    window.updaterAPI.cancelDownload();
-    updateStatus.value = 'cancelled';
-  }
-};
-
-const installUpdate = () => {
-  if (window.updaterAPI) window.updaterAPI.quitAndInstall();
-};
-
-const resetToIdle = () => {
-  updateStatus.value = 'idle';
-  progressInfo.value = { percent: 0, bytesPerSecond: 0 };
-};
 
 const openDisclaimer = () => {
   if (disclaimerModalRef && disclaimerModalRef.value) {
@@ -1230,7 +1273,6 @@ const closeModal = () => {
   isVisible.value = false;
 };
 
-let isListeningUpdater = false;
 onMounted(() => {
   liveTimer = setInterval(() => {
     if (isVisible.value) {
@@ -1238,38 +1280,6 @@ onMounted(() => {
     }
   }, 1000);
   window.addEventListener('storage', handleLyricStorageChange);
-  if (window.updaterAPI && !isListeningUpdater) {
-    isListeningUpdater = true;
-    window.updaterAPI.onUpdateEvent((data) => {
-      switch (data.type) {
-        case 'checking':
-          if (data.isManualCheck) updateStatus.value = 'checking';
-          break;
-        case 'available':
-          updateInfo.value = data.info || {};
-          updateStatus.value = 'available';
-          break;
-        case 'not-available':
-          if (data.isManualCheck) updateStatus.value = 'not-available';
-          break;
-        case 'progress':
-          updateStatus.value = 'downloading';
-          progressInfo.value = data.progressObj || {};
-          break;
-        case 'error':
-          if (updateStatus.value === 'cancelled') break;
-          updateStatus.value = 'error';
-          errorMsg.value = data.message || '更新检查失败';
-          break;
-        case 'cancelled':
-          updateStatus.value = 'cancelled';
-          break;
-        case 'downloaded':
-          updateStatus.value = 'downloaded';
-          break;
-      }
-    });
-  }
 });
 
 onUnmounted(() => {

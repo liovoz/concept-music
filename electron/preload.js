@@ -56,6 +56,8 @@ contextBridge.exposeInMainWorld('updaterAPI', {
   cancelDownload: () => ipcRenderer.send('cancel-download'),
   quitAndInstall: () => ipcRenderer.send('quit-and-install'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  getChannel: () => ipcRenderer.invoke('updater-get-channel'),
+  setChannel: (channel) => ipcRenderer.invoke('updater-set-channel', channel),
   onUpdateEvent: (callback) => {
     updaterEventMgr.set((_event, data) => callback(data));
   },

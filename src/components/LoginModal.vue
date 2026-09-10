@@ -253,7 +253,7 @@
             </div>
 
             <p class="mt-5 text-xs text-gray-500 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-              请打开 <span class="text-blue-600 font-bold tracking-wide">酷狗音乐 APP</span> 扫一扫
+              请打开 <span class="text-blue-600 font-bold tracking-wide">酷狗概念版 APP</span> 扫一扫
             </p>
           </div>
         </div>

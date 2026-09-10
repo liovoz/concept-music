@@ -217,6 +217,38 @@ async function startLocalServer() {
   });
 }
 
+function getDesktopSettingsPath() {
+  return path.join(app.getPath('userData'), 'desktop_settings.json');
+}
+function readDesktopSettings() {
+  try {
+    const p = getDesktopSettingsPath();
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) {}
+  return {};
+}
+function writeDesktopSettings(patch) {
+  try {
+    const p = getDesktopSettingsPath();
+    let data = {};
+    if (fs.existsSync(p)) {
+      try { data = JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) {}
+    }
+    Object.assign(data, patch);
+    fs.writeFileSync(p, JSON.stringify(data, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+const UPDATE_CHANNELS = {
+  auto: { id: 'auto', name: '自动优选 (推荐)' },
+  ghfast: { id: 'ghfast', name: '国内高速节点 1 (ghfast.top)', prefix: 'https://ghfast.top/' },
+  ghproxy: { id: 'ghproxy', name: '国内高速节点 2 (ghproxy.net)', prefix: 'https://ghproxy.net/' },
+  official: { id: 'official', name: '官方 GitHub 直连' }
+};
+
 function initAutoUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
@@ -226,11 +258,38 @@ function initAutoUpdater() {
     error: (...args) => console.error('[Updater]', ...args),
     debug: (...args) => console.log('[Updater][debug]', ...args)
   };
-  autoUpdater.setFeedURL({
-    provider: 'github',
-    owner: 'liovoz',
-    repo: 'concept-music'
-  });
+
+  let activeChannel = 'auto';
+  try {
+    const s = readDesktopSettings();
+    if (s.updateChannel && UPDATE_CHANNELS[s.updateChannel]) {
+      activeChannel = s.updateChannel;
+    }
+  } catch (e) {}
+
+  let currentFeedChannel = activeChannel;
+  const applyUpdateFeed = (channelId) => {
+    currentFeedChannel = channelId;
+    if (channelId === 'ghfast') {
+      autoUpdater.setFeedURL({
+        provider: 'generic',
+        url: 'https://ghfast.top/https://github.com/liovoz/concept-music/releases/latest/download/'
+      });
+    } else if (channelId === 'ghproxy') {
+      autoUpdater.setFeedURL({
+        provider: 'generic',
+        url: 'https://ghproxy.net/https://github.com/liovoz/concept-music/releases/latest/download/'
+      });
+    } else {
+      autoUpdater.setFeedURL({
+        provider: 'github',
+        owner: 'liovoz',
+        repo: 'concept-music'
+      });
+    }
+  };
+
+  applyUpdateFeed(activeChannel);
 
   const updaterSession = mainWindow.webContents.session;
   updaterSession.resolveProxy('https://github.com').then(proxy => {
@@ -246,13 +305,32 @@ function initAutoUpdater() {
   let updatePhase = null; // 'checking' | 'downloading' | null
   let isDownloadCancelled = false;
 
-  autoUpdater.on('checking-for-update', () => { updatePhase = 'checking'; sendToWindow({ type: 'checking', isManualCheck }); });
-  autoUpdater.on('update-available', (info) => {
+  autoUpdater.on('checking-for-update', () => { updatePhase = 'checking'; sendToWindow({ type: 'checking', isManualCheck, channel: currentFeedChannel }); });
+  autoUpdater.on('update-available', async (info) => {
     updatePhase = null;
     const isPortable = Boolean(process.env.PORTABLE_EXECUTABLE_DIR);
-    sendToWindow({ type: 'available', info, isManualCheck, isPortable });
+    // 当使用国内镜像通道时，latest.yml 中未嵌入更新日志文本，尝试轻量获取 GitHub Release Body 补充日志
+    if (!info.releaseNotes && info.version) {
+      try {
+        const res = await net.fetch(`https://api.github.com/repos/liovoz/concept-music/releases/tags/v${info.version}`, {
+          headers: { 'User-Agent': 'concept-music-desktop' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.body) {
+            info.releaseNotes = data.body;
+          }
+        }
+      } catch (e) {}
+    }
+    sendToWindow({ type: 'available', info, isManualCheck, isPortable, channel: currentFeedChannel });
+    isManualCheck = false;
   });
-  autoUpdater.on('update-not-available', (info) => { updatePhase = null; sendToWindow({ type: 'not-available', info, isManualCheck }); isManualCheck = false; });
+  autoUpdater.on('update-not-available', (info) => {
+    updatePhase = null;
+    if (isManualCheck) sendToWindow({ type: 'not-available', info, isManualCheck });
+    isManualCheck = false;
+  });
   autoUpdater.on('error', (err) => {
     const message = (err && err.message) || '';
     console.error('[Updater] error:', message);
@@ -274,27 +352,63 @@ function initAutoUpdater() {
   autoUpdater.on('download-progress', (progressObj) => { downloadRetryCount = 0; sendToWindow({ type: 'progress', progressObj }); });
   autoUpdater.on('update-downloaded', (info) => { updatePhase = null; sendToWindow({ type: 'downloaded', info }); downloadCancellationToken = null; downloadRetryCount = 0; });
 
+  const runCheckFlow = (channelToTry, manual = isManualCheck) => {
+    isManualCheck = manual;
+    updatePhase = 'checking';
+    const targetChannel = channelToTry || (activeChannel === 'auto' ? 'official' : activeChannel);
+    applyUpdateFeed(targetChannel);
+
+    autoUpdater.checkForUpdates().catch(err => {
+      const errMsg = (err && err.message) || '';
+      console.error(`[Updater] checkForUpdates on ${targetChannel} failed:`, errMsg);
+
+      // 如果当前是 auto 模式，官方直连异常时自动降级尝试国内高速镜像
+      if (activeChannel === 'auto') {
+        if (targetChannel === 'official') {
+          console.log('[Updater] 官方直连异常，自动切换至国内高速节点 1 (ghfast.top)');
+          if (isManualCheck) {
+            sendToWindow({
+              type: 'channel-fallback',
+              channel: 'ghfast',
+              message: '官方直连受阻，已自动切换至国内高速加速通道'
+            });
+          }
+          runCheckFlow('ghfast', isManualCheck);
+          return;
+        } else if (targetChannel === 'ghfast') {
+          console.log('[Updater] 国内高速节点 1 异常，自动切换至国内高速节点 2 (ghproxy.net)');
+          if (isManualCheck) {
+            sendToWindow({
+              type: 'channel-fallback',
+              channel: 'ghproxy',
+              message: '已自动切换至备用高速加速通道'
+            });
+          }
+          runCheckFlow('ghproxy', isManualCheck);
+          return;
+        }
+      }
+
+      updatePhase = null;
+      if (isManualCheck) {
+        sendToWindow({ type: 'error', message: '检查更新失败，请检查网络或在设置中切换下载线路', isManualCheck: true });
+      }
+      isManualCheck = false;
+    });
+  };
+
   ipcMain.on('check-for-updates', () => {
     isManualCheck = true;
     if (!app.isPackaged) { sendToWindow({ type: 'error', message: '开发环境暂不支持自动更新，请打包后体验', isManualCheck }); isManualCheck = false; return; }
-    updatePhase = 'checking';
-    autoUpdater.checkForUpdates().catch(err => {
-      console.error('[Updater] checkForUpdates failed:', err && err.message);
-      updatePhase = null;
-      sendToWindow({ type: 'error', message: '检查更新失败，请检查网络', isManualCheck });
-      isManualCheck = false;
-    });
+    runCheckFlow(null, true);
   });
 
-  const doDownloadUpdate = () => {
+  const doDownloadUpdate = async () => {
     isDownloadCancelled = false;
-    // electron-updater 要求传入 builder-util-runtime 的 CancellationToken（下载器内部会调用其 createPromise），
-    // 传 DOM AbortSignal 会导致下载发起瞬间即抛 TypeError
     downloadCancellationToken = new CancellationToken();
-    autoUpdater.downloadUpdate(downloadCancellationToken).catch(err => {
+    autoUpdater.downloadUpdate(downloadCancellationToken).catch(async (err) => {
       const errMsg = (err && err.message) || '';
       if (errMsg.includes('aborted') || errMsg.includes('cancel')) {
-        // 用户主动取消：CancellationError 不会触发 error 事件，在此统一发送 cancelled 状态
         downloadCancellationToken = null;
         if (isDownloadCancelled) {
           isDownloadCancelled = false;
@@ -307,11 +421,27 @@ function initAutoUpdater() {
       console.error('[Updater] download failed:', errMsg);
       if (downloadRetryCount < MAX_DOWNLOAD_RETRIES) {
         downloadRetryCount++;
-        console.log(`[Updater] 下载重试 ${downloadRetryCount}/${MAX_DOWNLOAD_RETRIES}，3 秒后重试`);
-        setTimeout(() => { doDownloadUpdate(); }, 3000);
+        // 在 auto 模式下下载异常，自动切换至加速节点并刷新 provider
+        if (activeChannel === 'auto') {
+          const fallbackChannel = downloadRetryCount === 1 ? 'ghfast' : 'ghproxy';
+          applyUpdateFeed(fallbackChannel);
+          try {
+            const providerInfo = await autoUpdater.getUpdateInfoAndProvider();
+            autoUpdater.updateInfoAndProvider = providerInfo;
+          } catch (e) {
+            console.warn('[Updater] 获取降级镜像 provider 异常:', e);
+          }
+          sendToWindow({
+            type: 'channel-fallback',
+            channel: fallbackChannel,
+            message: `下载受阻，已自动启用国内加速通道 (${downloadRetryCount}/${MAX_DOWNLOAD_RETRIES})`
+          });
+        }
+        console.log(`[Updater] 下载重试 ${downloadRetryCount}/${MAX_DOWNLOAD_RETRIES}，2 秒后重试`);
+        setTimeout(() => { doDownloadUpdate(); }, 2000);
       } else {
         updatePhase = null;
-        sendToWindow({ type: 'error', message: errMsg || '下载失败，请检查网络连接', isManualCheck: true, phase: 'download' });
+        sendToWindow({ type: 'error', message: errMsg || '下载失败，请检查网络连接或在设置中切换下载线路', isManualCheck: true, phase: 'download' });
         downloadRetryCount = 0;
       }
       downloadCancellationToken = null;
@@ -320,7 +450,14 @@ function initAutoUpdater() {
 
   ipcMain.on('download-update', () => {
     if (Boolean(process.env.PORTABLE_EXECUTABLE_DIR)) {
-      shell.openExternal('https://github.com/liovoz/concept-music/releases/latest');
+      let targetUrl = 'https://github.com/liovoz/concept-music/releases/latest';
+      const channel = activeChannel;
+      if (channel === 'ghfast' || channel === 'auto') {
+        targetUrl = 'https://ghfast.top/' + targetUrl;
+      } else if (channel === 'ghproxy') {
+        targetUrl = 'https://ghproxy.net/' + targetUrl;
+      }
+      shell.openExternal(targetUrl);
       sendToWindow({ type: 'cancelled' });
       return;
     }
@@ -328,6 +465,7 @@ function initAutoUpdater() {
     updatePhase = 'downloading';
     doDownloadUpdate();
   });
+
   ipcMain.on('cancel-download', () => {
     if (downloadCancellationToken) {
       isDownloadCancelled = true;
@@ -338,9 +476,32 @@ function initAutoUpdater() {
       sendToWindow({ type: 'cancelled' });
     }
   });
-  // oneClick:false 的辅助安装器：非静默安装并在完成后拉起应用
+
   ipcMain.on('quit-and-install', () => autoUpdater.quitAndInstall(false, true));
   ipcMain.handle('get-app-version', () => app.getVersion());
+
+  ipcMain.handle('updater-get-channel', () => activeChannel);
+  ipcMain.handle('updater-set-channel', (event, channelId) => {
+    if (['auto', 'ghfast', 'ghproxy', 'official'].includes(channelId)) {
+      activeChannel = channelId;
+      writeDesktopSettings({ updateChannel: channelId });
+      applyUpdateFeed(channelId);
+      return true;
+    }
+    return false;
+  });
+
+  if (app.isPackaged) {
+    // 启动 3 秒后首次静默检测（auto 模式下遇阻断会自动尝试国内镜像）
+    setTimeout(() => {
+      runCheckFlow(null, false);
+    }, 3000);
+
+    // 运行期间每 8 小时自动静默轮询一次，保证长期挂机也能感知新版本
+    setInterval(() => {
+      runCheckFlow(null, false);
+    }, 8 * 60 * 60 * 1000);
+  }
 }
 
 // --- 桌面歌词窗口逻辑 ---
@@ -933,30 +1094,6 @@ app.whenReady().then(async () => {
     }
     return true;
   });
-  function getDesktopSettingsPath() {
-    return path.join(app.getPath('userData'), 'desktop_settings.json');
-  }
-  function readDesktopSettings() {
-    try {
-      const p = getDesktopSettingsPath();
-      if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
-    } catch (e) {}
-    return {};
-  }
-  function writeDesktopSettings(patch) {
-    try {
-      const p = getDesktopSettingsPath();
-      let data = {};
-      if (fs.existsSync(p)) {
-        try { data = JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) {}
-      }
-      Object.assign(data, patch);
-      fs.writeFileSync(p, JSON.stringify(data, null, 2), 'utf8');
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
   ipcMain.handle('settings-get-audio-settings', () => {
     const data = readDesktopSettings();
     return {
@@ -983,7 +1120,6 @@ app.whenReady().then(async () => {
   initAutoUpdater();
   if (app.isPackaged) {
     mainWindow.loadURL('app://localhost/');
-    setTimeout(() => { autoUpdater.checkForUpdates().catch(() => {}); }, 3000);
   } else {
     mainWindow.loadURL(DEV_FRONTEND_URL);
   }

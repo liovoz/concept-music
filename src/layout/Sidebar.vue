@@ -127,9 +127,18 @@
 
     <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 dark:border-slate-800 pt-3">
       <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">系统</div>
-      <div @click="openSettings" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center transition-colors text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800 group">
-        <AppIcon name="settings" class="w-4 h-4 mr-3 text-gray-400 dark:text-slate-400 group-hover:text-blue-500 transition-colors" />
-        设置
+      <div @click="openSettings" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center justify-between transition-colors text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800 group relative">
+        <div class="flex items-center">
+          <AppIcon name="settings" class="w-4 h-4 mr-3 text-gray-400 dark:text-slate-400 group-hover:text-blue-500 transition-colors" />
+          <span>设置</span>
+        </div>
+        <span
+          v-if="updateStore.hasBadge"
+          class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200/60 dark:border-red-800/40 text-[10px] font-bold text-red-500"
+        >
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          <span>新版</span>
+        </span>
       </div>
     </nav>
 
@@ -178,11 +187,13 @@ import { ref, computed, onMounted, onUnmounted, inject, watch, nextTick } from '
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store/userStore';
 import { usePlayerStore } from '../store/playerStore'; 
+import { useUpdateStore } from '../store/updateStore';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 const playerStore = usePlayerStore(); 
+const updateStore = useUpdateStore();
 const settingsModalRef = inject('settingsModalRef', null);
 
 const showLogoutConfirm = ref(false);
