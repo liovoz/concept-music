@@ -664,7 +664,7 @@
                   <template v-else-if="updateStatus === 'checking'">
                     <div class="flex items-center justify-center py-4 space-x-3 text-blue-600 dark:text-blue-400 text-xs font-bold">
                       <AppIcon name="spinner" spin class="w-5 h-5" />
-                      <span>正在检查最新版本，请稍候...</span>
+                      <span>{{ updateStore.channelFallbackNotice ? updateStore.channelFallbackNotice + '，正在检测...' : '正在检查最新版本，请稍候...' }}</span>
                     </div>
                   </template>
 
@@ -676,7 +676,9 @@
                         </div>
                         <div>
                           <p class="text-xs font-bold text-gray-800 dark:text-slate-200">当前已是最新版本 (v{{ appVersion }})</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">无需更新，继续享受音乐吧</p>
+                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                            {{ updateStore.channelFallbackNotice ? '已通过高速加速通道完成检测，无需更新' : '无需更新，继续享受音乐吧' }}
+                          </p>
                         </div>
                       </div>
                       <button 

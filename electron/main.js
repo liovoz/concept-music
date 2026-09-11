@@ -342,6 +342,11 @@ function initAutoUpdater() {
       sendToWindow({ type: 'cancelled' });
       return;
     }
+    // 检查阶段的异常交由 runCheckFlow 的 catch 流程统一处理（进行自动降级/多线路容灾）
+    // 此处直接拦截，避免提前向渲染进程派发 error 事件打断检查流程，并防止 isManualCheck 标志被提前重置
+    if (updatePhase === 'checking') {
+      return;
+    }
     // 下载阶段的失败先静默重试，重试期间不推送错误，避免界面在“下载中/失败”之间抖动
     if (updatePhase === 'downloading' && downloadRetryCount < MAX_DOWNLOAD_RETRIES) return;
     updatePhase = null;
@@ -370,7 +375,7 @@ function initAutoUpdater() {
             sendToWindow({
               type: 'channel-fallback',
               channel: 'ghfast',
-              message: '官方直连受阻，已自动切换至国内高速加速通道'
+              message: '官方直连受阻，已自动切换至国内高速加速通道 (ghfast.top)'
             });
           }
           runCheckFlow('ghfast', isManualCheck);
@@ -381,7 +386,7 @@ function initAutoUpdater() {
             sendToWindow({
               type: 'channel-fallback',
               channel: 'ghproxy',
-              message: '已自动切换至备用高速加速通道'
+              message: '国内高速节点 1 受阻，已自动切换至备用加速通道 (ghproxy.net)'
             });
           }
           runCheckFlow('ghproxy', isManualCheck);
@@ -391,7 +396,7 @@ function initAutoUpdater() {
 
       updatePhase = null;
       if (isManualCheck) {
-        sendToWindow({ type: 'error', message: '检查更新失败，请检查网络或在设置中切换下载线路', isManualCheck: true });
+        sendToWindow({ type: 'error', message: '检查更新失败，请检查网络或在设置中切换下载线路', isManualCheck: true, phase: 'check' });
       }
       isManualCheck = false;
     });

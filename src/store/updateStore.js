@@ -29,6 +29,7 @@ export const useUpdateStore = defineStore('update', {
 
     // 线路选择：'auto' | 'ghfast' | 'ghproxy' | 'official'
     updateChannel: 'auto',
+    activeFeedChannel: 'auto',
     channelFallbackNotice: '',
 
     // 右下角主动浮动通知卡片控制
@@ -135,19 +136,19 @@ export const useUpdateStore = defineStore('update', {
             this.status = 'checking';
             this.isManualCheck = true;
           }
-          if (data.channel) this.updateChannel = data.channel;
+          if (data.channel) this.activeFeedChannel = data.channel;
           break;
 
         case 'channel-fallback':
           this.channelFallbackNotice = data.message || '网络连接受阻，已自动启用国内高速加速通道';
-          if (data.channel) this.updateChannel = data.channel;
+          if (data.channel) this.activeFeedChannel = data.channel;
           break;
 
         case 'available':
           this.updateInfo = data.info || {};
           this.isPortable = Boolean(data.isPortable);
           this.isManualCheck = Boolean(data.isManualCheck);
-          if (data.channel) this.updateChannel = data.channel;
+          if (data.channel) this.activeFeedChannel = data.channel;
           this.status = 'available';
 
           // 判断是否弹出浮动卡片
@@ -211,6 +212,8 @@ export const useUpdateStore = defineStore('update', {
       if (window.updaterAPI) {
         this.isManualCheck = manual;
         this.status = 'checking';
+        this.errorMsg = '';
+        this.channelFallbackNotice = '';
         window.updaterAPI.checkForUpdates();
       }
     },
@@ -301,6 +304,7 @@ export const useUpdateStore = defineStore('update', {
       this.progressInfo = { percent: 0, bytesPerSecond: 0 };
       this.errorMsg = '';
       this.isDownloadError = false;
+      this.channelFallbackNotice = '';
     },
 
     /**
