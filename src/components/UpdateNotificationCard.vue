@@ -371,6 +371,128 @@ const headerIconStyle = computed(() => {
 });
 
 /**
+ * HTML 转 Markdown 自适应转换层：
+ * 兼容 GitHub Releases Atom 订阅源返回的原生 HTML 标签（<p>, <h3>, <ul>, <li>, <strong>, <code> 等）
+ * 并在异常时提供轻量正则降级保证，确保不论是 HTML 还是纯 Markdown 均统一步骤化为标准 Markdown
+ */
+const htmlToMarkdown = (html) => {
+  if (!html || typeof html !== 'string') return '';
+  if (!/<[a-z][\s\S]*>/i.test(html)) return html;
+
+  // 1. 优先使用浏览器原生 DOMParser（完美处理嵌套列表与深层标签）
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      const walk = (node, indent = '') => {
+        if (node.nodeType === 3 /* TEXT_NODE */) {
+          return node.textContent;
+        }
+        if (node.nodeType !== 1 /* ELEMENT_NODE */) return '';
+
+        const tag = node.tagName.toLowerCase();
+        const children = Array.from(node.childNodes);
+
+        // 过滤下载与资源类节点
+        if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag) && /(?:下载|Assets|资源下载)/i.test(node.textContent)) {
+          return '';
+        }
+
+        switch (tag) {
+          case 'h1':
+            return `\n# ${children.map(c => walk(c)).join('').trim()}\n\n`;
+          case 'h2':
+            return `\n## ${children.map(c => walk(c)).join('').trim()}\n\n`;
+          case 'h3':
+            return `\n### ${children.map(c => walk(c)).join('').trim()}\n\n`;
+          case 'h4':
+          case 'h5':
+          case 'h6':
+            return `\n#### ${children.map(c => walk(c)).join('').trim()}\n\n`;
+          case 'hr':
+            return '\n---\n\n';
+          case 'p':
+            return `\n${children.map(c => walk(c)).join('').trim()}\n\n`;
+          case 'strong':
+          case 'b':
+            return `**${children.map(c => walk(c)).join('').trim()}**`;
+          case 'em':
+          case 'i':
+            return `*${children.map(c => walk(c)).join('').trim()}*`;
+          case 'code':
+            return `\`${node.textContent.trim()}\``;
+          case 'a': {
+            const href = node.getAttribute('href') || '';
+            const text = children.map(c => walk(c)).join('').trim();
+            return `[${text}](${href})`;
+          }
+          case 'br':
+            return '\n';
+          case 'ul':
+          case 'ol': {
+            let res = '\n';
+            let idx = 1;
+            for (const child of children) {
+              if (child.nodeType === 1 && child.tagName.toLowerCase() === 'li') {
+                const subLists = [];
+                const inlineNodes = [];
+                for (const liChild of Array.from(child.childNodes)) {
+                  if (liChild.nodeType === 1 && ['ul', 'ol'].includes(liChild.tagName.toLowerCase())) {
+                    subLists.push(liChild);
+                  } else {
+                    inlineNodes.push(liChild);
+                  }
+                }
+                const liText = inlineNodes.map(c => walk(c)).join('').trim();
+                const prefix = tag === 'ol' ? `${idx++}. ` : '- ';
+                res += `${indent}${prefix}${liText}\n`;
+                for (const subList of subLists) {
+                  res += walk(subList, indent + '  ');
+                }
+              }
+            }
+            return res + '\n';
+          }
+          default:
+            return children.map(c => walk(c)).join('');
+        }
+      };
+
+      const result = walk(doc.body).trim();
+      if (result) return result;
+    } catch (e) {
+      console.warn('[UpdateCard] DOMParser htmlToMarkdown fallback:', e);
+    }
+  }
+
+  // 2. 正则降级方案
+  let md = html;
+  md = md.replace(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+  md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+  md = md.replace(/<(strong|b)[^>]*>(.*?)<\/\1>/gi, '**$2**');
+  md = md.replace(/<(em|i)[^>]*>(.*?)<\/\1>/gi, '*$2*');
+  md = md.replace(/<hr\s*\/?>/gi, '\n---\n');
+  md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n# $1\n');
+  md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n## $1\n');
+  md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n### $1\n');
+  md = md.replace(/<h[4-6][^>]*>(.*?)<\/h[4-6]>/gi, '\n#### $1\n');
+  md = md.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '\n- $1');
+  md = md.replace(/<\/?(?:ul|ol)[^>]*>/gi, '\n');
+  md = md.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '\n$1\n');
+  md = md.replace(/<br\s*\/?>/gi, '\n');
+  md = md.replace(/<[^>]+>/g, '');
+  md = md
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  return md.replace(/\n{3,}/g, '\n\n').trim();
+};
+
+/**
  * 结构化解析更新日志：支持 GitHub Release 完整 Markdown 规范（多级标题、导语、列表项、代码块、加粗、链接）
  */
 const parsedNotesData = computed(() => {
@@ -383,7 +505,9 @@ const parsedNotesData = computed(() => {
   }
   if (!rawText) return { lead: '', sections: [] };
 
-  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  // 先行将可能包含的原生 HTML 进行 Markdown 自适应规整化
+  const normalizedText = htmlToMarkdown(rawText);
+  const lines = normalizedText.split('\n').map(l => l.trim()).filter(Boolean);
   const sections = [];
   let currentSection = { title: '', items: [] };
   let lead = '';
@@ -395,7 +519,7 @@ const parsedNotesData = computed(() => {
       isDownloadSection = true;
       continue;
     }
-    if (isDownloadSection && !line.startsWith('## ')) continue;
+    if (isDownloadSection && !line.startsWith('## ') && !line.startsWith('### ')) continue;
     if (line.startsWith('---')) continue;
 
     // 忽略顶层独立大标题 (例如 "# v3.6.0" 或 "# Release 3.6.0")
@@ -403,21 +527,24 @@ const parsedNotesData = computed(() => {
       continue;
     }
 
-    // 二级大标题：## 🌟 新增功能
-    if (line.startsWith('## ')) {
+    // 二级大标题：## 🌟 新增功能，或者作为章节主标题的 ### (例如 ### 🐛 问题修复 (Bug Fixes))
+    if (
+      line.startsWith('## ') ||
+      (line.startsWith('### ') && !/^\d+[.、]/.test(line.replace(/^###\s*/, '')) && (!currentSection.title || currentSection.items.length > 0))
+    ) {
       isDownloadSection = false;
       if (currentSection.title || currentSection.items.length) {
         sections.push(currentSection);
       }
-      currentSection = { title: line.replace(/^##\s*/, ''), items: [] };
+      currentSection = { title: line.replace(/^#{2,3}\s*/, ''), items: [] };
     } 
-    // 三级小节标题：### 1. 企鹅歌单...
-    else if (line.startsWith('### ')) {
-      currentSection.items.push({ type: 'subtitle', text: line.replace(/^###\s*/, '') });
+    // 三级/四级小节标题：### 1. 企鹅歌单... 或 #### 1. ...
+    else if (line.startsWith('### ') || line.startsWith('#### ')) {
+      currentSection.items.push({ type: 'subtitle', text: line.replace(/^#{3,4}\s*/, '') });
     } 
     // 无序列表：- 或 * 或 •
-    else if (line.startsWith('- ') || line.startsWith('* ')) {
-      currentSection.items.push({ type: 'bullet', text: line.replace(/^[-*]\s*/, '') });
+    else if (line.startsWith('- ') || line.startsWith('* ') || line.startsWith('• ')) {
+      currentSection.items.push({ type: 'bullet', text: line.replace(/^[-*•]\s*/, '') });
     } 
     // 有序列表：1. 2.
     else if (/^\d+[.、]/.test(line)) {
