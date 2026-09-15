@@ -66,9 +66,14 @@
               <div v-show="currentTab === 'general'" class="space-y-4">
                 <!-- 主题外观卡片 -->
                 <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3">
-                  <div class="flex items-center space-x-2">
-                    <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">外观主题</h3>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                      <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
+                      <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">外观主题</h3>
+                    </div>
+                    <span v-if="isScheduleEnabled" class="text-[11px] text-blue-600 dark:text-blue-400">
+                      时间调度运行中（点击卡片可锁定并退出定时）
+                    </span>
                   </div>
                   <div class="grid grid-cols-3 gap-2.5">
                     <div 
@@ -103,6 +108,115 @@
                       </div>
                       <span class="text-xs font-bold" :class="theme === 'system' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-200'">跟随系统</span>
                     </div>
+                  </div>
+
+                  <!-- 定时自动切换外观 分割线与独立控制区 -->
+                  <div class="pt-3 border-t border-gray-100 dark:border-slate-700/60 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="flex items-center space-x-2">
+                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">按时间自动切换外观</p>
+                          <span v-if="isScheduleEnabled" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60">
+                            已启用
+                          </span>
+                        </div>
+                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">在设定的时间段内自动切换浅色或深色主题</p>
+                      </div>
+                      <button 
+                        type="button"
+                        @click="toggleThemeSchedule"
+                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                        :class="isScheduleEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                      >
+                        <span 
+                          class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                          :class="isScheduleEnabled ? 'translate-x-5' : 'translate-x-0'"
+                        />
+                      </button>
+                    </div>
+
+                    <!-- 时间设置面板 (开启时展开) -->
+                    <transition
+                      enter-active-class="transition duration-200 ease-out"
+                      enter-from-class="opacity-0 -translate-y-1"
+                      enter-to-class="opacity-100 translate-y-0"
+                      leave-active-class="transition duration-150 ease-in"
+                      leave-from-class="opacity-100 translate-y-0"
+                      leave-to-class="opacity-0 -translate-y-1"
+                    >
+                      <div v-if="isScheduleEnabled" class="space-y-2.5 pt-1">
+                        <div class="grid grid-cols-2 gap-2.5">
+                          <!-- 浅色时间 -->
+                          <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-gray-200/70 dark:border-slate-700 space-y-1.5">
+                            <div class="flex items-center justify-between">
+                              <div class="flex items-center space-x-1.5 text-amber-500">
+                                <AppIcon name="sun" class="w-3.5 h-3.5" />
+                                <span class="text-xs font-bold text-gray-700 dark:text-slate-200">浅色模式时间</span>
+                              </div>
+                              <span class="text-[10px] text-gray-400 dark:text-slate-500">日间生效</span>
+                            </div>
+                            <TimePicker 
+                              v-model="tempScheduleLightTime"
+                              @change="handleScheduleTimeChange"
+                            />
+                          </div>
+
+                          <!-- 深色时间 -->
+                          <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-gray-200/70 dark:border-slate-700 space-y-1.5">
+                            <div class="flex items-center justify-between">
+                              <div class="flex items-center space-x-1.5 text-blue-400">
+                                <AppIcon name="moon" class="w-3.5 h-3.5" />
+                                <span class="text-xs font-bold text-gray-700 dark:text-slate-200">深色模式时间</span>
+                              </div>
+                              <span class="text-[10px] text-gray-400 dark:text-slate-500">夜间生效</span>
+                            </div>
+                            <TimePicker 
+                              v-model="tempScheduleDarkTime"
+                              @change="handleScheduleTimeChange"
+                            />
+                          </div>
+                        </div>
+
+                        <!-- 快捷预设按钮组 -->
+                        <div class="flex items-center justify-between text-[11px] pt-0.5">
+                          <span class="text-gray-400 dark:text-slate-500">快捷预设：</span>
+                          <div class="flex items-center space-x-1.5">
+                            <button
+                              type="button"
+                              @click="applyPreset('07:00', '19:00')"
+                              class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 transition-colors"
+                            >
+                              标准 (07:00 / 19:00)
+                            </button>
+                            <button
+                              type="button"
+                              @click="applyPreset('09:00', '23:00')"
+                              class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 transition-colors"
+                            >
+                              夜猫子 (09:00 / 23:00)
+                            </button>
+                            <button
+                              type="button"
+                              @click="applyPreset('06:00', '18:00')"
+                              class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 transition-colors"
+                            >
+                              早起族 (06:00 / 18:00)
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- 状态提示与下一次切换时间指示 -->
+                        <div class="flex items-center justify-between p-2 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/60 dark:border-blue-900/40 text-[11px] text-blue-700 dark:text-blue-300">
+                          <div class="flex items-center space-x-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                            <span>时间调度运行中</span>
+                          </div>
+                          <span v-if="nextSwitchInfo" class="font-mono font-medium">
+                            预计 {{ nextSwitchInfo.targetTime }} 切换为{{ nextSwitchInfo.targetTheme === 'dark' ? '深色' : '浅色' }}
+                          </span>
+                        </div>
+                      </div>
+                    </transition>
                   </div>
                 </section>
 
@@ -882,6 +996,7 @@ import { usePlayerStore } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
 import { useUpdateStore } from '../store/updateStore';
 import { useSearchHistory } from '../composables/useSearchHistory';
+import TimePicker from './common/TimePicker.vue';
 
 const props = defineProps({
   initialTab: { type: String, default: 'general' }
@@ -891,8 +1006,52 @@ const isVisible = ref(false);
 const currentTab = ref('general');
 const modalContainerRef = ref(null);
 
-const { theme, setTheme } = useTheme();
 const playerStore = usePlayerStore();
+const { 
+  theme, 
+  setTheme, 
+  isScheduleEnabled, 
+  scheduleLightTime, 
+  scheduleDarkTime, 
+  setScheduleEnabled, 
+  setScheduleTimes, 
+  nextSwitchInfo 
+} = useTheme();
+
+const tempScheduleLightTime = ref(scheduleLightTime.value);
+const tempScheduleDarkTime = ref(scheduleDarkTime.value);
+
+watch(scheduleLightTime, (val) => {
+  tempScheduleLightTime.value = val;
+});
+watch(scheduleDarkTime, (val) => {
+  tempScheduleDarkTime.value = val;
+});
+
+const toggleThemeSchedule = () => {
+  const next = !isScheduleEnabled.value;
+  setScheduleEnabled(next);
+  if (next) {
+    playerStore.showToast('已开启外观按时间自动切换');
+  } else {
+    playerStore.showToast('已关闭外观定时切换，保持当前外观');
+  }
+};
+
+const handleScheduleTimeChange = () => {
+  if (!tempScheduleLightTime.value || !tempScheduleDarkTime.value) return;
+  setScheduleTimes({
+    lightTime: tempScheduleLightTime.value,
+    darkTime: tempScheduleDarkTime.value
+  });
+};
+
+const applyPreset = (light, dark) => {
+  tempScheduleLightTime.value = light;
+  tempScheduleDarkTime.value = dark;
+  setScheduleTimes({ lightTime: light, darkTime: dark });
+  playerStore.showToast(`已应用预设：${light} 浅色 / ${dark} 深色`);
+};
 const userStore = useUserStore();
 const updateStore = useUpdateStore();
 const { history, clearHistory, syncHistory } = useSearchHistory();
@@ -970,7 +1129,14 @@ const toggleAutoStart = async () => {
 };
 
 const handleSetTheme = (mode) => {
+  const hadSchedule = isScheduleEnabled.value;
   setTheme(mode);
+  const modeName = mode === 'light' ? '浅色' : (mode === 'dark' ? '深色' : '跟随系统');
+  if (hadSchedule) {
+    playerStore.showToast(`已切换为${modeName}模式，自动定时已停用`);
+  } else {
+    playerStore.showToast(`已切换为${modeName}模式`);
+  }
 };
 
 const searchHistoryCount = computed(() => history.value.length);
@@ -1252,6 +1418,8 @@ const showModal = (tab = 'general') => {
   isVisible.value = true;
   closeBehavior.value = localStorage.getItem('kg_desktop_close_action') || 'ask';
   autoClaimVipEnabled.value = (localStorage.getItem('kg_desktop_auto_claim_vip') === 'true');
+  tempScheduleLightTime.value = scheduleLightTime.value;
+  tempScheduleDarkTime.value = scheduleDarkTime.value;
   syncHistory();
   loadLyricConfig();
   initAutoStart();

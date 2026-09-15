@@ -184,7 +184,7 @@
 
     <div class="w-48 flex justify-end items-center space-x-3 text-gray-400 dark:text-slate-400">
       <button
-        @click="toggleTheme"
+        @click="handleToggleTheme"
         class="group relative flex h-7 w-7 items-center justify-center rounded-full hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-all no-drag"
         v-tooltip="isDark ? '切换到浅色模式' : '切换到深色模式'"
         :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
@@ -275,12 +275,22 @@ import request from '../utils/request';
 import { useSearchHistory } from '../composables/useSearchHistory';
 import { disclaimerVisible } from '../utils/appState';
 import { useTheme } from '../composables/useTheme';
+import { usePlayerStore } from '../store/playerStore';
 
 const router = useRouter();
 const route = useRoute();
 const searchKeyword = ref('');
 const searchInput = ref(null);
+const playerStore = usePlayerStore();
 const { isDark, toggleTheme } = useTheme();
+
+const handleToggleTheme = () => {
+  const res = toggleTheme();
+  if (res?.wasScheduleDisabled) {
+    const modeName = res.theme === 'light' ? '浅色' : '深色';
+    playerStore.showToast?.(`已切换为${modeName}模式，自动定时已停用`);
+  }
+};
 
 const isFocused = ref(false);
 const isSuggestLoading = ref(false);
