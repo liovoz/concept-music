@@ -1,6 +1,6 @@
 <template>
   <div ref="scrollContainer" class="h-full overflow-y-auto custom-scrollbar flex flex-col relative" id="artist-list-scroll-container">
-    <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-blue-50/80 to-white -z-10"></div>
+    <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-blue-50/80 to-white dark:from-blue-950/20 dark:via-slate-950 dark:to-slate-950 -z-10 pointer-events-none"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
 

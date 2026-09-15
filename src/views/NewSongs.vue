@@ -56,12 +56,12 @@
 
         <div class="space-y-1">
           <div v-for="(song, index) in songs" :key="song._hash + index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)"
-            class="flex items-center px-4 py-3 rounded-xl hover:bg-emerald-50/60 group transition-colors cursor-pointer no-drag min-w-0">
+            class="flex items-center px-4 py-3 rounded-xl hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm font-bold group-hover:hidden flex-shrink-0 flex flex-col items-center justify-center"
               :class="index === 0 ? 'text-emerald-500' : index === 1 ? 'text-teal-500' : index === 2 ? 'text-cyan-500' : 'text-gray-400'">
               {{ (index + 1).toString().padStart(2, '0') }}
             </div>
-            <div class="w-10 text-center hidden group-hover:flex justify-center text-emerald-600 flex-shrink-0" @click.stop="handlePlay(song)">
+            <div class="w-10 text-center hidden group-hover:flex justify-center text-emerald-600 dark:text-emerald-400 flex-shrink-0" @click.stop="handlePlay(song)">
               <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
 

@@ -85,9 +85,9 @@
         </div>
         
         <div class="space-y-1 w-full">
-          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song, index)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
-            <div class="w-10 text-center text-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
-            <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 flex-shrink-0" @click.stop="handlePlay(song)">
+          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song, index)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
+            <div class="w-10 text-center text-sm text-gray-400 dark:text-slate-500 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
+            <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
             

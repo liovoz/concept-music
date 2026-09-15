@@ -27,13 +27,13 @@
           </button>
         </div>
 
-        <div v-if="!userStore.isLoggedIn" class="w-full bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-100/50 rounded-3xl p-10 flex flex-col items-center justify-center text-center shadow-inner">
-          <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
-            <AppIcon name="lock" class="w-8 h-8 text-blue-500" />
+        <div v-if="!userStore.isLoggedIn" class="w-full bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-slate-900/90 dark:to-blue-950/30 border border-blue-100/50 dark:border-slate-800 rounded-3xl p-10 flex flex-col items-center justify-center text-center shadow-inner dark:shadow-none transition-colors">
+          <div class="w-16 h-16 bg-white dark:!bg-blue-950/50 rounded-full flex items-center justify-center mb-4 shadow-sm dark:shadow-inner border border-transparent dark:border-blue-900/40 transition-colors">
+            <AppIcon name="lock" class="w-8 h-8 text-blue-500 dark:text-blue-400" />
           </div>
-          <h4 class="text-xl font-bold text-gray-800 mb-2">解锁您的专属音乐口味</h4>
-          <p class="text-xs text-gray-500 mb-6">登录后，我们将每天为您量身定制符合您品味的私藏好歌</p>
-          <button @click="userStore.openLoginModal()" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 transition-all active:scale-95 no-drag">
+          <h4 class="text-xl font-bold text-gray-800 dark:text-slate-100 mb-2">解锁您的专属音乐口味</h4>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mb-6">登录后，我们将每天为您量身定制符合您品味的私藏好歌</p>
+          <button @click="userStore.openLoginModal()" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 dark:shadow-none dark:hover:shadow-[0_4px_16px_rgba(37,99,235,0.4)] transition-all active:scale-95 no-drag">
             立即安全登录
           </button>
         </div>
@@ -55,8 +55,8 @@
 
         <div v-else-if="dailySongs.length > 0" class="w-full flex flex-col">
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
-            <div v-for="song in dailySongs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="group flex items-center p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-blue-100 transition-all cursor-pointer no-drag min-w-0">
-              <div class="relative w-[50px] h-[50px] flex-shrink-0 rounded-md overflow-hidden bg-gray-100 mr-3 border border-gray-50">
+            <div v-for="song in dailySongs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="group flex items-center p-2.5 bg-white dark:!bg-slate-900/80 border border-gray-100 dark:border-slate-800 shadow-sm rounded-xl hover:shadow-md hover:border-blue-100 dark:hover:border-blue-500/40 dark:hover:bg-slate-800/80 transition-all cursor-pointer no-drag min-w-0">
+              <div class="relative w-[50px] h-[50px] flex-shrink-0 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-800 mr-3 border border-gray-50 dark:border-slate-700/50">
                 <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
                 
                 <div @click.stop="handlePlay(song)" class="absolute inset-0 bg-black/20 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
@@ -66,7 +66,7 @@
               
               <div class="flex-1 min-w-0 flex flex-col justify-center">
                 <div class="flex items-center w-full">
-                  <span class="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate" v-tooltip="song._title">{{ song._title }}</span>
+                  <span class="text-sm font-bold text-gray-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate" v-tooltip="song._title">{{ song._title }}</span>
                   <span v-if="song._is_paid" class="ml-1.5 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-px rounded text-[8px] font-bold tracking-widest uppercase transform scale-90 origin-left">付费</span>
                   <span v-else-if="song._is_vip" class="ml-1.5 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-px rounded text-[8px] font-bold tracking-widest uppercase transform scale-90 origin-left">VIP</span>
                 </div>
@@ -122,14 +122,14 @@
           </div>
 
           <div class="w-full flex flex-col items-center justify-center mt-2 mb-8">
-            <div class="group px-10 py-6 bg-gray-50/50 border border-gray-100 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60">
-              <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                <AppIcon name="music" class="w-5 h-5 text-gray-300" />
+            <div class="group px-10 py-6 bg-gray-50/50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60 dark:hover:bg-slate-800/60 dark:hover:border-slate-700/80">
+              <div class="w-10 h-10 bg-white dark:!bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 border border-transparent dark:border-slate-700/60 transition-transform">
+                <AppIcon name="music" class="w-5 h-5 text-gray-300 dark:text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
               </div>
               <div class="flex items-center space-x-3">
-                <span class="w-8 h-px bg-gray-200"></span>
-                <span class="text-[11px] font-bold tracking-[0.2em] text-gray-400 uppercase">已经到底了 · 听点别的吧</span>
-                <span class="w-8 h-px bg-gray-200"></span>
+                <span class="w-8 h-px bg-gray-200 dark:bg-slate-700"></span>
+                <span class="text-[11px] font-bold tracking-[0.2em] text-gray-400 dark:text-slate-400 uppercase">已经到底了 · 听点别的吧</span>
+                <span class="w-8 h-px bg-gray-200 dark:bg-slate-700"></span>
               </div>
             </div>
           </div>

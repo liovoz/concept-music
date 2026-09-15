@@ -115,14 +115,14 @@
         </div>
 
         <div v-else-if="!hasMore" class="w-full flex flex-col items-center justify-center mt-2 mb-8">
-          <div class="group px-10 py-6 bg-gray-50/50 border border-gray-100 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60">
-            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-              <AppIcon name="music" class="w-5 h-5 text-gray-300" />
+          <div class="group px-10 py-6 bg-gray-50/50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60 dark:hover:bg-slate-800/60 dark:hover:border-slate-700/80">
+            <div class="w-10 h-10 bg-white dark:!bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 border border-transparent dark:border-slate-700/60 transition-transform">
+              <AppIcon name="music" class="w-5 h-5 text-gray-300 dark:text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
             </div>
             <div class="flex items-center space-x-3">
-              <span class="w-8 h-px bg-gray-200"></span>
-              <span class="text-[11px] font-bold tracking-[0.2em] text-gray-400 uppercase">已经到底了 · 换个分类看看</span>
-              <span class="w-8 h-px bg-gray-200"></span>
+              <span class="w-8 h-px bg-gray-200 dark:bg-slate-700"></span>
+              <span class="text-[11px] font-bold tracking-[0.2em] text-gray-400 dark:text-slate-400 uppercase">已经到底了 · 换个分类看看</span>
+              <span class="w-8 h-px bg-gray-200 dark:bg-slate-700"></span>
             </div>
           </div>
         </div>

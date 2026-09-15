@@ -53,18 +53,18 @@
             <form v-if="!multiUserList.length" @submit.prevent="handlePhoneLogin" class="w-full flex flex-col">
               <!-- 手机号输入框 -->
               <div class="w-full mb-3">
-                <label class="block text-[11px] font-bold text-gray-500 mb-1.5 px-0.5">手机号码</label>
+                <label class="block text-[11px] font-bold text-gray-500 dark:text-slate-400 mb-1.5 px-0.5">手机号码</label>
                 <div
-                  class="flex items-center w-full bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all px-3 py-2.5"
+                  class="flex items-center w-full bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:bg-white dark:focus-within:!bg-slate-800 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-500/20 transition-all px-3 py-2.5"
                 >
-                  <span class="text-xs font-bold text-gray-500 pr-2.5 border-r border-gray-200 select-none">+86</span>
+                  <span class="text-xs font-bold text-gray-500 dark:text-slate-400 pr-2.5 border-r border-gray-200 dark:border-slate-700 select-none">+86</span>
                   <input
                     ref="phoneInputRef"
                     v-model="phone"
                     type="tel"
                     maxlength="11"
                     placeholder="请输入11位大陆手机号码"
-                    class="w-full pl-2.5 bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                    class="w-full pl-2.5 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none"
                     @input="handlePhoneInput"
                     @keydown.enter.prevent="focusCodeInput"
                   />
@@ -72,7 +72,7 @@
                     v-if="phone"
                     type="button"
                     @click="clearPhone"
-                    class="text-gray-400 hover:text-gray-600 p-0.5 transition-colors"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-0.5 transition-colors"
                   >
                     <AppIcon name="close" class="w-3.5 h-3.5" />
                   </button>
@@ -81,9 +81,9 @@
 
               <!-- 验证码输入框 -->
               <div class="w-full mb-2">
-                <label class="block text-[11px] font-bold text-gray-500 mb-1.5 px-0.5">短信验证码</label>
+                <label class="block text-[11px] font-bold text-gray-500 dark:text-slate-400 mb-1.5 px-0.5">短信验证码</label>
                 <div
-                  class="flex items-center w-full bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all px-3 py-1.5"
+                  class="flex items-center w-full bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:bg-white dark:focus-within:!bg-slate-800 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-500/20 transition-all px-3 py-1.5"
                 >
                   <input
                     ref="codeInputRef"
@@ -91,7 +91,7 @@
                     type="text"
                     maxlength="6"
                     placeholder="请输入6位验证码"
-                    class="w-full pl-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                    class="w-full pl-1 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none"
                     @keydown.enter.prevent="handlePhoneLogin"
                   />
                   <button
@@ -102,7 +102,7 @@
                     :class="
                       canSendCode
                         ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 shadow-sm'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
                     "
                   >
                     <span v-if="isSendingCode" class="flex items-center gap-1">
@@ -118,22 +118,22 @@
               <!-- 错误回显与未注册智能提示条 -->
               <div
                 v-if="phoneError"
-                class="w-full mb-3 p-3 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-800 text-xs flex flex-col gap-1.5 transition-all"
+                class="w-full mb-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs flex flex-col gap-1.5 transition-all"
               >
                 <div class="flex items-start gap-2">
-                  <AppIcon name="warning" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <AppIcon name="warning" class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <span class="font-medium leading-relaxed">{{ phoneError }}</span>
                 </div>
                 <!-- 针对未注册、连续失败或风控的引导操作 -->
                 <div
                   v-if="isUnregistered || sendFailedCount >= 2"
-                  class="flex items-center justify-between pt-2 border-t border-amber-200/60 mt-0.5"
+                  class="flex items-center justify-between pt-2 border-t border-amber-200/60 dark:border-amber-800/40 mt-0.5"
                 >
-                  <span class="text-[11px] text-amber-700 font-medium">推荐免风控通道：</span>
+                  <span class="text-[11px] text-amber-700 dark:text-amber-400 font-medium">推荐免风控通道：</span>
                   <button
                     type="button"
                     @click="switchTab('qr')"
-                    class="text-blue-600 font-bold hover:underline text-xs flex items-center gap-0.5"
+                    class="text-blue-600 dark:text-blue-400 font-bold hover:underline text-xs flex items-center gap-0.5"
                   >
                     <span>切换至扫码登录</span>
                     <span>&rarr;</span>

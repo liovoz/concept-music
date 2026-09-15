@@ -3,19 +3,19 @@
 // ====================
 <template>
   <div class="h-full overflow-y-auto custom-scrollbar flex flex-col relative" id="history-scroll-container">
-    <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-blue-50/50 to-white -z-10 pointer-events-none"></div>
+    <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-blue-50/50 to-white dark:from-blue-950/20 dark:via-slate-950 dark:to-slate-950 -z-10 pointer-events-none"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
       
       <div v-if="!userStore.isLoggedIn" class="flex-1 flex flex-col items-center justify-center relative">
-        <div class="absolute inset-0 bg-white/40 backdrop-blur-md z-0 rounded-3xl"></div>
+        <div class="absolute inset-0 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md z-0 rounded-3xl border border-transparent dark:border-slate-800/60"></div>
         <div class="relative z-10 flex flex-col items-center text-center">
-          <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-blue-100">
-            <AppIcon name="history" class="w-10 h-10 text-blue-500" />
+          <div class="w-24 h-24 bg-blue-50 dark:bg-blue-950/50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-blue-100 dark:border-blue-900/40 transition-colors">
+            <AppIcon name="history" class="w-10 h-10 text-blue-500 dark:text-blue-400" />
           </div>
-          <h2 class="text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">听歌足迹</h2>
-          <p class="text-sm text-gray-500 mb-8 max-w-sm leading-relaxed">安全登录后，我们将为您自动记录听歌足迹，帮您找回那些不经意间触动心弦的旋律。</p>
-          <button @click="userStore.openLoginModal()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag flex items-center">
+          <h2 class="text-3xl font-extrabold text-gray-900 dark:text-slate-100 mb-3 tracking-tight">听歌足迹</h2>
+          <p class="text-sm text-gray-500 dark:text-slate-400 mb-8 max-w-sm leading-relaxed">安全登录后，我们将为您自动记录听歌足迹，帮您找回那些不经意间触动心弦的旋律。</p>
+          <button @click="userStore.openLoginModal()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] dark:shadow-none dark:hover:shadow-[0_4px_20px_rgba(37,99,235,0.4)] transition-all transform active:scale-95 no-drag flex items-center">
             立即安全登录
             <AppIcon name="chevron-right" class="w-4 h-4 ml-2" />
           </button>
@@ -76,12 +76,12 @@
           </div>
           
           <div class="space-y-1">
-            <div v-for="(song, index) in currentSongs" :key="song._hash + index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 group transition-colors cursor-pointer no-drag min-w-0">
+            <div v-for="(song, index) in currentSongs" :key="song._hash + index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
               <div class="w-10 text-center text-sm font-bold group-hover:hidden flex-shrink-0 flex flex-col items-center justify-center"
                    :class="activeTab === 'rank' ? {'text-red-500': index === 0, 'text-orange-400': index === 1, 'text-yellow-500': index === 2, 'text-gray-400': index > 2} : 'text-gray-400'">
                 {{ (index + 1).toString().padStart(2, '0') }}
               </div>
-              <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 flex-shrink-0" @click.stop="handlePlay(song)">
+              <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                  <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
               </div>
               
