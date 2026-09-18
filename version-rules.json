@@ -9,7 +9,7 @@
   "_说明_notice": "强制升级或熔断弹窗中向用户详细呈现的故障说明、安全公告或升级引导文案。",
 
 
-  "latestVersion": "3.6.2",
+  "latestVersion": "3.6.3",
   "minSupportedVersion": "",
   "blacklistedVersions": [],
   "forceUpdate": false,
