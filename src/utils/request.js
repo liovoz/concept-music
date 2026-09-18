@@ -68,9 +68,18 @@ request.interceptors.request.use(
 );
 
 request.interceptors.response.use(
-  (response) => {
+  async (response) => {
     if (response.data && response.data.errcode === 20028) {
        localStorage.removeItem('kg_desktop_has_dfid');
+       const config = response.config;
+       if (config && !config._isDfidRetry && !config.url?.includes('/register/dev')) {
+         config._isDfidRetry = true;
+         try {
+           await request.get('/register/dev', { silent: true, _isDfidRetry: true });
+           await new Promise(resolve => setTimeout(resolve, 300));
+           return await request(config);
+         } catch (e) {}
+       }
        if (!response.config?.silent) {
            window.dispatchEvent(new CustomEvent('API_GATEWAY_DOWN', {
                detail: { message: '🎵 播放受限：该歌曲需要验证，请检查是否为 VIP 专享' }

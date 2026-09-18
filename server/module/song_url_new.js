@@ -8,14 +8,16 @@ module.exports = (params, useAxios) => {
   const token = params?.token || params?.cookie?.token || '';
   const clienttime_ms = Date.now();
   const userid = Number(params?.userid || params?.cookie?.userid || '0');
-  const dfid = params?.dfid || params?.cookie?.dfid || randomString(24); // 自定义
+  const incomingDfid = params?.dfid || params?.cookie?.dfid || params?.cookie?.kg_dfid || '';
+  const dfid = (incomingDfid && incomingDfid !== '-' && incomingDfid.length >= 16) ? incomingDfid : randomString(24);
   const vip_type = params?.cookie?.vip_type || params?.vipType || 0;
+  const mid = params?.cookie?.KUGOU_API_MID || params?.cookie?.mid || params?.cookie?.kg_mid || '0';
 
   const dataMap = {
     area_code: '1',
     behavior: 'play',
     qualities: ['128', '320', 'flac', 'high', 'multitrack', 'viper_atmos', 'viper_tape', 'viper_clear', 'super'],
-    'resource': {
+    'resource': [{
       'album_audio_id': params.album_audio_id,
       'collect_list_id': '3',
       'collect_time': clienttime_ms,
@@ -23,13 +25,13 @@ module.exports = (params, useAxios) => {
       'id': 0,
       'page_id': 1,
       'type': 'audio',
-    },
+    }],
     token,
     'tracker_param': {
       all_m: 1,
       auth: '',
       is_free_part: params?.free_part ? 1 : 0,
-      key: cryptoMd5(`${params.hash}185672dd44712f60bb1736df5a377e82${appid}${params?.cookie?.KUGOU_API_MID}${userid}`),
+      key: cryptoMd5(`${params.hash}185672dd44712f60bb1736df5a377e82${appid}${mid}${userid}`),
       module_id: 0,
       need_climax: 1,
       need_xcdn: 1,
@@ -48,7 +50,8 @@ module.exports = (params, useAxios) => {
     url: '/v6/priv_url',
     method: 'POST',
     data: dataMap,
+    headers: { 'Content-Type': 'application/json' },
     encryptType: 'android',
-    cookie: Object.assign({}, { dfid }, params?.cookie),
+    cookie: Object.assign({}, { dfid, kg_dfid: dfid }, params?.cookie),
   });
 };

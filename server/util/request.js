@@ -36,8 +36,12 @@ const sharedHttpsAgent = new https.Agent({ keepAlive: true, maxSockets: 64 });
 const createRequest = (options) => {
   return new Promise(async (resolve, reject) => {
     const isLite = process.env.platform === 'lite';
-    const dfid = options?.cookie?.dfid || '-'; // 自定义
-    const mid = `${options?.cookie?.KUGOU_API_MID}`; //'334689572176563962868706300678062568191';
+    const dfid = options?.cookie?.dfid || options?.cookie?.kg_dfid || '-';
+    const mid = (options?.cookie?.KUGOU_API_MID && options.cookie.KUGOU_API_MID !== 'undefined')
+      ? String(options.cookie.KUGOU_API_MID)
+      : (options?.cookie?.kg_mid && options.cookie.kg_mid !== 'undefined'
+          ? String(options.cookie.kg_mid)
+          : '0');
     const uuid = '-'; //cryptoMd5(`${dfid}${mid}`); // 可以自定义
     const token = options?.cookie?.token || '';
     const userid = options?.cookie?.userid || 0;

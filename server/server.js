@@ -28,6 +28,7 @@ const cache = require('./util/apicache').middleware;
 
 const guid = cryptoMd5(getGuid());
 const serverDev = randomString(10).toUpperCase();
+let globalDfid = '';
 
 const isPrivateAddress = (address) => {
   if (!address) return true;
@@ -335,6 +336,10 @@ async function consturctServer(moduleDefs) {
     ensureCookie('KUGOU_API_GUID', process.env.KUGOU_API_GUID ?? guid);
     ensureCookie('KUGOU_API_DEV', (process.env.KUGOU_API_DEV ?? serverDev).toUpperCase());
     ensureCookie('KUGOU_API_MAC', (process.env.KUGOU_API_MAC ?? '02:00:00:00:00:00').toUpperCase());
+    if (globalDfid) {
+      ensureCookie('dfid', globalDfid);
+      ensureCookie('kg_dfid', globalDfid);
+    }
 
     req.cookies = cookies;
 
@@ -366,9 +371,15 @@ async function consturctServer(moduleDefs) {
     proxyAudioRequest(rawUrl, req, res);
   });
 
-  // Cache only idempotent GET requests. POST module calls can carry different
-  // song data on the same route, so caching by URL would replay stale results.
-  app.use(cache('2 minutes', (req, res) => req.method === 'GET' && res.statusCode === 200));
+  // Cache only idempotent GET requests. Exclude dynamic endpoints like register, song url, login, user
+  app.use(cache('2 minutes', (req, res) => {
+    if (req.method !== 'GET' || res.statusCode !== 200) return false;
+    const p = req.path || '';
+    if (p.startsWith('/register') || p.startsWith('/song/url') || p.startsWith('/login') || p.startsWith('/user') || p.startsWith('/captcha')) {
+      return false;
+    }
+    return true;
+  }));
 
   const moduleDefinitions = moduleDefs || (await getModulesDefinitions(path.join(__dirname, 'module'), {}));
 
@@ -394,9 +405,12 @@ async function consturctServer(moduleDefs) {
       try {
         const moduleFn = typeof moduleDef.getModule === 'function' ? moduleDef.getModule() : moduleDef.module;
         const moduleResponse = await moduleFn(query, (config) => {
-          let ip = req.ip;
+          let ip = req.ip || '';
           if (ip.substring(0, 7) === '::ffff:') {
             ip = ip.substring(7);
+          }
+          if (ip === '127.0.0.1' || ip === '::1' || isPrivateAddress(ip)) {
+            ip = '';
           }
           config.ip = ip;
           return createRequest(config);
@@ -405,6 +419,18 @@ async function consturctServer(moduleDefs) {
         console.log('[OK]', decode(req.originalUrl));
 
         const cookies = moduleResponse.cookie;
+        if (Array.isArray(cookies)) {
+          for (const c of cookies) {
+            const m = String(c).match(/(?:^|;\s*)(?:kg_)?dfid=([^;]+)/i);
+            if (m && m[1]) {
+              const candidate = m[1].trim();
+              if (candidate && candidate !== '-' && candidate !== 'deleted' && candidate.length >= 16) {
+                globalDfid = candidate;
+                break;
+              }
+            }
+          }
+        }
         if (!query.noCookie) {
           if (Array.isArray(cookies) && cookies.length > 0) {
             if (req.protocol === 'https') {
@@ -456,7 +482,7 @@ async function consturctServer(moduleDefs) {
     'search_hot',
     'song_lyric'
   ];
-  setImmediate(() => {
+  setImmediate(async () => {
     for (const mod of moduleDefinitions) {
       if (CORE_MODULES.includes(mod.identifier)) {
         try {
@@ -464,6 +490,15 @@ async function consturctServer(moduleDefs) {
         } catch (_) {}
       }
     }
+    try {
+      const registerDev = require('./module/register_dev');
+      const reg = await registerDev({}, (config) => createRequest(config));
+      const dfid = reg?.body?.data?.dfid;
+      if (dfid && typeof dfid === 'string' && dfid.length >= 16 && dfid !== '-' && dfid !== 'deleted') {
+        globalDfid = dfid.trim();
+        console.log('[Server] Device registered on startup, dfid:', globalDfid);
+      }
+    } catch (_) {}
   });
 
   return app;

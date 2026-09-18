@@ -610,7 +610,7 @@ function initAutoUpdater() {
         sendToWindow({
           type: 'available',
           info: {
-            version: rules.latestVersion || '3.6.3',
+            version: rules.latestVersion || '3.7.0',
             releaseDate: new Date().toISOString(),
             releaseNotes: evalResult.forceNotice || '### [开发调试模拟更新日志]\n- 本日志来自本地 version-rules.json 模拟分发\n- 支持完整验证：常规更新、稍后提醒、跳过版本、强制升级及高危熔断等各种场景\n- 交互体验与正式打包发布完全一致'
           },
@@ -709,7 +709,7 @@ function initAutoUpdater() {
           updatePhase = null;
           sendToWindow({
             type: 'downloaded',
-            info: { version: '3.6.3' }
+            info: { version: '3.7.0' }
           });
         } else {
           sendToWindow({
@@ -1186,6 +1186,9 @@ const createWindow = () => {
       shell.openExternal(url);
     }
     return { action: 'deny' };
+  });
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    console.log(`[Renderer] ${message}`);
   });
   mainWindow.once('ready-to-show', () => mainWindow.show());
   ipcMain.on('window-min', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize(); });

@@ -174,7 +174,7 @@ export const useUpdateStore = defineStore('update', {
           this.handleUpdateEvent({
             type: 'available',
             info: {
-              version: rules.latestVersion || '3.6.3',
+              version: rules.latestVersion || '3.7.0',
               releaseDate: new Date().toISOString(),
               releaseNotes: rules.notice || '### [浏览器开发环境模拟更新]\n- 本地测试模式已激活\n- 支持验证常规更新、强制升级与黑名单熔断'
             },

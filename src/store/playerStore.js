@@ -731,6 +731,7 @@ export const usePlayerStore = defineStore('player', {
 
         let actualAudioDuration = activeAudio.duration;
         let expectedDuration = getExpectedDuration(this.currentSong);
+        console.log('[Audio] loadedmetadata fired: actualAudioDuration=', actualAudioDuration, 'expectedDuration=', expectedDuration);
 
         if (!this.isCurrentSongPreview) {
           if (expectedDuration > 0 && actualAudioDuration > 0) {
@@ -772,6 +773,7 @@ export const usePlayerStore = defineStore('player', {
            preloadState.hash = null;
            return;
         }
+        console.error('[Audio error event]', activeAudio.error?.code, activeAudio.error?.message, 'src:', activeAudio.src);
 
         if (activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
           const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
@@ -797,6 +799,29 @@ export const usePlayerStore = defineStore('player', {
           if (!isExternalImportSong(this.currentSong)) {
             this.showToast('音量增强代理暂时不可用，已恢复普通播放');
           }
+          activeAudio.load();
+          activeAudio.addEventListener('loadedmetadata', () => {
+            if (savedTime > 0) activeAudio.currentTime = savedTime;
+            if (wasPlaying) {
+              const p = activeAudio.play();
+              if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+            }
+            activeAudio._proxyRestoreTime = 0;
+            activeAudio._proxyResumeOnLoad = false;
+          }, { once: true });
+          return;
+        }
+
+        if (!activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
+          const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
+            ? activeAudio._proxyRestoreTime
+            : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
+          const wasPlaying = activeAudio._proxyResumeOnLoad || (this.isPlaying && !activeAudio.paused);
+          const rawUrl = activeAudio._rawSourceUrl;
+          activeAudio._proxyFallbackAttempted = true;
+          activeAudio._proxyRestoreTime = savedTime;
+          activeAudio._proxyResumeOnLoad = wasPlaying;
+          setAudioSource(activeAudio, rawUrl, true);
           activeAudio.load();
           activeAudio.addEventListener('loadedmetadata', () => {
             if (savedTime > 0) activeAudio.currentTime = savedTime;
@@ -2005,6 +2030,7 @@ export const usePlayerStore = defineStore('player', {
           this.currentQuality = res.quality;
           this.isCurrentSongPreview = res.isPreview; 
           setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this));
+          console.log('[Player playSong] res:', JSON.stringify(res), 'activeAudio.src:', activeAudio.src);
           if (maintainTime === 0) this.currentTime = 0;
           if (res.isPreview && autoPlay) this.showToast(getPreviewToastMessage(userStore));
           if (this.rememberState) this.persistPlaybackState();

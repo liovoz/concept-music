@@ -7,7 +7,7 @@ const { randomString } = require('../util/util');
 // subwoofer 乐器
 // ancient 尤克里里
 // dj dj
-module.exports = (params, useAxios) => {
+module.exports = async (params, useAxios) => {
   const quality = ['piano', 'acappella', 'subwoofer', 'ancient', 'dj', 'surnay'].includes(params.quality)
     ? `magic_${params?.quality}`
     : params.quality;
@@ -39,14 +39,93 @@ module.exports = (params, useAxios) => {
     clientver: 11430,
   };
   
-  return useAxios({
-    url: '/v5/url',
-    method: 'GET',
-    params: dataMap,
-    encryptType: 'android',
-    headers: { 'x-router': 'trackercdn.kugou.com'},
-    encryptKey: true,
-    notSign: true,
-    cookie: Object.assign({}, {dfid: randomString(24)}, params?.cookie ),
-  });
+  const isValidDfid = (val) => Boolean(val && typeof val === 'string' && val !== '-' && val !== 'deleted' && val.trim().length >= 16);
+  const incomingCookie = params?.cookie || {};
+  let effectiveDfid = (isValidDfid(incomingCookie.dfid) ? incomingCookie.dfid : '') ||
+                      (isValidDfid(incomingCookie.kg_dfid) ? incomingCookie.kg_dfid : '');
+  if (!effectiveDfid) {
+    try {
+      const registerDev = require('./register_dev');
+      const reg = await registerDev(params, useAxios);
+      if (isValidDfid(reg?.body?.data?.dfid)) {
+        effectiveDfid = String(reg.body.data.dfid).trim();
+      }
+    } catch (_) {}
+  }
+  if (!effectiveDfid) effectiveDfid = randomString(24);
+  const cookieObj = Object.assign({}, incomingCookie, { dfid: effectiveDfid, kg_dfid: effectiveDfid });
+
+  const trackerCandidates = [
+    params.baseURL,
+    'http://trackercdn.kugou.com',
+    'https://trackercdn.kugou.com',
+    'http://tracker.kugou.com'
+  ].filter(Boolean);
+
+  let lastResult = null;
+  let lastError = null;
+  let retried20028 = false;
+
+  for (const baseURL of trackerCandidates) {
+    try {
+      let res = await useAxios({
+        baseURL,
+        url: '/v5/url',
+        method: 'GET',
+        params: dataMap,
+        encryptType: 'android',
+        headers: { 'x-router': 'trackercdn.kugou.com' },
+        encryptKey: true,
+        notSign: true,
+        cookie: cookieObj,
+      });
+
+      if (res?.body?.errcode === 20028 && !retried20028) {
+        retried20028 = true;
+        try {
+          const registerDev = require('./register_dev');
+          const reg = await registerDev(params, useAxios);
+          if (isValidDfid(reg?.body?.data?.dfid)) {
+            effectiveDfid = String(reg.body.data.dfid).trim();
+            cookieObj.dfid = effectiveDfid;
+            cookieObj.kg_dfid = effectiveDfid;
+            res = await useAxios({
+              baseURL,
+              url: '/v5/url',
+              method: 'GET',
+              params: dataMap,
+              encryptType: 'android',
+              headers: { 'x-router': 'trackercdn.kugou.com' },
+              encryptKey: true,
+              notSign: true,
+              cookie: cookieObj,
+            });
+          }
+        } catch (_) {}
+      }
+
+      const body = res?.body;
+      const hasUrl = Boolean(body?.url && (Array.isArray(body.url) ? body.url.length > 0 : true));
+      const hasBackup = Boolean(body?.backupUrl && (Array.isArray(body.backupUrl) ? body.backupUrl.length > 0 : true));
+
+      if (hasUrl || hasBackup) {
+        res.cookie = Array.isArray(res.cookie) ? res.cookie : [];
+        if (effectiveDfid && !res.cookie.some(c => c.startsWith('dfid='))) {
+          res.cookie.push(`dfid=${effectiveDfid}`);
+          res.cookie.push(`kg_dfid=${effectiveDfid}`);
+        }
+        return res;
+      }
+
+      if (body && body.errcode !== 20028) {
+        lastResult = res;
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  if (lastResult) return lastResult;
+  if (lastError) throw lastError;
+  return { status: 404, body: { errcode: 404, error: 'No audio url available' }, cookie: [] };
 };

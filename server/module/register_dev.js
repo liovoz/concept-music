@@ -1,7 +1,10 @@
-const { playlistAesEncrypt, playlistAesDecrypt, rsaEncrypt2, signParamsKey, clientver, appid } = require('../util');
+const { playlistAesEncrypt, playlistAesDecrypt, rsaEncrypt2, signParamsKey, clientver, appid, cryptoMd5 } = require('../util');
+const { getGuid } = require('../util/util');
+
 module.exports = (params, useAxios) => {
   const userid = params?.userid || params?.cookie?.userid || 0;
   const token = params?.token || params.cookie?.token || '';
+  const fallbackGuid = cryptoMd5(getGuid());
   //可用内存，单位是字节
   const availableRamSize = params?.availableRamSize || 4983533568;
   //内部存储可用空间，单位是字节（约 48 MB）
@@ -21,13 +24,13 @@ module.exports = (params, useAxios) => {
   //设备代号
   const device = params?.device || 'marble';
   //IMEI 号
-  const imei = params?.imei || params.cookie?.KUGOU_API_GUID;
+  const imei = params?.imei || params.cookie?.KUGOU_API_GUID || fallbackGuid;
   //sim 卡号序号
   const imsi = params?.imsi || '';
   //厂商
   const manufacturer = params?.manufacturer || 'Xiaomi';
   //设备uuid
-  const uuid = params?.uuid  || params.cookie?.KUGOU_API_GUID;
+  const uuid = params?.uuid  || params.cookie?.KUGOU_API_GUID || fallbackGuid;
   //是否有加速度传感器
   const accelerometer = params?.accelerometer || false;
   //加速度传感器值
@@ -117,11 +120,31 @@ module.exports = (params, useAxios) => {
       responseType: 'arraybuffer',
     })
       .then((res) => {
-        res.body = playlistAesDecrypt({ str: res.body.toString('base64'), key: aesEncrypt.key });
+        let decryptedBody = null;
+        if (Buffer.isBuffer(res.body)) {
+          try {
+            decryptedBody = playlistAesDecrypt({ str: res.body.toString('base64'), key: aesEncrypt.key });
+          } catch (e) {
+            console.warn('[register_dev] Decrypt buffer failed:', e);
+          }
+        } else if (typeof res.body === 'string') {
+          try {
+            decryptedBody = playlistAesDecrypt({ str: res.body, key: aesEncrypt.key });
+          } catch (e) {
+            try { decryptedBody = JSON.parse(res.body); } catch (_) {}
+          }
+        } else if (typeof res.body === 'object' && res.body !== null) {
+          decryptedBody = res.body;
+        }
+
+        res.body = decryptedBody || res.body;
 
         const { body } = res;
-        if (body?.status === 1 && body?.data) {
-          res.cookie.push(`dfid=${res.body.data['dfid']}`);
+        if (body?.status === 1 && body?.data?.dfid) {
+          const dfidVal = String(body.data.dfid);
+          res.cookie = Array.isArray(res.cookie) ? res.cookie : [];
+          res.cookie.push(`dfid=${dfidVal}`);
+          res.cookie.push(`kg_dfid=${dfidVal}`);
         }
 
         resolve(res);

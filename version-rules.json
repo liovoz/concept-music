@@ -9,10 +9,12 @@
   "_说明_notice": "强制升级或熔断弹窗中向用户详细呈现的故障说明、安全公告或升级引导文案。",
 
 
-  "latestVersion": "3.6.3",
+  "latestVersion": "3.7.0",
   "minSupportedVersion": "",
-  "blacklistedVersions": [],
+  "blacklistedVersions": [
+    "3.6.3"
+  ],
   "forceUpdate": false,
-  "title": "重要安全与稳定性更新",
-  "notice": "检测到当前版本存在严重功能异常或底层协议调整，为了保障正常使用，请更新到最新版本后继续体验。"
+  "title": "高危故障版本紧急熔断",
+  "notice": "检测到您当前运行的客户端版本 (v3.6.3) 存在高危音源解析与播放故障，已被官方紧急熔断停用。为保障您的正常使用与数据安全，请立即更新至 v3.7.0 最新版本！"
 }
