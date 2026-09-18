@@ -186,21 +186,14 @@
                               @click="applyPreset('07:00', '19:00')"
                               class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 transition-colors"
                             >
-                              标准 (07:00 / 19:00)
+                              常规 (07:00 / 19:00)
                             </button>
                             <button
                               type="button"
                               @click="applyPreset('09:00', '23:00')"
                               class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 transition-colors"
                             >
-                              夜猫子 (09:00 / 23:00)
-                            </button>
-                            <button
-                              type="button"
-                              @click="applyPreset('06:00', '18:00')"
-                              class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 transition-colors"
-                            >
-                              早起族 (06:00 / 18:00)
+                              晚睡 (09:00 / 23:00)
                             </button>
                           </div>
                         </div>
