@@ -119,8 +119,10 @@ onMounted(() => {
     // 仅主窗口在启动时同步一次托盘状态，恢复上次退出时的播放模式显示（歌词窗口不参与，避免覆盖播放状态）
     if (route.path !== '/desktop-lyric') {
       playerStore.syncTrayState();
-      updateStore.initUpdater();
     }
+  }
+  if (route.path !== '/desktop-lyric') {
+    updateStore.initUpdater();
   }
 });
 

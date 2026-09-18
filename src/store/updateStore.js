@@ -40,7 +40,13 @@ export const useUpdateStore = defineStore('update', {
     snoozeUntil: Number(localStorage.getItem(STORAGE_KEYS.SNOOZE_UNTIL) || 0),
     dismissedVersion: localStorage.getItem(STORAGE_KEYS.DISMISSED_VERSION) || '',
 
-    isListening: false
+    isListening: false,
+
+    // 强制更新与高危熔断状态
+    isForced: false,
+    isBlacklisted: false,
+    forceTitle: '',
+    forceNotice: ''
   }),
 
   getters: {
@@ -62,9 +68,10 @@ export const useUpdateStore = defineStore('update', {
       );
     },
 
-    // 侧边栏/设置内是否展示红点（如果该版本被用户彻底忽略，则不亮红点）
+    // 侧边栏/设置内是否展示红点（如果该版本被用户彻底忽略，则不亮红点；强制更新必亮）
     hasBadge: (state) => {
       if (!state.hasNewVersion) return false;
+      if (state.isForced || state.isBlacklisted) return true;
       const targetVer = state.updateInfo?.version;
       return Boolean(targetVer && targetVer !== state.ignoredVersion);
     },
@@ -72,6 +79,9 @@ export const useUpdateStore = defineStore('update', {
     // 是否应该弹出右下角浮动通知卡片
     canShowFloatCard: (state) => {
       if (!state.showFloatCard || !state.hasNewVersion) return false;
+      // 强制更新或熔断模式下：永远保持展示，不可被忽略或推迟
+      if (state.isForced || state.isBlacklisted) return true;
+
       const ver = state.updateInfo?.version;
       // 已彻底忽略该版本
       if (ver && ver === state.ignoredVersion) return false;
@@ -121,6 +131,69 @@ export const useUpdateStore = defineStore('update', {
         window.updaterAPI.onUpdateEvent((data) => {
           this.handleUpdateEvent(data);
         });
+      } else if (import.meta.env.DEV) {
+        // 纯浏览器端开发调试支持：从本地根目录读取并模拟策略
+        this.appVersion = '3.6.2';
+        this.isListening = true;
+        setTimeout(() => {
+          this.simulateBrowserDevCheck(false);
+        }, 1200);
+      }
+    },
+
+    /**
+     * 纯浏览器开发环境下的更新策略模拟执行器
+     */
+    async simulateBrowserDevCheck(manual = false) {
+      try {
+        const rulesMod = await import('../../version-rules.json');
+        const rules = rulesMod.default || rulesMod;
+        if (!rules) return;
+
+        const currentVer = this.appVersion || '3.6.2';
+        const p1 = currentVer.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+        const p2 = (rules.latestVersion || currentVer).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+        const cmp = (a, b) => {
+          for (let i = 0; i < 3; i++) {
+            if ((a[i] || 0) > (b[i] || 0)) return 1;
+            if ((a[i] || 0) < (b[i] || 0)) return -1;
+          }
+          return 0;
+        };
+
+        const isBlacklisted = Array.isArray(rules.blacklistedVersions) && rules.blacklistedVersions.some(v => cmp(p1, v.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0)) === 0);
+        let isBelowMin = false;
+        if (rules.minSupportedVersion) {
+          const minP = rules.minSupportedVersion.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+          isBelowMin = cmp(p1, minP) < 0;
+        }
+        const hasHigherVer = cmp(p1, p2) < 0;
+        const isForced = isBlacklisted || isBelowMin || (rules.forceUpdate && hasHigherVer);
+
+        if (isBlacklisted || isForced || hasHigherVer) {
+          this.handleUpdateEvent({
+            type: 'available',
+            info: {
+              version: rules.latestVersion || '3.6.3',
+              releaseDate: new Date().toISOString(),
+              releaseNotes: rules.notice || '### [浏览器开发环境模拟更新]\n- 本地测试模式已激活\n- 支持验证常规更新、强制升级与黑名单熔断'
+            },
+            isManualCheck: manual,
+            isPortable: false,
+            channel: 'auto',
+            isForced,
+            isBlacklisted,
+            forceTitle: isBlacklisted ? '版本已停用并熔断' : (isForced ? '强制安全更新' : '重要安全与稳定性更新'),
+            forceNotice: rules.notice
+          });
+        } else if (manual) {
+          this.handleUpdateEvent({
+            type: 'not-available',
+            isManualCheck: true
+          });
+        }
+      } catch (e) {
+        console.warn('[Updater][BrowserDev] 模拟更新异常:', e);
       }
     },
 
@@ -151,15 +224,25 @@ export const useUpdateStore = defineStore('update', {
           if (data.channel) this.activeFeedChannel = data.channel;
           this.status = 'available';
 
-          // 判断是否弹出浮动卡片
-          const currentVer = this.updateInfo.version;
-          const isIgnored = currentVer && currentVer === this.ignoredVersion;
-          const isSnoozed = Date.now() < this.snoozeUntil;
-          const isDismissed = currentVer && currentVer === this.dismissedVersion;
+          // 接收强制更新与高危熔断状态
+          this.isForced = Boolean(data.isForced);
+          this.isBlacklisted = Boolean(data.isBlacklisted);
+          this.forceTitle = data.forceTitle || '';
+          this.forceNotice = data.forceNotice || '';
 
-          // 手动检查时或者符合通知条件时弹出
-          if (this.isManualCheck || (!isIgnored && !isSnoozed && !isDismissed)) {
+          // 判断是否弹出浮动卡片
+          if (this.isForced || this.isBlacklisted) {
             this.showFloatCard = true;
+          } else {
+            const currentVer = this.updateInfo.version;
+            const isIgnored = currentVer && currentVer === this.ignoredVersion;
+            const isSnoozed = Date.now() < this.snoozeUntil;
+            const isDismissed = currentVer && currentVer === this.dismissedVersion;
+
+            // 手动检查时或者符合通知条件时弹出
+            if (this.isManualCheck || (!isIgnored && !isSnoozed && !isDismissed)) {
+              this.showFloatCard = true;
+            }
           }
           break;
 
@@ -209,12 +292,17 @@ export const useUpdateStore = defineStore('update', {
      * 触发检查更新
      */
     checkForUpdates(manual = true) {
+      this.isManualCheck = manual;
+      this.status = 'checking';
+      this.errorMsg = '';
+      this.channelFallbackNotice = '';
+
       if (window.updaterAPI) {
-        this.isManualCheck = manual;
-        this.status = 'checking';
-        this.errorMsg = '';
-        this.channelFallbackNotice = '';
         window.updaterAPI.checkForUpdates();
+      } else if (import.meta.env.DEV) {
+        setTimeout(() => {
+          this.simulateBrowserDevCheck(manual);
+        }, 500);
       }
     },
 
@@ -243,6 +331,27 @@ export const useUpdateStore = defineStore('update', {
         this.status = 'downloading';
         this.progressInfo = { percent: 0, bytesPerSecond: 0 };
         window.updaterAPI.downloadUpdate();
+      } else if (import.meta.env.DEV) {
+        this.status = 'downloading';
+        let percent = 0;
+        const timer = setInterval(() => {
+          percent += 25;
+          if (percent >= 100) {
+            clearInterval(timer);
+            this.handleUpdateEvent({
+              type: 'downloaded',
+              info: this.updateInfo
+            });
+          } else {
+            this.handleUpdateEvent({
+              type: 'progress',
+              progressObj: {
+                percent,
+                bytesPerSecond: 1024 * 1024 * 3.8
+              }
+            });
+          }
+        }, 350);
       }
     },
 
@@ -270,6 +379,11 @@ export const useUpdateStore = defineStore('update', {
      * @param {'close' | 'snooze' | 'ignore'} type
      */
     dismissCard(type = 'close') {
+      // 强制更新或熔断模式下：严格拦截关闭、推迟和忽略行为
+      if (this.isForced || this.isBlacklisted) {
+        return;
+      }
+
       this.showFloatCard = false;
       const ver = this.updateInfo?.version || '';
 
@@ -293,6 +407,21 @@ export const useUpdateStore = defineStore('update', {
           this.ignoredVersion = ver;
           localStorage.setItem(STORAGE_KEYS.IGNORED_VERSION, ver);
         }
+      }
+    },
+
+    /**
+     * 退出应用程序（强制更新模式下提供给用户的合法退出途径）
+     */
+    quitApp() {
+      if (window.updaterAPI?.quitApp) {
+        window.updaterAPI.quitApp();
+      } else if (window.trayAPI?.forceQuit) {
+        window.trayAPI.forceQuit();
+      } else if (window.windowControls?.close) {
+        window.windowControls.close();
+      } else {
+        window.close();
       }
     },
 

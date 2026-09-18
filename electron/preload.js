@@ -61,7 +61,8 @@ contextBridge.exposeInMainWorld('updaterAPI', {
   onUpdateEvent: (callback) => {
     updaterEventMgr.set((_event, data) => callback(data));
   },
-  clearVault: () => ipcRenderer.send('clear-vault')
+  clearVault: () => ipcRenderer.send('clear-vault'),
+  quitApp: () => ipcRenderer.send('force-quit')
 });
 
 contextBridge.exposeInMainWorld('lyricAPI', {

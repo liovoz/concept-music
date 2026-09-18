@@ -249,6 +249,154 @@ const UPDATE_CHANNELS = {
   official: { id: 'official', name: '官方 GitHub 直连' }
 };
 
+// --- 版本控制与强制更新决策引擎 (Version Gating & Force Update) ---
+function parseSemver(v) {
+  if (!v) return [0, 0, 0];
+  const cleaned = String(v).replace(/^v/i, '').trim().split('-')[0];
+  const parts = cleaned.split('.').map(n => parseInt(n, 10) || 0);
+  while (parts.length < 3) parts.push(0);
+  return parts.slice(0, 3);
+}
+
+function compareSemver(v1, v2) {
+  const p1 = parseSemver(v1);
+  const p2 = parseSemver(v2);
+  for (let i = 0; i < 3; i++) {
+    if (p1[i] > p2[i]) return 1;
+    if (p1[i] < p2[i]) return -1;
+  }
+  return 0;
+}
+
+function stripJsonComments(str) {
+  if (!str) return '';
+  return str.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*$|\/\*[\s\S]*?\*\/)/gm, (match, group) => {
+    return group ? '' : match;
+  });
+}
+
+let cachedVersionRules = null;
+let lastRuleFetchTime = 0;
+
+async function fetchRemoteVersionRules(channel = 'auto') {
+  // 开发环境下优先读取本地 version-rules.json，方便即时模拟调试
+  if (!app.isPackaged) {
+    try {
+      const localPath = path.join(__dirname, '../version-rules.json');
+      if (fs.existsSync(localPath)) {
+        const rawContent = fs.readFileSync(localPath, 'utf8').replace(/^\uFEFF/, '');
+        const content = stripJsonComments(rawContent);
+        const parsed = JSON.parse(content);
+        if (parsed) {
+          console.log('[Updater] 开发环境成功读取本地 version-rules.json');
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('[Updater] 开发环境读取本地 version-rules.json 异常:', e);
+    }
+  }
+
+  // 生产环境下 3 分钟内使用缓存，降低网络开销
+  if (cachedVersionRules && (Date.now() - lastRuleFetchTime < 3 * 60 * 1000)) {
+    return cachedVersionRules;
+  }
+
+  const rawOfficial = 'https://raw.githubusercontent.com/liovoz/concept-music/main/version-rules.json';
+  const candidateUrls = [];
+  if (channel === 'ghfast') {
+    candidateUrls.push(`https://ghfast.top/${rawOfficial}`);
+    candidateUrls.push(`https://cdn.jsdelivr.net/gh/liovoz/concept-music@main/version-rules.json`);
+    candidateUrls.push(`https://ghproxy.net/${rawOfficial}`);
+    candidateUrls.push(rawOfficial);
+  } else if (channel === 'ghproxy') {
+    candidateUrls.push(`https://ghproxy.net/${rawOfficial}`);
+    candidateUrls.push(`https://cdn.jsdelivr.net/gh/liovoz/concept-music@main/version-rules.json`);
+    candidateUrls.push(`https://ghfast.top/${rawOfficial}`);
+    candidateUrls.push(rawOfficial);
+  } else if (channel === 'official') {
+    candidateUrls.push(rawOfficial);
+    candidateUrls.push(`https://cdn.jsdelivr.net/gh/liovoz/concept-music@main/version-rules.json`);
+    candidateUrls.push(`https://ghfast.top/${rawOfficial}`);
+  } else {
+    // 自动优选
+    candidateUrls.push(`https://ghfast.top/${rawOfficial}`);
+    candidateUrls.push(`https://cdn.jsdelivr.net/gh/liovoz/concept-music@main/version-rules.json`);
+    candidateUrls.push(`https://ghproxy.net/${rawOfficial}`);
+    candidateUrls.push(rawOfficial);
+  }
+
+  for (const url of candidateUrls) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const res = await net.fetch(url, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'concept-music-desktop', 'Cache-Control': 'no-cache' }
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const rawText = await res.text();
+        const cleanedText = stripJsonComments(rawText.replace(/^\uFEFF/, ''));
+        const json = JSON.parse(cleanedText);
+        if (json && typeof json === 'object') {
+          cachedVersionRules = json;
+          lastRuleFetchTime = Date.now();
+          console.log('[Updater] 成功获取云端版本控制策略');
+          return json;
+        }
+      }
+    } catch (e) {
+      // 单线路失败静默重试下一线路
+    }
+  }
+
+  return cachedVersionRules; // 若全失败返回旧缓存或 null (Fail-Open 容灾)
+}
+
+function evaluateVersionRules(currentVersion, rules, updateInfo) {
+  if (!rules) {
+    return { isForced: false, isBlacklisted: false, forceTitle: '', forceNotice: '' };
+  }
+
+  const blacklisted = Array.isArray(rules.blacklistedVersions) ? rules.blacklistedVersions : [];
+  const isBlacklisted = blacklisted.some(v => compareSemver(currentVersion, v) === 0);
+
+  let isBelowMin = false;
+  if (rules.minSupportedVersion) {
+    isBelowMin = compareSemver(currentVersion, rules.minSupportedVersion) < 0;
+  }
+
+  let isGlobalForced = false;
+  const targetVer = updateInfo?.version || rules.latestVersion;
+  if (rules.forceUpdate && targetVer && compareSemver(currentVersion, targetVer) < 0) {
+    isGlobalForced = true;
+  }
+
+  const isForced = isBlacklisted || isBelowMin || isGlobalForced;
+
+  let forceTitle = rules.title || '重要版本升级通知';
+  let forceNotice = rules.notice || '';
+
+  if (isBlacklisted) {
+    forceTitle = '版本已停用并熔断';
+    forceNotice = forceNotice || '您当前使用的客户端版本存在严重缺陷隐患，已被熔断停用。为保障您的数据安全与正常使用，请立即更新至新版本。';
+  } else if (isBelowMin) {
+    forceTitle = '版本过低，请升级后使用';
+    forceNotice = forceNotice || `当前版本已停止维护（最低要求 v${rules.minSupportedVersion}），请更新到最新版本以恢复正常功能。`;
+  } else if (isGlobalForced) {
+    forceTitle = rules.title || '强制安全更新';
+    forceNotice = forceNotice || '本次更新包含核心架构升级与重要修复，必须更新后方可继续使用。';
+  }
+
+  return {
+    isForced,
+    isBlacklisted,
+    forceTitle,
+    forceNotice
+  };
+}
+
 function initAutoUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
@@ -323,11 +471,52 @@ function initAutoUpdater() {
         }
       } catch (e) {}
     }
-    sendToWindow({ type: 'available', info, isManualCheck, isPortable, channel: currentFeedChannel });
+
+    // 结合云端策略进行版本决策判定
+    const rules = await fetchRemoteVersionRules(currentFeedChannel);
+    const evalResult = evaluateVersionRules(app.getVersion(), rules, info);
+
+    sendToWindow({
+      type: 'available',
+      info,
+      isManualCheck,
+      isPortable,
+      channel: currentFeedChannel,
+      isForced: evalResult.isForced,
+      isBlacklisted: evalResult.isBlacklisted,
+      forceTitle: evalResult.forceTitle,
+      forceNotice: evalResult.forceNotice
+    });
     isManualCheck = false;
   });
-  autoUpdater.on('update-not-available', (info) => {
+  autoUpdater.on('update-not-available', async (info) => {
     updatePhase = null;
+    // 即使 electron-updater 报告无更高版本，仍需判断当前版本是否已被列入黑名单或低于最低版本（解决紧急撤回后的版本孤岛）
+    const rules = await fetchRemoteVersionRules(currentFeedChannel);
+    const evalResult = evaluateVersionRules(app.getVersion(), rules, info);
+
+    if (evalResult.isForced || evalResult.isBlacklisted) {
+      console.warn('[Updater] 当前版本被列入黑名单或已停止维护，合成阻断更新弹窗');
+      const isPortable = Boolean(process.env.PORTABLE_EXECUTABLE_DIR);
+      sendToWindow({
+        type: 'available',
+        info: {
+          version: (rules && rules.latestVersion) || app.getVersion(),
+          releaseDate: new Date().toISOString(),
+          releaseNotes: evalResult.forceNotice
+        },
+        isManualCheck: true,
+        isPortable,
+        channel: currentFeedChannel,
+        isForced: evalResult.isForced,
+        isBlacklisted: evalResult.isBlacklisted,
+        forceTitle: evalResult.forceTitle,
+        forceNotice: evalResult.forceNotice
+      });
+      isManualCheck = false;
+      return;
+    }
+
     if (isManualCheck) sendToWindow({ type: 'not-available', info, isManualCheck });
     isManualCheck = false;
   });
@@ -402,9 +591,62 @@ function initAutoUpdater() {
     });
   };
 
-  ipcMain.on('check-for-updates', () => {
+  const triggerDevUpdateSimulation = async (manual = false) => {
+    try {
+      const rules = await fetchRemoteVersionRules(activeChannel);
+      if (!rules) return false;
+
+      const currentVer = app.getVersion();
+      const evalResult = evaluateVersionRules(currentVer, rules, { version: rules.latestVersion });
+      const hasHigherVer = rules.latestVersion && compareSemver(currentVer, rules.latestVersion) < 0;
+
+      if (evalResult.isForced || evalResult.isBlacklisted || hasHigherVer) {
+        console.log('[Updater][Dev] 触发开发环境本地更新模拟:', {
+          currentVer,
+          latestVersion: rules.latestVersion,
+          isForced: evalResult.isForced,
+          isBlacklisted: evalResult.isBlacklisted
+        });
+        sendToWindow({
+          type: 'available',
+          info: {
+            version: rules.latestVersion || '3.6.3',
+            releaseDate: new Date().toISOString(),
+            releaseNotes: evalResult.forceNotice || '### [开发调试模拟更新日志]\n- 本日志来自本地 version-rules.json 模拟分发\n- 支持完整验证：常规更新、稍后提醒、跳过版本、强制升级及高危熔断等各种场景\n- 交互体验与正式打包发布完全一致'
+          },
+          isManualCheck: manual,
+          isPortable: false,
+          channel: currentFeedChannel,
+          isForced: evalResult.isForced,
+          isBlacklisted: evalResult.isBlacklisted,
+          forceTitle: evalResult.forceTitle,
+          forceNotice: evalResult.forceNotice
+        });
+        return true;
+      } else if (manual) {
+        sendToWindow({
+          type: 'not-available',
+          info: { version: currentVer },
+          isManualCheck: true
+        });
+        return true;
+      }
+    } catch (e) {
+      console.warn('[Updater][Dev] 模拟更新检测失败:', e);
+    }
+    return false;
+  };
+
+  ipcMain.on('check-for-updates', async () => {
     isManualCheck = true;
-    if (!app.isPackaged) { sendToWindow({ type: 'error', message: '开发环境暂不支持自动更新，请打包后体验', isManualCheck }); isManualCheck = false; return; }
+    if (!app.isPackaged) {
+      const handled = await triggerDevUpdateSimulation(true);
+      if (!handled) {
+        sendToWindow({ type: 'error', message: '开发环境暂不支持自动更新安装，请打包后体验完整更新流程', isManualCheck });
+      }
+      isManualCheck = false;
+      return;
+    }
     runCheckFlow(null, true);
   });
 
@@ -453,7 +695,37 @@ function initAutoUpdater() {
     });
   };
 
+  let devDownloadTimer = null;
   ipcMain.on('download-update', () => {
+    if (!app.isPackaged) {
+      updatePhase = 'downloading';
+      let currentPercent = 0;
+      clearInterval(devDownloadTimer);
+      devDownloadTimer = setInterval(() => {
+        currentPercent += 25;
+        if (currentPercent >= 100) {
+          clearInterval(devDownloadTimer);
+          devDownloadTimer = null;
+          updatePhase = null;
+          sendToWindow({
+            type: 'downloaded',
+            info: { version: '3.6.3' }
+          });
+        } else {
+          sendToWindow({
+            type: 'progress',
+            progressObj: {
+              percent: currentPercent,
+              bytesPerSecond: 1024 * 1024 * 4.2,
+              total: 50 * 1024 * 1024,
+              transferred: Math.floor(50 * 1024 * 1024 * (currentPercent / 100))
+            }
+          });
+        }
+      }, 400);
+      return;
+    }
+
     if (Boolean(process.env.PORTABLE_EXECUTABLE_DIR)) {
       let targetUrl = 'https://github.com/liovoz/concept-music/releases/latest';
       const channel = activeChannel;
@@ -472,6 +744,13 @@ function initAutoUpdater() {
   });
 
   ipcMain.on('cancel-download', () => {
+    if (!app.isPackaged && devDownloadTimer) {
+      clearInterval(devDownloadTimer);
+      devDownloadTimer = null;
+      updatePhase = null;
+      sendToWindow({ type: 'cancelled' });
+      return;
+    }
     if (downloadCancellationToken) {
       isDownloadCancelled = true;
       downloadCancellationToken.cancel();
@@ -506,6 +785,11 @@ function initAutoUpdater() {
     setInterval(() => {
       runCheckFlow(null, false);
     }, 8 * 60 * 60 * 1000);
+  } else {
+    // 开发环境下：启动 2 秒后自动进行本地策略模拟检测
+    setTimeout(() => {
+      triggerDevUpdateSimulation(false);
+    }, 2000);
   }
 }
 

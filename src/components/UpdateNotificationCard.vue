@@ -4,7 +4,7 @@
       <div
         v-if="updateStore.canShowFloatCard"
         class="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 backdrop-blur-md no-drag p-4 outline-none"
-        @click.self="updateStore.dismissCard('close')"
+        @click.self="handleBackdropClick"
       >
         <div
           class="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/60 dark:border-slate-800/80 rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.8)] w-[520px] max-w-[94vw] flex flex-col overflow-hidden transform transition-all text-slate-800 dark:text-slate-100 select-none"
@@ -15,8 +15,9 @@
 
           <!-- 头部：图标 + 标题 + 版本药丸 + 关闭按钮 -->
           <div class="relative px-6 pt-6 pb-4 border-b border-slate-100/80 dark:border-slate-800/80 bg-gradient-to-b from-blue-50/50 via-indigo-50/15 to-transparent dark:from-blue-950/25 dark:via-slate-900/50 dark:to-transparent">
-            <!-- 关闭按钮 -->
+            <!-- 关闭按钮 (非强制更新时展示) -->
             <button
+              v-if="!updateStore.isForced && !updateStore.isBlacklisted"
               @click="updateStore.dismissCard('close')"
               class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-all duration-150 active:scale-90 border border-slate-200/50 dark:border-slate-700/50"
               v-tooltip="'关闭 (Esc)'"
@@ -40,7 +41,21 @@
                     {{ cardTitle }}
                   </h3>
                   <span
-                    v-if="updateStore.updateInfo?.version"
+                    v-if="updateStore.isBlacklisted"
+                    class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-300/60 dark:border-rose-700/60 shadow-xs flex items-center gap-1"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                    版本已熔断
+                  </span>
+                  <span
+                    v-else-if="updateStore.isForced"
+                    class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60 shadow-xs flex items-center gap-1"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    强制安全更新
+                  </span>
+                  <span
+                    v-else-if="updateStore.updateInfo?.version"
                     class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-gradient-to-r from-blue-500/10 to-indigo-500/10 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-700/50 shadow-xs flex items-center gap-1"
                   >
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
@@ -51,6 +66,24 @@
                   {{ headerSubtitle }}
                 </p>
               </div>
+            </div>
+          </div>
+
+          <!-- 紧急安全更新/熔断公告横幅 -->
+          <div 
+            v-if="updateStore.isForced || updateStore.isBlacklisted" 
+            class="mx-6 mt-3 px-3.5 py-2.5 rounded-2xl text-xs flex items-start gap-3 border shadow-2xs"
+            :class="updateStore.isBlacklisted ? 'bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-300' : 'bg-amber-500/10 border-amber-500/25 text-amber-800 dark:text-amber-200'"
+          >
+            <div 
+              class="w-6 h-6 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs"
+              :class="updateStore.isBlacklisted ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'"
+            >
+              <AppIcon :name="updateStore.isBlacklisted ? 'danger' : 'warning'" class="w-3.5 h-3.5" />
+            </div>
+            <div class="leading-relaxed flex-1">
+              <div class="font-black text-xs mb-0.5 tracking-tight">{{ updateStore.forceTitle || (updateStore.isBlacklisted ? '版本安全熔断警报' : '强制版本升级要求') }}</div>
+              <div class="opacity-90 text-[11px] leading-normal select-text">{{ updateStore.forceNotice || '当前版本已无法继续提供正常服务，请立即升级到新版本以继续使用。' }}</div>
             </div>
           </div>
 
@@ -142,24 +175,30 @@
               <!-- 左侧辅助快捷链接 -->
               <div class="flex items-center space-x-2.5">
                 <button
+                  v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                   @click="updateStore.dismissCard('ignore')"
                   class="text-xs text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 transition-colors font-medium"
                   v-tooltip="'跳过此版本 (不再提示)'"
                 >
                   跳过此版本
                 </button>
-                <span class="text-slate-200 dark:text-slate-700 select-none">|</span>
+                <span v-if="!updateStore.isForced && !updateStore.isBlacklisted" class="text-slate-200 dark:text-slate-700 select-none">|</span>
                 <button
                   @click="openDetails"
-                  class="text-xs text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 transition-colors font-medium"
+                  class="text-xs text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1.5"
+                  v-tooltip="'切换更新镜像加速通道'"
                 >
-                  线路设置
+                  <AppIcon name="settings" class="w-3.5 h-3.5" />
+                  <span>线路设置</span>
+                  <span class="text-[10px] text-blue-500/90 font-medium">({{ currentChannelBrief }})</span>
                 </button>
               </div>
 
               <!-- 右侧主/次操作按钮 -->
               <div class="flex items-center space-x-2.5">
+                <!-- 非强制更新：稍后提醒 -->
                 <button
+                  v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                   @click="updateStore.dismissCard('snooze')"
                   class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all"
                   v-tooltip="'稍后提醒 (24小时内不再提示)'"
@@ -167,9 +206,21 @@
                   稍后提醒
                 </button>
 
+                <!-- 强制更新或熔断模式：退出软件 -->
+                <button
+                  v-else
+                  @click="updateStore.quitApp()"
+                  class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
+                >
+                  退出软件
+                </button>
+
                 <button
                   @click="updateStore.startDownload()"
-                  class="px-6 py-2.5 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center gap-2 group"
+                  class="px-6 py-2.5 text-white rounded-xl text-xs font-black shadow-lg active:scale-95 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center gap-2 group"
+                  :class="updateStore.isBlacklisted 
+                    ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 shadow-rose-500/25 hover:shadow-rose-500/35' 
+                    : 'bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25 hover:shadow-blue-500/35'"
                 >
                   <AppIcon :name="updateStore.isPortable ? 'share' : 'download'" class="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
                   <span>{{ updateStore.isPortable ? '前往下载 Release' : '立即更新' }}</span>
@@ -209,9 +260,10 @@
               <div class="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 pt-1">
                 <span class="flex items-center gap-1.5">
                   <AppIcon name="music" class="w-3.5 h-3.5 text-blue-500" />
-                  <span>下载过程不影响歌曲播放，您可以继续听歌</span>
+                  <span>{{ (updateStore.isForced || updateStore.isBlacklisted) ? '正在下载最新版本，下载完成后自动提示安装' : '下载过程不影响歌曲播放，您可以继续听歌' }}</span>
                 </span>
                 <button
+                  v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                   @click="updateStore.cancelDownload()"
                   class="text-xs font-medium text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
                 >
@@ -226,12 +278,20 @@
                 <span>下载完成后将自动提示安装</span>
               </span>
               <button
+                v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
                 class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-700 active:scale-95 transition-all border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-1.5 shadow-2xs"
                 v-tooltip="'收起窗口，下载将在后台继续进行'"
               >
                 <AppIcon name="minimize-tray" class="w-3.5 h-3.5 text-slate-400" />
                 <span>收起至后台下载</span>
+              </button>
+              <button
+                v-else
+                @click="updateStore.quitApp()"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200/60 dark:border-slate-700/60"
+              >
+                <span>退出软件</span>
               </button>
             </div>
           </div>
@@ -254,10 +314,18 @@
 
             <div class="px-6 py-4 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-2.5">
               <button
+                v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
                 class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 active:scale-95 transition-all"
               >
                 稍后重启
+              </button>
+              <button
+                v-else
+                @click="updateStore.quitApp()"
+                class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
+              >
+                退出软件
               </button>
               <button
                 @click="updateStore.quitAndInstall()"
@@ -291,13 +359,82 @@
                 切换下载线路
               </button>
               <button
+                v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
                 class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors"
               >
                 关闭
               </button>
+              <button
+                v-else
+                @click="updateStore.quitApp()"
+                class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors border border-slate-200 dark:border-slate-700"
+              >
+                退出软件
+              </button>
             </div>
           </div>
+
+          <!-- 内置线路设置快捷切换浮层（彻底解决模态框遮挡全局设置菜单的痛点） -->
+          <transition name="modal-fade">
+            <div
+              v-if="showChannelMenu"
+              class="absolute inset-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl flex flex-col justify-between p-6 rounded-3xl animate-in fade-in zoom-in-95 duration-200"
+            >
+              <div>
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+                  <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                      <AppIcon name="settings" class="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-black text-slate-900 dark:text-white">选择下载与更新线路</h4>
+                      <p class="text-[11px] text-slate-400 dark:text-slate-500">如遇下载缓慢或连接阻断，推荐切换至国内专线镜像</p>
+                    </div>
+                  </div>
+                  <button
+                    @click="showChannelMenu = false"
+                    class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-400 flex items-center justify-center transition-colors"
+                  >
+                    <AppIcon name="close" class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div class="space-y-2">
+                  <button
+                    v-for="ch in channelOptions"
+                    :key="ch.id"
+                    @click="handleSelectChannel(ch.id)"
+                    class="w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between group"
+                    :class="updateStore.updateChannel === ch.id
+                      ? 'bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-300 shadow-xs'
+                      : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300'"
+                  >
+                    <div class="space-y-0.5">
+                      <div class="text-xs font-bold flex items-center gap-1.5">
+                        <span>{{ ch.name }}</span>
+                        <span v-if="ch.id === 'auto'" class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold">推荐</span>
+                      </div>
+                      <div class="text-[11px] text-slate-400 dark:text-slate-500">{{ ch.desc }}</div>
+                    </div>
+                    <div v-if="updateStore.updateChannel === ch.id" class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <AppIcon name="check" class="w-3 h-3" />
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-400 dark:text-slate-500">当前已选：<strong class="text-blue-600 dark:text-blue-400">{{ currentChannelName }}</strong></span>
+                <button
+                  @click="showChannelMenu = false"
+                  class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all shadow-md shadow-blue-500/20"
+                >
+                  确定完成
+                </button>
+              </div>
+            </div>
+          </transition>
         </div>
       </div>
     </transition>
@@ -305,14 +442,45 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, onUnmounted } from 'vue';
+import { ref, computed, inject, onMounted, onUnmounted } from 'vue';
 import { useUpdateStore } from '../store/updateStore';
 
 const updateStore = useUpdateStore();
 const settingsModalRef = inject('settingsModalRef', null);
 
+const showChannelMenu = ref(false);
+
+const channelOptions = [
+  { id: 'auto', name: '自动优选 (推荐)', desc: '智能并发测速，自动选择延迟最低的国内加速节点' },
+  { id: 'ghfast', name: 'ghfast 专线', desc: '基于 CDN 极速中继，国内三大运营商访问友好稳定' },
+  { id: 'ghproxy', name: 'ghproxy 镜像', desc: '稳定老牌 GitHub 代理中转节点' },
+  { id: 'official', name: 'GitHub 官方直连', desc: '直连 GitHub 官方 Releases（适合已开启网络代理或海外环境）' }
+];
+
+const currentChannelName = computed(() => {
+  const target = channelOptions.find(c => c.id === updateStore.updateChannel);
+  return target ? target.name : '自动优选';
+});
+
+const currentChannelBrief = computed(() => {
+  if (updateStore.updateChannel === 'ghfast') return 'ghfast';
+  if (updateStore.updateChannel === 'ghproxy') return 'ghproxy';
+  if (updateStore.updateChannel === 'official') return '官方直连';
+  return '自动优选';
+});
+
+const handleSelectChannel = (id) => {
+  updateStore.setChannel(id);
+};
+
+const handleBackdropClick = () => {
+  if (updateStore.isForced || updateStore.isBlacklisted) return;
+  updateStore.dismissCard('close');
+};
+
 const onKeyDown = (e) => {
   if (e.key === 'Escape' && updateStore.canShowFloatCard) {
+    if (updateStore.isForced || updateStore.isBlacklisted) return;
     updateStore.dismissCard('close');
   }
 };
@@ -329,6 +497,8 @@ const cardTitle = computed(() => {
   if (updateStore.status === 'downloaded') return '更新已就绪';
   if (updateStore.status === 'downloading') return '新版本下载中';
   if (updateStore.status === 'error') return '更新遇到问题';
+  if (updateStore.isBlacklisted) return updateStore.forceTitle || '版本已被熔断停用';
+  if (updateStore.isForced) return updateStore.forceTitle || '重要安全更新';
   return '发现新版本';
 });
 
@@ -337,15 +507,35 @@ const headerSubtitle = computed(() => {
     return '安装包已在本地准备就绪，重启软件即可完成更新升级';
   }
   if (updateStore.status === 'downloading') {
-    return '正在下载新版本安装包，可收起窗口在后台继续下载';
+    return (updateStore.isForced || updateStore.isBlacklisted)
+      ? '正在下载修复版本安装包，安装完成后方可进入主系统'
+      : '正在下载新版本安装包，可收起窗口在后台继续下载';
   }
   if (updateStore.status === 'error') {
     return '检测或下载过程中网络受阻，可尝试在设置中切换镜像源';
+  }
+  if (updateStore.isBlacklisted) {
+    return '检测到当前使用的客户端版本存在重大缺陷隐患，已被熔断停用';
+  }
+  if (updateStore.isForced) {
+    return '当前版本已低于最低运行要求，请更新后继续使用概念音乐';
   }
   return '概念音乐发布了全新版本，推荐立即更新体验最新特性与修复';
 });
 
 const headerIconStyle = computed(() => {
+  if (updateStore.isBlacklisted) {
+    return {
+      wrap: 'bg-gradient-to-br from-rose-500 to-red-600 shadow-rose-500/30',
+      icon: 'danger'
+    };
+  }
+  if (updateStore.isForced) {
+    return {
+      wrap: 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-500/30',
+      icon: 'warning'
+    };
+  }
   if (updateStore.status === 'downloaded') {
     return {
       wrap: 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/30',
@@ -593,10 +783,7 @@ const formatDate = (isoStr) => {
 };
 
 const openDetails = () => {
-  updateStore.dismissCard('close');
-  if (settingsModalRef && settingsModalRef.value) {
-    settingsModalRef.value.showModal('about');
-  }
+  showChannelMenu.value = true;
 };
 </script>
 
