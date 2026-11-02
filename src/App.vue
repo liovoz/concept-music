@@ -72,6 +72,7 @@ import { useUserStore } from './store/userStore';
 import { usePlayerStore } from './store/playerStore';
 import { useUpdateStore } from './store/updateStore';
 import { hideTooltip, tooltipState } from './utils/tooltip';
+import { initMediaSessionBridge, disposeMediaSessionBridge } from './utils/mediaSessionBridge';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
@@ -112,21 +113,27 @@ const handleTrayAction = (action) => {
   }
 };
 
+const isDesktopLyricWindow = () =>
+  route.path === '/desktop-lyric' ||
+  (typeof window !== 'undefined' && typeof window.location?.hash === 'string' && window.location.hash.startsWith('#/desktop-lyric'));
+
 onMounted(() => { 
-  if (disclaimerAccepted) userStore.verifySession(); 
-  if (window.trayAPI) {
+  const isLyricWin = isDesktopLyricWindow();
+  if (disclaimerAccepted && !isLyricWin) userStore.verifySession(); 
+  if (window.trayAPI && !isLyricWin) {
     window.trayAPI.onTrayAction(handleTrayAction);
     // 仅主窗口在启动时同步一次托盘状态，恢复上次退出时的播放模式显示（歌词窗口不参与，避免覆盖播放状态）
-    if (route.path !== '/desktop-lyric') {
-      playerStore.syncTrayState();
-    }
+    playerStore.syncTrayState();
   }
-  if (route.path !== '/desktop-lyric') {
+  if (!isLyricWin) {
     updateStore.initUpdater();
+    // 锁屏 / 系统媒体控件（SMTC）桥接，仅主窗口初始化，避免桌面歌词窗口产生第二个会话
+    initMediaSessionBridge(playerStore);
   }
 });
 
 onUnmounted(() => {
+  disposeMediaSessionBridge();
   if (window.trayAPI) {
     try { window.trayAPI.onTrayAction(() => {}); } catch(e) {}
   }

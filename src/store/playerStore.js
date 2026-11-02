@@ -160,13 +160,15 @@ const buildAudioProxyUrl = (url) => {
 
 const shouldUseAudioProxy = (store) => store.volumeBoostEnabled || audioGraphInitialized;
 
-const setAudioSource = (audio, url, useProxy) => {
+const setAudioSource = (audio, url, useProxy, songHash = '') => {
   const rawUrl = getRawAudioUrl(url);
   audio._rawSourceUrl = rawUrl;
   audio._usingProxy = !!useProxy;
   audio._proxyFallbackAttempted = false;
   audio._proxyRestoreTime = 0;
   audio._proxyResumeOnLoad = false;
+  audio._intendToPlay = false;
+  if (songHash) audio._songHash = songHash;
   if (useProxy) {
     audio.crossOrigin = 'anonymous';
     audio.src = buildAudioProxyUrl(rawUrl);
@@ -259,15 +261,37 @@ const recreateAudioInstances = (store) => {
   }
 };
 
+const resetAudioElementSource = (audio) => {
+  if (!audio) return;
+  audio._intendToPlay = false;
+  audio._songHash = '';
+  try { audio.pause(); } catch (e) {}
+  audio.removeAttribute('src');
+  audio._rawSourceUrl = '';
+  audio._usingProxy = false;
+  audio._proxyFallbackAttempted = false;
+  audio._proxyRestoreTime = 0;
+  audio._proxyResumeOnLoad = false;
+  try { audio.load(); } catch (e) {}
+};
+
+const safePlayAudio = (audio) => {
+  if (!audio) return undefined;
+  audio._intendToPlay = true;
+  if (audioContext && audioContext.state === 'suspended') {
+    try { audioContext.resume().catch(() => {}); } catch (e) {}
+  }
+  return audio.play();
+};
+
+const safePauseAudio = (audio) => {
+  if (!audio) return;
+  audio._intendToPlay = false;
+  try { audio.pause(); } catch (e) {}
+};
+
 const resetPreloadAudio = () => {
-  preloadAudio.pause();
-  preloadAudio.removeAttribute('src');
-  preloadAudio._rawSourceUrl = '';
-  preloadAudio._usingProxy = false;
-  preloadAudio._proxyFallbackAttempted = false;
-  preloadAudio._proxyRestoreTime = 0;
-  preloadAudio._proxyResumeOnLoad = false;
-  preloadAudio.load();
+  resetAudioElementSource(preloadAudio);
   preloadState = {
     hash: null,
     quality: 'standard',
@@ -757,7 +781,7 @@ export const usePlayerStore = defineStore('player', {
       });
       
       audioInstance.addEventListener('pause', (e) => { 
-        if (e.target !== activeAudio) return;
+        if (e.target !== activeAudio || !activeAudio.paused) return;
         this.isPlaying = false; 
         if (this.rememberState) this.persistPlaybackState();
         this.syncTrayState();
@@ -779,8 +803,9 @@ export const usePlayerStore = defineStore('player', {
           const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
             ? activeAudio._proxyRestoreTime
             : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
-          const wasPlaying = activeAudio._proxyResumeOnLoad || (this.isPlaying && !activeAudio.paused);
+          const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
           const rawUrl = activeAudio._rawSourceUrl;
+          const ownerHash = activeAudio._songHash || this.currentSong?.hash || '';
           activeAudio._proxyFallbackAttempted = true;
           activeAudio._proxyRestoreTime = savedTime;
           activeAudio._proxyResumeOnLoad = wasPlaying;
@@ -789,12 +814,13 @@ export const usePlayerStore = defineStore('player', {
             this.volumeBoostEnabled = false;
             localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
             recreateAudioInstances(this);
-            activeAudio._proxyFallbackAttempted = true;
-            activeAudio._proxyRestoreTime = savedTime;
-            activeAudio._proxyResumeOnLoad = wasPlaying;
           }
 
-          setAudioSource(activeAudio, rawUrl, false);
+          setAudioSource(activeAudio, rawUrl, false, ownerHash);
+          activeAudio._proxyFallbackAttempted = true;
+          activeAudio._proxyRestoreTime = savedTime;
+          activeAudio._proxyResumeOnLoad = wasPlaying;
+          activeAudio._intendToPlay = wasPlaying;
           this.applyAudioOutputSettings();
           if (!isExternalImportSong(this.currentSong)) {
             this.showToast('音量增强代理暂时不可用，已恢复普通播放');
@@ -803,8 +829,11 @@ export const usePlayerStore = defineStore('player', {
           activeAudio.addEventListener('loadedmetadata', () => {
             if (savedTime > 0) activeAudio.currentTime = savedTime;
             if (wasPlaying) {
-              const p = activeAudio.play();
+              const p = safePlayAudio(activeAudio);
               if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+              this.isPlaying = true;
+            } else {
+              this.isPlaying = false;
             }
             activeAudio._proxyRestoreTime = 0;
             activeAudio._proxyResumeOnLoad = false;
@@ -816,18 +845,23 @@ export const usePlayerStore = defineStore('player', {
           const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
             ? activeAudio._proxyRestoreTime
             : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
-          const wasPlaying = activeAudio._proxyResumeOnLoad || (this.isPlaying && !activeAudio.paused);
+          const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
           const rawUrl = activeAudio._rawSourceUrl;
+          const ownerHash = activeAudio._songHash || this.currentSong?.hash || '';
+          setAudioSource(activeAudio, rawUrl, true, ownerHash);
           activeAudio._proxyFallbackAttempted = true;
           activeAudio._proxyRestoreTime = savedTime;
           activeAudio._proxyResumeOnLoad = wasPlaying;
-          setAudioSource(activeAudio, rawUrl, true);
+          activeAudio._intendToPlay = wasPlaying;
           activeAudio.load();
           activeAudio.addEventListener('loadedmetadata', () => {
             if (savedTime > 0) activeAudio.currentTime = savedTime;
             if (wasPlaying) {
-              const p = activeAudio.play();
+              const p = safePlayAudio(activeAudio);
               if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+              this.isPlaying = true;
+            } else {
+              this.isPlaying = false;
             }
             activeAudio._proxyRestoreTime = 0;
             activeAudio._proxyResumeOnLoad = false;
@@ -1077,7 +1111,7 @@ export const usePlayerStore = defineStore('player', {
         audio.addEventListener('loadedmetadata', () => {
           if (savedTime > 0) audio.currentTime = savedTime;
           if (wasPlaying) {
-            const p = audio.play();
+            const p = safePlayAudio(audio);
             if (p !== undefined) p.catch(() => { this.isPlaying = false; });
           }
           audio._proxyRestoreTime = 0;
@@ -1372,13 +1406,14 @@ export const usePlayerStore = defineStore('player', {
       return true;
     },
 
-    async fetchSongQualityInfo(song) {
+    async fetchSongQualityInfo(song, options = {}) {
       if (!song) return;
       if (isExternalImportSong(song)) {
         song.qualities = extractQualities(song);
         return;
       }
       if (!song.qualities) song.qualities = extractQualities(song);
+      if (song._qualityInfoFetched && !options.force) return;
 
       try {
         let info = null;
@@ -1392,16 +1427,26 @@ export const usePlayerStore = defineStore('player', {
         }
 
         if (info) {
+          song._qualityInfoFetched = true;
           if (!song.qualities) song.qualities = {};
-          if (info.hash_320 && !song.qualities.hq) song.qualities.hq = info.hash_320;
-          if (info.hash_flac && !song.qualities.sq) song.qualities.sq = info.hash_flac;
-          if (info.hash_high && !song.qualities.high) song.qualities.high = info.hash_high;
-          if (info.hash_viper_clear && !song.qualities.viper_clear) song.qualities.viper_clear = info.hash_viper_clear;
-          if (info.hash_viper_atmos && !song.qualities.viper_atmos) song.qualities.viper_atmos = info.hash_viper_atmos;
+          let addedNewQuality = false;
+          const assignIfMissing = (key, val) => {
+            if (val && !song.qualities[key]) {
+              song.qualities[key] = val;
+              addedNewQuality = true;
+            }
+          };
+          assignIfMissing('hq', info.hash_320);
+          assignIfMissing('sq', info.hash_flac);
+          assignIfMissing('high', info.hash_high);
+          assignIfMissing('viper_clear', info.hash_viper_clear);
+          assignIfMissing('viper_atmos', info.hash_viper_atmos);
 
-          for (const qKey of Object.keys(song.qualities)) {
-            const cacheKey = `${song.hash}_${qKey}`;
-            if (urlCache.has(cacheKey)) urlCache.delete(cacheKey);
+          if (options.force || addedNewQuality) {
+            for (const qKey of Object.keys(song.qualities)) {
+              const cacheKey = `${song.hash}_${qKey}`;
+              if (urlCache.has(cacheKey)) urlCache.delete(cacheKey);
+            }
           }
         }
       } catch (e) {}
@@ -1420,6 +1465,11 @@ export const usePlayerStore = defineStore('player', {
       const isVipSong = song.is_vip || song.is_paid;
       const hasFullAccess = isVipUser || !isVipSong;
       if (!hasFullAccess) return;
+
+      const cacheQ = hasFullAccess ? 'best' : 'hq';
+      if (getCachedUrl(song.hash, cacheQ)) return;
+      // 带有 album_audio_id 的歌曲直接走 /song/url/new 一次返回全音质，无需前置串行请求 /krm/audio
+      if (song.album_audio_id && String(song.album_audio_id) !== '0') return;
 
       await this.fetchSongQualityInfo(song);
     },
@@ -1711,6 +1761,10 @@ export const usePlayerStore = defineStore('player', {
         } catch (e) {}
       }
 
+      if (hasFullAccess && !songInfo._qualityInfoFetched) {
+        await this.fetchSongQualityInfo(songInfo);
+      }
+
       let tryQueue = [...QUALITY_CONFIG];
       if (targetQuality) {
         const targetIdx = tryQueue.findIndex(q => q.key === targetQuality);
@@ -1833,7 +1887,7 @@ export const usePlayerStore = defineStore('player', {
         await this.prepareAutoQuality(nextSong, null);
         const res = await this.resolveSongUrl(nextSong, null);
         if (res && res.url) {
-          setAudioSource(preloadAudio, res.url, shouldUseAudioProxy(this));
+          setAudioSource(preloadAudio, res.url, shouldUseAudioProxy(this), nextSong.hash);
           preloadAudio.load(); 
           
           preloadState = {
@@ -1849,11 +1903,15 @@ export const usePlayerStore = defineStore('player', {
     },
 
     async playSong(songInfo, targetQuality = null, maintainTime = 0, autoPlay = true) {
+      if (!songInfo) return;
       if (this._errorSkipTimer) { clearTimeout(this._errorSkipTimer); this._errorSkipTimer = null; }
       if (this._vipActionTimer) { clearTimeout(this._vipActionTimer); this._vipActionTimer = null; }
+
+      const thisPlayVersion = ++playVersion;
       this.isLoading = true;
       this.isError = false;        
       this.errorMessage = '';
+
       const previousSong = this.currentSong;
       const previousPlaybackState = {
         currentQuality: this.currentQuality,
@@ -1863,25 +1921,8 @@ export const usePlayerStore = defineStore('player', {
         wasPlaying: this.isPlaying
       };
       const isSongChange = !previousSong || previousSong.hash !== songInfo.hash;
-      
-      if (isSongChange && maintainTime === 0) {
-        activeAudio.pause();
-        if (isExternalImportSong(songInfo)) {
-          activeAudio.removeAttribute('src');
-          activeAudio._rawSourceUrl = '';
-          activeAudio._usingProxy = false;
-          activeAudio._proxyFallbackAttempted = false;
-          activeAudio._proxyRestoreTime = 0;
-          activeAudio._proxyResumeOnLoad = false;
-          activeAudio.load();
-        }
-        this.isPlaying = false;
-      } else if (maintainTime === 0) {
-        this.currentTime = 0;
-        this.isCurrentSongPreview = false;
-      }
 
-      if (this.peakMode && songInfo.hash !== this.currentSong?.hash) {
+      if (this.peakMode && isSongChange) {
         const isInPlaylist = this.playlist.some(s => s.hash === songInfo.hash);
         if (!isInPlaylist) {
           this.peakMode = false;
@@ -1890,8 +1931,8 @@ export const usePlayerStore = defineStore('player', {
         }
       }
 
-      if (maintainTime === 0 || !this.currentSong || this.currentSong.hash !== songInfo.hash) {
-          this.hasReportedCurrentSong = false;
+      if (maintainTime === 0 || isSongChange) {
+        this.hasReportedCurrentSong = false;
       }
 
       const exists = this.playlist.find(s => s.hash === songInfo.hash);
@@ -1904,20 +1945,22 @@ export const usePlayerStore = defineStore('player', {
       }
 
       const userStore = useUserStore();
-
       const autoTargetQuality = targetQuality;
 
+      // 1. 优先命中预加载实例：0ms 瞬切音频流与歌曲元数据
       if (!isExternalImportSong(songInfo) && songInfo.hash === preloadState.hash && preloadAudio.src && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
-          activeAudio.pause();
+          safePauseAudio(activeAudio);
           activeAudio.currentTime = 0;
           
           const tempAudio = activeAudio;
           activeAudio = preloadAudio;
           preloadAudio = tempAudio;
+          activeAudio._songHash = songInfo.hash;
 
           this.currentSong = songInfo;
           this.currentQuality = preloadState.quality;
           this.isCurrentSongPreview = preloadState.isPreview;
+          this.currentTime = 0;
 
           if (activeAudio.duration && isFinite(activeAudio.duration)) {
             if (this.isCurrentSongPreview && activeAudio.duration > 60) {
@@ -1925,14 +1968,20 @@ export const usePlayerStore = defineStore('player', {
             } else {
               this.duration = activeAudio.duration;
             }
+          } else {
+            this.duration = getExpectedDuration(songInfo) || Number(songInfo.duration) || 0;
           }
 
           if (this.isCurrentSongPreview) this.showToast(getPreviewToastMessage(userStore));
 
           if (autoPlay) {
-             const playPromise = activeAudio.play();
+             const playPromise = safePlayAudio(activeAudio);
              if (playPromise !== undefined) {
-                 playPromise.catch(() => { this.isPlaying = false; });
+                 playPromise.catch(() => {
+                   if (thisPlayVersion !== playVersion) return;
+                   this.isPlaying = false;
+                   this.syncTrayState();
+                 });
              }
              this.isPlaying = true;
           } else {
@@ -1950,50 +1999,62 @@ export const usePlayerStore = defineStore('player', {
           return;
       }
 
-      const thisPlayVersion = ++playVersion;
+      // 2. 未命中预加载时：立即乐观更新 currentSong 与预期时长，使锁屏和底栏 0ms 切换信息与封面，并清空旧音频源防止串音
+      if (isSongChange && maintainTime === 0) {
+        resetAudioElementSource(activeAudio);
+        this.isPlaying = false;
+        this.currentSong = songInfo;
+        this.currentTime = 0;
+        this.duration = getExpectedDuration(songInfo) || Number(songInfo.duration) || 0;
+        this.isCurrentSongPreview = false;
+        this.syncTrayState();
+      } else if (maintainTime === 0) {
+        this.currentTime = 0;
+        this.isCurrentSongPreview = false;
+      }
 
-      const triggerFallback = (reason) => {
+      const triggerFallback = () => {
+        if (thisPlayVersion !== playVersion) return;
         this.isLoading = false;
         this.isError = true;
         this.isPlaying = false;
         this.failedSong = songInfo;
         const isVipSong = songInfo.is_vip || songInfo.is_paid;
-        const userStore = useUserStore();
-        if (isVipSong && !userStore.isLoggedIn) {
+        const currentUserStore = useUserStore();
+        if (isVipSong && !currentUserStore.isLoggedIn) {
           this.errorMessage = 'VIP 歌曲需要登录后播放';
         } else {
           this.errorMessage = '音频获取失败，请尝试其他歌曲';
         }
-        if (!previousSong) {
-          activeAudio.pause();
-          activeAudio.removeAttribute('src');
-          activeAudio._rawSourceUrl = '';
-          activeAudio._usingProxy = false;
-          activeAudio._proxyFallbackAttempted = false;
-          activeAudio._proxyRestoreTime = 0;
-          activeAudio._proxyResumeOnLoad = false;
-          activeAudio.load();
-          this.currentSong = null;
-          this.currentQuality = 'standard';
-          this.currentTime = 0;
-          this.duration = 0;
-          this.isCurrentSongPreview = false;
-        } else {
+
+        if (!isSongChange && previousSong && activeAudio.src && activeAudio._songHash === previousSong.hash) {
+          // 同一首歌切换音质失败时，保留原播放流继续播放
           this.currentSong = previousSong;
           this.currentQuality = previousPlaybackState.currentQuality;
           this.currentTime = previousPlaybackState.currentTime;
           this.duration = previousPlaybackState.duration;
           this.isCurrentSongPreview = previousPlaybackState.isCurrentSongPreview;
           if (previousPlaybackState.wasPlaying) {
-            const resumePromise = activeAudio.play();
+            const resumePromise = safePlayAudio(activeAudio);
             if (resumePromise !== undefined) {
               resumePromise
-                .then(() => { this.isPlaying = true; })
-                .catch(() => { this.isPlaying = false; });
+                .then(() => { if (thisPlayVersion === playVersion) this.isPlaying = true; })
+                .catch(() => { if (thisPlayVersion === playVersion) this.isPlaying = false; });
             }
           }
+        } else {
+          // 切歌失败：保持 currentSong 在当前目标歌曲（不回退到更早歌曲造成连切死循环），清空无效流等待自动跳过或手动重试
+          resetAudioElementSource(activeAudio);
+          this.currentSong = songInfo;
+          this.currentTime = 0;
+          this.duration = getExpectedDuration(songInfo) || Number(songInfo.duration) || 0;
+          this.isCurrentSongPreview = false;
         }
-        setTimeout(() => this.clearError(), 5000);
+        this.syncTrayState();
+
+        setTimeout(() => {
+          if (thisPlayVersion === playVersion) this.clearError();
+        }, 5000);
 
         if (this.autoSkipOnError && autoPlay && this.playlist && this.playlist.length > 1) {
           this.consecutiveErrorCount = (this.consecutiveErrorCount || 0) + 1;
@@ -2007,6 +2068,7 @@ export const usePlayerStore = defineStore('player', {
           if (this._errorSkipTimer) clearTimeout(this._errorSkipTimer);
           this._errorSkipTimer = setTimeout(() => {
             this._errorSkipTimer = null;
+            if (thisPlayVersion !== playVersion) return;
             this.playNext(true, songInfo);
           }, 1500);
         } else {
@@ -2016,12 +2078,10 @@ export const usePlayerStore = defineStore('player', {
 
       try {
         await this.prepareAutoQuality(songInfo, targetQuality);
-        const res = await this.resolveSongUrl(songInfo, targetQuality);
+        if (thisPlayVersion !== playVersion) return;
 
-        if (thisPlayVersion !== playVersion) {
-          this.isLoading = false;
-          return;
-        }
+        const res = await this.resolveSongUrl(songInfo, targetQuality);
+        if (thisPlayVersion !== playVersion) return;
 
         if (res?.url) {
           this.failedSong = null;
@@ -2029,7 +2089,7 @@ export const usePlayerStore = defineStore('player', {
           this.currentSong = songInfo;
           this.currentQuality = res.quality;
           this.isCurrentSongPreview = res.isPreview; 
-          setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this));
+          setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this), songInfo.hash);
           console.log('[Player playSong] res:', JSON.stringify(res), 'activeAudio.src:', activeAudio.src);
           if (maintainTime === 0) this.currentTime = 0;
           if (res.isPreview && autoPlay) this.showToast(getPreviewToastMessage(userStore));
@@ -2076,17 +2136,19 @@ export const usePlayerStore = defineStore('player', {
         }
 
         if (autoPlay) {
-          const playPromise = activeAudio.play();
+          const playPromise = safePlayAudio(activeAudio);
           if (playPromise !== undefined) {
             playPromise.catch(error => {
+              if (thisPlayVersion !== playVersion) return;
               console.warn("播放被浏览器打断", error);
               this.isPlaying = false;
               this.isLoading = false;
+              this.syncTrayState();
             });
           }
           this.isPlaying = true;
         } else {
-          activeAudio.pause();
+          safePauseAudio(activeAudio);
           this.isPlaying = false;
         }
         this.clearError();
@@ -2095,9 +2157,12 @@ export const usePlayerStore = defineStore('player', {
         this.syncTrayState();
 
       } catch (error) {
+        if (thisPlayVersion !== playVersion) return;
         triggerFallback('网络请求异常');
       } finally {
-        this.isLoading = false;
+        if (thisPlayVersion === playVersion) {
+          this.isLoading = false;
+        }
       }
     },
 
@@ -2148,7 +2213,7 @@ export const usePlayerStore = defineStore('player', {
 
       if (!this.currentSong.qualities) this.currentSong.qualities = extractQualities(this.currentSong);
 
-      await this.fetchSongQualityInfo(this.currentSong);
+      await this.fetchSongQualityInfo(this.currentSong, { force: true });
 
       for (const q of [...QUALITY_CONFIG, { key: 'best' }, { key: 'hq' }]) {
         const cacheKey = `${this.currentSong.hash}_${q.key}`;
@@ -2222,7 +2287,7 @@ export const usePlayerStore = defineStore('player', {
 
              this.currentQuality = res.quality;
              this.isCurrentSongPreview = res.isPreview;
-             setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this));
+             setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this), targetHash);
              const targetTime = res.isPreview && savedTime > 59 ? 59.5 : savedTime;
              if (targetTime > 0) {
                const applySeek = () => {
@@ -2237,7 +2302,7 @@ export const usePlayerStore = defineStore('player', {
                try { activeAudio.currentTime = targetTime; } catch (e) {}
              }
              if (wasPlaying) {
-               const p = activeAudio.play();
+               const p = safePlayAudio(activeAudio);
                if (p !== undefined) p.catch(() => { this.isPlaying = false; });
              }
            }
@@ -2263,30 +2328,60 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
-    togglePlay() {
-      if (this.isError) {
-        const retrySong = this.failedSong || this.currentSong;
-        if (retrySong) this.playSong(retrySong);
-        else this.clearError();
+    mediaPlay() {
+      if (!this.currentSong) {
+        if (this.playlist.length > 0) this.playSong(this.playlist[0]);
         return;
       }
-      if (!this.currentSong) return;
-      if (this.isPlaying) {
-        activeAudio.pause();
-        this.isPlaying = false;
-        if (this.rememberState) this.persistPlaybackState();
-      } else {
-        if (!activeAudio.src) {
-          this.playSong(this.currentSong, null, this.currentTime, true);
-          return;
-        }
-        const playPromise = activeAudio.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => { this.isPlaying = false; });
-        }
-        this.isPlaying = true;
+      if (this.isLoading) return;
+      if (this.isError) {
+        const retrySong = this.failedSong || this.currentSong;
+        this.clearError();
+        if (retrySong) this.playSong(retrySong);
+        return;
       }
+      if (!activeAudio.src || (activeAudio._songHash && activeAudio._songHash !== this.currentSong.hash)) {
+        this.playSong(this.currentSong, null, this.currentTime, true);
+        return;
+      }
+      const playPromise = safePlayAudio(activeAudio);
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          this.isPlaying = false;
+          this.syncTrayState();
+        });
+      }
+      this.isPlaying = true;
       this.syncTrayState();
+    },
+
+    mediaPause() {
+      if (this._errorSkipTimer) { clearTimeout(this._errorSkipTimer); this._errorSkipTimer = null; }
+      if (this.isLoading) {
+        playVersion++;
+        this.isLoading = false;
+      }
+      safePauseAudio(activeAudio);
+      this.isPlaying = false;
+      if (this.rememberState) this.persistPlaybackState();
+      this.syncTrayState();
+    },
+
+    togglePlay() {
+      if (this.isError) {
+        this.mediaPlay();
+        return;
+      }
+      if (!this.currentSong) {
+        if (this.playlist.length > 0) this.playSong(this.playlist[0]);
+        return;
+      }
+      const isActuallyActive = this.isLoading || (this.isPlaying && !activeAudio.paused && Boolean(activeAudio.src));
+      if (isActuallyActive) {
+        this.mediaPause();
+      } else {
+        this.mediaPlay();
+      }
     },
 
     seek(time) {
@@ -2310,11 +2405,19 @@ export const usePlayerStore = defineStore('player', {
     playPrev() {
       this.consecutiveErrorCount = 0;
       if (this.playlist.length === 0) return;
-      if (this.playlist.length === 1 || this.playMode === 'loop') { 
-        activeAudio.currentTime = 0; 
-        const p = activeAudio.play(); 
-        if (p !== undefined) p.catch(() => {}); 
-        return; 
+      if (this.playlist.length === 1 || this.playMode === 'loop') {
+        const target = this.currentSong || this.playlist[0];
+        if (!activeAudio.src || (target && activeAudio._songHash && activeAudio._songHash !== target.hash)) {
+          if (target) this.playSong(target);
+          return;
+        }
+        activeAudio.currentTime = 0;
+        this.currentTime = 0;
+        const p = safePlayAudio(activeAudio);
+        if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+        this.isPlaying = true;
+        this.syncTrayState();
+        return;
       }
 
       let prevIndex;
@@ -2340,7 +2443,18 @@ export const usePlayerStore = defineStore('player', {
       if (this.playlist.length === 0) return;
       
       if (this.playlist.length === 1 || this.playMode === 'loop') {
-         activeAudio.currentTime = 0; const p = activeAudio.play(); if (p !== undefined) p.catch(() => {}); return; 
+        const target = this.currentSong || this.playlist[0];
+        if (!activeAudio.src || (target && activeAudio._songHash && activeAudio._songHash !== target.hash)) {
+          if (target) this.playSong(target);
+          return;
+        }
+        activeAudio.currentTime = 0;
+        this.currentTime = 0;
+        const p = safePlayAudio(activeAudio);
+        if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+        this.isPlaying = true;
+        this.syncTrayState();
+        return;
       }
 
       const userStore = useUserStore();

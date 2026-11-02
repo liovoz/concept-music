@@ -72,7 +72,8 @@ playwright-report/
 test-results/
 
 # Documentation (local only)
-docs/
+docs/*
+!docs/ARCHITECTURE.md
 
 # Local design/browser capture scratch state
 design/

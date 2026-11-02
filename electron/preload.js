@@ -118,6 +118,9 @@ contextBridge.exposeInMainWorld('settingsAPI', {
   getCacheSize: () => ipcRenderer.invoke('settings-get-cache-size'),
   getShortcutsEnabled: () => ipcRenderer.invoke('settings-get-shortcuts-enabled'),
   setShortcutsEnabled: (enabled) => ipcRenderer.invoke('settings-set-shortcuts-enabled', enabled),
+  getSystemMediaControls: () => ipcRenderer.invoke('settings-get-system-media-controls'),
+  getSystemMediaControlsSessionActive: () => ipcRenderer.invoke('settings-get-system-media-controls-session-active'),
+  setSystemMediaControls: (enabled) => ipcRenderer.invoke('settings-set-system-media-controls', enabled),
   getAudioSettings: () => ipcRenderer.invoke('settings-get-audio-settings'),
   setAudioSettings: (settings) => ipcRenderer.invoke('settings-set-audio-settings', settings),
   openExternal: (url) => ipcRenderer.send('open-external', url)

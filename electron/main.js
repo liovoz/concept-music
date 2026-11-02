@@ -9,6 +9,28 @@ import builderUtilRuntime from 'builder-util-runtime';
 import { TrayManager } from './trayManager.js';
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
+// 锁屏 / 系统媒体控件（SMTC）开关：需在 app ready 之前决定是否向系统注册媒体会话
+let systemMediaControlsActiveInSession = true;
+(() => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'desktop_settings.json');
+    if (!fs.existsSync(settingsPath)) return;
+    const data = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    if (data && data.systemMediaControls === false) {
+      const existing = app.commandLine.getSwitchValue('disable-features');
+      const features = existing ? `${existing},HardwareMediaKeyHandling` : 'HardwareMediaKeyHandling';
+      app.commandLine.appendSwitch('disable-features', features);
+      systemMediaControlsActiveInSession = false;
+    }
+  } catch (e) {}
+})();
+
+// 与 electron-builder appId 保持一致，使锁屏 / 媒体浮窗显示应用名称与图标
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.concept.music');
+}
 
 const { autoUpdater } = pkg;
 const { CancellationToken } = builderUtilRuntime;
@@ -1179,7 +1201,7 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1200, height: 830, minWidth: 1100, minHeight: 740, frame: false, show: false, backgroundColor: '#ffffff',
     icon: getAppIconPath(),
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, webSecurity: true }
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), nodeIntegration: false, contextIsolation: true, webSecurity: true, backgroundThrottling: false }
   });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
@@ -1237,6 +1259,25 @@ const createWindow = () => {
 app.whenReady().then(async () => {
   if (process.platform === 'linux' || process.platform === 'win32') {
     try { app.setIcon(getAppIconPath()); } catch(e) {}
+  }
+  // 开发模式下，若本机从未安装过正式版（开始菜单无 com.concept.music 快捷方式），补建开发快捷方式供 Win11 Win+A 解析身份
+  if (process.platform === 'win32' && !app.isPackaged && process.env.APPDATA) {
+    try {
+      const programsDir = path.join(process.env.APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs');
+      const prodLnk = path.join(programsDir, '概念音乐.lnk');
+      const devLnk = path.join(programsDir, '概念音乐 (Dev).lnk');
+      if (!fs.existsSync(prodLnk) && !fs.existsSync(devLnk)) {
+        shell.writeShortcutLink(devLnk, 'create', {
+          target: process.execPath,
+          args: `"${path.resolve(__dirname, '..')}"`,
+          cwd: path.resolve(__dirname, '..'),
+          icon: getAppIconPath(),
+          iconIndex: 0,
+          appUserModelId: 'com.concept.music',
+          description: '概念音乐 (Dev)'
+        });
+      }
+    } catch (e) {}
   }
   const distRoot = path.resolve(__dirname, '../dist');
   protocol.handle('app', async (request) => {
@@ -1385,6 +1426,15 @@ app.whenReady().then(async () => {
       trayManager.setShortcutsEnabled(enable);
     }
     return true;
+  });
+  ipcMain.handle('settings-get-system-media-controls', () => {
+    const data = readDesktopSettings();
+    return data.systemMediaControls !== false;
+  });
+  ipcMain.handle('settings-get-system-media-controls-session-active', () => systemMediaControlsActiveInSession);
+  ipcMain.handle('settings-set-system-media-controls', (event, enabled) => {
+    const saved = writeDesktopSettings({ systemMediaControls: !!enabled });
+    return { saved, activeInSession: systemMediaControlsActiveInSession };
   });
   ipcMain.handle('settings-get-audio-settings', () => {
     const data = readDesktopSettings();

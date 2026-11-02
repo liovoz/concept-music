@@ -460,6 +460,30 @@
                         />
                       </button>
                     </div>
+
+                    <div class="p-2.5 rounded-lg bg-slate-50/70 dark:bg-slate-800/50">
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">锁屏界面显示播放控件</p>
+                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">在 Windows 锁屏和系统媒体浮窗中显示歌曲信息，并可切歌、暂停</p>
+                        </div>
+                        <button 
+                          type="button"
+                          @click="toggleSystemMediaControls"
+                          class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                          :class="systemMediaControlsEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        >
+                          <span 
+                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                            :class="systemMediaControlsEnabled ? 'translate-x-5' : 'translate-x-0'"
+                          />
+                        </button>
+                      </div>
+                      <p class="flex items-start gap-1 text-[11px] text-gray-400 dark:text-slate-500 mt-2 leading-relaxed">
+                        <AppIcon name="info" class="w-3.5 h-3.5 shrink-0 mt-px" />
+                        <span>锁屏播放控件由 Windows 系统提供，部分系统版本（如早期的 Windows 11）可能不会在锁屏上显示。</span>
+                      </p>
+                    </div>
                   </div>
                 </section>
               </div>
@@ -990,6 +1014,7 @@ import { useUserStore } from '../store/userStore';
 import { useUpdateStore } from '../store/updateStore';
 import { useSearchHistory } from '../composables/useSearchHistory';
 import TimePicker from './common/TimePicker.vue';
+import { getSystemMediaControlsPreference, setMediaSessionEnabled } from '../utils/mediaSessionBridge';
 
 const props = defineProps({
   initialTab: { type: String, default: 'general' }
@@ -1216,7 +1241,32 @@ const toggleRememberState = () => {
   playerStore.showToast(next ? '已开启记忆播放列表与进度' : '已关闭记忆功能（下次启动将清空列表）');
 };
 
+// 锁屏 / 系统媒体控件（SMTC）开关
+const systemMediaControlsEnabled = ref(getSystemMediaControlsPreference());
+const initSystemMediaControls = async () => {
+  if (window.settingsAPI?.getSystemMediaControls) {
+    try {
+      systemMediaControlsEnabled.value = !!(await window.settingsAPI.getSystemMediaControls());
+    } catch (e) {}
+  }
+};
+const toggleSystemMediaControls = async () => {
+  const next = !systemMediaControlsEnabled.value;
+  systemMediaControlsEnabled.value = next;
+  setMediaSessionEnabled(next);
+  let activeInSession = !next;
+  if (window.settingsAPI?.setSystemMediaControls) {
+    try {
+      const res = await window.settingsAPI.setSystemMediaControls(next);
+      if (res && typeof res.activeInSession === 'boolean') activeInSession = res.activeInSession;
+    } catch (e) {}
+  }
+  const suffix = next !== activeInSession ? '，重启软件后生效' : '';
+  playerStore.showToast((next ? '已开启锁屏播放控件' : '已关闭锁屏播放控件') + suffix);
+};
+
 // --- 3. 桌面歌词 ---
+
 const lyricThemes = [
   { id: 'white', label: '亮白', color: '#f8fafc' },
   { id: 'red', label: '珊瑚粉', color: '#fb7185' },
@@ -1417,6 +1467,7 @@ const showModal = (tab = 'general') => {
   loadLyricConfig();
   initAutoStart();
   initGlobalShortcuts();
+  initSystemMediaControls();
   refreshCacheSize();
   playerStore.initAudioSettings?.();
 
