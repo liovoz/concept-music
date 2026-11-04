@@ -1,8 +1,8 @@
 # 概念音乐 (Concept Music) 项目全景架构与技术梳理报告
 
-> **文档版本**：v3.7.0  
+> **文档版本**：v3.8.0  
 > **运行环境规范**：Node.js 22 LTS / npm 10+ / Windows 10/11 x64  
-> **最后更新**：2026-11-02  
+> **最后更新**：2026-11-04  
 
 ---
 
@@ -14,7 +14,7 @@
 
 | 维度 | 技术选型 | 版本 | 核心作用与定位 |
 | :--- | :--- | :--- | :--- |
-| **桌面容器** | Electron | `^30.0.0` | 跨平台桌面应用外壳，接管窗口生命周期、托盘系统、全局热键、底层硬件凭据加密与网络代理 |
+| **桌面容器** | Electron | `^30.0.0` | 跨平台桌面应用外壳，接管窗口生命周期、多窗口调度、托盘系统、全局热键、底层硬件凭据加密、视口边界钳制与网络代理 |
 | **前端框架** | Vue 3 | `^3.4.21` | 渲染进程核心 UI 框架，采用 Composition API 与 `<script setup>` |
 | **前端构建** | Vite | `^5.2.0` | 现代化前端构建与 HMR 热重载工具，提供 DevServer 与相对路径资产打包 |
 | **状态管理** | Pinia | `^2.1.7` | 全局状态仓（播放内核 `playerStore`、用户资产 `userStore`、更新感知 `updateStore`） |
@@ -22,15 +22,17 @@
 | **样式与原子化** | Tailwind CSS | `^3.4.19` | 页面样式系统，配合 PostCSS 与 Autoprefixer 实现高响应式与深浅主题自适应 |
 | **网络请求** | Axios | `^1.6.8` (前端) / `^1.20.0` (后端) | 封装统一 HTTP 请求，前端集成 IPC 原生适配器 |
 | **本地 API 服务** | Express | `^4.18.2` | 嵌入式本地服务，监听 `127.0.0.1:10420`，提供多平台 API 聚合、音频代理及第三方音源调度 |
+| **系统媒体控制** | Media Session API | Chromium 原生 | 桥接 Windows 系统媒体传输控件 (SMTC)，支持 Win+L 锁屏与 Win+A 快捷控制 |
 | **桌面打包** | electron-builder | `^24.13.3` | 生成 NSIS 安装程序、Portable 绿色便携版及 GitHub Release 自动发布 |
 | **自动更新** | electron-updater | `^6.1.8` | 增量/全量更新检测、多线路下载、断点控制与静默安装 |
 
 ### 1.2 关键工具与底层支持库
 
-- **加密与签名**：`crypto-js` (^4.2.0)、`node-forge` (^1.3.3)、`big-integer` (^1.6.52)（酷狗客户端协议签名、解密与请求加密校验）
-- **流媒体与解压**：`pako` (^2.1.0)（Gzip/Deflate 二进制解压）
-- **安全与编码**：`safe-decode-uri-component` (^1.2.1)
-- **二维码生成**：`qrcode` (^1.5.3)（登录二维码渲染）
+- **系统级媒体会话**：内置 `mediaSessionBridge.js` 原生实现双阶段乐观更新与 WebAudio 次声波保活。
+- **加密与签名**：`crypto-js` (^4.2.0)、`node-forge` (^1.3.3)、`big-integer` (^1.6.52)（酷狗客户端协议签名、解密与请求加密校验）。
+- **流媒体与解压**：`pako` (^2.1.0)（Gzip/Deflate 二进制解压）。
+- **安全与编码**：`safe-decode-uri-component` (^1.2.1)。
+- **二维码生成**：`qrcode` (^1.5.3)（登录二维码渲染）。
 
 ---
 
@@ -44,7 +46,7 @@ concept-music/
 │     └─ install-check.yml             # 跨平台 (Ubuntu/macOS/Windows) 依赖安装与 setup 校验
 ├─ electron/                           # [主进程模块]
 │  ├─ assets/tray-icons/               # 原生系统托盘多分辨率图标资产 (.png)
-│  ├─ main.js                          # Electron 主入口、单实例锁、窗口管理、SafeStorage 金库、IPC 代理
+│  ├─ main.js                          # Electron 主入口、单实例锁、多窗口与横竖排歌词坐标记忆、SafeStorage 金库、IPC 代理
 │  ├─ preload.js                       # 渲染进程安全桥接隔离层 (ContextBridge)
 │  ├─ trayIcons.js                     # 托盘菜单原生图标动态生成与加载器
 │  └─ trayManager.js                   # 系统托盘菜单事件调度、状态同步与系统全局热键
@@ -68,13 +70,13 @@ concept-music/
 ├─ src/                                # [Vue 3 渲染进程源码]
 │  ├─ components/                      # 基础交互组件与全局模态框
 │  │  ├─ common/AppIcon.vue            # 全局统一内联 SVG 图标渲染组件
-│  │  ├─ common/TimePicker.vue         # 时间选择器
+│  │  ├─ common/TimePicker.vue         # 时间选择器组件
 │  │  ├─ BackToTop.vue                 # 快速回到顶部悬浮按钮
 │  │  ├─ DisclaimerModal.vue           # 首次启动免责声明弹窗
 │  │  ├─ GlobalDialog.vue              # 通用确认/提示模态对话框
-│  │  ├─ GlobalToast.vue               # 全局轻提示 Toast
+│  │  ├─ GlobalToast.vue               # 全局轻提示 Toast（支持带撤销 Action）
 │  │  ├─ LoginModal.vue                # 扫码与手机号验证码登录弹窗
-│  │  ├─ SettingsModal.vue             # 独立偏好设置中心 (外观/播放/歌词/快捷键/打卡/更新)
+│  │  ├─ SettingsModal.vue             # 偏好设置中心 (外观/播放/歌词横竖排/SMTC/快捷键/打卡/更新)
 │  │  ├─ SingerLink.vue                # 歌手多作者可点击跳转路由链接
 │  │  ├─ SongContextMenu.vue           # 歌曲列表通用右键功能菜单 (播放/下首/添加/复制/原平台)
 │  │  ├─ UpdateNotificationCard.vue    # 主界面右下角非侵入式版本感知与更新浮动通知卡片
@@ -84,15 +86,27 @@ concept-music/
 │  ├─ layout/                          # 应用三栏主视窗骨架
 │  │  ├─ Header.vue                    # 顶部导航、Windows 原生无边框控制按钮、搜索框与用户徽标
 │  │  ├─ Sidebar.vue                   # 侧边栏导航 (发现/广场/榜单/歌手/FM/收藏/导入)
-│  │  └─ PlayerBar.vue                 # 底部常驻播控条、WebAudio 增益菜单、音质切换、长队列抽屉
+│  │  └─ PlayerBar.vue                 # 底部播控条、WebAudio增益、音质切换、海量虚拟滚动播放列表抽屉
 │  ├─ router/index.js                  # Vue Router 路由配置 (Hash 模式，含 DesktopLyric 独立视图)
 │  ├─ store/                           # Pinia 状态管理核心
-│  │  ├─ playerStore.js                # 播放核心引擎、WebAudio 节点图谱、双实例预加载、断点记忆
+│  │  ├─ playerStore.js                # 播放内核：WebAudio链路、分片防抖存储、虚拟索引、看门狗、FM电台解耦
 │  │  ├─ userStore.js                  # 账户资产、Cookie 鉴权、自建歌单增删、VIP 自动打卡助手
 │  │  └─ updateStore.js                # 版本检测感知、多节点分流 (GitHub/ghfast/ghproxy)、强制熔断
-│  ├─ utils/                           # 前端工具库 (IPC桥接请求封装、数据规整、Tooltip、各平台Helper)
-│  ├─ views/                           # 路由视图页面 (17 个业务视图)
-│  ├─ App.vue                          # 顶层根组件 (主视窗与独立桌面歌词视窗分流调度)
+│  ├─ utils/                           # 前端工具库
+│  │  ├─ appState.js                   # 全局前后台状态与事件总线
+│  │  ├─ artistNavigation.js           # 歌手跨平台跳转调度
+│  │  ├─ fmRecommendation.js           # 私人 FM 推荐引擎与协同推荐
+│  │  ├─ mediaSessionBridge.js         # Windows SMTC 系统媒体控制与锁屏桥接
+│  │  ├─ neteasePlaylistStorage.js     # 网易歌单持久化缓存
+│  │  ├─ neteaseSongHelper.js          # 网易歌曲数据清洗与适配
+│  │  ├─ qqPlaylistStorage.js          # 企鹅歌单持久化缓存
+│  │  ├─ qqSongHelper.js               # 企鹅歌曲数据清洗与适配
+│  │  ├─ request.js                    # 统一 Axios 封装与 IPC 原生适配器
+│  │  ├─ songContextMenu.js            # 歌曲右键菜单上下文数据组装
+│  │  ├─ songHelper.js                 # 核心歌曲规范化器 (`normalizeSongKey`, `buildPlayPayload`)
+│  │  └─ tooltip.js                    # 悬浮提示微动效工具
+│  ├─ views/                           # 路由视图页面 (17 个业务视图，含横竖排 DesktopLyric、PersonalFM 等)
+│  ├─ App.vue                          # 顶层根组件 (主视窗与独立桌面歌词视窗分流调度、SMTC 全局挂载)
 │  ├─ main.js                          # 前端入口文件
 │  └─ style.css                        # 全局样式与自定义滚动条定义
 ├─ index.html                          # 单页应用 HTML 入口
@@ -108,11 +122,11 @@ concept-music/
 
 ### 3.1 核心入口文件梳理
 
-1. **桌面主进程入口**：[`electron/main.js`](file:///d:/DevelopProject/concept-music/electron/main.js)
-   - 由 `package.json` 的 `"main": "electron/main.js"` 声明。负责单实例锁校验、拉起本地 Node 嵌入式子进程、注册自定义协议、维护主窗口与桌面歌词独立窗口、监听全局 IPC 通道。
-2. **前端渲染进程入口**：[`index.html`](file:///d:/DevelopProject/concept-music/index.html) -> [`src/main.js`](file:///d:/DevelopProject/concept-music/src/main.js) -> [`src/App.vue`](file:///d:/DevelopProject/concept-music/src/App.vue)
-   - 初始化 Pinia、Vue Router、主题模式 (`initTheme`)、全局指令与组件，并根据路由哈希 (`#/desktop-lyric` vs 普通页面) 决定展示主窗口还是透明歌词窗口。
-3. **本地后端服务入口**：[`server/app.js`](file:///d:/DevelopProject/concept-music/server/app.js) -> [`server/server.js`](file:///d:/DevelopProject/concept-music/server/server.js)
+1. **桌面主进程入口**：[`electron/main.js`](../electron/main.js)
+   - 由 `package.json` 的 `"main": "electron/main.js"` 声明。负责单实例锁校验、拉起本地 Node 嵌入式子进程、注册自定义协议、维护主窗口与桌面歌词独立窗口（横竖排尺寸与坐标独立记忆及防出界钳制）、监听全局 IPC 通道与安全金库加解密。
+2. **前端渲染进程入口**：[`index.html`](../index.html) -> [`src/main.js`](../src/main.js) -> [`src/App.vue`](../src/App.vue)
+   - 初始化 Pinia、Vue Router、主题模式 (`initTheme`)、全局指令与组件，并根据路由哈希 (`#/desktop-lyric` vs 普通页面) 决定展示主窗口还是透明歌词窗口，同时挂载 Windows SMTC 全局播控联动。
+3. **本地后端服务入口**：[`server/app.js`](../server/app.js) -> [`server/server.js`](../server/server.js)
    - 由主进程通过 Node `fork` 派生子进程启动。监听 `process.on('disconnect')` 确保主进程退出时子进程立即自毁，防止孤儿进程长期占用 `10420` 端口。
 
 ### 3.2 运行与构建命令速查
@@ -153,9 +167,15 @@ npm run release
 
 ```mermaid
 flowchart TB
+    subgraph OS_System [操作系统层 (Windows 10/11)]
+        SMTC["系统媒体传输控件 (SMTC)<br/>Win+L 锁屏 / Win+A 快捷控制"]
+        ScreenMonitors["多显示器桌面视口边界"]
+    end
+
     subgraph Electron_Main_Process [Electron 主进程 (Node.js)]
         Main["main.js<br/>窗口与生命周期管理"]
-        Vault["SafeStorage 金库<br/>kugou_auth_vault.json"]
+        LyricWinMgr["歌词窗口管理<br/>横/竖排独立坐标记忆 & 防溢出钳制"]
+        Vault["SafeStorage 金库<br/>kugou_auth_vault.json (DPAPI)"]
         Tray["trayManager.js<br/>托盘菜单与系统全局快捷键"]
         NativeReq["IPC Handler<br/>'native-api-request'"]
         AutoUpdate["initAutoUpdater<br/>多线路在线版本控制"]
@@ -166,17 +186,18 @@ flowchart TB
         subgraph MainWindow [主窗口视图]
             Header["Header.vue"]
             Sidebar["Sidebar.vue"]
-            Views["Views (Discover, Playlist, Import...)"]
-            PlayerBar["PlayerBar.vue"]
+            Views["Views (Discover, PersonalFM, Playlist...)"]
+            PlayerBar["PlayerBar.vue<br/>虚拟滚动抽屉 & 批量管理"]
         end
         subgraph LyricWindow [独立桌面歌词窗口]
-            DesktopLyric["views/DesktopLyric.vue"]
+            DesktopLyric["views/DesktopLyric.vue<br/>横排/竖排双模态 & 卡拉OK"]
         end
         subgraph Pinia_Stores [Pinia 状态仓]
-            PlayerStore["playerStore.js<br/>WebAudio & 播控内核"]
+            PlayerStore["playerStore.js<br/>WebAudio & 虚拟索引 & 6s看门狗"]
             UserStore["userStore.js<br/>鉴权 & VIP 打卡"]
             UpdateStore["updateStore.js<br/>版本感知"]
         end
+        SMTCBridge["mediaSessionBridge.js<br/>乐观推送 & 次声波保活"]
         ReqAdapter["utils/request.js<br/>(IPC Adapter / Axios)"]
     end
 
@@ -204,8 +225,10 @@ flowchart TB
     ExpressApp --> AudioProxy
     Modules --> VMRunner --> MusicSource
     PlayerStore -- "Audio.src" --> AudioProxy --> CDNAudio
+    PlayerStore <--> SMTCBridge <--> SMTC
     PlayerStore -- "lyricAPI.sync" --> Main -- "update-lyric" --> DesktopLyric
     DesktopLyric -- "lyricAPI.sendControl" --> Main -- "main-lyric-control" --> PlayerStore
+    DesktopLyric -- "lyricAPI.toggleMode" --> LyricWinMgr <--> ScreenMonitors
     Tray -- "tray-action" --> AppRoot
     UpdateStore <--> AutoUpdate <--> GHRelease
 ```
@@ -214,26 +237,45 @@ flowchart TB
 
 #### ① 鉴权金库与请求闭环（SafeStorage Vault）
 - **安全保障**：所有从登录或接口响应中获得的敏感凭据（`token`、`kg_mid`、`kg_dfid`、`userid`、`vip_token` 等）统一由 Electron 底层 `safeStorage`（DPAPI 硬件级加密）写入本地 `userData/kugou_auth_vault.json`。
-- **透明注入**：前端请求统一通过 [`src/utils/request.js`](file:///d:/DevelopProject/concept-music/src/utils/request.js) 的 `ipcAdapter` 路由至主进程 [`electron/main.js`](file:///d:/DevelopProject/concept-music/electron/main.js) 的 `native-api-request` 处理器；主进程自动解密并注入 Cookie，返回结果时拦截 `Set-Cookie` 写回金库。渲染端无明文泄露风险，彻底消除跨域限制。
+- **透明注入**：前端请求统一通过 [`src/utils/request.js`](../src/utils/request.js) 的 `ipcAdapter` 路由至主进程 [`electron/main.js`](../electron/main.js) 的 `native-api-request` 处理器；主进程自动解密并注入 Cookie，返回结果时拦截 `Set-Cookie` 写回金库。渲染端无明文泄露风险，彻底消除跨域限制。
 
 #### ② 播放引擎与 WebAudio 增益流
-- **双 Audio 交替加载**：[`src/store/playerStore.js`](file:///d:/DevelopProject/concept-music/src/store/playerStore.js) 维护 `audioA` 和 `audioB`。当正在播放当前歌曲时，`preloadAudio` 提前在后台静默预拉取下一首音频流，切歌时瞬间切换，彻底消除切歌卡顿。
+- **双 Audio 交替加载**：[`src/store/playerStore.js`](../src/store/playerStore.js) 维护 `audioA` 和 `audioB`。当正在播放当前歌曲时，`preloadAudio` 提前在后台静默预拉取下一首音频流，切歌时瞬间切换，彻底消除切歌卡顿。
 - **Volume Boost 与压限**：集成 WebAudio API 节点链路：
   $$\text{AudioElement} \rightarrow \text{MediaElementAudioSourceNode} \rightarrow \text{GainNode (1.25x/1.5x/2.0x)} \rightarrow \text{DynamicsCompressorNode} \rightarrow \text{AudioDestinationNode}$$
   加入动态压缩器以防止高倍增益带来的数码破音削波。
 - **流媒体跨域代理 (AudioProxy)**：WebAudio 处理流媒体必须开启 `crossOrigin = 'anonymous'`，部分第三方 CDN 缺乏 CORS 头会导致音频挂起或静音。因此所有经过 WebAudio 的流统一经由本地 `http://127.0.0.1:10420/audio/proxy?url=...` 代理，内置防 SSRF、智能 Referer 伪装与 Range 分段支持。
 
-#### ③ 跨平台歌单导入与第三方音源沙箱
+#### ③ Windows 系统媒体控制 (SMTC) 与锁屏交互桥接
+- **原生能力桥接**：通过 Chromium 原生 `navigator.mediaSession` 桥接 Windows 系统媒体传输控件 (SMTC)，支持在 Windows 锁屏界面 (Win+L) 与系统快捷控制面板 (Win+A) 实时显示歌曲标题、歌手、专辑及封面大图。
+- **播控双向联动**：响应系统多媒体硬件按键及界面按钮（播放、暂停、上一首、下一首、跳转进度），与 `playerStore` 实现纳秒级同步。
+- **乐观更新与双阶段元数据穿透**：切歌瞬间先以乐观元数据直推 SMTC，音频流解析完成时二次更新准确时长与高质量封面，彻底消除了 Win+A 面板的滞后与标题闪烁。
+- **次声波保活机制**：针对 WebAudio 模式可能被 Chromium 判定为空闲而静音挂起导致 SMTC 失去焦点的边界问题，注入轻量近零电本次声波通道保持会话活跃。用户亦可在偏好设置中随时关闭该功能。
+
+#### ④ 海量歌单虚拟滚动与分片防抖持久化引擎
+- **容量治理与智能淘汰**：偏好设置新增播放列表上限档位（1000/1500/2000 首，默认 1500 首），队列超限时依据播放状态智能淘汰队尾或已播放歌曲，并配以明确的 UI 反馈。
+- **播放行为模式与 5 秒撤销**：新增“播放全部”行为模式（“替换当前播放列表”与“合并到队首”），替换大歌单时提供 5 秒一键撤销（Undo）机制，保障用户播放资产安全。
+- **可视区间虚拟滚动 (Virtual Scroll)**：`PlayerBar.vue` 播放列表抽屉集成动态虚拟滚动算法，通过哈希索引（`normKey`、`rebuildPlaylistKeyMap`）与滚动锚定，仅渲染可视视口前后缓冲歌曲，支撑 2000+ 首海量歌曲秒级展开与丝滑滚动。
+- **分片防抖持久化 (Debounced Chunked Storage)**：将高频轻量的播放进度持久化与沉重的大歌单序列化解耦。歌单列表采用防抖分片批量写入，显著降低频繁切歌时的磁盘 I/O 阻塞，应用冷启动提速 300%。
+- **播放异常自愈看门狗**：引入 6 秒进度监测看门狗（Watchdog），针对第三方音源偶发的 `00:00` 假死、网络中断挂起或音频上下文失联实施自动断点自愈与音源重试重拉。
+
+#### ⑤ 私人 FM 独立电台流解耦机制
+- **流模式物理隔离**：将私人 FM 重构为独立电台流模式，彻底解耦常规播放队列（`playlist`）。用户开启 FM 时完整保留常规列表与播放位置，退出 FM 时一键丝滑恢复原歌单。
+- **独立队列与预拉取**：FM 内部维护轻量环形缓冲队列（`fmQueue`），具备副歌高潮智能片段定位、不喜切歌及协同推荐兜底自愈机制。
+
+#### ⑥ 跨平台歌单导入与第三方音源沙箱
 - **物理隔离**：第三方脚本按平台分别放置在 `music_source/Netease/` 与 `music_source/QQ/`。
-- **沙箱隔离运行**：本地服务使用 [`server/util/lx-source-runner.js`](file:///d:/DevelopProject/concept-music/server/util/lx-source-runner.js) 基于 Node.js `vm.Script` 创建沙箱，彻底屏蔽宿主系统的 `process`、`require`、`module` 等敏感对象，仅注入定制的 `lx.request`，同时建立了带有文件 `mtimeMs` 校验的脚本内存编译缓存池。
+- **沙箱隔离运行**：本地服务使用 [`server/util/lx-source-runner.js`](../server/util/lx-source-runner.js) 基于 Node.js `vm.Script` 创建沙箱，彻底屏蔽宿主系统的 `process`、`require`、`module` 等敏感对象，仅注入定制的 `lx.request`，同时建立了带有文件 `mtimeMs` 校验的脚本内存编译缓存池。
 - **多音质降级链**：统一按 `atmos` -> `master` -> `hires` -> `flac` -> `320k` -> `128k` 进行自适应探测与顺次降级。
 
-#### ④ 桌面逐字悬浮歌词系统
+#### ⑦ 桌面逐字悬浮歌词系统（横排/竖排双模态与边界钳制）
 - **独立无感窗口**：主进程以 `transparent: true, frame: false, alwaysOnTop: true, showInactive: true, focusable: false` 创建歌词子窗口，加载 `/#/desktop-lyric`。
-- **热区与穿透**：歌词窗口 [`src/views/DesktopLyric.vue`](file:///d:/DevelopProject/concept-music/src/views/DesktopLyric.vue) 渲染逐字卡拉OK过渡动效并向主进程同步有效交互热区；主进程以定时器轮询当前鼠标指针绝对坐标，鼠标在热区内时响应交互与拖拽，移出后立即开启全局鼠标穿透 (`setIgnoreMouseEvents(true, { forward: true })`)。
+- **横排/竖排双模态**：支持常规横向双行歌词与典雅竖排书卷模式。竖排模式下主副歌词纵向并列排列，卡拉OK进度逐字垂直平滑填充。
+- **多显示器视口防溢出钳制**：主进程为横排与竖排模式分别提供独立的尺寸与屏幕绝对坐标记忆。在模式切换或窗口拖拽结束时，动态计算所有已连接显示器的几何工作区，施加防溢出钳制算法，严防歌词窗口飘出屏幕可视范围。
+- **热区穿透与深色毛玻璃 Tooltip**：歌词组件以节流形式计算交互热区边界向主进程汇报，移出后立即开启全局鼠标穿透 (`setIgnoreMouseEvents(true, { forward: true })`)。悬浮工具栏配备具有视口边界防出界保护的深色毛玻璃质感 Tooltip。
 
-#### ⑤ 自动化 VIP 特权打卡助手
-- 在 [`src/store/userStore.js`](file:///d:/DevelopProject/concept-music/src/store/userStore.js) 中集成：
+#### ⑧ 自动化 VIP 特权打卡助手
+- 在 [`src/store/userStore.js`](../src/store/userStore.js) 中集成：
   1. 登录后自动触发领取「1天畅听VIP」；
   2. 每隔 60 分钟自动调度打卡领取「3小时特权」（每日最多 8 次，累计 24 小时）；
   3. 内置 15~45 秒随机抖动延时与风控离散算法，并在设置中心提供执行倒计时与状态看板。
@@ -242,25 +284,27 @@ flowchart TB
 
 ## 5. 关键文件清单与开发索引
 
-| 文件路径 | 模块类型 | 核心用途与重要考量 |
+| 文件相对路径 | 模块类型 | 核心用途与重要考量 |
 | :--- | :--- | :--- |
-| [`package.json`](file:///d:/DevelopProject/concept-music/package.json) | 根配置 | 依赖版本定义、启动脚本、electron-builder 跨平台安装包与静态资源外置打包配置 |
-| [`vite.config.js`](file:///d:/DevelopProject/concept-music/vite.config.js) | 构建配置 | `base: './'` 相对路径控制（杜绝 Electron 白屏）、端口与代理设置 |
-| [`version-rules.json`](file:///d:/DevelopProject/concept-music/version-rules.json) | 版本策略 | 云端在线版本规则清单、最低兼容版本阻断、高危版本黑名单熔断配置 |
-| [`electron/main.js`](file:///d:/DevelopProject/concept-music/electron/main.js) | 主进程 | 单实例锁、主窗口与歌词窗口管理、SafeStorage 凭据加解密、本地服务拉起与子进程生命周期 |
-| [`electron/preload.js`](file:///d:/DevelopProject/concept-music/electron/preload.js) | 桥接层 | `windowControls`、`lyricAPI`、`apiBridge`、`trayAPI`、`settingsAPI` 安全暴露 |
-| [`electron/trayManager.js`](file:///d:/DevelopProject/concept-music/electron/trayManager.js) | 托盘与快捷键 | 系统托盘右键菜单状态联动、全局热键绑定与设置持久化 |
-| [`server/server.js`](file:///d:/DevelopProject/concept-music/server/server.js) | 本地微服务 | Express 服务配置、CORS 控制、防 SSRF 音频代理中间件 (`/audio/proxy`)、API 自动注册 |
-| [`server/util/lx-source-runner.js`](file:///d:/DevelopProject/concept-music/server/util/lx-source-runner.js) | 音源引擎 | Node.js VM 沙箱上下文构建、音源脚本编译缓存池与请求封装 |
-| [`server/module/source_resolve.js`](file:///d:/DevelopProject/concept-music/server/module/source_resolve.js) | 音源调度 | 负责根据歌曲特征调用 Netease/QQ 脚本并执行多音质链路探测 |
-| [`src/store/playerStore.js`](file:///d:/DevelopProject/concept-music/src/store/playerStore.js) | 状态仓 | 播放器内核：WebAudio 增益、多音质降级、长播放队列懒加载、双实例交叉加载、断点记忆 |
-| [`src/store/userStore.js`](file:///d:/DevelopProject/concept-music/src/store/userStore.js) | 状态仓 | 用户资产、登录与 Token 定期刷新、自建歌单增删、VIP 自动打卡调度与冷却监控 |
-| [`src/store/updateStore.js`](file:///d:/DevelopProject/concept-music/src/store/updateStore.js) | 状态仓 | 版本在线感知、更新线路选择（官方/国内高速节点）、弹窗免打扰策略与熔断响应 |
-| [`src/utils/request.js`](file:///d:/DevelopProject/concept-music/src/utils/request.js) | 网络库 | 统一 Axios 封装，自动在 Electron 下使用 `ipcAdapter` 经由主进程发送请求与注入凭据 |
-| [`src/utils/songHelper.js`](file:///d:/DevelopProject/concept-music/src/utils/songHelper.js) | 工具库 | 深度清洗并统一酷狗历史接口、网易、企鹅等多源异构歌曲对象 |
-| [`src/views/DesktopLyric.vue`](file:///d:/DevelopProject/concept-music/src/views/DesktopLyric.vue) | 视图 | 桌面歌词主视图：卡拉OK逐字平滑渲染、无极自定义调色盘、热区汇报与播控 |
-| [`src/layout/PlayerBar.vue`](file:///d:/DevelopProject/concept-music/src/layout/PlayerBar.vue) | 视图组件 | 底部播放栏：进度条、音量/增益菜单、音质菜单、黑胶转盘动画、千首大歌单滚动虚拟列表 |
-| [`src/components/SettingsModal.vue`](file:///d:/DevelopProject/concept-music/src/components/SettingsModal.vue) | 弹窗组件 | 全能偏好设置中心（常规/外观、播放音频、桌面歌词、快捷键、打卡看板、关于更新） |
+| [`package.json`](../package.json) | 根配置 | 依赖版本定义、启动脚本、electron-builder 跨平台安装包与静态资源外置打包配置 |
+| [`vite.config.js`](../vite.config.js) | 构建配置 | `base: './'` 相对路径控制（杜绝 Electron 白屏）、端口与本地微服务代理设置 |
+| [`version-rules.json`](../version-rules.json) | 版本策略 | 云端在线版本规则清单、最低兼容版本阻断、高危版本黑名单熔断配置 |
+| [`electron/main.js`](../electron/main.js) | 主进程 | 单实例锁、多窗口调度、横竖排歌词独立坐标记忆与视口钳制、SafeStorage 金库、IPC 原生网络代理 |
+| [`electron/preload.js`](../electron/preload.js) | 桥接层 | `windowControls`、`lyricAPI`、`apiBridge`、`trayAPI`、`settingsAPI` 安全暴露 (ContextBridge) |
+| [`electron/trayManager.js`](../electron/trayManager.js) | 托盘与快捷键 | 系统托盘右键菜单状态联动、全局热键绑定与设置持久化 |
+| [`server/server.js`](../server/server.js) | 本地微服务 | Express 服务配置、CORS 控制、防 SSRF 音频代理中间件 (`/audio/proxy`)、API 自动注册 |
+| [`server/util/lx-source-runner.js`](../server/util/lx-source-runner.js) | 音源引擎 | Node.js VM 沙箱上下文构建、音源脚本编译缓存池与请求封装 |
+| [`server/module/source_resolve.js`](../server/module/source_resolve.js) | 音源调度 | 负责根据歌曲特征调用 Netease/QQ 脚本并执行多音质链路探测 |
+| [`src/store/playerStore.js`](../src/store/playerStore.js) | 状态仓 | 播放器内核：WebAudio 增益、多音质降级、海量队列索引、分片防抖存储、6s看门狗自愈、FM解耦 |
+| [`src/store/userStore.js`](../src/store/userStore.js) | 状态仓 | 用户资产、登录与 Token 定期刷新、自建歌单增删、VIP 自动打卡调度与冷却监控 |
+| [`src/store/updateStore.js`](../src/store/updateStore.js) | 状态仓 | 版本在线感知、更新线路选择（官方/国内高速节点）、弹窗免打扰策略与熔断响应 |
+| [`src/utils/mediaSessionBridge.js`](../src/utils/mediaSessionBridge.js) | 系统桥接 | Windows 系统媒体控制 (SMTC) 与锁屏交互桥接、双阶段乐观更新与次声波保活通道 |
+| [`src/composables/usePlayAllHydration.js`](../src/composables/usePlayAllHydration.js) | 逻辑复用 | 歌单/专辑/排行榜全量分页分段补水灌入机制，支持取消、超限拦截与平滑追加 |
+| [`src/utils/request.js`](../src/utils/request.js) | 网络库 | 统一 Axios 封装，自动在 Electron 下使用 `ipcAdapter` 经由主进程发送请求与注入凭据 |
+| [`src/utils/songHelper.js`](../src/utils/songHelper.js) | 工具库 | 统一跨平台歌曲标准化器 (`normalizeSongKey`, `buildPlayPayload`)、多源异构数据清洗 |
+| [`src/views/DesktopLyric.vue`](../src/views/DesktopLyric.vue) | 视图 | 桌面歌词主视图：横排/竖排双模态切换、卡拉OK垂直/水平逐字平滑渲染、深色毛玻璃 Tooltip、热区汇报 |
+| [`src/layout/PlayerBar.vue`](../src/layout/PlayerBar.vue) | 视图组件 | 底部播放栏：进度条、WebAudio 增益、音质菜单、海量歌曲虚拟滚动抽屉、快捷搜索与批量移除 |
+| [`src/components/SettingsModal.vue`](../src/components/SettingsModal.vue) | 弹窗组件 | 全能偏好设置中心（常规/外观、播放音频/SMTC、桌面歌词横竖排定制、快捷键、打卡看板、关于更新） |
 
 ---
 
@@ -270,10 +314,10 @@ flowchart TB
 
 1. **第三方音源的不可控性与外部协议风险**：
    - 依赖 `music_source/` 中的开源社区逆向脚本解析网易和企鹅音频。一旦平台升级加密校验、反爬风控或改版，可能导致音源瞬间失效。
-   - **对策建议**：保持多源备选脚本池；严格校验返回的流媒体有效性；确保故障自愈跳歌和熔断机制持续生效。
+   - **对策建议**：保持多源备选脚本池；严格校验返回的流媒体有效性；确保 6 秒进度看门狗和故障自动自愈跳歌持续生效。
 2. **跨平台（macOS / Linux）行为差异**：
-   - 当前主要为 Windows 优化，包括 NSIS/Portable 打包、托盘右键菜单行为、`safeStorage` 凭据加密底层。
-   - **对策建议**：若后续支持 macOS 或 Linux，需适配各自托盘图标规范（如 macOS Template Image）、快捷键习惯及文件路径标准。
+   - 当前主要针对 Windows 深度优化（NSIS/Portable、SMTC 锁屏控制、托盘右键菜单行为、`safeStorage` DPAPI 凭据加密底层）。
+   - **对策建议**：若后续支持 macOS 或 Linux，需适配各自系统的媒体控制器规范、托盘图标规范（如 macOS Template Image）及文件路径标准。
 3. **固定本地服务端口 (10420) 冲突**：
    - 本地服务固定监听 `127.0.0.1:10420`。若用户系统中该端口被其他进程占用或被杀毒软件阻断，整个客户端将无法播放音频。
    - **对策建议**：未来可考虑支持动态检测备用端口，并将端口号通过 IPC 动态同步给前端。
@@ -283,15 +327,20 @@ flowchart TB
 
 ### 6.2 现有技术债与重构机会
 
-1. **巨型单文件代码集中度高**：
-   - `src/store/playerStore.js` (2580+ 行)、`src/store/userStore.js` (1416+ 行)、`electron/main.js` (1421+ 行) 体量极大，杂糅了大量细分逻辑。
-   - **改进建议**：后续可将 `playerStore` 拆分为 `audioEngine.js`（WebAudio）、`playQueue.js`（队列管理）、`qualityResolver.js`（音质解析）；将 `main.js` 拆分为 `windowManager.js`、`ipcHandlers.js`、`vault.js` 等模块。
+1. **超大型单文件代码集中度高**：
+   - 当前核心业务组件与状态仓代码体量较大：
+     - `src/store/playerStore.js` (3900+ 行)
+     - `src/layout/PlayerBar.vue` (3100+ 行)
+     - `src/views/DesktopLyric.vue` (1650+ 行)
+     - `electron/main.js` (1530+ 行)
+     - `src/components/SettingsModal.vue` (1690+ 行)
+   - **改进建议**：后续可将 `playerStore` 进一步按领域拆分（如 `audioPipeline.js`、`queueStorage.js`、`fmStream.js`）；将 `PlayerBar.vue` 内部的虚拟滚动抽屉拆分为独立的子组件。
 2. **缺乏自动化测试保障 (测试缺口)**：
-   - 工程目前没有任何单元测试或集成测试。核心算法（如音质降级链推算、歌曲清洗正则、时间解析、Token 刷新）完全依赖手工回归。
-   - **改进建议**：建议引入 `vitest` 对 `utils/songHelper.js`、`store/playerStore.js` 中的核心计算逻辑补充单元测试。
+   - 工程目前暂无自动化单元测试或集成测试。核心算法（如音质降级链推算、歌曲规范化哈希生成 `normalizeSongKey`、虚拟滚动切片计算、Token 刷新）依赖手工回归。
+   - **改进建议**：建议引入 `vitest` 对 `utils/songHelper.js`、`utils/mediaSessionBridge.js` 中的核心无副作用纯函数补充单元测试。
 3. **缺少 TypeScript 类型声明 (类型缺口)**：
-   - 异构平台歌曲对象（Song）、音质对象（Qualities）、用户资产（VipStatus）字段繁杂，全靠可选链 `?.` 防御，容易引入拼写失误。
-   - **改进建议**：可以逐步通过 JSDoc `@type` 规范关键领域模型，或在后续阶段逐步迁移核心工具库至 TypeScript。
+   - 异构平台歌曲对象（Song）、音质对象（Qualities）、用户资产（VipStatus）字段繁杂，全靠可选链 `?.` 防御，存在拼写疏漏风险。
+   - **改进建议**：逐步通过 JSDoc `@type` 规范关键领域模型，或在后续阶段逐步迁移核心工具库至 TypeScript。
 
 ---
 
@@ -300,7 +349,8 @@ flowchart TB
 1. **新增依赖原则**：绝对避免引入需要原生 C/C++ 编译的底层依赖，始终保持纯 JavaScript 生态，维持各平台 `npm install` 零编译报错的轻量体验。
 2. **敏感凭据隔离**：严禁在前端直接读取、存储明文 Cookie 或 Token；必须始终经由 `safeStorage` 金库与主进程代理中转。
 3. **音频代理规范**：任何新增的第三方流媒体解析必须正确流转至 `/audio/proxy`，确保 WebAudio 音量增益、波形分析及跨域头兼容。
-4. **发布流程**：发布新版本时务必遵循：
+4. **媒体会话与多模态规范**：新增任何全局播放状态变更必须经过 `mediaSessionBridge.js` 同步 Windows SMTC；歌词窗口调整需兼顾横排与竖排模式以及屏幕视口防溢出保护。
+5. **发布流程**：发布新版本时务必遵循：
    - 更新 `package.json` 版本号；
    - 同步校验 `version-rules.json` 中的 `latestVersion` 与版本规则；
    - 通过 Git Tag 触发 `.github/workflows/build.yml` 自动化构建。

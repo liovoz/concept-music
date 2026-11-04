@@ -6,8 +6,8 @@
 
 ## 1. 核心架构认知与文档索引
 
-- **项目架构全貌**：完整技术栈、目录职责、音频流转与数据安全规范详见 [`docs/ARCHITECTURE.md`](file:///d:/DevelopProject/concept-music/docs/ARCHITECTURE.md)。
-- **核心业务改动准则**：在涉及播放内核（`playerStore.js`）、鉴权金库与网络代理（`main.js`、`request.js`）、第三方音源调度（`lx-source-runner.js`、`source_resolve.js`）或跨模块重构时，**必须优先查阅 `docs/ARCHITECTURE.md`**，保持系统设计理念一致。
+- **项目架构全貌**：完整技术栈、目录职责、音频流转与数据安全规范详见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+- **核心业务改动准则**：在涉及播放内核（`playerStore.js`）、鉴权金库与网络代理（`main.js`、`request.js`）、系统媒体会话（`mediaSessionBridge.js`）、第三方音源调度（`lx-source-runner.js`、`source_resolve.js`）或跨模块重构时，**必须优先查阅 `docs/ARCHITECTURE.md`**，保持系统设计理念一致。
 
 ---
 
@@ -23,6 +23,13 @@
 4. **第三方音源沙箱与降级链**：
    - 第三方脚本保持在 `music_source/Netease/` 与 `music_source/QQ/` 物理隔离，由 `lx-source-runner.js` 在 Node.js `vm.Script` 沙箱中执行；
    - 音质遵循 `atmos` -> `master` -> `hires` -> `flac` -> `320k` -> `128k` 平滑降级。
-5. **文档维护原则**：
-   - 日常代码修改（如修复 Bug、新增局部页面、调整组件样式）**无需**更新 `docs/ARCHITECTURE.md`；
-   - 仅在发生**重大架构演进**（如拆分巨型 Store、改动底层加密协议、新增多平台音源架构）时，顺带同步更新 `docs/ARCHITECTURE.md`。
+5. **系统媒体控制 (SMTC) 桥接规范**：
+   - 系统级媒体控制必须统一经由 `src/utils/mediaSessionBridge.js` 处理，结合状态乐观更新、双阶段元数据穿透推送与次声波保活机制，防止 WebAudio 模式被 Chromium 静音挂起。
+6. **大容量歌单与电台流隔离规范**：
+   - 常规播放列表引入了虚拟滚动与分片防抖存储机制（支持 1000/1500/2000 档位管理），严禁破坏歌曲内存模型与哈希索引 (`normKey`)；
+   - 私人 FM 采用独立电台流模式，物理隔离常规播放队列，严禁在电台流逻辑中污染或重置用户当前的常规播放列表。
+7. **桌面歌词双模态与视口防溢出**：
+   - 桌面歌词支持横排/竖排双模态，窗口尺寸与位置需在主进程独立记忆，窗口拖拽与定位需严格遵循屏幕多监视器边界钳制算法，防止歌词溢出不可视区域。
+8. **文档维护原则**：
+   - 日常代码微调（如样式微调、局部文案修正）**无需**更新 `docs/ARCHITECTURE.md`；
+   - 在发生**核心架构演进**（如状态仓重构、新增系统级桥接、变动底层安全金库或多平台音源架构）时，顺带同步更新 `docs/ARCHITECTURE.md`。

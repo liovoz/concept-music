@@ -21,6 +21,11 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Crash and dump artifacts
+*.dmp
+*.crash
+*.stackdump
+
 # Local environment and secrets
 .env
 .env.*
@@ -33,9 +38,15 @@ lerna-debug.log*
 *.cer
 *.jks
 *.keystore
+*vault*.json
 
-# Local overrides
+# Local overrides and backups
 *.local
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
 
 # Editor directories and files
 .vscode/*
@@ -50,7 +61,9 @@ lerna-debug.log*
 # OS generated files
 .DS_Store
 Thumbs.db
-Desktop.ini
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
 
 # Local temp/cache/tooling state
 Temp/
