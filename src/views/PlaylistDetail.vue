@@ -227,8 +227,6 @@ const goToAlbum = (id) => {
 
 watch(() => route.params.id, (newId, oldId) => {
   if (newId && newId !== oldId && route.path.startsWith('/playlist/')) {
-    cancelPlayAllHydration();
-    store.cancelPlayAllHydration();
     const cached = playlistDetailCache.get(String(newId));
     if (cached && cached.songs && cached.songs.length > 0) {
       playlistInfo.value = cached.info || {};
@@ -638,6 +636,10 @@ const extractPlaylistInfo = (res) => {
     if (data.list_create_gid && !info.list_create_gid) {
         info.list_create_gid = data.list_create_gid;
     }
+    const rawCount = Number(data.count || data.songcount || data.song_count || data.total || 0);
+    if (rawCount > 0 && !info.count) {
+      info.count = rawCount;
+    }
     Object.values(data).forEach(val => traverse(val, depth + 1));
   };
   traverse(res, 0);
@@ -786,8 +788,6 @@ onMounted(() => {
   window.addEventListener('song-context-menu:song-added', handleSongAdded);
 });
 onUnmounted(() => {
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
   if (observer) observer.disconnect();
   window.removeEventListener('song-context-menu:song-removed', handleSongRemoved);
   window.removeEventListener('song-context-menu:song-added', handleSongAdded);
@@ -813,11 +813,22 @@ const playAll = () => {
   if (songs.value.length === 0) return;
   const fallbackCover = playlistInfo.value.cover || defaultImg;
   const initialSongs = songs.value.map(song => buildPlayPayload(song, fallbackCover));
-  const result = store.startPlayAllHydrationSession(initialSongs, { sourceKey: `playlist:${route.params.id}` });
+  const routeId = String(route.params.id || '');
+  const shouldFilterLiked = Boolean(
+    isFavoriteList.value && userStore.likedHashes.length > 0 && routeId === String(userStore.likedPlaylistGlobalId)
+  );
+  const expectedTotal = shouldFilterLiked
+    ? Number(userStore.likedHashes.length || playlistInfo.value.count || 0)
+    : Number(playlistInfo.value.count || 0);
+  const result = store.startPlayAllHydrationSession(initialSongs, {
+    sourceKey: `playlist:${routeId}`,
+    hasMore: hasMore.value,
+    expectedTotal
+  });
   if (!result.sessionId || !hasMore.value) return;
 
-  const routeId = String(route.params.id || '');
   const targetFetchId = playlistInfo.value.list_create_gid || routeId;
+  const likedSnapshot = shouldFilterLiked ? new Set(userStore.likedHashes.map(h => String(h || '').toUpperCase())) : null;
 
   startPlayAllHydration({
     sessionId: result.sessionId,
@@ -830,8 +841,8 @@ const playAll = () => {
       });
       const rawSongs = extractSongs(songsRes);
       let normalized = normalizeSongs(rawSongs, defaultImg);
-      if (isFavoriteList.value && userStore.likedHashes.length > 0 && String(route.params.id) === String(userStore.likedPlaylistGlobalId)) {
-        normalized = normalized.filter(song => userStore.likedHashes.includes((song._hash || '').toUpperCase()));
+      if (likedSnapshot && likedSnapshot.size > 0) {
+        normalized = normalized.filter(song => likedSnapshot.has((song._hash || '').toUpperCase()));
       }
       return {
         rawCount: rawSongs.length,
@@ -839,7 +850,7 @@ const playAll = () => {
       };
     },
     appendSongs: (sessionId, payloads) => store.extendPlayAllHydration(sessionId, payloads),
-    shouldContinue: () => String(route.params.id || '') === routeId && store.isPlayAllHydrationActive(result.sessionId)
+    shouldContinue: () => store.isPlayAllHydrationActive(result.sessionId)
   });
 };
 </script>

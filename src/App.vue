@@ -54,10 +54,11 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const cachedComponents = new Set(['PersonalFM', 'PlaylistCategory']);
-const isCached = (Component) => cachedComponents.has(Component?.name); 
+const getComponentName = (Component) => Component?.type?.name || Component?.name || '';
+const isCached = (Component) => cachedComponents.has(getComponentName(Component)); 
 const getRouteComponentKey = (Component) => {
   if (typeof route.meta?.stableComponentKey === 'string') return route.meta.stableComponentKey;
-  return isCached(Component) ? Component.name : route.fullPath;
+  return isCached(Component) ? getComponentName(Component) : route.fullPath;
 };
 
 watch(() => route.path, () => {

@@ -404,7 +404,7 @@ const actionHandlers = {
 const syncActions = () => {
   if (!sessionActive || !store) return;
   const hasSongOrList = Boolean(store.currentSong) || (Array.isArray(store.playlist) && store.playlist.length > 0);
-  const hasList = Array.isArray(store.playlist) && store.playlist.length > 0;
+  const hasList = (Array.isArray(store.playlist) && store.playlist.length > 0) || Boolean(store.isFmModePlaylist && store.currentSong);
   const canSeek = Boolean(store.currentSong) && Number(store.duration) > 0;
 
   setAction('play', hasSongOrList ? actionHandlers.play : null);

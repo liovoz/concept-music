@@ -138,51 +138,408 @@
     </div>
 
     <transition name="slide-up">
-      <div v-show="store.isPlaylistVisible" ref="playlistPanelRef" class="absolute bottom-24 right-6 w-[400px] min-h-[380px] max-h-[65vh] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.55)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-slate-100" tabindex="-1" @keydown.escape="store.isPlaylistVisible = false">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/60">
-          <h3 class="font-bold text-gray-800 text-sm">当前播放队列 <span class="text-gray-400 font-normal ml-1">({{ store.playlist.length }}首)</span></h3>
-          <button @click="store.clearPlaylist" class="text-xs text-gray-500 hover:text-blue-600 transition-colors no-drag">清空</button>
+      <div
+        v-show="store.isPlaylistVisible"
+        ref="playlistPanelRef"
+        class="absolute bottom-24 right-6 w-[420px] min-h-[390px] max-h-[68vh] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.55)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-slate-100"
+        tabindex="-1"
+        @keydown.escape="handlePlaylistEscape"
+      >
+        <!-- 私人FM电台独立播放面板 -->
+        <template v-if="store.isFmModePlaylist">
+          <div class="px-5 py-3.5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-purple-50/60 dark:bg-purple-950/20 gap-2 flex-shrink-0">
+            <div class="flex items-center min-w-0 gap-2">
+              <span class="text-base">📻</span>
+              <h3 class="font-bold text-gray-800 dark:text-slate-100 text-sm truncate">私人FM电台</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                独立播放中
+              </span>
+            </div>
+            <button
+              type="button"
+              @click.stop="store.isPlaylistVisible = false"
+              class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer no-drag"
+              v-tooltip="'收起面板'"
+            >
+              <AppIcon name="close" class="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div class="p-6 flex-1 flex flex-col justify-between overflow-y-auto custom-scrollbar gap-5">
+            <div v-if="store.currentSong" class="p-4 rounded-xl bg-purple-50/40 dark:bg-slate-800/60 border border-purple-100/70 dark:border-slate-700 flex items-center gap-3.5">
+              <img
+                :src="store.currentSong.cover || defaultImg"
+                :alt="store.currentSong.name"
+                class="w-14 h-14 rounded-lg object-cover shadow-sm bg-gray-100 dark:bg-slate-700 flex-shrink-0"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm text-gray-900 dark:text-slate-50 truncate" v-tooltip="store.currentSong.name">
+                  {{ store.currentSong.name }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-slate-400 truncate mt-1">
+                  {{ store.currentSong.singer || '未知歌手' }}
+                </div>
+              </div>
+              <button
+                type="button"
+                @click.stop="store.togglePlay()"
+                class="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shadow-md transition-transform active:scale-95 flex-shrink-0 cursor-pointer no-drag"
+              >
+                <AppIcon :name="store.isPlaying ? 'pause' : 'play'" class="w-4 h-4" :class="store.isPlaying ? '' : 'ml-0.5'" />
+              </button>
+            </div>
+
+            <div class="p-4 rounded-xl bg-gray-50/80 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-700/80 text-xs text-gray-500 dark:text-slate-400 space-y-2">
+              <div class="flex items-start gap-2">
+                <AppIcon name="info" class="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                <span class="leading-relaxed">
+                  私人FM根据算法智能实时推荐歌曲，后续推荐随播放自动生成，不占用常规播放队列。
+                </span>
+              </div>
+              <div v-if="store.playlist.length > 0" class="pt-2 border-t border-gray-100 dark:border-slate-700/60 text-[11px] text-gray-600 dark:text-slate-300 font-medium">
+                常规播放列表（{{ store.playlist.length }}首）已安全保留，退出电台后即可随时恢复。
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2.5 pt-2">
+              <button
+                v-if="route.path !== '/fm'"
+                type="button"
+                @click.stop="store.isPlaylistVisible = false; router.push('/fm');"
+                class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200 dark:shadow-purple-950/40 transition-all flex items-center justify-center gap-2 cursor-pointer no-drag active:scale-[0.98]"
+              >
+                <AppIcon name="personal-fm" class="w-4 h-4" />
+                <span>前往私人FM主页</span>
+              </button>
+
+              <button
+                v-if="store.hasRegularPlaylistBackup || store.playlist.length > 0"
+                type="button"
+                @click.stop="handleRestoreFromFmDrawer"
+                class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-white hover:bg-gray-50 text-gray-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border border-gray-200 dark:border-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer no-drag active:scale-[0.98]"
+              >
+                <AppIcon name="playlist" class="w-4 h-4 text-purple-500" />
+                <span>恢复常规播放列表 ({{ store.playlist.length }}首)</span>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <!-- 常规播放队列面板 -->
+        <template v-else>
+        <!-- 顶栏：标题 + 容量状态 + 快捷管理按钮 -->
+        <div class="px-5 py-3.5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/60 gap-2 flex-shrink-0">
+          <div class="flex items-center min-w-0 gap-1.5">
+            <h3 class="font-bold text-gray-800 dark:text-slate-100 text-sm truncate">
+              当前播放队列
+            </h3>
+            <span
+              class="text-xs font-semibold tabular-nums flex-shrink-0"
+              :class="isPlaylistNearCap ? 'text-amber-500 dark:text-amber-400' : 'text-gray-400 dark:text-slate-400'"
+              v-tooltip="`当前队列容量上限：${store.maxPlaylistSize} 首（可在设置中调整）`"
+            >
+              ({{ store.playlist.length }}/{{ store.maxPlaylistSize }})
+            </span>
+          </div>
+
+          <div class="flex items-center space-x-1 flex-shrink-0 no-drag">
+            <!-- 搜索过滤 -->
+            <button
+              type="button"
+              @click.stop="togglePlaylistSearch"
+              :disabled="store.playlist.length === 0"
+              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
+              :class="isPlaylistSearchOpen
+                ? 'bg-blue-100/80 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400'"
+              v-tooltip="store.playlist.length === 0 ? '' : '搜索队列歌曲'"
+            >
+              <AppIcon name="search" class="w-3.5 h-3.5" />
+            </button>
+
+            <!-- 定位当前播放歌曲 -->
+            <button
+              type="button"
+              @click.stop="scrollToCurrentSong(true)"
+              :disabled="currentSongIndexInQueue < 0"
+              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed text-gray-500 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400"
+              v-tooltip="currentSongIndexInQueue < 0 ? '' : '定位到当前播放歌曲'"
+            >
+              <AppIcon name="locate" class="w-3.5 h-3.5" />
+            </button>
+
+            <!-- 清理已播歌曲 -->
+            <button
+              v-if="!store.isFmModePlaylist"
+              type="button"
+              @click.stop="handleCleanPlayedSongs"
+              :disabled="currentSongIndexInQueue <= 0"
+              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed text-gray-500 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400"
+              v-tooltip="currentSongIndexInQueue <= 0 ? '当前歌曲前暂无已播歌曲' : `清理当前歌曲之前的 ${currentSongIndexInQueue} 首已播歌曲`"
+            >
+              <AppIcon name="broom" class="w-3.5 h-3.5" />
+            </button>
+
+            <!-- 批量选择管理 -->
+            <button
+              type="button"
+              @click.stop="togglePlaylistBatchMode"
+              :disabled="store.playlist.length === 0"
+              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
+              :class="isPlaylistBatchMode
+                ? 'bg-blue-100/80 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400'"
+              v-tooltip="store.playlist.length === 0 ? '' : (isPlaylistBatchMode ? '退出批量管理' : '批量选择管理')"
+            >
+              <AppIcon name="list-check" class="w-3.5 h-3.5" />
+            </button>
+
+            <div class="w-px h-3.5 bg-gray-200 dark:bg-slate-700 mx-0.5"></div>
+
+            <!-- 清空列表 -->
+            <button
+              type="button"
+              @click="handleClearPlaylistClick"
+              :disabled="!store.playlist || store.playlist.length === 0"
+              class="px-1.5 py-1 rounded-md text-xs transition-colors no-drag font-medium cursor-pointer"
+              :class="[
+                !store.playlist || store.playlist.length === 0
+                  ? 'opacity-40 cursor-not-allowed text-gray-400 dark:text-slate-600'
+                  : isClearingPlaylist
+                    ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950/40 font-bold'
+                    : 'text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400'
+              ]"
+              v-tooltip="!store.playlist || store.playlist.length === 0 ? '' : (isClearingPlaylist ? '再次点击立即清空（支持5秒内撤销）' : '清空播放队列')"
+            >
+              {{ isClearingPlaylist ? '确认清空' : '清空' }}
+            </button>
+          </div>
         </div>
-        
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col" @scroll.passive="handlePlaylistScroll">
-          <div v-if="store.playlist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-400">
-            <AppIcon name="album" class="w-12 h-12 mb-3 text-gray-200" />
+
+        <!-- 搜索过滤栏 -->
+        <div
+          v-if="isPlaylistSearchOpen && store.playlist.length > 0"
+          class="px-4 py-2 border-b border-gray-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 flex items-center gap-2 flex-shrink-0 no-drag"
+        >
+          <div class="flex-1 relative flex items-center">
+            <AppIcon name="search" class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 absolute left-2.5 pointer-events-none" />
+            <input
+              ref="playlistSearchInputRef"
+              v-model="playlistSearchKeyword"
+              type="text"
+              placeholder="搜索队列中的歌名 / 歌手..."
+              @keydown.stop="handleSearchInputKeydown"
+              class="w-full pl-8 pr-16 py-1.5 rounded-lg text-xs bg-gray-100/80 dark:bg-slate-800/90 text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 border border-transparent focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 outline-none transition-all"
+            />
+            <div class="absolute right-2 flex items-center space-x-1">
+              <span v-if="playlistSearchKeyword.trim()" class="text-[10px] text-gray-400 dark:text-slate-500 tabular-nums">
+                {{ filteredPlaylist.length }}首
+              </span>
+              <button
+                v-if="playlistSearchKeyword"
+                type="button"
+                @click.stop="playlistSearchKeyword = ''"
+                class="p-0.5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 cursor-pointer"
+                v-tooltip="'清空搜索词'"
+              >
+                <AppIcon name="close" class="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 批量操作控制栏 -->
+        <div
+          v-if="isPlaylistBatchMode && store.playlist.length > 0"
+          class="px-4 py-2 border-b border-blue-100/80 dark:border-slate-800 bg-blue-50/60 dark:bg-slate-800/80 flex items-center justify-between text-xs flex-shrink-0 no-drag select-none"
+        >
+          <span class="font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+            已选 {{ selectedPlaylistKeys.size }} 首
+          </span>
+          <div class="flex items-center space-x-2">
+            <button
+              type="button"
+              @click.stop="toggleSelectAllFiltered"
+              class="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-slate-700/70 transition-colors cursor-pointer"
+            >
+              {{ isAllFilteredSelected ? '取消全选' : '全选' }}
+            </button>
+            <button
+              type="button"
+              @click.stop="invertSelectFiltered"
+              class="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-slate-700/70 transition-colors cursor-pointer"
+            >
+              反选
+            </button>
+            <button
+              type="button"
+              :disabled="selectedPlaylistKeys.size === 0"
+              @click.stop="handleBatchRemoveSelected"
+              class="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-red-500 hover:bg-red-600 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              移除选中
+            </button>
+            <button
+              type="button"
+              @click.stop="exitPlaylistBatchMode"
+              class="px-1.5 py-0.5 rounded text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 cursor-pointer"
+            >
+              完成
+            </button>
+          </div>
+        </div>
+
+        <!-- 虚拟滚动列表视口 -->
+        <div
+          ref="playlistScrollRef"
+          class="flex-1 overflow-y-auto custom-scrollbar px-2 py-1.5 flex flex-col relative"
+          @scroll.passive="handlePlaylistScroll"
+        >
+          <div v-if="store.playlist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-400 py-12">
+            <AppIcon name="album" class="w-12 h-12 mb-3 text-gray-200 dark:text-slate-700" />
             <p class="text-xs font-medium">你还没有添加任何歌曲</p>
           </div>
-          <div v-else class="space-y-1">
-            <div
-              v-for="(song, index) in displayedPlaylist"
-              :key="song.hash + '_' + index"
-              @contextmenu="handlePlaylistContextMenu($event, song, index)"
-              @mouseenter="playlistHoverIndex = index"
-              @mouseleave="playlistHoverIndex = -1"
-              class="group flex items-center justify-between px-4 py-2.5 rounded-xl cursor-pointer transition-colors"
-              :style="getPlaylistRowStyle(song, index)"
+          <div v-else-if="filteredPlaylist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 py-12">
+            <AppIcon name="search" class="w-9 h-9 mb-2.5 opacity-40" />
+            <p class="text-xs font-medium">未找到匹配「{{ playlistSearchKeyword }}」的歌曲</p>
+            <button
+              type="button"
+              @click.stop="playlistSearchKeyword = ''"
+              class="mt-2.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
-              <div class="flex items-center flex-1 overflow-hidden">
-                <div class="w-4 h-4 mr-3 flex items-center justify-center flex-shrink-0">
-                  <AppIcon v-if="store.currentSong?.hash === song.hash && store.isPlaying" name="volume-high" class="w-4 h-4 text-blue-600 animate-pulse" />
-                  <span v-else class="text-xs text-gray-400 dark:text-slate-400 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400">{{ index + 1 }}</span>
-                </div>
-                <div class="flex-1 pl-2 text-xs font-medium flex flex-col justify-center overflow-hidden">
-                  <div class="flex items-center">
-                    <span class="truncate text-gray-800 dark:text-slate-100" :class="{ '!text-blue-600 dark:!text-blue-400': store.currentSong?.hash === song.hash }">{{ song.name }}</span>
-                    <span v-if="song.is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
-                    <span v-else-if="song.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
+              清除搜索条件
+            </button>
+          </div>
+          <div
+            v-else
+            class="w-full relative flex-shrink-0"
+            :style="{ height: totalVirtualHeight + 'px' }"
+          >
+            <div
+              class="w-full absolute left-0 top-0"
+              :style="{ transform: `translateY(${virtualOffsetY}px)`, willChange: 'transform' }"
+            >
+              <div
+                v-for="item in virtualPlaylistRows"
+                :key="item.normKey"
+                @click="isPlaylistBatchMode ? toggleSelectSongKey(item.normKey) : undefined"
+                @dblclick="!isPlaylistBatchMode && handleRowDblClick(item.song)"
+                @contextmenu="handlePlaylistContextMenu($event, item.song, item.realIndex)"
+                @mouseenter="playlistHoverIndex = item.realIndex"
+                @mouseleave="playlistHoverIndex = -1"
+                class="group h-[52px] flex items-center justify-between px-3.5 rounded-xl select-none transition-colors"
+                :class="[
+                  isPlaylistBatchMode ? 'cursor-pointer' : 'cursor-default',
+                  { 'song-row-current': isCurrentRowSong(item.song) },
+                  { 'ring-1 ring-blue-400/70 dark:ring-blue-500/70': locatedFlashKey && locatedFlashKey === item.normKey }
+                ]"
+                :style="getPlaylistRowStyle(item.song, item.realIndex, item.normKey)"
+              >
+                <div class="flex items-center flex-1 min-w-0">
+                  <!-- 批量多选复选框 / 序号与正在播放图标 -->
+                  <div
+                    v-if="isPlaylistBatchMode"
+                    class="w-6 h-5 mr-2 flex items-center justify-center flex-shrink-0"
+                  >
+                    <span
+                      class="w-4 h-4 rounded border flex items-center justify-center transition-colors"
+                      :class="selectedPlaylistKeys.has(item.normKey)
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'border-gray-300 dark:border-slate-600 bg-white/80 dark:bg-slate-800'"
+                    >
+                      <AppIcon v-if="selectedPlaylistKeys.has(item.normKey)" name="check" class="w-3 h-3" />
+                    </span>
                   </div>
-                  <SingerLink :singers="song._singers || song.artists" :singer-name="song.singer" :singer-id="song.singer_id" size="small" :disabled="isExternalImportSong(song)" :disabled-tooltip="getImportDisabledTooltip(song)" />
+                  <div
+                    v-else
+                    class="h-4 mr-2.5 flex items-center justify-end flex-shrink-0"
+                    :class="store.playlist.length >= 1000 ? 'w-8' : 'w-6'"
+                  >
+                    <AppIcon
+                      v-if="isCurrentRowSong(item.song) && store.isPlaying"
+                      name="volume-high"
+                      class="w-4 h-4 text-blue-600 dark:text-blue-400 animate-pulse"
+                    />
+                    <span
+                      v-else
+                      class="text-xs text-gray-400 dark:text-slate-400 font-medium tabular-nums text-right group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                    >
+                      {{ item.realIndex + 1 }}
+                    </span>
+                  </div>
+
+                  <div class="flex-1 pl-1 text-xs font-medium flex flex-col justify-center overflow-hidden min-w-0">
+                    <div class="flex items-center min-w-0">
+                      <span
+                        class="truncate flex-1 min-w-0 text-gray-800 dark:text-slate-100"
+                        :class="{ '!text-blue-600 dark:!text-blue-400 font-bold': isCurrentRowSong(item.song) }"
+                        v-tooltip="item.song.name"
+                      >
+                        {{ item.song.name }}
+                      </span>
+                      <span v-if="item.song.is_paid" class="ml-1.5 flex-shrink-0 bg-orange-50 dark:bg-orange-950/60 text-orange-500 dark:text-orange-400 border border-orange-200 dark:border-orange-800/70 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
+                      <span v-else-if="item.song.is_vip" class="ml-1.5 flex-shrink-0 bg-blue-50 dark:bg-blue-950/60 text-blue-500 dark:text-blue-400 border border-blue-200 dark:border-blue-800/70 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
+                    </div>
+                    <div class="truncate min-w-0 mt-0.5" @click.stop="isPlaylistBatchMode ? toggleSelectSongKey(item.normKey) : undefined">
+                      <SingerLink
+                        :singers="item.song._singers || item.song.artists"
+                        :singer-name="item.song.singer"
+                        :singer-id="item.song.singer_id"
+                        size="small"
+                        :disabled="isPlaylistBatchMode || isExternalImportSong(item.song)"
+                        :disabled-tooltip="isPlaylistBatchMode ? '' : getImportDisabledTooltip(item.song)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 悬浮快捷操作 -->
+                <div
+                  v-if="!isPlaylistBatchMode"
+                  class="w-[76px] flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2"
+                >
+                  <button
+                    v-if="!store.isFmModePlaylist"
+                    type="button"
+                    @click.stop="store.insertNext(item.song)"
+                    class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag cursor-pointer"
+                    :class="{ 'invisible pointer-events-none': isCurrentRowSong(item.song) }"
+                    v-tooltip="isCurrentRowSong(item.song) ? '' : '移至下一首播放'"
+                  >
+                    <AppIcon name="play-next" class="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    @click.stop="handleRowPlayClick(item.song)"
+                    class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag cursor-pointer"
+                    :class="{ '!text-blue-600 dark:!text-blue-400': isCurrentRowSong(item.song) }"
+                    v-tooltip="isCurrentRowSong(item.song) && store.isPlaying ? '暂停' : (isCurrentRowSong(item.song) ? '继续播放' : '播放')"
+                  >
+                    <AppIcon
+                      v-if="isCurrentRowSong(item.song) && store.isPlaying"
+                      name="pause"
+                      class="w-4 h-4"
+                    />
+                    <AppIcon
+                      v-else
+                      name="play"
+                      class="w-4 h-4"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    @click.stop="store.removeFromPlaylist(item.realIndex, item.song.hash)"
+                    class="text-gray-400 dark:text-slate-500 hover:text-red-500 p-1 no-drag cursor-pointer"
+                    v-tooltip="'从队列中移除'"
+                  >
+                    <AppIcon name="close" class="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-              <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-                <button @click.stop="store.playSong(song)" class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag"><AppIcon name="play" class="w-4 h-4" /></button>
-                <button @click.stop="store.removeFromPlaylist(index)" class="text-gray-400 dark:text-slate-500 hover:text-red-500 p-1 no-drag"><AppIcon name="close" class="w-4 h-4" /></button>
-              </div>
-            </div>
-            <div v-if="displayedPlaylist.length < store.playlist.length" class="text-[10px] text-center text-gray-400 dark:text-slate-500 py-1.5">
-              向下滚动加载更多歌曲 (已显示 {{ displayedPlaylist.length }}/{{ store.playlist.length }})
             </div>
           </div>
         </div>
+        </template>
       </div>
     </transition>
   </footer>
@@ -873,10 +1230,11 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import { usePlayerStore, QUALITY_CONFIG } from '../store/playerStore';
+import { useRouter, useRoute } from 'vue-router';
+import { usePlayerStore, QUALITY_CONFIG, MAX_FM_QUEUE_SIZE } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
 import request from '../utils/request';
+import { normalizeSongKey } from '../utils/songHelper';
 import { openSongContextMenu } from '../utils/songContextMenu';
 import SingerLink from '../components/SingerLink.vue';
 import VinylTurntable from '../components/VinylTurntable.vue';
@@ -885,6 +1243,7 @@ import { useTheme } from '../composables/useTheme';
 const store = usePlayerStore();
 const userStore = useUserStore();
 const router = useRouter();
+const route = useRoute();
 const { isDark } = useTheme();
 const titleViewportRef = ref(null);
 const titleTextRef = ref(null);
@@ -954,30 +1313,330 @@ startDiscAnimation();
 
 const playlistPanelRef = ref(null);
 const playlistBtnRef = ref(null);
+const playlistScrollRef = ref(null);
+const playlistSearchInputRef = ref(null);
 const qualityMenuRef = ref(null);
 const qualityMenuOpen = ref(false);
 const playlistHoverIndex = ref(-1);
-const visiblePlaylistLimit = ref(60);
+const isClearingPlaylist = ref(false);
+let clearConfirmTimer = null;
 
-const displayedPlaylist = computed(() => {
-  if (!store.playlist || store.playlist.length <= 60) return store.playlist;
-  return store.playlist.slice(0, visiblePlaylistLimit.value);
+// --- 队列虚拟滚动与交互管理状态 ---
+const PLAYLIST_ROW_HEIGHT = 52;
+const PLAYLIST_OVERSCAN = 6;
+const playlistScrollTop = ref(0);
+const playlistViewportHeight = ref(360);
+const isPlaylistSearchOpen = ref(false);
+const playlistSearchKeyword = ref('');
+const isPlaylistBatchMode = ref(false);
+const selectedPlaylistKeys = ref(new Set());
+const locatedFlashKey = ref('');
+let locatedFlashTimer = null;
+
+const currentSongNormKey = computed(() => normalizeSongKey(store.currentSong));
+
+const isCurrentRowSong = (song) => {
+  if (!currentSongNormKey.value || !song) return false;
+  return normalizeSongKey(song) === currentSongNormKey.value;
+};
+
+const currentSongIndexInQueue = computed(() => {
+  if (!store.currentSong || !store.playlist.length) return -1;
+  return store.getCurrentSongIndex();
 });
 
-const handlePlaylistScroll = (e) => {
-  const target = e.target;
-  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 100) {
-    if (visiblePlaylistLimit.value < store.playlist.length) {
-      visiblePlaylistLimit.value = Math.min(store.playlist.length, visiblePlaylistLimit.value + 40);
+const isPlaylistNearCap = computed(() => {
+  if (store.isFmModePlaylist) return false;
+  return store.playlist.length >= Math.floor(store.maxPlaylistSize * 0.9);
+});
+
+const filteredPlaylist = computed(() => {
+  const list = store.playlist || [];
+  const kw = playlistSearchKeyword.value.trim().toLowerCase();
+  if (!kw) {
+    return list.map((song, idx) => ({
+      song,
+      realIndex: idx,
+      normKey: normalizeSongKey(song) || `idx_${idx}`
+    }));
+  }
+  const res = [];
+  for (let i = 0; i < list.length; i++) {
+    const song = list[i];
+    const name = String(song?.name || '').toLowerCase();
+    const singer = String(song?.singer || '').toLowerCase();
+    if (name.includes(kw) || singer.includes(kw)) {
+      res.push({
+        song,
+        realIndex: i,
+        normKey: normalizeSongKey(song) || `idx_${i}`
+      });
+    }
+  }
+  return res;
+});
+
+const totalVirtualHeight = computed(() => filteredPlaylist.value.length * PLAYLIST_ROW_HEIGHT);
+
+const virtualStartIndex = computed(() => {
+  const raw = Math.floor(playlistScrollTop.value / PLAYLIST_ROW_HEIGHT) - PLAYLIST_OVERSCAN;
+  return Math.max(0, raw);
+});
+
+const virtualEndIndex = computed(() => {
+  const visibleCount = Math.ceil((playlistViewportHeight.value || 360) / PLAYLIST_ROW_HEIGHT) + PLAYLIST_OVERSCAN * 2;
+  return Math.min(filteredPlaylist.value.length, virtualStartIndex.value + visibleCount);
+});
+
+const virtualOffsetY = computed(() => virtualStartIndex.value * PLAYLIST_ROW_HEIGHT);
+
+const virtualPlaylistRows = computed(() => {
+  return filteredPlaylist.value.slice(virtualStartIndex.value, virtualEndIndex.value);
+});
+
+const measurePlaylistViewport = () => {
+  const el = playlistScrollRef.value;
+  if (el && el.clientHeight > 0) {
+    playlistViewportHeight.value = el.clientHeight;
+  }
+};
+
+const resetClearConfirm = () => {
+  isClearingPlaylist.value = false;
+  if (clearConfirmTimer) {
+    clearTimeout(clearConfirmTimer);
+    clearConfirmTimer = null;
+  }
+};
+
+const handleClearPlaylistClick = () => {
+  if (!store.playlist || store.playlist.length === 0) return;
+
+  if (!isClearingPlaylist.value) {
+    isClearingPlaylist.value = true;
+    if (clearConfirmTimer) clearTimeout(clearConfirmTimer);
+
+    clearConfirmTimer = setTimeout(() => {
+      resetClearConfirm();
+    }, 3000);
+  } else {
+    resetClearConfirm();
+    exitPlaylistBatchMode();
+    store.clearPlaylist();
+  }
+};
+
+const togglePlaylistSearch = async () => {
+  isPlaylistSearchOpen.value = !isPlaylistSearchOpen.value;
+  if (isPlaylistSearchOpen.value) {
+    await nextTick();
+    measurePlaylistViewport();
+    playlistSearchInputRef.value?.focus();
+  } else {
+    playlistSearchKeyword.value = '';
+    await nextTick();
+    measurePlaylistViewport();
+  }
+};
+
+const handleSearchInputKeydown = (e) => {
+  if (e.key === 'Escape') {
+    if (playlistSearchKeyword.value) {
+      playlistSearchKeyword.value = '';
+    } else {
+      isPlaylistSearchOpen.value = false;
     }
   }
 };
 
-watch(() => store.isPlaylistVisible, (visible) => {
-  if (visible) {
-    const currentIndex = store.playlist.findIndex(s => s.hash === store.currentSong?.hash);
-    if (currentIndex >= 0 && currentIndex >= visiblePlaylistLimit.value) {
-      visiblePlaylistLimit.value = Math.min(store.playlist.length, currentIndex + 30);
+const exitPlaylistBatchMode = () => {
+  isPlaylistBatchMode.value = false;
+  if (selectedPlaylistKeys.value.size > 0) {
+    selectedPlaylistKeys.value = new Set();
+  }
+};
+
+const togglePlaylistBatchMode = async () => {
+  if (isPlaylistBatchMode.value) {
+    exitPlaylistBatchMode();
+  } else {
+    isPlaylistBatchMode.value = true;
+    selectedPlaylistKeys.value = new Set();
+  }
+  await nextTick();
+  measurePlaylistViewport();
+};
+
+const toggleSelectSongKey = (normKey) => {
+  if (!normKey) return;
+  const next = new Set(selectedPlaylistKeys.value);
+  if (next.has(normKey)) {
+    next.delete(normKey);
+  } else {
+    next.add(normKey);
+  }
+  selectedPlaylistKeys.value = next;
+};
+
+const isAllFilteredSelected = computed(() => {
+  if (filteredPlaylist.value.length === 0) return false;
+  for (let i = 0; i < filteredPlaylist.value.length; i++) {
+    if (!selectedPlaylistKeys.value.has(filteredPlaylist.value[i].normKey)) {
+      return false;
+    }
+  }
+  return true;
+});
+
+const toggleSelectAllFiltered = () => {
+  const next = new Set(selectedPlaylistKeys.value);
+  if (isAllFilteredSelected.value) {
+    filteredPlaylist.value.forEach(item => next.delete(item.normKey));
+  } else {
+    filteredPlaylist.value.forEach(item => next.add(item.normKey));
+  }
+  selectedPlaylistKeys.value = next;
+};
+
+const invertSelectFiltered = () => {
+  const next = new Set(selectedPlaylistKeys.value);
+  filteredPlaylist.value.forEach(item => {
+    if (next.has(item.normKey)) next.delete(item.normKey);
+    else next.add(item.normKey);
+  });
+  selectedPlaylistKeys.value = next;
+};
+
+const handleBatchRemoveSelected = () => {
+  const keys = Array.from(selectedPlaylistKeys.value);
+  if (keys.length === 0) return;
+  store.removeSongsByHashes(keys);
+  exitPlaylistBatchMode();
+};
+
+const handleCleanPlayedSongs = () => {
+  store.clearPlayedSongs();
+};
+
+const handlePlaylistEscape = () => {
+  if (isPlaylistSearchOpen.value) {
+    playlistSearchKeyword.value = '';
+    isPlaylistSearchOpen.value = false;
+    return;
+  }
+  if (isPlaylistBatchMode.value) {
+    exitPlaylistBatchMode();
+    return;
+  }
+  store.isPlaylistVisible = false;
+};
+
+const scrollToCurrentSong = async (withFlash = false) => {
+  if (!store.currentSong || !store.playlist.length) return;
+  const curKey = currentSongNormKey.value;
+  let targetFilteredIdx = filteredPlaylist.value.findIndex(item => item.normKey === curKey);
+
+  if (targetFilteredIdx === -1 && playlistSearchKeyword.value) {
+    playlistSearchKeyword.value = '';
+    await nextTick();
+    targetFilteredIdx = filteredPlaylist.value.findIndex(item => item.normKey === curKey);
+  }
+  if (targetFilteredIdx === -1) return;
+
+  await nextTick();
+  measurePlaylistViewport();
+  const el = playlistScrollRef.value;
+  if (!el) return;
+
+  const viewH = el.clientHeight || playlistViewportHeight.value || 360;
+  const targetTop = Math.max(0, targetFilteredIdx * PLAYLIST_ROW_HEIGHT - (viewH / 2) + (PLAYLIST_ROW_HEIGHT / 2));
+  el.scrollTo({ top: targetTop, behavior: withFlash ? 'smooth' : 'auto' });
+  playlistScrollTop.value = targetTop;
+
+  if (withFlash) {
+    locatedFlashKey.value = curKey;
+    if (locatedFlashTimer) clearTimeout(locatedFlashTimer);
+    locatedFlashTimer = setTimeout(() => {
+      locatedFlashKey.value = '';
+    }, 1200);
+  }
+};
+
+const handleRowPlayClick = (song) => {
+  if (isCurrentRowSong(song)) {
+    store.togglePlay();
+  } else {
+    store.playSong(song);
+  }
+};
+
+const handleRowDblClick = (song) => {
+  if (isCurrentRowSong(song) && store.isPlaying) {
+    return;
+  }
+  store.playSong(song);
+};
+
+const handlePlaylistScroll = (e) => {
+  const target = e.target;
+  playlistScrollTop.value = target.scrollTop;
+  if (target.clientHeight > 0 && target.clientHeight !== playlistViewportHeight.value) {
+    playlistViewportHeight.value = target.clientHeight;
+  }
+};
+
+watch(playlistSearchKeyword, () => {
+  if (playlistScrollRef.value) {
+    playlistScrollRef.value.scrollTop = 0;
+  }
+  playlistScrollTop.value = 0;
+});
+
+const handleRestoreFromFmDrawer = async () => {
+  store.restoreRegularPlaylistFromFm({ navigateBack: true });
+  await nextTick();
+  measurePlaylistViewport();
+  if (route.path === '/fm') {
+    const back = window.history?.state?.back;
+    if (back && typeof back === 'string' && !back.startsWith('/fm')) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  }
+};
+
+watch(() => [store.isPlaylistVisible, store.isFmModePlaylist], async ([visible, isFm], prevValues) => {
+  const [prevVisible, prevIsFm] = prevValues || [];
+  if (visible && !isFm) {
+    await nextTick();
+    measurePlaylistViewport();
+    if (prevIsFm) {
+      playlistScrollTop.value = 0;
+      if (playlistScrollRef.value) playlistScrollRef.value.scrollTop = 0;
+    }
+    if (store.currentSong && !playlistSearchKeyword.value) {
+      setTimeout(() => {
+        scrollToCurrentSong(false);
+      }, 50);
+    }
+  } else if (!visible) {
+    resetClearConfirm();
+  }
+});
+
+watch(() => store.playlist.length, (len) => {
+  if (len === 0) {
+    resetClearConfirm();
+    exitPlaylistBatchMode();
+    playlistSearchKeyword.value = '';
+    isPlaylistSearchOpen.value = false;
+    playlistScrollTop.value = 0;
+  } else {
+    const maxTop = Math.max(0, filteredPlaylist.value.length * PLAYLIST_ROW_HEIGHT - playlistViewportHeight.value);
+    if (playlistScrollTop.value > maxTop) {
+      playlistScrollTop.value = maxTop;
+      if (playlistScrollRef.value) playlistScrollRef.value.scrollTop = maxTop;
     }
   }
 });
@@ -1027,16 +1686,20 @@ const goToAlbum = (song) => {
 };
 
 const handleClickOutside = (event) => {
-  if (store.isPlaylistVisible) {
-    const isClickInsidePanel = playlistPanelRef.value?.contains(event.target);
-    const isClickOnBtn = playlistBtnRef.value?.contains(event.target);
-    const isClickOnQualityMenu = qualityMenuRef.value?.contains(event.target);
+  const targetEl = event.target;
+  const isClickOnFloatingOverlay = Boolean(
+    targetEl?.closest?.('.song-context-menu, .global-toast-container')
+  );
+  if (store.isPlaylistVisible && !isClickOnFloatingOverlay) {
+    const isClickInsidePanel = playlistPanelRef.value?.contains(targetEl);
+    const isClickOnBtn = playlistBtnRef.value?.contains(targetEl);
+    const isClickOnQualityMenu = qualityMenuRef.value?.contains(targetEl);
     if (!isClickInsidePanel && !isClickOnBtn && !isClickOnQualityMenu) {
       store.isPlaylistVisible = false;
     }
   }
   if (qualityMenuOpen.value) {
-    const isClickOnQualityMenu = qualityMenuRef.value?.contains(event.target);
+    const isClickOnQualityMenu = qualityMenuRef.value?.contains(targetEl);
     if (!isClickOnQualityMenu) {
       qualityMenuOpen.value = false;
     }
@@ -1301,6 +1964,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  resetClearConfirm();
+  if (locatedFlashTimer) clearTimeout(locatedFlashTimer);
   if (discAnimFrame) cancelAnimationFrame(discAnimFrame);
   if (idleTimer) clearTimeout(idleTimer);
   stopInAppLyricAnim();
@@ -1353,7 +2018,7 @@ const hoveredNavMode = ref('none'); // 'none' | 'prev' | 'next'
 const prevSongInQueue = computed(() => {
   if (!store.playlist || store.playlist.length === 0) return null;
   if (store.playlist.length === 1) return store.playlist[0];
-  const currentIndex = store.playlist.findIndex(s => s.hash === store.currentSong?.hash);
+  const currentIndex = store.getCurrentSongIndex();
   if (currentIndex === -1) return store.playlist[0];
   const prevIndex = (currentIndex - 1 + store.playlist.length) % store.playlist.length;
   return store.playlist[prevIndex];
@@ -1362,13 +2027,16 @@ const prevSongInQueue = computed(() => {
 const nextSongInQueue = computed(() => {
   if (!store.playlist || store.playlist.length === 0) return null;
   if (store.playlist.length === 1) return store.playlist[0];
-  const currentIndex = store.playlist.findIndex(s => s.hash === store.currentSong?.hash);
+  const currentIndex = store.getCurrentSongIndex();
   if (currentIndex === -1) return store.playlist[0];
   const nextIndex = (currentIndex + 1) % store.playlist.length;
   return store.playlist[nextIndex];
 });
 
 const previewSong = computed(() => {
+  if (store.isFmModePlaylist) {
+    return store.currentSong;
+  }
   if (store.playMode === 'loop' || store.playMode === 'random') {
     return store.currentSong;
   }
@@ -1382,6 +2050,21 @@ const previewSong = computed(() => {
 });
 
 const displayedTitle = computed(() => {
+  if (store.isFmModePlaylist) {
+    if (store.playMode === 'loop') {
+      if (hoveredNavMode.value === 'prev' || hoveredNavMode.value === 'next') {
+        return '重新播放当前歌曲';
+      }
+    }
+    if (hoveredNavMode.value === 'prev') {
+      return '上一首电台歌曲';
+    }
+    if (hoveredNavMode.value === 'next') {
+      return '播放下一首电台推荐';
+    }
+    return store.currentSong ? store.currentSong.name : '私人FM播放中';
+  }
+
   if (!store.playlist || store.playlist.length === 0) {
     return store.currentSong ? store.currentSong.name : '听见好时光';
   }
@@ -1422,6 +2105,21 @@ const displayedTitle = computed(() => {
 });
 
 const titleTooltip = computed(() => {
+  if (store.isFmModePlaylist) {
+    if (store.playMode === 'loop') {
+      if (hoveredNavMode.value === 'prev' || hoveredNavMode.value === 'next') {
+        return '单曲循环中 · 点击重新播放当前歌曲';
+      }
+    }
+    if (hoveredNavMode.value === 'prev') {
+      return '返回上一首电台歌曲';
+    }
+    if (hoveredNavMode.value === 'next') {
+      return '下一首私人FM推荐';
+    }
+    return store.currentSong ? `私人FM：${store.currentSong.name} - ${store.currentSong.singer || '未知歌手'}` : '';
+  }
+
   if (!store.playlist || store.playlist.length === 0) {
     return store.currentSong ? `${store.currentSong.name} - ${store.currentSong.singer || '未知歌手'}` : '';
   }
@@ -1465,6 +2163,10 @@ const titleTooltip = computed(() => {
 });
 
 const prevButtonTooltip = computed(() => {
+  if (store.isFmModePlaylist) {
+    if (store.playMode === 'loop') return '单曲循环中 · 点击重新播放当前歌曲';
+    return '上一首电台歌曲';
+  }
   if (!store.playlist || store.playlist.length === 0) return '上一首';
   if (store.playMode === 'loop') return '单曲循环中 · 点击重新播放当前歌曲';
   if (store.playMode === 'random') {
@@ -1475,6 +2177,10 @@ const prevButtonTooltip = computed(() => {
 });
 
 const nextButtonTooltip = computed(() => {
+  if (store.isFmModePlaylist) {
+    if (store.playMode === 'loop') return '单曲循环中 · 点击重新播放当前歌曲';
+    return '下一首私人FM推荐';
+  }
   if (!store.playlist || store.playlist.length === 0) return '下一首';
   if (store.playMode === 'loop') return '单曲循环中 · 点击重新播放当前歌曲';
   if (store.playMode === 'random') {
@@ -1485,20 +2191,23 @@ const nextButtonTooltip = computed(() => {
 });
 
 const canPlayPrevOrNext = computed(() => {
-  return !!(store.playlist && store.playlist.length > 0);
+  return Boolean((store.playlist && store.playlist.length > 0) || (store.isFmModePlaylist && store.currentSong));
 });
 
-const getPlaylistRowStyle = (song, index) => {
-  const isCurrent = store.currentSong?.hash === song.hash;
+const getPlaylistRowStyle = (song, index, normKey = '') => {
+  const isCurrent = isCurrentRowSong(song);
+  const isSelected = isPlaylistBatchMode.value && normKey && selectedPlaylistKeys.value.has(normKey);
   const isHovered = playlistHoverIndex.value === index;
 
   if (isDark.value) {
+    if (isSelected) return { backgroundColor: 'rgba(30, 58, 138, 0.45)' };
     if (isCurrent && isHovered) return { backgroundColor: 'rgba(51, 65, 85, 0.92)' };
     if (isCurrent) return { backgroundColor: 'rgba(30, 41, 59, 0.86)' };
     if (isHovered) return { backgroundColor: 'rgba(30, 41, 59, 0.78)' };
     return { backgroundColor: 'transparent' };
   }
 
+  if (isSelected) return { backgroundColor: 'rgba(219, 234, 254, 0.78)' };
   if (isCurrent && isHovered) return { backgroundColor: 'rgba(219, 234, 254, 0.86)' };
   if (isCurrent) return { backgroundColor: 'rgba(239, 246, 255, 0.76)' };
   if (isHovered) return { backgroundColor: 'rgba(249, 250, 251, 0.95)' };

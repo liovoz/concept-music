@@ -1,6 +1,110 @@
 // ====================
 // 文件：src/utils/songHelper.js
 // ====================
+import { markRaw } from 'vue';
+
+export const normalizeSongKey = (songOrHash) => {
+  if (!songOrHash) return '';
+  if (typeof songOrHash === 'string') {
+    const raw = songOrHash.trim();
+    if (!raw) return '';
+    if (/^netease:/i.test(raw)) return `netease:${raw.slice(8).trim()}`;
+    if (/^qq:/i.test(raw)) return `qq:${raw.slice(3).trim()}`;
+    if (/^mix:/i.test(raw)) return `mix:${raw.slice(4).trim()}`;
+    return raw.toUpperCase();
+  }
+  if (typeof songOrHash !== 'object') return '';
+
+  const rawHash = String(songOrHash.hash || songOrHash._hash || '').trim();
+  if (songOrHash.source === 'netease-import' || /^netease:/i.test(rawHash) || songOrHash.neteaseId) {
+    const id = String(songOrHash.neteaseId || rawHash.replace(/^netease:/i, '') || songOrHash.songId || songOrHash.id || '').trim();
+    return id ? `netease:${id}` : '';
+  }
+  if (songOrHash.source === 'qq-import' || /^qq:/i.test(rawHash) || songOrHash.qqMid) {
+    const mid = String(songOrHash.qqMid || songOrHash.songmid || rawHash.replace(/^qq:/i, '') || songOrHash.songId || songOrHash.id || '').trim();
+    return mid ? `qq:${mid}` : '';
+  }
+  if (rawHash) {
+    if (/^mix:/i.test(rawHash)) return `mix:${rawHash.slice(4).trim()}`;
+    return rawHash.toUpperCase();
+  }
+  const mixId = String(songOrHash.album_audio_id || songOrHash._album_audio_id || songOrHash.mixsongid || songOrHash.audio_id || '').trim();
+  if (mixId && mixId !== '0') return `mix:${mixId}`;
+  return '';
+};
+
+export const compactQueueSong = (song, fallbackCover = 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=300&q=80') => {
+  if (!song || typeof song !== 'object') return null;
+  const canonicalKey = normalizeSongKey(song);
+  if (!canonicalKey) return null;
+
+  const isNetease = song.source === 'netease-import' || canonicalKey.startsWith('netease:');
+  const isQQ = song.source === 'qq-import' || canonicalKey.startsWith('qq:');
+  const artists = Array.isArray(song._singers) && song._singers.length > 0
+    ? song._singers.map(a => ({ id: String(a?.id || ''), name: String(a?.name || '').trim() })).filter(a => a.name)
+    : getSongArtists(song);
+  const primaryArtist = artists[0] || {};
+
+  let durationSec = Number(song.duration || song._durationSec || song.interval || 0);
+  if (durationSec > 36000) durationSec = Math.floor(durationSec / 1000);
+  let durationText = typeof song._duration === 'string' && song._duration ? song._duration : '';
+  if (!durationText && durationSec > 0) {
+    const mins = Math.floor(durationSec / 60).toString().padStart(2, '0');
+    const secs = Math.floor(durationSec % 60).toString().padStart(2, '0');
+    durationText = `${mins}:${secs}`;
+  } else if (durationSec <= 0 && durationText && durationText.includes(':')) {
+    const parts = durationText.split(':');
+    if (parts.length === 2) {
+      const parsed = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      if (Number.isFinite(parsed) && parsed > 0) durationSec = parsed;
+    }
+  }
+
+  const rawQualities = song.qualities || song._qualities || null;
+  const qualities = rawQualities && typeof rawQualities === 'object' ? { ...rawQualities } : null;
+
+  const compact = {
+    hash: canonicalKey,
+    fileid: String(song.fileid || song._fileid || song.FileID || song.file_id || (!isNetease && !isQQ ? (song.id || '') : '') || '').trim(),
+    name: String(song.name || song._title || song.title || '未知歌曲').trim() || '未知歌曲',
+    singer: String(song.singer || song._singer || artists.map(a => a.name).join('、') || '未知歌手').trim() || '未知歌手',
+    singer_id: String(song.singer_id || song._singer_id || primaryArtist.id || '').trim(),
+    _singers: artists,
+    artists,
+    album: String(song.album?.name || song.album || song._album || '').trim(),
+    album_id: String(song.album_id || song._album_id || song.album?.id || '').trim(),
+    album_audio_id: String(song.album_audio_id || song._album_audio_id || '').trim(),
+    cover: song.cover || song._cover || fallbackCover,
+    duration: durationSec > 0 ? durationSec : 0,
+    _duration: durationText || '--:--',
+    is_vip: !!(song.is_vip ?? song._is_vip),
+    is_paid: !!(song.is_paid ?? song._is_paid),
+    qualities,
+    source: isNetease ? 'netease-import' : (isQQ ? 'qq-import' : (song.source || song._source || ''))
+  };
+
+  if (isNetease) {
+    const neteaseId = canonicalKey.slice(8);
+    compact.neteaseId = neteaseId;
+    compact.id = neteaseId;
+    compact.songId = neteaseId;
+    compact.interval = compact.duration;
+  } else if (isQQ) {
+    const qqMid = canonicalKey.slice(3);
+    compact.qqMid = qqMid;
+    compact.songmid = qqMid;
+    compact.id = qqMid;
+    compact.songId = qqMid;
+    compact.strMediaMid = String(song.strMediaMid || song.file?.media_mid || qqMid).trim();
+    compact.interval = compact.duration;
+  }
+
+  if (song._qualityInfoFetched) {
+    compact._qualityInfoFetched = true;
+  }
+
+  return markRaw(compact);
+};
 
 export const findDeepDuration = (obj, depth = 0) => {
   if (depth > 3 || !obj || typeof obj !== 'object') return 0;
@@ -270,9 +374,19 @@ export const normalizeSongs = (rawList, defaultImg = 'https://images.unsplash.co
 export const buildPlayPayload = (song, fallbackCover = 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=300&q=80') => {
   const artists = getSongArtists(song);
   const primaryArtist = artists[0] || {};
+  const rawHash = song._hash || song.hash || '';
+  const normalizedHash = normalizeSongKey({ ...song, hash: rawHash }) || rawHash;
+  let durationSec = Number(song.duration || song._durationSec || 0);
+  if (!durationSec && typeof song._duration === 'string' && song._duration.includes(':')) {
+    const parts = song._duration.split(':');
+    if (parts.length === 2) {
+      const parsed = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      if (Number.isFinite(parsed) && parsed > 0) durationSec = parsed;
+    }
+  }
   return {
     fileid: song._fileid || song.fileid || song.FileID || song.file_id || song.id || '',
-    hash: song._hash || song.hash,
+    hash: normalizedHash,
     name: song._title || song.name,
     singer: song._singer || song.singer,
     singer_id: song._singer_id || primaryArtist.id || '',
@@ -282,6 +396,8 @@ export const buildPlayPayload = (song, fallbackCover = 'https://images.unsplash.
     cover: song._cover || fallbackCover,
     album_id: song._album_id || song.album_id,
     album_audio_id: song._album_audio_id || song.album_audio_id,
+    duration: durationSec > 0 ? durationSec : 0,
+    _duration: song._duration || '--:--',
     is_vip: song._is_vip ?? song.is_vip,
     is_paid: song._is_paid ?? song.is_paid,
     qualities: song._qualities || song.qualities

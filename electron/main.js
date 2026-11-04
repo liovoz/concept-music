@@ -1169,7 +1169,8 @@ ipcMain.handle('native-api-request', async (event, config) => {
 
   const reqMethod = (config.method || 'GET').toUpperCase();
   const isIdempotent = ['GET', 'HEAD'].includes(reqMethod);
-  const maxAttempts = isIdempotent ? 5 : 1;
+  const customRetries = Number.isFinite(Number(config.maxRetries)) ? Math.max(0, Math.min(4, Math.floor(Number(config.maxRetries)))) : null;
+  const maxAttempts = isIdempotent ? (customRetries !== null ? customRetries + 1 : 3) : 1;
   let attempt = 0; let finalResult = null; let lastErr = null;
 
   while (attempt < maxAttempts) {
@@ -1181,14 +1182,16 @@ ipcMain.handle('native-api-request', async (event, config) => {
           break;
         }
         attempt++; lastErr = new Error(`Server returned ${res.statusCode}`);
-        await new Promise(r => setTimeout(r, 500 * Math.pow(1.5, attempt - 1)));
+        if (attempt >= maxAttempts) break;
+        await new Promise(r => setTimeout(r, 400 * Math.pow(1.5, attempt - 1)));
         continue;
       }
       finalResult = res; break;
     } catch (e) {
       attempt++; lastErr = e;
-      if (!isIdempotent) break;
-      await new Promise(r => setTimeout(r, 500));
+      const isTimeoutErr = String(e?.message || '').includes('Request timeout');
+      if (!isIdempotent || isTimeoutErr || attempt >= maxAttempts) break;
+      await new Promise(r => setTimeout(r, 400));
     }
   }
   if (!finalResult) return { status: 502, data: { errcode: 502, error_msg: lastErr?.message || 'Timeout' } };
@@ -1442,7 +1445,9 @@ app.whenReady().then(async () => {
       autoSkipOnError: typeof data.autoSkipOnError === 'boolean' ? data.autoSkipOnError : null,
       rememberState: typeof data.rememberState === 'boolean' ? data.rememberState : false,
       volumeBoostEnabled: typeof data.volumeBoostEnabled === 'boolean' ? data.volumeBoostEnabled : false,
-      volumeBoostLevel: typeof data.volumeBoostLevel === 'number' ? data.volumeBoostLevel : null
+      volumeBoostLevel: typeof data.volumeBoostLevel === 'number' ? data.volumeBoostLevel : null,
+      maxPlaylistSize: [1000, 1500, 2000].includes(Number(data.maxPlaylistSize)) ? Number(data.maxPlaylistSize) : null,
+      playAllBehavior: ['replace', 'prepend'].includes(data.playAllBehavior) ? data.playAllBehavior : null
     };
   });
   ipcMain.handle('settings-set-audio-settings', (event, settings) => {
@@ -1452,6 +1457,8 @@ app.whenReady().then(async () => {
     if (typeof settings.rememberState === 'boolean') patch.rememberState = settings.rememberState;
     if (typeof settings.volumeBoostEnabled === 'boolean') patch.volumeBoostEnabled = settings.volumeBoostEnabled;
     if (typeof settings.volumeBoostLevel === 'number') patch.volumeBoostLevel = settings.volumeBoostLevel;
+    if ([1000, 1500, 2000].includes(Number(settings.maxPlaylistSize))) patch.maxPlaylistSize = Number(settings.maxPlaylistSize);
+    if (['replace', 'prepend'].includes(settings.playAllBehavior)) patch.playAllBehavior = settings.playAllBehavior;
     return writeDesktopSettings(patch);
   });
   ipcMain.on('open-external', (event, url) => {

@@ -11,7 +11,8 @@ const ipcAdapter = async (config) => {
       data: config.data,
       params: config.params,
       headers: config.headers,
-      timeout: config.timeout
+      timeout: config.timeout,
+      maxRetries: config.maxRetries
     }));
   } catch (e) {
     cleanConfig = {
@@ -20,7 +21,8 @@ const ipcAdapter = async (config) => {
       data: config.data,
       params: config.params,
       headers: config.headers,
-      timeout: config.timeout
+      timeout: config.timeout,
+      maxRetries: config.maxRetries
     };
   }
 

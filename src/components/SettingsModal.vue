@@ -486,6 +486,94 @@
                     </div>
                   </div>
                 </section>
+
+                <!-- 播放列表与队列策略卡片 -->
+                <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                      <span class="w-1.5 h-3.5 bg-indigo-600 rounded-full"></span>
+                      <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">播放列表与队列策略</h3>
+                    </div>
+                    <span class="text-[11px] font-medium text-gray-400 dark:text-slate-500 tabular-nums">
+                      {{ playerStore.isFmModePlaylist ? `私人FM窗口：${playerStore.playlist.length} / 50 首` : `当前队列：${playerStore.playlist.length} / ${playerStore.maxPlaylistSize} 首` }}
+                    </span>
+                  </div>
+
+                  <div class="space-y-2.5">
+                    <!-- 播放全部按钮行为 -->
+                    <div class="p-3 rounded-lg bg-slate-50/70 dark:bg-slate-800/50 space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <div>
+                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">点击「播放全部」时</p>
+                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                            {{ playerStore.playAllBehavior === 'prepend'
+                              ? '将新歌单插入当前队列最前面并开始播放，保留队列内原有歌曲'
+                              : '替换当前播放列表并开始播放（覆盖非空列表时提供 5 秒一键撤销）' }}
+                          </p>
+                        </div>
+                      </div>
+                      <div class="grid grid-cols-2 gap-2 pt-0.5">
+                        <button
+                          type="button"
+                          @click="handleSelectPlayAllBehavior('replace')"
+                          class="px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border"
+                          :class="playerStore.playAllBehavior === 'replace'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/20'
+                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-slate-600'"
+                        >
+                          <span>替换当前播放列表</span>
+                          <span
+                            class="px-1.5 py-0.5 rounded text-[9px] font-extrabold leading-none"
+                            :class="playerStore.playAllBehavior === 'replace'
+                              ? 'bg-white/20 text-white'
+                              : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'"
+                          >默认</span>
+                        </button>
+                        <button
+                          type="button"
+                          @click="handleSelectPlayAllBehavior('prepend')"
+                          class="px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border"
+                          :class="playerStore.playAllBehavior === 'prepend'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/20'
+                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-slate-600'"
+                        >
+                          <span>合并到队首</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- 播放列表容量上限 -->
+                    <div class="p-3 rounded-lg bg-slate-50/70 dark:bg-slate-800/50 space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <div>
+                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">播放列表容量上限</p>
+                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">控制单次播放队列最大歌曲数量，保障大歌单加载与切歌流畅度</p>
+                        </div>
+                      </div>
+                      <div class="grid grid-cols-3 gap-2 pt-0.5">
+                        <button
+                          v-for="cap in playlistMaxSizeOptions"
+                          :key="cap"
+                          type="button"
+                          @click="handleSelectMaxPlaylistSize(cap)"
+                          class="px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 border tabular-nums"
+                          :class="playerStore.maxPlaylistSize === cap
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/20'
+                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-slate-600'"
+                        >
+                          <span>{{ cap }} 首</span>
+                          <span
+                            v-if="cap === 1500"
+                            class="px-1 py-0.5 rounded text-[9px] font-extrabold leading-none"
+                            :class="playerStore.maxPlaylistSize === cap
+                              ? 'bg-white/20 text-white'
+                              : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'"
+                          >默认</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
 
               <!-- TAB 3: 桌面歌词 -->
@@ -1009,7 +1097,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick, inject } from 'vue';
 import { useTheme } from '../composables/useTheme';
-import { usePlayerStore } from '../store/playerStore';
+import { usePlayerStore, PLAYLIST_MAX_SIZE_OPTIONS } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
 import { useUpdateStore } from '../store/updateStore';
 import { useSearchHistory } from '../composables/useSearchHistory';
@@ -1239,6 +1327,36 @@ const toggleRememberState = () => {
   const next = !playerStore.rememberState;
   playerStore.setRememberState(next);
   playerStore.showToast(next ? '已开启记忆播放列表与进度' : '已关闭记忆功能（下次启动将清空列表）');
+};
+
+const playlistMaxSizeOptions = PLAYLIST_MAX_SIZE_OPTIONS;
+
+const handleSelectPlayAllBehavior = (behavior) => {
+  if (playerStore.playAllBehavior === behavior) return;
+  playerStore.setPlayAllBehavior(behavior);
+};
+
+const handleSelectMaxPlaylistSize = (size) => {
+  const target = Number(size);
+  if (playerStore.maxPlaylistSize === target) return;
+
+  const currentLen = playerStore.playlist.length;
+  if (!playerStore.isFmModePlaylist && currentLen > target) {
+    const overflowCount = currentLen - target;
+    playerStore.showDialog({
+      type: 'warning',
+      title: '调低播放列表上限',
+      message: `当前播放列表共有 ${currentLen} 首歌曲，超出新的容量上限（${target} 首）。\n确认后将优先保留当前播放及后续歌曲，并自动裁剪多余的 ${overflowCount} 首歌曲（支持 5 秒内撤销）。`,
+      confirmText: '确认裁剪并应用',
+      cancelText: '取消',
+      onConfirm: () => {
+        playerStore.applyMaxPlaylistSize(target);
+      }
+    });
+    return;
+  }
+
+  playerStore.applyMaxPlaylistSize(target);
 };
 
 // 锁屏 / 系统媒体控件（SMTC）开关
@@ -1484,6 +1602,7 @@ const showModal = (tab = 'general') => {
 
 const closeModal = () => {
   if (updateStatus.value === 'downloading') return;
+  if (playerStore.dialogState?.visible) return;
   isVisible.value = false;
 };
 

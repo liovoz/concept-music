@@ -11,6 +11,15 @@
           </h2>
           <p class="text-xs text-gray-500 dark:text-slate-300 mt-2 font-medium">根据你的口味，无限推荐好音乐</p>
         </div>
+        <button
+          v-if="playerStore.isFmModePlaylist && playerStore.hasRegularPlaylistBackup"
+          @click="handleRestoreRegularPlaylist"
+          class="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200/80 dark:bg-purple-500/15 dark:hover:bg-purple-500/25 dark:text-purple-200 dark:border-purple-400/30 transition-all active:scale-95 no-drag"
+          v-tooltip="'退出私人FM并返回上一页恢复原播放列表'"
+        >
+          <AppIcon name="playlist" class="w-3.5 h-3.5" />
+          <span>恢复原播放列表 ({{ playerStore.regularPlaylistBackupCount }}首)</span>
+        </button>
       </div>
 
       <div class="flex flex-wrap items-center gap-4 mb-8">
@@ -293,12 +302,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, watch, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import request from '../utils/request';
 import { useUserStore } from '../store/userStore';
-import { usePlayerStore } from '../store/playerStore';
-import { normalizeSongs, buildPlayPayload } from '../utils/songHelper';
+import { usePlayerStore, MAX_FM_QUEUE_SIZE } from '../store/playerStore';
+import { normalizeSongs, buildPlayPayload, normalizeSongKey } from '../utils/songHelper';
 import {
   FM_TASTE_PROFILES,
   MAX_FM_FETCH_RETRIES,
@@ -317,6 +326,7 @@ import { openSongContextMenu } from '../utils/songContextMenu';
 defineOptions({ name: 'PersonalFM' });
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
 
@@ -364,7 +374,7 @@ const remainingCount = computed(() => upcomingSongs.value.length);
 
 const isCurrentPlaying = computed(() => {
   if (!currentFMSong.value || !playerStore.currentSong) return false;
-  return playerStore.isPlaying && playerStore.currentSong.hash === currentFMSong.value._hash;
+  return playerStore.isPlaying && normalizeSongKey(playerStore.currentSong) === normalizeSongKey(currentFMSong.value);
 });
 
 const isCurrentLiked = computed(() => {
@@ -463,12 +473,104 @@ const collectFreshSongs = async ({ action = 'play', reset = false } = {}) => {
   return { songs: collected, sawRawSongs };
 };
 
-const syncToPlaylist = () => {
-  if (playerStore.playlist.length > 0 && !isFMActive.value) {
-    playerStore.showToast('FM 模式已替换当前播放列表');
+const trimFmQueueWindow = () => {
+  if (fmQueue.value.length <= MAX_FM_QUEUE_SIZE) return;
+  const excess = fmQueue.value.length - MAX_FM_QUEUE_SIZE;
+  const removableBeforeCurrent = Math.max(0, currentFMIndex.value);
+  const trimFront = Math.min(excess, removableBeforeCurrent);
+  if (trimFront > 0) {
+    fmQueue.value.splice(0, trimFront);
+    currentFMIndex.value = Math.max(0, currentFMIndex.value - trimFront);
   }
-  playerStore.cancelPlayAllHydration();
-  playerStore.playlist = fmQueue.value.map(song => buildPlayPayload(song, defaultImg));
+  if (fmQueue.value.length > MAX_FM_QUEUE_SIZE) {
+    fmQueue.value = fmQueue.value.slice(0, MAX_FM_QUEUE_SIZE);
+    if (currentFMIndex.value >= fmQueue.value.length) {
+      currentFMIndex.value = Math.max(0, fmQueue.value.length - 1);
+    }
+  }
+};
+
+const navigateSafelyAwayFromFm = () => {
+  if (route.path === '/fm') {
+    const back = window.history?.state?.back;
+    if (back && typeof back === 'string' && !back.startsWith('/fm')) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  }
+};
+
+const handleRestoreRegularPlaylist = () => {
+  resetPeakState();
+  isFMActive.value = false;
+  playerStore.restoreRegularPlaylistFromFm({ navigateBack: true });
+  nextTick(() => {
+    navigateSafelyAwayFromFm();
+  });
+};
+
+const peekNextFmSong = () => {
+  if (currentFMIndex.value >= 0 && currentFMIndex.value + 1 < fmQueue.value.length) {
+    return buildPlayPayload(fmQueue.value[currentFMIndex.value + 1], defaultImg);
+  }
+  return null;
+};
+
+const advanceFmNext = async ({ isAuto = false } = {}) => {
+  isFeedbackOpen.value = false;
+  resetPeakState();
+
+  if (currentFMIndex.value + 1 < fmQueue.value.length) {
+    currentFMIndex.value++;
+    playFMSong(fmQueue.value[currentFMIndex.value]);
+    if (remainingCount.value <= 3 && !isLoadingMore.value) {
+      fetchFMSongs();
+    }
+    return;
+  }
+
+  await fetchFMSongs('play');
+  if (currentFMIndex.value + 1 < fmQueue.value.length) {
+    currentFMIndex.value++;
+    playFMSong(fmQueue.value[currentFMIndex.value]);
+  } else {
+    playerStore.showToast('私人FM正在搜寻新音乐...');
+  }
+};
+
+const stepFmPrev = () => {
+  isFeedbackOpen.value = false;
+  resetPeakState();
+
+  if (currentFMIndex.value > 0) {
+    currentFMIndex.value--;
+    playFMSong(fmQueue.value[currentFMIndex.value]);
+  } else if (currentFMSong.value) {
+    playerStore.seek(0);
+    playerStore.mediaPlay();
+    playerStore.showToast('已是第一首电台歌曲');
+  }
+};
+
+const registerController = () => {
+  playerStore.registerFmController({
+    playNext: (opts) => advanceFmNext(opts),
+    playPrev: () => stepFmPrev(),
+    peekNextSong: () => peekNextFmSong(),
+    onExitFm: () => {
+      isFMActive.value = false;
+      resetPeakState();
+    },
+    onRestoreRegular: ({ navigateBack = true } = {}) => {
+      isFMActive.value = false;
+      isFeedbackOpen.value = false;
+      resetPeakState();
+      if (navigateBack) {
+        navigateSafelyAwayFromFm();
+      }
+    }
+  });
 };
 
 const fetchFMSongs = async (action = 'play') => {
@@ -481,7 +583,7 @@ const fetchFMSongs = async (action = 'play') => {
 
     if (songs.length > 0) {
       fmQueue.value.push(...songs);
-      syncToPlaylist();
+      trimFmQueueWindow();
     }
   } catch (error) {
     if (fmQueue.value.length === 0) {
@@ -505,12 +607,11 @@ const fetchAndShow = async () => {
     const { songs, sawRawSongs } = await collectFreshSongs({ action: 'play', reset: true });
 
     if (songs.length > 0) {
-      fmQueue.value = songs;
-      syncToPlaylist();
+      fmQueue.value = songs.slice(0, MAX_FM_QUEUE_SIZE);
       currentFMIndex.value = 0;
       fmInitialized.value = true;
 
-      playFMSong(songs[0]);
+      playFMSong(fmQueue.value[0]);
     } else {
       if (sawRawSongs) playerStore.showToast('这批推荐都太熟了，稍后再试一次');
       isError.value = true;
@@ -529,10 +630,11 @@ const loadMore = () => {
 const playFMSong = (song) => {
   if (!song) return;
   isFeedbackOpen.value = false;
+  isFMActive.value = true;
   recordFmServed(song);
-  playerStore.playSong(buildPlayPayload(song, defaultImg));
+  playerStore.playFmSong(buildPlayPayload(song, defaultImg));
   if (isPeakPreview.value) {
-    schedulePeakSeek(song._hash);
+    schedulePeakSeek(normalizeSongKey(song));
   }
 };
 
@@ -541,7 +643,7 @@ const handlePlay = () => {
 
   if (isCurrentPlaying.value) {
     playerStore.togglePlay();
-  } else if (playerStore.currentSong && playerStore.currentSong.hash === currentFMSong.value._hash) {
+  } else if (playerStore.currentSong && normalizeSongKey(playerStore.currentSong) === normalizeSongKey(currentFMSong.value)) {
     playerStore.togglePlay();
   } else {
     playFMSong(currentFMSong.value);
@@ -549,9 +651,7 @@ const handlePlay = () => {
 };
 
 const handleNext = () => {
-  isFeedbackOpen.value = false;
-  resetPeakState();
-  playerStore.playNext(false);
+  advanceFmNext({ isAuto: false });
 };
 
 const toggleFeedback = () => {
@@ -574,13 +674,8 @@ const handleDislike = async (reason = '不喜欢') => {
 
     resetPeakState();
 
-    const dislikedHash = currentFMSong.value._hash;
+    const dislikedHash = normalizeSongKey(currentFMSong.value);
     fmQueue.value.splice(currentFMIndex.value, 1);
-
-    const playlistIdx = playerStore.playlist.findIndex(s => s.hash === dislikedHash);
-    if (playlistIdx !== -1) {
-      playerStore.playlist.splice(playlistIdx, 1);
-    }
 
     if (currentFMIndex.value >= fmQueue.value.length) {
       currentFMIndex.value = Math.max(0, fmQueue.value.length - 1);
@@ -638,8 +733,8 @@ const switchTasteMode = (mode) => {
 
 const togglePeakPreview = () => {
   isPeakPreview.value = !isPeakPreview.value;
-  if (isPeakPreview.value && currentFMSong.value && playerStore.currentSong?.hash === currentFMSong.value._hash) {
-    schedulePeakSeek(currentFMSong.value._hash);
+  if (isPeakPreview.value && currentFMSong.value && normalizeSongKey(playerStore.currentSong) === normalizeSongKey(currentFMSong.value)) {
+    schedulePeakSeek(normalizeSongKey(currentFMSong.value));
   } else {
     resetPeakState();
   }
@@ -768,9 +863,10 @@ const schedulePeakSeek = (hash) => {
 
 watch(() => playerStore.currentSong, (newSong) => {
   if (!newSong) return;
+  const newKey = normalizeSongKey(newSong);
 
-  if (isFMActive.value) {
-    const fmIndex = fmQueue.value.findIndex(s => s._hash === newSong.hash);
+  if (isFMActive.value || playerStore.isFmModePlaylist) {
+    const fmIndex = fmQueue.value.findIndex(s => normalizeSongKey(s) === newKey);
     if (fmIndex !== -1) {
       currentFMIndex.value = fmIndex;
       recordFmServed(fmQueue.value[fmIndex]);
@@ -781,10 +877,10 @@ watch(() => playerStore.currentSong, (newSong) => {
     }
   }
 
-  if (isPeakPreview.value && fmInitialized.value && newSong.hash !== peakSeekScheduledForHash) {
-    const isInQueue = fmQueue.value.some(s => s._hash === newSong.hash);
+  if (isPeakPreview.value && fmInitialized.value && newKey !== peakSeekScheduledForHash) {
+    const isInQueue = fmQueue.value.some(s => normalizeSongKey(s) === newKey);
     if (isInQueue) {
-      schedulePeakSeek(newSong.hash);
+      schedulePeakSeek(newKey);
     } else {
       resetPeakState();
     }
@@ -792,12 +888,12 @@ watch(() => playerStore.currentSong, (newSong) => {
 });
 
 onActivated(() => {
+  registerController();
   if (fmInitialized.value && fmQueue.value.length > 0) {
-    isFMActive.value = true;
-    syncToPlaylist();
+    isFMActive.value = playerStore.isFmModePlaylist;
 
     if (playerStore.currentSong) {
-      const fmIndex = fmQueue.value.findIndex(s => s._hash === playerStore.currentSong.hash);
+      const fmIndex = fmQueue.value.findIndex(s => normalizeSongKey(s) === normalizeSongKey(playerStore.currentSong));
       if (fmIndex !== -1) {
         currentFMIndex.value = fmIndex;
       }
@@ -806,8 +902,8 @@ onActivated(() => {
     if (isPeakPreview.value && currentFMSong.value) {
       if (playerStore.peakMode && playerStore.peakStartOffset > 0) {
         climaxInfo.value = { start: playerStore.peakStartOffset, end: playerStore.peakStartOffset + playerStore.peakDuration };
-      } else if (playerStore.currentSong && playerStore.currentSong.hash === currentFMSong.value._hash) {
-        schedulePeakSeek(currentFMSong.value._hash);
+      } else if (playerStore.currentSong && normalizeSongKey(playerStore.currentSong) === normalizeSongKey(currentFMSong.value)) {
+        schedulePeakSeek(normalizeSongKey(currentFMSong.value));
       }
     }
   }
@@ -818,11 +914,9 @@ onDeactivated(() => {
 });
 
 onMounted(() => {
+  registerController();
   if (fmInitialized.value) {
-    isFMActive.value = true;
-    if (fmQueue.value.length > 0) {
-      syncToPlaylist();
-    }
+    isFMActive.value = playerStore.isFmModePlaylist;
   }
 });
 
@@ -833,6 +927,7 @@ onUnmounted(() => {
     peakTimerId = null;
   }
   resetPeakState();
+  playerStore.registerFmController(null);
 });
 </script>
 

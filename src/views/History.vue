@@ -363,7 +363,7 @@ const goToAlbum = (id) => {
 
 const playAll = () => {
   if (currentSongs.value.length === 0) return;
-  store.prependPlaylistAndPlay(currentSongs.value.map(song => buildPlayPayload(song, defaultImg)));
+  store.playAllSongs(currentSongs.value.map(song => buildPlayPayload(song, defaultImg)));
 };
 </script>
 

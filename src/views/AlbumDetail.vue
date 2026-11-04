@@ -174,7 +174,8 @@ const extractAlbumInfo = (res) => {
     intro: introStr,
     singer: data.author_name || data.singername || data.singer_name || '',
     singer_id: data.author_id || data.singerid || data.singer_id || '',
-    publish_date: data.publish_date || data.publishtime || ''
+    publish_date: data.publish_date || data.publishtime || '',
+    count: Number(data.songcount || data.count || data.song_count || data.total || 0)
   };
 };
 
@@ -229,6 +230,8 @@ const fetchDetail = async () => {
     
     if (songsRes.status === 'fulfilled') {
       const rawSongs = extractSongs(songsRes.value);
+      const resTotal = Number(songsRes.value?.data?.total || songsRes.value?.total || 0);
+      if (resTotal > 0 && !albumInfo.value.count) albumInfo.value.count = resTotal;
       songs.value = normalizeSongs(rawSongs, defaultImg);
       if (rawSongs.length < pageSize) hasMore.value = false;
     } else {
@@ -272,8 +275,6 @@ const setupObserver = () => {
 
 watch(() => route.params.id, (newId, oldId) => {
   if (newId && newId !== oldId && route.path.startsWith('/album/')) {
-    cancelPlayAllHydration();
-    store.cancelPlayAllHydration();
     fetchDetail().then(() => setupObserver());
   }
 });
@@ -286,8 +287,6 @@ onMounted(() => {
 });
 onUnmounted(() => { 
   isComponentMounted = false;
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
   if (observer) observer.disconnect(); 
 });
 
@@ -305,10 +304,14 @@ const playAll = () => {
   if (songs.value.length === 0) return;
   const fallbackCover = albumInfo.value.cover || defaultImg;
   const initialSongs = songs.value.map(song => buildPlayPayload(song, fallbackCover));
-  const result = store.startPlayAllHydrationSession(initialSongs, { sourceKey: `album:${route.params.id}` });
+  const albumId = String(route.params.id || '');
+  const result = store.startPlayAllHydrationSession(initialSongs, {
+    sourceKey: `album:${albumId}`,
+    hasMore: hasMore.value,
+    expectedTotal: Number(albumInfo.value.count || 0)
+  });
   if (!result.sessionId || !hasMore.value) return;
 
-  const albumId = String(route.params.id || '');
   startPlayAllHydration({
     sessionId: result.sessionId,
     startPage: page.value + 1,
@@ -325,7 +328,7 @@ const playAll = () => {
       };
     },
     appendSongs: (sessionId, payloads) => store.extendPlayAllHydration(sessionId, payloads),
-    shouldContinue: () => String(route.params.id || '') === albumId && store.isPlayAllHydrationActive(result.sessionId)
+    shouldContinue: () => store.isPlayAllHydrationActive(result.sessionId)
   });
 };
 </script>

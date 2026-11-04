@@ -155,7 +155,8 @@ const extractRankInfo = (res) => {
   return {
     name: data.rankname || '未知榜单',
     cover: cover,
-    intro: introStr
+    intro: introStr,
+    count: Number(data.count || data.songcount || data.total || 0)
   };
 };
 
@@ -194,6 +195,8 @@ const fetchDetail = async () => {
 
     if (audioRes.status === 'fulfilled') {
       const rawSongs = extractSongsList(audioRes.value);
+      const resTotal = Number(audioRes.value?.data?.total || audioRes.value?.total || 0);
+      if (resTotal > 0 && !rankInfo.value.count) rankInfo.value.count = resTotal;
       songs.value = normalizeSongs(rawSongs, defaultImg);
       if (rawSongs.length < pageSize) hasMore.value = false;
     } else {
@@ -249,8 +252,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
   if (observer) observer.disconnect();
 });
 
@@ -272,10 +273,14 @@ const playAll = () => {
   if (songs.value.length === 0) return;
   const fallbackCover = rankInfo.value.cover || defaultImg;
   const initialSongs = songs.value.map(song => buildPlayPayload(song, fallbackCover));
-  const result = store.startPlayAllHydrationSession(initialSongs, { sourceKey: `rank:${route.params.id}` });
+  const rankId = String(route.params.id || '');
+  const result = store.startPlayAllHydrationSession(initialSongs, {
+    sourceKey: `rank:${rankId}`,
+    hasMore: hasMore.value,
+    expectedTotal: Number(rankInfo.value.count || 0)
+  });
   if (!result.sessionId || !hasMore.value) return;
 
-  const rankId = String(route.params.id || '');
   startPlayAllHydration({
     sessionId: result.sessionId,
     startPage: page.value + 1,
@@ -292,7 +297,7 @@ const playAll = () => {
       };
     },
     appendSongs: (sessionId, payloads) => store.extendPlayAllHydration(sessionId, payloads),
-    shouldContinue: () => String(route.params.id || '') === rankId && store.isPlayAllHydrationActive(result.sessionId)
+    shouldContinue: () => store.isPlayAllHydrationActive(result.sessionId)
   });
 };
 </script>

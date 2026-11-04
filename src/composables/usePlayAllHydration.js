@@ -1,12 +1,14 @@
-import { onUnmounted } from 'vue';
+import { usePlayerStore } from '../store/playerStore';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+let globalActiveRunId = 0;
+
 export function usePlayAllHydration() {
-  let activeRunId = 0;
+  const store = usePlayerStore();
 
   const cancelPlayAllHydration = () => {
-    activeRunId += 1;
+    globalActiveRunId += 1;
   };
 
   const runHydration = async (runId, options) => {
@@ -20,6 +22,7 @@ export function usePlayAllHydration() {
       loadPage,
       appendSongs,
       shouldContinue = () => true,
+      onComplete = null,
       onError = null
     } = options;
 
@@ -29,17 +32,18 @@ export function usePlayAllHydration() {
     let addedSongs = 0;
 
     for (let loadedPages = 0; loadedPages < maxPages; loadedPages += 1) {
-      if (runId !== activeRunId || !shouldContinue()) return;
+      if (runId !== globalActiveRunId || !shouldContinue()) return;
 
       let result = null;
       try {
         result = await loadPage(nextPage);
       } catch (error) {
+        if (store?.cancelPlayAllHydration) store.cancelPlayAllHydration(sessionId);
         if (typeof onError === 'function') onError(error);
         return;
       }
 
-      if (runId !== activeRunId || !shouldContinue()) return;
+      if (runId !== globalActiveRunId || !shouldContinue()) return;
 
       const songs = Array.isArray(result?.songs) ? result.songs : [];
       const rawCount = Number(result?.rawCount ?? songs.length);
@@ -48,24 +52,33 @@ export function usePlayAllHydration() {
         const appendResult = appendSongs(sessionId, songs);
         if (appendResult?.canceled) return;
         addedSongs += appendResult?.added ?? songs.length;
-        if (addedSongs >= maxSongs) return;
+        if (appendResult?.full || addedSongs >= maxSongs) {
+          if (store?.finishPlayAllHydration) store.finishPlayAllHydration(sessionId);
+          if (typeof onComplete === 'function') onComplete({ addedSongs, full: Boolean(appendResult?.full) });
+          return;
+        }
       }
 
-      if (result?.done || rawCount === 0 || rawCount < pageSize) return;
+      if (result?.done || rawCount === 0 || rawCount < pageSize) {
+        if (store?.finishPlayAllHydration) store.finishPlayAllHydration(sessionId);
+        if (typeof onComplete === 'function') onComplete({ addedSongs, full: false });
+        return;
+      }
 
       nextPage += 1;
       if (delayMs > 0) await sleep(delayMs);
     }
+
+    if (store?.finishPlayAllHydration) store.finishPlayAllHydration(sessionId);
+    if (typeof onComplete === 'function') onComplete({ addedSongs, full: false });
   };
 
   const startPlayAllHydration = (options) => {
-    const runId = activeRunId + 1;
-    activeRunId = runId;
+    const runId = globalActiveRunId + 1;
+    globalActiveRunId = runId;
     runHydration(runId, options).catch(() => {});
     return runId;
   };
-
-  onUnmounted(cancelPlayAllHydration);
 
   return {
     startPlayAllHydration,

@@ -3,7 +3,7 @@
     <div
       v-if="visible"
       ref="menuRef"
-      class="fixed z-[100001] w-56 overflow-visible rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 py-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
+      class="song-context-menu fixed z-[100001] w-56 overflow-visible rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 py-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
       :style="{ left: position.x + 'px', top: position.y + 'px' }"
       @contextmenu.prevent
     >
@@ -374,7 +374,9 @@ const copyInfo = () => runAndClose(async () => {
 });
 
 const removeFromPlaylist = () => runAndClose(() => {
-  if (sourceIndex.value >= 0) playerStore.removeFromPlaylist(sourceIndex.value);
+  if (sourceIndex.value >= 0 || song.value?.hash) {
+    playerStore.removeFromPlaylist(sourceIndex.value, song.value?.hash);
+  }
 });
 
 const handlePointerDown = (event) => {

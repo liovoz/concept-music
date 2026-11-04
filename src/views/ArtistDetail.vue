@@ -199,15 +199,15 @@ const extractArtistInfo = (res) => {
   };
 };
 
-const extractSongs = (res) => {
+const extractSongs = (res, overrideArtistId = null, overrideArtistName = '') => {
   let validArr = [];
   if (res?.data?.info && Array.isArray(res.data.info)) validArr = res.data.info;
   else if (res?.data?.songs && Array.isArray(res.data.songs)) validArr = res.data.songs;
   else if (res?.data?.data && Array.isArray(res.data.data)) validArr = res.data.data;
   else if (res?.data && Array.isArray(res.data)) validArr = res.data;
   
-  const currentArtistId = String(route.params.id || '').trim();
-  const currentArtistName = artistInfo.value?.name || '';
+  const currentArtistId = overrideArtistId !== null ? String(overrideArtistId).trim() : String(route.params.id || '').trim();
+  const currentArtistName = overrideArtistName || artistInfo.value?.name || '';
 
   const buildFallbackSingerList = (name, id) => {
     const names = splitSingerNames(name);
@@ -364,8 +364,6 @@ watch(() => activeTab.value, (newTab) => {
 
 watch(songSort, () => {
   if (activeTab.value !== 'songs') return;
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
   songPage.value = 1;
   hasMoreSongs.value = true;
   songs.value = [];
@@ -382,8 +380,6 @@ watch(songSort, () => {
 
 watch(() => route.params.id, (newId, oldId) => {
   if (newId && newId !== oldId && route.path.startsWith('/artist/')) {
-    cancelPlayAllHydration();
-    store.cancelPlayAllHydration();
     activeTab.value = 'songs';
     songSort.value = 'hot';
     fetchArtistData().then(() => setupObserver());
@@ -392,8 +388,6 @@ watch(() => route.params.id, (newId, oldId) => {
 
 onMounted(() => { fetchArtistData().then(() => setupObserver()); });
 onUnmounted(() => {
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
   if (observer) observer.disconnect();
 });
 
@@ -411,11 +405,16 @@ const playAllSongs = () => {
   if (songs.value.length === 0) return;
   const fallbackCover = artistInfo.value.avatar || defaultImg;
   const initialSongs = songs.value.map(song => buildPlayPayload(song, fallbackCover));
-  const result = store.startPlayAllHydrationSession(initialSongs, { sourceKey: `artist:${route.params.id}:${songSort.value}` });
+  const artistId = String(route.params.id || '');
+  const artistName = artistInfo.value?.name || '';
+  const currentSort = songSort.value;
+  const result = store.startPlayAllHydrationSession(initialSongs, {
+    sourceKey: `artist:${artistId}:${currentSort}`,
+    hasMore: hasMoreSongs.value,
+    expectedTotal: Number(artistInfo.value.song_count || 0)
+  });
   if (!result.sessionId || !hasMoreSongs.value) return;
 
-  const artistId = String(route.params.id || '');
-  const currentSort = songSort.value;
   startPlayAllHydration({
     sessionId: result.sessionId,
     startPage: songPage.value + 1,
@@ -425,14 +424,14 @@ const playAllSongs = () => {
         params: { id: artistId, page: nextPage, pagesize: 30, sort: currentSort, timestamp: Date.now() },
         silent: true
       });
-      const rawSongs = extractSongs(res);
+      const rawSongs = extractSongs(res, artistId, artistName);
       return {
         rawCount: rawSongs.length,
         songs: normalizeSongs(rawSongs, defaultImg).map(song => buildPlayPayload(song, fallbackCover))
       };
     },
     appendSongs: (sessionId, payloads) => store.extendPlayAllHydration(sessionId, payloads),
-    shouldContinue: () => String(route.params.id || '') === artistId && songSort.value === currentSort && store.isPlayAllHydrationActive(result.sessionId)
+    shouldContinue: () => store.isPlayAllHydrationActive(result.sessionId)
   });
 };
 </script>

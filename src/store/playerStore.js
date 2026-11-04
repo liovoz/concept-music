@@ -4,6 +4,7 @@
 import { defineStore } from 'pinia';
 import request from '../utils/request';
 import { useUserStore } from './userStore'; 
+import { normalizeSongKey, compactQueueSong } from '../utils/songHelper';
 
 let audioA = new Audio();
 let audioB = new Audio();
@@ -72,9 +73,20 @@ const getStoredPlayMode = () => {
   return PLAY_MODES.includes(saved) ? saved : 'sequence';
 };
 
+export const PLAYLIST_MAX_SIZE_OPTIONS = [1000, 1500, 2000];
+export const DEFAULT_MAX_PLAYLIST_SIZE = 1500;
+export const PLAY_ALL_BEHAVIORS = ['replace', 'prepend'];
+export const DEFAULT_PLAY_ALL_BEHAVIOR = 'replace';
+export const MAX_FM_QUEUE_SIZE = 50;
+
 const AUTO_SKIP_KEY = 'kg_desktop_auto_skip';
 const REMEMBER_STATE_KEY = 'kg_desktop_remember_state';
+const MAX_PLAYLIST_SIZE_KEY = 'kg_desktop_max_playlist_size';
+const PLAY_ALL_BEHAVIOR_KEY = 'kg_desktop_play_all_behavior';
 const PLAYER_STATE_STORAGE_KEY = 'kg_desktop_player_state';
+const PLAYER_QUEUE_STORAGE_KEY = 'kg_desktop_player_queue';
+const PLAYER_PROGRESS_STORAGE_KEY = 'kg_desktop_player_progress';
+const REGULAR_BACKUP_STORAGE_KEY = 'kg_desktop_regular_playlist_backup';
 
 const getInitialAutoSkip = () => {
   return localStorage.getItem(AUTO_SKIP_KEY) !== 'false';
@@ -84,41 +96,129 @@ const getInitialRememberState = () => {
   return localStorage.getItem(REMEMBER_STATE_KEY) === 'true';
 };
 
+const getInitialMaxPlaylistSize = () => {
+  const saved = Number(localStorage.getItem(MAX_PLAYLIST_SIZE_KEY));
+  return PLAYLIST_MAX_SIZE_OPTIONS.includes(saved) ? saved : DEFAULT_MAX_PLAYLIST_SIZE;
+};
+
+const getInitialPlayAllBehavior = () => {
+  const saved = localStorage.getItem(PLAY_ALL_BEHAVIOR_KEY);
+  return PLAY_ALL_BEHAVIORS.includes(saved) ? saved : DEFAULT_PLAY_ALL_BEHAVIOR;
+};
+
 const syncAudioSettingsToNative = (patch) => {
   if (typeof window !== 'undefined' && window.settingsAPI?.setAudioSettings) {
     window.settingsAPI.setAudioSettings(patch).catch(() => {});
   }
 };
 
-let persistStateTimer = null;
+const playlistKeyMap = new Map();
+let hydrationSeenSet = new Set();
+let undoPlaylistSnapshot = null;
+let regularPlaylistSavedState = null;
+let fmController = null;
+let currentToastAction = null;
+let toastSeq = 0;
+
+let persistQueueTimer = null;
+let persistQueueIdleId = null;
+let persistProgressTimer = null;
 let lastPersistProgressTime = 0;
+
+const rebuildPlaylistKeyMap = (playlist = []) => {
+  playlistKeyMap.clear();
+  if (!Array.isArray(playlist)) return;
+  for (let i = 0; i < playlist.length; i++) {
+    const key = normalizeSongKey(playlist[i]);
+    if (key && !playlistKeyMap.has(key)) {
+      playlistKeyMap.set(key, i);
+    }
+  }
+};
+
+const getFastSongIndex = (playlist, songOrHash) => {
+  if (!Array.isArray(playlist) || playlist.length === 0 || !songOrHash) return -1;
+  const key = normalizeSongKey(songOrHash);
+  if (!key) return -1;
+  const cachedIdx = playlistKeyMap.get(key);
+  if (cachedIdx !== undefined && cachedIdx >= 0 && cachedIdx < playlist.length) {
+    if (normalizeSongKey(playlist[cachedIdx]) === key) {
+      return cachedIdx;
+    }
+  }
+  rebuildPlaylistKeyMap(playlist);
+  const rebuiltIdx = playlistKeyMap.get(key);
+  return rebuiltIdx !== undefined ? rebuiltIdx : -1;
+};
 
 const sanitizeSongForStorage = (song) => {
   if (!song || typeof song !== 'object') return null;
-  return {
-    hash: song.hash || song._hash || '',
+  const canonicalKey = normalizeSongKey(song);
+  if (!canonicalKey) return null;
+  const isNetease = song.source === NETEASE_IMPORT_SOURCE || canonicalKey.startsWith('netease:');
+  const isQQ = song.source === QQ_IMPORT_SOURCE || canonicalKey.startsWith('qq:');
+  const item = {
+    hash: canonicalKey,
+    fileid: song.fileid || song._fileid || '',
     name: song.name || song._title || '',
     singer: song.singer || song._singer || '',
-    singer_id: song.singer_id || song._singer_id || 0,
+    singer_id: song.singer_id || song._singer_id || '',
     _singers: song._singers || song.artists || (song.singer ? [{ id: String(song.singer_id || ''), name: song.singer }] : []),
     album: song.album || song._album || '',
-    album_id: song.album_id || song._album_id || 0,
-    album_audio_id: song.album_audio_id || song._album_audio_id || 0,
+    album_id: song.album_id || song._album_id || '',
+    album_audio_id: song.album_audio_id || song._album_audio_id || '',
     cover: song.cover || song._cover || '',
     duration: song.duration || 0,
+    _duration: song._duration || '--:--',
     is_vip: !!(song.is_vip || song._is_vip),
     is_paid: !!(song.is_paid || song._is_paid),
     qualities: song.qualities || null,
-    source: song.source || song._source || ''
+    source: isNetease ? NETEASE_IMPORT_SOURCE : (isQQ ? QQ_IMPORT_SOURCE : (song.source || song._source || ''))
   };
+  if (isNetease) {
+    const id = canonicalKey.slice(8);
+    item.neteaseId = id;
+    item.id = id;
+    item.songId = id;
+    item.interval = item.duration;
+  } else if (isQQ) {
+    const mid = canonicalKey.slice(3);
+    item.qqMid = mid;
+    item.songmid = mid;
+    item.id = mid;
+    item.songId = mid;
+    item.strMediaMid = song.strMediaMid || mid;
+    item.interval = item.duration;
+  }
+  return item;
 };
 
-const schedulePersistState = (store, delay = 400) => {
+const schedulePersistQueue = (store, delay = 600) => {
   if (!store || !store.rememberState) return;
-  if (persistStateTimer) clearTimeout(persistStateTimer);
-  persistStateTimer = setTimeout(() => {
-    persistStateTimer = null;
-    store.persistPlaybackState();
+  if (persistQueueTimer) clearTimeout(persistQueueTimer);
+  if (persistQueueIdleId && typeof window !== 'undefined' && typeof window.cancelIdleCallback === 'function') {
+    window.cancelIdleCallback(persistQueueIdleId);
+    persistQueueIdleId = null;
+  }
+  persistQueueTimer = setTimeout(() => {
+    persistQueueTimer = null;
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      persistQueueIdleId = window.requestIdleCallback(() => {
+        persistQueueIdleId = null;
+        store.persistQueueState();
+      }, { timeout: 1500 });
+    } else {
+      store.persistQueueState();
+    }
+  }, delay);
+};
+
+const schedulePersistProgress = (store, delay = 300) => {
+  if (!store || !store.rememberState) return;
+  if (persistProgressTimer) clearTimeout(persistProgressTimer);
+  persistProgressTimer = setTimeout(() => {
+    persistProgressTimer = null;
+    store.persistProgressState();
   }, delay);
 };
 
@@ -261,12 +361,31 @@ const recreateAudioInstances = (store) => {
   }
 };
 
+const hasLoadedAudioSource = (audio) => {
+  if (!audio || !audio._rawSourceUrl) return false;
+  if (typeof audio.getAttribute === 'function') {
+    const attrSrc = audio.getAttribute('src');
+    if (attrSrc !== null && attrSrc !== undefined) {
+      return Boolean(String(attrSrc).trim());
+    }
+  }
+  return Boolean(audio.src && String(audio.src).trim());
+};
+
+const isValidKugouHash = (val) => {
+  return typeof val === 'string' && /^[0-9a-fA-F]{32}$/.test(val.trim());
+};
+
 const resetAudioElementSource = (audio) => {
   if (!audio) return;
   audio._intendToPlay = false;
   audio._songHash = '';
   try { audio.pause(); } catch (e) {}
-  audio.removeAttribute('src');
+  if (typeof audio.removeAttribute === 'function') {
+    audio.removeAttribute('src');
+  } else {
+    audio.src = '';
+  }
   audio._rawSourceUrl = '';
   audio._usingProxy = false;
   audio._proxyFallbackAttempted = false;
@@ -298,6 +417,25 @@ const resetPreloadAudio = () => {
     isPreview: false,
     url: null
   };
+};
+
+const abortActivePlayback = (store, { resetPreload = false } = {}) => {
+  playVersion++;
+  pendingResolves.clear();
+  if (store) {
+    if (store._errorSkipTimer) { clearTimeout(store._errorSkipTimer); store._errorSkipTimer = null; }
+    if (store._vipActionTimer) { clearTimeout(store._vipActionTimer); store._vipActionTimer = null; }
+    if (store._playWatchdogTimer) { clearTimeout(store._playWatchdogTimer); store._playWatchdogTimer = null; }
+    if (store._playbackProgressTimer) { clearTimeout(store._playbackProgressTimer); store._playbackProgressTimer = null; }
+    store._pendingRestoreSeekTime = 0;
+    store.isLoading = false;
+    store.isPlaying = false;
+  }
+  safePauseAudio(activeAudio);
+  resetAudioElementSource(activeAudio);
+  if (resetPreload) {
+    resetPreloadAudio();
+  }
 };
 
 const clearUrlResolutionState = () => {
@@ -472,6 +610,35 @@ const extractQualities = (song) => {
   };
 };
 
+const prepareQueueSong = (song) => {
+  if (!song || typeof song !== 'object') return null;
+  if (song._isCompact) return song;
+  const compact = compactQueueSong(song);
+  if (!compact) return null;
+  if (!compact.qualities || Object.keys(compact.qualities).length === 0) {
+    compact.qualities = extractQualities(song);
+  }
+  Object.defineProperty(compact, '_isCompact', {
+    value: true,
+    enumerable: false,
+    configurable: true
+  });
+  return compact;
+};
+
+const toReactiveCurrentSong = (song) => {
+  if (!song || typeof song !== 'object') return null;
+  const prepared = prepareQueueSong(song) || song;
+  const rawQualities = prepared.qualities && typeof prepared.qualities === 'object'
+    ? { ...prepared.qualities }
+    : extractQualities(prepared);
+  return {
+    ...prepared,
+    _singers: Array.isArray(prepared._singers) ? [...prepared._singers] : [],
+    qualities: rawQualities
+  };
+};
+
 const getExpectedDuration = (song) => {
   if (!song || !song._duration) return 0;
   const parts = song._duration.split(':');
@@ -515,7 +682,8 @@ export const usePlayerStore = defineStore('player', {
     currentTime: 0,    
     duration: 0,       
     hasDfid: false,
-    playlist: [], 
+    playlist: [],
+    playbackHistory: [], // 随机模式下的历史播放回溯栈
     playAllHydrationSession: null,
     isPlaylistVisible: false,
     isLyricsVisible: false,
@@ -542,15 +710,28 @@ export const usePlayerStore = defineStore('player', {
     currentQuality: 'standard',
     
     toastMessage: '',
+    toastState: {
+      visible: false,
+      message: '',
+      type: 'info',
+      actionText: '',
+      id: 0
+    },
     toastTimeout: null,
 
     isCurrentSongPreview: false,
 
     _errorSkipTimer: null,
     _vipActionTimer: null,
+    _playWatchdogTimer: null,
     failedSong: null,
     autoSkipOnError: getInitialAutoSkip(),
     rememberState: getInitialRememberState(),
+    maxPlaylistSize: getInitialMaxPlaylistSize(),
+    playAllBehavior: getInitialPlayAllBehavior(),
+    isFmModePlaylist: false,
+    hasRegularPlaylistBackup: false,
+    regularPlaylistBackupCount: 0,
     consecutiveErrorCount: 0,
     _pendingRestoreSeekTime: 0,
 
@@ -653,7 +834,7 @@ export const usePlayerStore = defineStore('player', {
         if (isErrorEnd) {
           if (this.autoSkipOnError) {
             this.consecutiveErrorCount = (this.consecutiveErrorCount || 0) + 1;
-            const maxErrors = Math.min(Math.max(3, this.playlist.length), 5);
+            const maxErrors = this.isFmModePlaylist ? 5 : Math.min(Math.max(3, this.playlist.length), 5);
             if (this.consecutiveErrorCount >= maxErrors) {
               this.consecutiveErrorCount = 0;
               this.showToast('连续多首歌曲播放故障，已停止自动跳过');
@@ -683,6 +864,11 @@ export const usePlayerStore = defineStore('player', {
       audioInstance.addEventListener('timeupdate', (e) => { 
         if (e.target !== activeAudio) return;
 
+        if (this._playbackProgressTimer && activeAudio.currentTime > 0) {
+          clearTimeout(this._playbackProgressTimer);
+          this._playbackProgressTimer = null;
+        }
+
         if (this.isCurrentSongPreview && activeAudio.currentTime >= 60) {
           if (!activeAudio.paused) {
             activeAudio.pause();
@@ -698,7 +884,7 @@ export const usePlayerStore = defineStore('player', {
             const now = Date.now();
             if (now - lastPersistProgressTime > 3000) {
               lastPersistProgressTime = now;
-              this.persistPlaybackState();
+              this.persistProgressState();
             }
           }
 
@@ -774,6 +960,10 @@ export const usePlayerStore = defineStore('player', {
       
       audioInstance.addEventListener('playing', (e) => { 
         if (e.target !== activeAudio) return;
+        if (this._playbackProgressTimer && activeAudio.currentTime > 0) {
+          clearTimeout(this._playbackProgressTimer);
+          this._playbackProgressTimer = null;
+        }
         this.isLoading = false; 
         this.isPlaying = true; 
         this.consecutiveErrorCount = 0;
@@ -782,8 +972,12 @@ export const usePlayerStore = defineStore('player', {
       
       audioInstance.addEventListener('pause', (e) => { 
         if (e.target !== activeAudio || !activeAudio.paused) return;
+        if (this._playbackProgressTimer) {
+          clearTimeout(this._playbackProgressTimer);
+          this._playbackProgressTimer = null;
+        }
         this.isPlaying = false; 
-        if (this.rememberState) this.persistPlaybackState();
+        if (this.rememberState) this.persistProgressState();
         this.syncTrayState();
       });
       
@@ -797,6 +991,7 @@ export const usePlayerStore = defineStore('player', {
            preloadState.hash = null;
            return;
         }
+        if (!hasLoadedAudioSource(activeAudio)) return;
         console.error('[Audio error event]', activeAudio.error?.code, activeAudio.error?.message, 'src:', activeAudio.src);
 
         if (activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
@@ -910,6 +1105,14 @@ export const usePlayerStore = defineStore('player', {
               this.volumeBoostLevel = nativeSettings.volumeBoostLevel;
               localStorage.setItem(VOLUME_BOOST_LEVEL_KEY, String(this.volumeBoostLevel));
             }
+            if (typeof nativeSettings.maxPlaylistSize === 'number' && PLAYLIST_MAX_SIZE_OPTIONS.includes(nativeSettings.maxPlaylistSize)) {
+              this.maxPlaylistSize = nativeSettings.maxPlaylistSize;
+              localStorage.setItem(MAX_PLAYLIST_SIZE_KEY, String(this.maxPlaylistSize));
+            }
+            if (typeof nativeSettings.playAllBehavior === 'string' && PLAY_ALL_BEHAVIORS.includes(nativeSettings.playAllBehavior)) {
+              this.playAllBehavior = nativeSettings.playAllBehavior;
+              localStorage.setItem(PLAY_ALL_BEHAVIOR_KEY, this.playAllBehavior);
+            }
           }
         } catch (e) {}
       }
@@ -987,7 +1190,7 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
-    persistPlaybackState() {
+    persistQueueState() {
       if (!this.rememberState) {
         this.clearPersistedState();
         return;
@@ -996,24 +1199,83 @@ export const usePlayerStore = defineStore('player', {
         const sanitizedPlaylist = (this.playlist || [])
           .map(sanitizeSongForStorage)
           .filter(Boolean);
-        const sanitizedCurrentSong = sanitizeSongForStorage(this.currentSong);
-        const stateToSave = {
+        const queueToSave = {
           playlist: sanitizedPlaylist,
-          currentSong: sanitizedCurrentSong,
-          currentTime: Number.isFinite(this.currentTime) ? Math.max(0, this.currentTime) : 0,
-          duration: Number.isFinite(this.duration) ? Math.max(0, this.duration) : 0,
-          currentQuality: this.currentQuality || 'standard',
-          isCurrentSongPreview: !!this.isCurrentSongPreview,
+          isFmModePlaylist: false,
           savedAt: Date.now()
         };
-        localStorage.setItem(PLAYER_STATE_STORAGE_KEY, JSON.stringify(stateToSave));
+        localStorage.setItem(PLAYER_QUEUE_STORAGE_KEY, JSON.stringify(queueToSave));
+        if (this.isFmModePlaylist && regularPlaylistSavedState?.currentSong) {
+          const savedRegularProgress = {
+            currentSong: sanitizeSongForStorage(regularPlaylistSavedState.currentSong),
+            currentTime: Number.isFinite(regularPlaylistSavedState.currentTime) ? Math.max(0, regularPlaylistSavedState.currentTime) : 0,
+            duration: Number.isFinite(regularPlaylistSavedState.duration) ? Math.max(0, regularPlaylistSavedState.duration) : 0,
+            currentQuality: regularPlaylistSavedState.currentQuality || 'standard',
+            isCurrentSongPreview: !!regularPlaylistSavedState.isCurrentSongPreview,
+            savedAt: Date.now()
+          };
+          localStorage.setItem(REGULAR_BACKUP_STORAGE_KEY, JSON.stringify(savedRegularProgress));
+        } else {
+          localStorage.removeItem(REGULAR_BACKUP_STORAGE_KEY);
+        }
+        localStorage.removeItem(PLAYER_STATE_STORAGE_KEY);
       } catch (e) {
-        console.warn('Failed to persist player state:', e);
+        console.warn('Failed to persist player queue:', e);
       }
     },
 
-    clearPersistedState() {
+    persistProgressState() {
+      if (!this.rememberState) {
+        this.clearPersistedState();
+        return;
+      }
       try {
+        const sourceState = (this.isFmModePlaylist && regularPlaylistSavedState?.currentSong)
+          ? regularPlaylistSavedState
+          : {
+              currentSong: this.currentSong,
+              currentTime: this.currentTime,
+              duration: this.duration,
+              currentQuality: this.currentQuality,
+              isCurrentSongPreview: this.isCurrentSongPreview
+            };
+        const sanitizedCurrentSong = sanitizeSongForStorage(sourceState.currentSong);
+        const progressToSave = {
+          currentSong: sanitizedCurrentSong,
+          currentTime: Number.isFinite(sourceState.currentTime) ? Math.max(0, sourceState.currentTime) : 0,
+          duration: Number.isFinite(sourceState.duration) ? Math.max(0, sourceState.duration) : 0,
+          currentQuality: sourceState.currentQuality || 'standard',
+          isCurrentSongPreview: !!sourceState.isCurrentSongPreview,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(PLAYER_PROGRESS_STORAGE_KEY, JSON.stringify(progressToSave));
+      } catch (e) {
+        console.warn('Failed to persist player progress:', e);
+      }
+    },
+
+    persistPlaybackState() {
+      if (!this.rememberState) {
+        this.clearPersistedState();
+        return;
+      }
+      if (persistQueueTimer) { clearTimeout(persistQueueTimer); persistQueueTimer = null; }
+      if (persistProgressTimer) { clearTimeout(persistProgressTimer); persistProgressTimer = null; }
+      this.persistQueueState();
+      this.persistProgressState();
+    },
+
+    clearPersistedState() {
+      if (persistQueueTimer) { clearTimeout(persistQueueTimer); persistQueueTimer = null; }
+      if (persistProgressTimer) { clearTimeout(persistProgressTimer); persistProgressTimer = null; }
+      if (persistQueueIdleId && typeof window !== 'undefined' && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(persistQueueIdleId);
+        persistQueueIdleId = null;
+      }
+      try {
+        localStorage.removeItem(PLAYER_QUEUE_STORAGE_KEY);
+        localStorage.removeItem(PLAYER_PROGRESS_STORAGE_KEY);
+        localStorage.removeItem(REGULAR_BACKUP_STORAGE_KEY);
         localStorage.removeItem(PLAYER_STATE_STORAGE_KEY);
       } catch (e) {}
     },
@@ -1021,28 +1283,85 @@ export const usePlayerStore = defineStore('player', {
     restorePlaybackState() {
       if (!this.rememberState) return false;
       try {
-        const raw = localStorage.getItem(PLAYER_STATE_STORAGE_KEY);
-        if (!raw) return false;
-        const data = JSON.parse(raw);
-        if (!data || !Array.isArray(data.playlist) || data.playlist.length === 0) return false;
+        let rawQueueData = null;
+        let rawProgressData = null;
+        let migratedFromLegacy = false;
 
-        this.playlist = data.playlist;
-        if (data.currentSong && data.currentSong.hash) {
-          const matched = this.playlist.find(s => s.hash === data.currentSong.hash) || data.currentSong;
-          this.currentSong = matched;
-          this.currentTime = Math.max(0, Number(data.currentTime) || 0);
-          this.duration = Math.max(0, Number(data.duration) || getExpectedDuration(matched) || 0);
-          this.currentQuality = data.currentQuality || 'standard';
-          this.isCurrentSongPreview = !!data.isCurrentSongPreview;
-        } else if (this.playlist.length > 0) {
-          this.currentSong = this.playlist[0];
+        const queueRaw = localStorage.getItem(PLAYER_QUEUE_STORAGE_KEY);
+        if (queueRaw) {
+          rawQueueData = JSON.parse(queueRaw);
+          const progressRaw = localStorage.getItem(PLAYER_PROGRESS_STORAGE_KEY);
+          if (progressRaw) {
+            try { rawProgressData = JSON.parse(progressRaw); } catch (e) {}
+          }
+        } else {
+          const legacyRaw = localStorage.getItem(PLAYER_STATE_STORAGE_KEY);
+          if (!legacyRaw) return false;
+          const legacyData = JSON.parse(legacyRaw);
+          if (!legacyData || !Array.isArray(legacyData.playlist) || legacyData.playlist.length === 0) return false;
+          rawQueueData = { playlist: legacyData.playlist, isFmModePlaylist: false };
+          rawProgressData = legacyData;
+          migratedFromLegacy = true;
+        }
+
+        const backupRaw = localStorage.getItem(REGULAR_BACKUP_STORAGE_KEY);
+        if (backupRaw) {
+          try {
+            const parsedBackup = JSON.parse(backupRaw);
+            if (rawQueueData?.isFmModePlaylist && Array.isArray(parsedBackup?.playlist) && parsedBackup.playlist.length > 0) {
+              rawQueueData = { playlist: parsedBackup.playlist, isFmModePlaylist: false };
+              rawProgressData = parsedBackup;
+              migratedFromLegacy = true;
+            } else if (!rawProgressData?.currentSong && parsedBackup?.currentSong) {
+              rawProgressData = parsedBackup;
+            }
+          } catch (e) {}
+          localStorage.removeItem(REGULAR_BACKUP_STORAGE_KEY);
+        }
+
+        if (!rawQueueData || !Array.isArray(rawQueueData.playlist) || rawQueueData.playlist.length === 0) return false;
+
+        regularPlaylistSavedState = null;
+        this.isFmModePlaylist = false;
+        this.hasRegularPlaylistBackup = false;
+        this.regularPlaylistBackupCount = 0;
+
+        const seenKeys = new Set();
+        const restoredQueue = [];
+        for (const item of rawQueueData.playlist) {
+          const prepared = prepareQueueSong(item);
+          if (!prepared || seenKeys.has(prepared.hash)) continue;
+          seenKeys.add(prepared.hash);
+          restoredQueue.push(prepared);
+          if (restoredQueue.length >= this.maxPlaylistSize) break;
+        }
+        if (restoredQueue.length === 0) return false;
+
+        this.playlist = restoredQueue;
+        rebuildPlaylistKeyMap(this.playlist);
+
+        const savedCurrent = rawProgressData?.currentSong ? prepareQueueSong(rawProgressData.currentSong) : null;
+        if (savedCurrent && savedCurrent.hash) {
+          const matchedIdx = getFastSongIndex(this.playlist, savedCurrent.hash);
+          const matched = matchedIdx !== -1 ? this.playlist[matchedIdx] : savedCurrent;
+          this.currentSong = toReactiveCurrentSong(matched);
+          this.currentTime = Math.max(0, Number(rawProgressData.currentTime) || 0);
+          this.duration = Math.max(0, Number(rawProgressData.duration) || getExpectedDuration(matched) || Number(matched.duration) || 0);
+          this.currentQuality = rawProgressData.currentQuality || 'standard';
+          this.isCurrentSongPreview = !!rawProgressData.isCurrentSongPreview;
+        } else {
+          this.currentSong = toReactiveCurrentSong(this.playlist[0]);
           this.currentTime = 0;
-          this.duration = getExpectedDuration(this.playlist[0]) || 0;
+          this.duration = getExpectedDuration(this.playlist[0]) || Number(this.playlist[0].duration) || 0;
           this.currentQuality = 'standard';
           this.isCurrentSongPreview = false;
         }
+
         this.isPlaying = false;
         this.syncTrayState();
+        if (migratedFromLegacy) {
+          this.persistPlaybackState();
+        }
         return true;
       } catch (e) {
         console.warn('Failed to restore player state:', e);
@@ -1050,10 +1369,55 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
-    showToast(message) {
+    showToast(messageOrOpts, options = {}) {
+      const isObj = messageOrOpts && typeof messageOrOpts === 'object';
+      const message = String(isObj ? (messageOrOpts.message || '') : (messageOrOpts || '')).trim();
+      const opts = isObj ? messageOrOpts : (options || {});
+      if (!message) {
+        this.dismissToast();
+        return;
+      }
+      const validTypes = ['info', 'success', 'warning', 'error'];
+      const type = validTypes.includes(opts.type) ? opts.type : 'info';
+      const actionText = String(opts.actionText || '').trim();
+      currentToastAction = typeof opts.onAction === 'function' ? opts.onAction : null;
+      const duration = Number(opts.duration) > 0 ? Number(opts.duration) : (actionText ? 5000 : 3000);
+
       this.toastMessage = message;
+      this.toastState = {
+        visible: true,
+        message,
+        type,
+        actionText,
+        id: ++toastSeq
+      };
       if (this.toastTimeout) clearTimeout(this.toastTimeout);
-      this.toastTimeout = setTimeout(() => { this.toastMessage = ''; }, 3000);
+      this.toastTimeout = setTimeout(() => {
+        this.dismissToast();
+      }, duration);
+    },
+
+    dismissToast() {
+      if (this.toastTimeout) {
+        clearTimeout(this.toastTimeout);
+        this.toastTimeout = null;
+      }
+      currentToastAction = null;
+      this.toastMessage = '';
+      this.toastState = {
+        ...this.toastState,
+        visible: false,
+        message: '',
+        actionText: ''
+      };
+    },
+
+    triggerToastAction() {
+      const fn = currentToastAction;
+      this.dismissToast();
+      if (typeof fn === 'function') {
+        fn();
+      }
     },
 
     setVolume(val) {
@@ -1221,99 +1585,592 @@ export const usePlayerStore = defineStore('player', {
       this.setImmersiveBgMode(nextMode);
     },
 
-    addToPlaylist(song) {
-      if (!song || !song.hash) return;
-      const exists = this.playlist.find(s => s.hash === song.hash);
-      if (!exists) {
-        this.playlist.push(song);
-        if (this.rememberState) schedulePersistState(this);
+    getCurrentSongIndex() {
+      return getFastSongIndex(this.playlist, this.currentSong);
+    },
+
+    findSongIndex(songOrHash) {
+      return getFastSongIndex(this.playlist, songOrHash);
+    },
+
+    applyMaxPlaylistSize(size, options = {}) {
+      const prevSize = this.maxPlaylistSize;
+      const nextSize = PLAYLIST_MAX_SIZE_OPTIONS.includes(Number(size))
+        ? Number(size)
+        : DEFAULT_MAX_PLAYLIST_SIZE;
+      this.maxPlaylistSize = nextSize;
+      localStorage.setItem(MAX_PLAYLIST_SIZE_KEY, String(nextSize));
+      syncAudioSettingsToNative({ maxPlaylistSize: nextSize });
+
+      let truncated = 0;
+      if (this.playlist.length > nextSize) {
+        this.saveUndoSnapshot('cap-truncate');
+        const prevLen = this.playlist.length;
+        const refSong = (this.isFmModePlaylist && regularPlaylistSavedState?.currentSong)
+          ? regularPlaylistSavedState.currentSong
+          : this.currentSong;
+        const curIdx = getFastSongIndex(this.playlist, refSong);
+        if (curIdx <= 0) {
+          this.playlist = this.playlist.slice(0, nextSize);
+        } else {
+          const after = this.playlist.slice(curIdx, curIdx + nextSize);
+          const needBefore = Math.max(0, nextSize - after.length);
+          const before = needBefore > 0 ? this.playlist.slice(Math.max(0, curIdx - needBefore), curIdx) : [];
+          this.playlist = [...before, ...after];
+        }
+        truncated = Math.max(0, prevLen - this.playlist.length);
+        if (this.playAllHydrationSession && (this.playAllHydrationSession.insertIndex || 0) >= nextSize) {
+          this.cancelPlayAllHydration();
+        }
+        rebuildPlaylistKeyMap(this.playlist);
+        if (!this.isFmModePlaylist) this.triggerPreload();
+      }
+      if (this.isFmModePlaylist) {
+        this._syncFmBackupFlags();
+      }
+
+      if (this.rememberState) schedulePersistQueue(this, 200);
+      if (!options.silent) {
+        if (truncated > 0) {
+          this.showToast(`播放列表上限已设为 ${nextSize} 首，已裁剪 ${truncated} 首超出歌曲`, {
+            type: 'info',
+            duration: 5000,
+            actionText: '撤销',
+            onAction: () => {
+              this.maxPlaylistSize = prevSize;
+              localStorage.setItem(MAX_PLAYLIST_SIZE_KEY, String(prevSize));
+              syncAudioSettingsToNative({ maxPlaylistSize: prevSize });
+              this.restoreUndoSnapshot();
+            }
+          });
+        } else {
+          this.showToast(`播放列表容量上限已设为 ${nextSize} 首`, { type: 'success' });
+        }
+      }
+      return { truncated, total: this.playlist.length, maxPlaylistSize: nextSize };
+    },
+
+    setPlayAllBehavior(behavior, options = {}) {
+      const nextBehavior = PLAY_ALL_BEHAVIORS.includes(behavior) ? behavior : DEFAULT_PLAY_ALL_BEHAVIOR;
+      this.playAllBehavior = nextBehavior;
+      localStorage.setItem(PLAY_ALL_BEHAVIOR_KEY, nextBehavior);
+      syncAudioSettingsToNative({ playAllBehavior: nextBehavior });
+      if (!options.silent) {
+        const label = nextBehavior === 'replace' ? '替换当前播放列表' : '合并到队首';
+        this.showToast(`「播放全部」默认行为已切换为：${label}`, { type: 'success' });
+      }
+      return nextBehavior;
+    },
+
+    saveUndoSnapshot(reason = 'clear') {
+      if (!Array.isArray(this.playlist) || this.playlist.length === 0) return;
+      const progressSource = (this.isFmModePlaylist && regularPlaylistSavedState)
+        ? regularPlaylistSavedState
+        : {
+            currentSong: this.currentSong,
+            currentTime: this.currentTime,
+            duration: this.duration,
+            currentQuality: this.currentQuality,
+            isCurrentSongPreview: this.isCurrentSongPreview,
+            wasPlaying: Boolean(this.isPlaying || this.isLoading)
+          };
+      undoPlaylistSnapshot = {
+        playlist: [...this.playlist],
+        currentSong: progressSource.currentSong ? toReactiveCurrentSong(progressSource.currentSong) : null,
+        currentTime: progressSource.currentTime || 0,
+        duration: progressSource.duration || 0,
+        currentQuality: progressSource.currentQuality || 'standard',
+        isCurrentSongPreview: !!progressSource.isCurrentSongPreview,
+        wasPlaying: !!progressSource.wasPlaying,
+        isFmModePlaylist: false,
+        playbackHistory: Array.isArray(this.playbackHistory) ? [...this.playbackHistory] : [],
+        reason,
+        createdAt: Date.now()
+      };
+    },
+
+    restoreUndoSnapshot() {
+      if (!undoPlaylistSnapshot || !Array.isArray(undoPlaylistSnapshot.playlist) || undoPlaylistSnapshot.playlist.length === 0) {
+        return false;
+      }
+      const snap = undoPlaylistSnapshot;
+      undoPlaylistSnapshot = null;
+      this.cancelPlayAllHydration();
+      if (this.isFmModePlaylist) {
+        this._exitFmModeSilent({ keepCurrentFmSong: false });
+      }
+
+      this.isFmModePlaylist = false;
+      this.playlist = snap.playlist.slice(0, this.maxPlaylistSize);
+      this.playbackHistory = snap.playbackHistory || [];
+      rebuildPlaylistKeyMap(this.playlist);
+
+      const isSameSongStillActive = !this.isFmModePlaylist
+        && snap.currentSong
+        && this.currentSong
+        && normalizeSongKey(snap.currentSong) === normalizeSongKey(this.currentSong);
+
+      let triggeredPlay = false;
+      if (!isSameSongStillActive) {
+        if (snap.currentSong) {
+          if (snap.wasPlaying) {
+            triggeredPlay = true;
+            this.playSong(snap.currentSong, null, snap.currentTime || 0, true, { silentQueueToast: true });
+          } else {
+            abortActivePlayback(this, { resetPreload: true });
+            this.currentSong = toReactiveCurrentSong(snap.currentSong);
+            this.currentTime = snap.currentTime || 0;
+            this.duration = snap.duration || getExpectedDuration(snap.currentSong) || Number(snap.currentSong.duration) || 0;
+            this.currentQuality = snap.currentQuality || 'standard';
+            this.isCurrentSongPreview = !!snap.isCurrentSongPreview;
+            this.clearError();
+            this.syncTrayState();
+          }
+        } else {
+          abortActivePlayback(this, { resetPreload: true });
+          this.currentSong = null;
+          this.currentTime = 0;
+          this.duration = 0;
+          this.clearError();
+          this.syncTrayState();
+        }
+      }
+
+      if (!triggeredPlay) {
+        this.triggerPreload();
+      }
+      if (this.rememberState) {
+        schedulePersistQueue(this, 200);
+        schedulePersistProgress(this, 200);
+      }
+      this.showToast(`已恢复原播放列表 (${this.playlist.length}首)`, { type: 'success' });
+      return true;
+    },
+
+    registerFmController(controller = null) {
+      fmController = controller || null;
+    },
+
+    _syncFmBackupFlags() {
+      this.regularPlaylistBackupCount = this.isFmModePlaylist ? this.playlist.length : 0;
+      this.hasRegularPlaylistBackup = Boolean(this.isFmModePlaylist && this.playlist.length > 0);
+    },
+
+    enterFmMode(options = {}) {
+      if (!this.isFmModePlaylist) {
+        this.cancelPlayAllHydration();
+        const fallbackRegularSong = this.currentSong || this.playlist[0] || null;
+        regularPlaylistSavedState = fallbackRegularSong
+          ? {
+              currentSong: toReactiveCurrentSong(fallbackRegularSong),
+              currentTime: Math.max(0, Number(this.currentTime) || 0),
+              duration: Math.max(0, Number(this.duration) || getExpectedDuration(fallbackRegularSong) || Number(fallbackRegularSong.duration) || 0),
+              currentQuality: this.currentQuality || 'standard',
+              isCurrentSongPreview: !!this.isCurrentSongPreview,
+              wasPlaying: Boolean(this.isPlaying || this.isLoading)
+            }
+          : null;
+        this.isFmModePlaylist = true;
+        this._syncFmBackupFlags();
+        if (this.playlist.length > 0 && !options.silent) {
+          this.showToast(`已进入私人FM，原播放列表 (${this.playlist.length}首) 已保留`, {
+            type: 'info',
+            duration: 5000,
+            actionText: '恢复原列表',
+            onAction: () => this.restoreRegularPlaylistFromFm({ navigateBack: true })
+          });
+        }
+        if (this.rememberState) schedulePersistQueue(this, 200);
+      } else {
+        this._syncFmBackupFlags();
       }
     },
 
-    addSongsToPlaylist(songs = [], options = {}) {
-      const incoming = Array.isArray(songs) ? songs.filter(song => song && song.hash) : [];
-      let added = 0;
-      let skipped = 0;
-
-      incoming.forEach(song => {
-        const exists = this.playlist.some(item => item.hash === song.hash);
-        if (exists) {
-          skipped++;
-          return;
-        }
-        this.playlist.push(song);
-        added++;
+    playFmSong(rawSong, options = {}) {
+      if (!rawSong) return Promise.resolve();
+      this.enterFmMode(options);
+      return this.playSong(rawSong, null, 0, true, {
+        isFmTrack: true,
+        silentQueueToast: true
       });
+    },
 
-      if (added > 0) {
-        this.triggerPreload();
-        if (this.rememberState) schedulePersistState(this);
+    _exitFmModeSilent({ keepCurrentFmSong = false } = {}) {
+      if (!this.isFmModePlaylist) return;
+      const fmSong = keepCurrentFmSong && this.currentSong ? prepareQueueSong(this.currentSong) : null;
+      this.isFmModePlaylist = false;
+      regularPlaylistSavedState = null;
+      this._syncFmBackupFlags();
+      if (fmSong && getFastSongIndex(this.playlist, fmSong.hash) === -1) {
+        if (this.playlist.length >= this.maxPlaylistSize) {
+          this.playlist.pop();
+        }
+        this.playlist.unshift(fmSong);
+        rebuildPlaylistKeyMap(this.playlist);
       }
+      try { fmController?.onExitFm?.(); } catch (e) {}
+    },
+
+    restoreRegularPlaylistFromFm(options = {}) {
+      if (!this.isFmModePlaylist && !regularPlaylistSavedState) {
+        return false;
+      }
+      const snap = regularPlaylistSavedState;
+      regularPlaylistSavedState = null;
+      this.isFmModePlaylist = false;
+      this._syncFmBackupFlags();
+      this.peakMode = false;
+      this.peakStartOffset = 0;
+      this.peakDuration = 30;
+
+      if (this.playlist.length === 0 && !snap?.currentSong) {
+        abortActivePlayback(this, { resetPreload: true });
+        this.currentSong = null;
+        this.currentTime = 0;
+        this.duration = 0;
+        this.clearError();
+        this.syncTrayState();
+        try { fmController?.onRestoreRegular?.({ navigateBack: options.navigateBack !== false }); } catch (e) {}
+        return false;
+      }
+
+      rebuildPlaylistKeyMap(this.playlist);
+      const matchedIdx = snap?.currentSong ? getFastSongIndex(this.playlist, snap.currentSong) : -1;
+      const targetSong = (matchedIdx !== -1 ? this.playlist[matchedIdx] : snap?.currentSong) || this.playlist[0] || null;
+      const savedTime = Math.max(0, Number(snap?.currentTime) || 0);
+      const shouldPlay = options.autoPlay !== undefined
+        ? !!options.autoPlay
+        : Boolean(this.isPlaying || this.isLoading || snap?.wasPlaying);
+
+      if (targetSong) {
+        if (shouldPlay) {
+          this.playSong(targetSong, null, savedTime, true, { silentQueueToast: true });
+        } else {
+          abortActivePlayback(this, { resetPreload: true });
+          this.currentSong = toReactiveCurrentSong(targetSong);
+          this.currentTime = savedTime;
+          this.duration = snap?.duration || getExpectedDuration(targetSong) || Number(targetSong.duration) || 0;
+          this.currentQuality = snap?.currentQuality || 'standard';
+          this.isCurrentSongPreview = !!snap?.isCurrentSongPreview;
+          this.clearError();
+          this.syncTrayState();
+          this.triggerPreload();
+        }
+      }
+
+      if (this.rememberState) {
+        schedulePersistQueue(this, 200);
+        schedulePersistProgress(this, 200);
+      }
+      if (!options.silent && this.playlist.length > 0) {
+        this.showToast(`已恢复原播放列表 (${this.playlist.length}首)`, { type: 'success' });
+      }
+      try { fmController?.onRestoreRegular?.({ navigateBack: options.navigateBack !== false }); } catch (e) {}
+      return true;
+    },
+
+    addToPlaylist(song) {
+      const prepared = prepareQueueSong(song);
+      if (!prepared) return false;
+      if (getFastSongIndex(this.playlist, prepared.hash) !== -1) return false;
+      if (this.playlist.length >= this.maxPlaylistSize) return false;
+      this.playlist.push(prepared);
+      playlistKeyMap.set(prepared.hash, this.playlist.length - 1);
+      if (this.isFmModePlaylist) this._syncFmBackupFlags();
+      if (this.rememberState) schedulePersistQueue(this);
+      return true;
+    },
+
+    addSongsToPlaylist(songs = [], options = {}) {
+      const rawIncoming = Array.isArray(songs) ? songs : [];
+
+      rebuildPlaylistKeyMap(this.playlist);
+      const accepted = [];
+      let skipped = 0;
+      let dropped = 0;
+      let validIncomingCount = 0;
+      const localSeen = new Set();
+
+      for (const rawSong of rawIncoming) {
+        const prepared = prepareQueueSong(rawSong);
+        if (!prepared) continue;
+        validIncomingCount++;
+        if (playlistKeyMap.has(prepared.hash) || localSeen.has(prepared.hash)) {
+          skipped++;
+          continue;
+        }
+        if (this.playlist.length + accepted.length >= this.maxPlaylistSize) {
+          dropped++;
+          continue;
+        }
+        localSeen.add(prepared.hash);
+        accepted.push(prepared);
+      }
+
+      if (accepted.length > 0) {
+        const startIdx = this.playlist.length;
+        this.playlist.push(...accepted);
+        for (let i = 0; i < accepted.length; i++) {
+          playlistKeyMap.set(accepted[i].hash, startIdx + i);
+        }
+        if (this.isFmModePlaylist) {
+          this._syncFmBackupFlags();
+        } else if (!preloadState.hash || startIdx <= this.getCurrentSongIndex() + 1) {
+          this.triggerPreload();
+        }
+        if (this.rememberState) schedulePersistQueue(this);
+      }
+
+      const full = this.playlist.length >= this.maxPlaylistSize;
       if (!options.silent) {
-        const skippedText = skipped > 0 ? `，已跳过 ${skipped} 首重复歌曲` : '';
-        this.showToast(added > 0 ? `已添加 ${added} 首歌曲${skippedText}` : '歌曲已在播放列表中');
+        if (accepted.length === 0 && dropped > 0) {
+          this.showToast(`播放列表已达上限 (${this.maxPlaylistSize}首)，请先清理部分歌曲`, {
+            type: 'warning',
+            actionText: '打开列表',
+            onAction: () => { this.isPlaylistVisible = true; }
+          });
+        } else if (accepted.length === 0 && skipped > 0) {
+          this.showToast('所选歌曲已在播放列表中', { type: 'info' });
+        } else if (dropped > 0) {
+          const skippedText = skipped > 0 ? `（跳过 ${skipped} 首重复）` : '';
+          this.showToast(`已添加 ${accepted.length} 首${skippedText}，达 ${this.maxPlaylistSize} 首上限剩余 ${dropped} 首未加入`, {
+            type: 'warning',
+            duration: 4500
+          });
+        } else if (accepted.length > 0) {
+          const skippedText = skipped > 0 ? `，已跳过 ${skipped} 首重复` : '';
+          this.showToast(`已添加 ${accepted.length} 首歌曲${skippedText}`, { type: 'success' });
+        }
       }
-      return { added, skipped, total: incoming.length };
+      return { added: accepted.length, skipped, dropped, full, total: validIncomingCount };
+    },
+
+    playAllSongs(songs = [], options = {}) {
+      const mode = PLAY_ALL_BEHAVIORS.includes(options.mode) ? options.mode : this.playAllBehavior;
+      if (mode === 'prepend') {
+        return this.prependPlaylistAndPlay(songs, { ...options, createHydrationSession: false });
+      }
+      return this.replacePlaylistAndPlay(songs, { ...options, createHydrationSession: false });
     },
 
     replacePlaylistAndPlay(songs = [], options = {}) {
       this.cancelPlayAllHydration();
-      const incoming = Array.isArray(songs) ? songs.filter(song => song && song.hash) : [];
+      const rawIncoming = Array.isArray(songs) ? songs : [];
       const unique = [];
       const seen = new Set();
-      incoming.forEach(song => {
-        if (seen.has(song.hash)) return;
-        seen.add(song.hash);
-        unique.push(song);
-      });
+      let validCount = 0;
 
-      if (unique.length === 0) return { added: 0, skipped: incoming.length, total: incoming.length };
-      this.playlist = unique;
-      if (this.rememberState) schedulePersistState(this);
-      const startIndex = Math.max(0, Math.min(options.startIndex || 0, unique.length - 1));
-      this.playSong(unique[startIndex]);
-      if (!options.silent) this.showToast(`已加入 ${unique.length} 首歌曲并开始播放`);
-      return { added: unique.length, skipped: incoming.length - unique.length, total: incoming.length };
-    },
+      for (const rawSong of rawIncoming) {
+        const prepared = prepareQueueSong(rawSong);
+        if (!prepared) continue;
+        validCount++;
+        if (seen.has(prepared.hash)) continue;
+        seen.add(prepared.hash);
+        unique.push(prepared);
+      }
 
-    prependPlaylistAndPlay(songs = [], options = {}) {
-      if (!options.createHydrationSession) this.cancelPlayAllHydration();
-      const incoming = Array.isArray(songs) ? songs.filter(song => song && song.hash) : [];
-      const front = [];
-      const seen = new Set();
+      if (unique.length === 0) {
+        return { added: 0, skipped: validCount, dropped: 0, full: false, total: validCount, sessionId: null };
+      }
 
-      incoming.forEach(song => {
-        if (seen.has(song.hash)) return;
-        seen.add(song.hash);
-        front.push(song);
-      });
+      let hadPrevQueue = false;
+      let prevCount = 0;
+      if (this.playlist.length > 0) {
+        hadPrevQueue = true;
+        prevCount = this.playlist.length;
+        this.saveUndoSnapshot('replace');
+      }
+      if (this.isFmModePlaylist) {
+        this._exitFmModeSilent({ keepCurrentFmSong: false });
+      }
 
-      if (front.length === 0) return { added: 0, skipped: incoming.length, total: incoming.length };
+      const accepted = unique.slice(0, this.maxPlaylistSize);
+      const dropped = Math.max(0, unique.length - accepted.length);
+      const skipped = Math.max(0, validCount - unique.length);
+      const isFull = accepted.length >= this.maxPlaylistSize;
+      const isHydrating = Boolean(options.createHydrationSession && options.hasMore !== false && !isFull);
+      const expectedTotal = Math.max(0, Number(options.expectedTotal || 0));
 
-      const rest = this.playlist.filter(song => song && song.hash && !seen.has(song.hash));
-      this.playlist = [...front, ...rest];
-      if (this.rememberState) schedulePersistState(this);
-      const sessionId = options.createHydrationSession ? (options.sessionId || `play-all-${Date.now()}-${Math.random().toString(36).slice(2)}`) : null;
+      this.playlist = accepted;
+      rebuildPlaylistKeyMap(this.playlist);
+
+      const sessionId = isHydrating
+        ? (options.sessionId || `play-all-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+        : null;
       if (sessionId) {
+        hydrationSeenSet = new Set(accepted.map(song => song.hash));
         this.playAllHydrationSession = {
           id: sessionId,
+          mode: 'replace',
           sourceKey: options.sourceKey || '',
-          insertIndex: front.length,
-          seenHashes: front.map(song => song.hash),
+          insertIndex: accepted.length,
+          expectedTotal,
+          notifiedCapUpfront: expectedTotal > this.maxPlaylistSize,
           startedAt: Date.now()
         };
       }
-      this.playSong(front[0]);
+
+      if (this.rememberState) schedulePersistQueue(this);
+      const startIndex = Math.max(0, Math.min(options.startIndex || 0, accepted.length - 1));
+      this.playSong(accepted[startIndex], null, 0, true, { silentQueueToast: true });
+
       if (!options.silent) {
-        const skipped = incoming.length - front.length;
-        const skippedText = skipped > 0 ? `，已跳过 ${skipped} 首重复歌曲` : '';
-        this.showToast(`优先播放已加载的 ${front.length} 首歌曲${skippedText}`);
+        const canShowUndo = hadPrevQueue && prevCount > 1;
+        const undoOpts = canShowUndo
+          ? { actionText: '撤销', onAction: () => this.restoreUndoSnapshot() }
+          : {};
+
+        if (dropped > 0) {
+          this.showToast(`歌单超出上限，已为您载入前 ${this.maxPlaylistSize} 首歌曲`, {
+            type: 'warning',
+            duration: 5000,
+            ...(hadPrevQueue ? { actionText: '撤销', onAction: () => this.restoreUndoSnapshot() } : {})
+          });
+        } else if (isHydrating) {
+          if (expectedTotal > this.maxPlaylistSize) {
+            const msg = canShowUndo
+              ? `已替换为新播放列表 (前 ${this.maxPlaylistSize} 首，已优先载入 ${accepted.length} 首，其余后台同步中)`
+              : `开始播放，将载入前 ${this.maxPlaylistSize} 首歌曲 (已优先载入 ${accepted.length} 首，其余后台同步中)`;
+            this.showToast(msg, { type: 'info', duration: 5000, ...undoOpts });
+          } else if (expectedTotal > accepted.length) {
+            const msg = canShowUndo
+              ? `已替换为新播放列表 (共 ${expectedTotal} 首，已优先载入 ${accepted.length} 首，其余后台同步中)`
+              : `开始播放 (共 ${expectedTotal} 首，已优先载入 ${accepted.length} 首，其余后台同步中)`;
+            this.showToast(msg, { type: canShowUndo ? 'info' : 'success', duration: 5000, ...undoOpts });
+          } else {
+            const msg = canShowUndo
+              ? `已替换为新播放列表 (已优先载入 ${accepted.length} 首，其余后台同步中)`
+              : `开始播放，已优先载入 ${accepted.length} 首歌曲，其余后台同步中`;
+            this.showToast(msg, { type: canShowUndo ? 'info' : 'success', duration: 5000, ...undoOpts });
+          }
+        } else if (canShowUndo) {
+          this.showToast(`已替换为新播放列表 (${accepted.length}首)`, {
+            type: 'info',
+            duration: 5000,
+            actionText: '撤销',
+            onAction: () => this.restoreUndoSnapshot()
+          });
+        } else {
+          const skippedText = skipped > 0 ? `，已跳过 ${skipped} 首重复` : '';
+          this.showToast(`已载入 ${accepted.length} 首歌曲并开始播放${skippedText}`, { type: 'success' });
+        }
       }
-      return { added: front.length, skipped: incoming.length - front.length, total: incoming.length, sessionId };
+
+      return { added: accepted.length, skipped, dropped, full: isFull, total: validCount, sessionId };
+    },
+
+    prependPlaylistAndPlay(songs = [], options = {}) {
+      this.cancelPlayAllHydration();
+      const rawIncoming = Array.isArray(songs) ? songs : [];
+      const unique = [];
+      const seen = new Set();
+      let validCount = 0;
+
+      for (const rawSong of rawIncoming) {
+        const prepared = prepareQueueSong(rawSong);
+        if (!prepared) continue;
+        validCount++;
+        if (seen.has(prepared.hash)) continue;
+        seen.add(prepared.hash);
+        unique.push(prepared);
+      }
+
+      if (unique.length === 0) {
+        return { added: 0, skipped: validCount, dropped: 0, full: false, total: validCount, sessionId: null };
+      }
+
+      const hadPrevQueue = this.playlist.length > 0;
+      if (hadPrevQueue) {
+        this.saveUndoSnapshot('prepend');
+      }
+      if (this.isFmModePlaylist) {
+        this._exitFmModeSilent({ keepCurrentFmSong: false });
+      }
+      const baseQueue = this.playlist;
+
+      const front = unique.slice(0, this.maxPlaylistSize);
+      const dropped = Math.max(0, unique.length - front.length);
+      const skipped = Math.max(0, validCount - unique.length);
+      const frontKeys = new Set(front.map(song => song.hash));
+      const remainingSlots = Math.max(0, this.maxPlaylistSize - front.length);
+      const rest = remainingSlots > 0
+        ? baseQueue.filter(song => song && song.hash && !frontKeys.has(normalizeSongKey(song))).slice(0, remainingSlots)
+        : [];
+
+      this.playlist = [...front, ...rest];
+      rebuildPlaylistKeyMap(this.playlist);
+
+      const isFrontFull = front.length >= this.maxPlaylistSize;
+      const isHydrating = Boolean(options.createHydrationSession && options.hasMore !== false && !isFrontFull);
+      const expectedTotal = Math.max(0, Number(options.expectedTotal || 0));
+      const sessionId = isHydrating
+        ? (options.sessionId || `play-all-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+        : null;
+      if (sessionId) {
+        hydrationSeenSet = new Set(frontKeys);
+        this.playAllHydrationSession = {
+          id: sessionId,
+          mode: 'prepend',
+          sourceKey: options.sourceKey || '',
+          insertIndex: front.length,
+          expectedTotal,
+          notifiedCapUpfront: expectedTotal > this.maxPlaylistSize,
+          startedAt: Date.now()
+        };
+      }
+
+      if (this.rememberState) schedulePersistQueue(this);
+      const startIndex = Math.max(0, Math.min(options.startIndex || 0, front.length - 1));
+      this.playSong(front[startIndex], null, 0, true, { silentQueueToast: true });
+
+      if (!options.silent) {
+        const undoOpts = hadPrevQueue
+          ? { actionText: '撤销', onAction: () => this.restoreUndoSnapshot() }
+          : {};
+        if (dropped > 0) {
+          this.showToast(`歌单超出上限，已合并前 ${this.maxPlaylistSize} 首歌曲到队首`, {
+            type: 'warning',
+            duration: 5000,
+            ...undoOpts
+          });
+        } else if (isHydrating) {
+          if (expectedTotal > this.maxPlaylistSize) {
+            this.showToast(`已合并到队首 (前 ${this.maxPlaylistSize} 首，已优先载入 ${front.length} 首，其余后台同步中)`, {
+              type: 'info',
+              duration: 5000,
+              ...undoOpts
+            });
+          } else if (expectedTotal > front.length) {
+            this.showToast(`已合并到队首 (共 ${expectedTotal} 首，已优先载入 ${front.length} 首，其余后台同步中)`, {
+              type: 'success',
+              duration: 5000,
+              ...undoOpts
+            });
+          } else {
+            this.showToast(`已合并到队首，已优先载入 ${front.length} 首歌曲，其余后台同步中`, {
+              type: 'success',
+              duration: 5000,
+              ...undoOpts
+            });
+          }
+        } else {
+          const skippedText = skipped > 0 ? `，已跳过 ${skipped} 首重复` : '';
+          this.showToast(`已合并到队首，优先播放 ${front.length} 首歌曲${skippedText}`, {
+            type: 'success',
+            duration: 4500,
+            ...undoOpts
+          });
+        }
+      }
+      return { added: front.length, skipped, dropped, full: isFrontFull, total: validCount, sessionId };
     },
 
     startPlayAllHydrationSession(songs = [], options = {}) {
-      return this.prependPlaylistAndPlay(songs, { ...options, createHydrationSession: true });
+      const mode = PLAY_ALL_BEHAVIORS.includes(options.mode) ? options.mode : this.playAllBehavior;
+      if (mode === 'prepend') {
+        return this.prependPlaylistAndPlay(songs, { ...options, createHydrationSession: true });
+      }
+      return this.replacePlaylistAndPlay(songs, { ...options, createHydrationSession: true });
     },
 
     isPlayAllHydrationActive(sessionId) {
@@ -1323,87 +2180,270 @@ export const usePlayerStore = defineStore('player', {
     cancelPlayAllHydration(sessionId = null) {
       if (!sessionId || this.playAllHydrationSession?.id === sessionId) {
         this.playAllHydrationSession = null;
+        hydrationSeenSet.clear();
+      }
+    },
+
+    finishPlayAllHydration(sessionId, { notifyDifference = true } = {}) {
+      const session = this.playAllHydrationSession;
+      if (!session || session.id !== sessionId) return;
+      const expectedTotal = session.expectedTotal || 0;
+      const actualCount = this.playlist.length;
+      const notifiedCap = !!session.notifiedCapUpfront;
+      this.cancelPlayAllHydration(sessionId);
+
+      if (notifyDifference && expectedTotal > 0 && !notifiedCap) {
+        const diff = expectedTotal - actualCount;
+        if (diff > 0 && actualCount > 0) {
+          this.showToast(`歌单已同步完成，共 ${actualCount} 首歌曲（已自动跳过 ${diff} 首重复或失效歌曲）`, {
+            type: 'info',
+            duration: 4500
+          });
+        }
       }
     },
 
     extendPlayAllHydration(sessionId, songs = []) {
       const session = this.playAllHydrationSession;
       if (!session || session.id !== sessionId) {
-        return { added: 0, skipped: 0, total: 0, canceled: true };
+        return { added: 0, skipped: 0, dropped: 0, full: false, total: 0, canceled: true };
       }
 
-      const incoming = Array.isArray(songs) ? songs.filter(song => song && song.hash) : [];
-      const seen = new Set(session.seenHashes || []);
-      const unique = [];
+      const rawIncoming = Array.isArray(songs) ? songs : [];
+      let insertIndex = Math.max(0, Math.min(session.insertIndex || 0, this.playlist.length));
+      const remainingSessionSlots = Math.max(0, this.maxPlaylistSize - insertIndex);
+      if (remainingSessionSlots <= 0) {
+        const alreadyNotified = !!session.notifiedCapUpfront;
+        this.cancelPlayAllHydration(sessionId);
+        if (!alreadyNotified) {
+          this.showToast(`歌单较长，已达到播放列表上限 (${this.maxPlaylistSize}首)`, { type: 'warning', duration: 4500 });
+        }
+        return { added: 0, skipped: 0, dropped: rawIncoming.length, full: true, total: rawIncoming.length, canceled: true };
+      }
 
-      incoming.forEach(song => {
-        if (seen.has(song.hash)) return;
-        seen.add(song.hash);
-        unique.push(song);
-      });
+      const unique = [];
+      let validCount = 0;
+      for (const rawSong of rawIncoming) {
+        const prepared = prepareQueueSong(rawSong);
+        if (!prepared) continue;
+        validCount++;
+        if (hydrationSeenSet.has(prepared.hash)) continue;
+        hydrationSeenSet.add(prepared.hash);
+        unique.push(prepared);
+      }
 
       if (unique.length === 0) {
-        this.playAllHydrationSession = { ...session, seenHashes: Array.from(seen) };
-        return { added: 0, skipped: incoming.length, total: incoming.length };
+        return { added: 0, skipped: validCount, dropped: 0, full: false, total: validCount };
       }
 
-      let insertIndex = Math.max(0, Math.min(session.insertIndex || 0, this.playlist.length));
-      unique.forEach(song => {
-        const existingIndex = this.playlist.findIndex(item => item?.hash === song.hash);
-        if (existingIndex !== -1) {
-          this.playlist.splice(existingIndex, 1);
-          if (existingIndex < insertIndex) insertIndex -= 1;
-        }
-        this.playlist.splice(insertIndex, 0, song);
-        insertIndex += 1;
-      });
+      const accepted = unique.slice(0, remainingSessionSlots);
+      const dropped = Math.max(0, unique.length - accepted.length);
+      const skipped = Math.max(0, validCount - unique.length);
+      const acceptedKeys = new Set(accepted.map(s => s.hash));
 
-      this.playAllHydrationSession = {
-        ...session,
-        insertIndex,
-        seenHashes: Array.from(seen)
-      };
-      this.triggerPreload();
-      if (this.rememberState) schedulePersistState(this);
-      return { added: unique.length, skipped: incoming.length - unique.length, total: incoming.length };
+      const before = [];
+      const after = [];
+      for (let i = 0; i < this.playlist.length; i++) {
+        const item = this.playlist[i];
+        const key = normalizeSongKey(item);
+        if (!key || acceptedKeys.has(key)) continue;
+        if (i < insertIndex) before.push(item);
+        else after.push(item);
+      }
+
+      const nextPlaylist = [...before, ...accepted, ...after].slice(0, this.maxPlaylistSize);
+      const nextInsertIndex = Math.min(before.length + accepted.length, this.maxPlaylistSize);
+      this.playlist = nextPlaylist;
+      rebuildPlaylistKeyMap(this.playlist);
+
+      const reachedLimit = nextInsertIndex >= this.maxPlaylistSize;
+      if (reachedLimit) {
+        const alreadyNotified = !!session.notifiedCapUpfront;
+        this.cancelPlayAllHydration(sessionId);
+        if (dropped > 0 && !alreadyNotified) {
+          this.showToast(`歌单较长，已为您载入前 ${this.maxPlaylistSize} 首歌曲`, { type: 'warning', duration: 4500 });
+        }
+      } else {
+        this.playAllHydrationSession = {
+          ...session,
+          insertIndex: nextInsertIndex
+        };
+      }
+
+      const curIdx = this.getCurrentSongIndex();
+      if (!this.isFmModePlaylist && !preloadState.hash && this.playlist.length > curIdx + 1) {
+        this.triggerPreload();
+      }
+      if (this.rememberState) schedulePersistQueue(this);
+      return { added: accepted.length, skipped, dropped, full: reachedLimit, canceled: reachedLimit, total: validCount };
     },
 
     appendToPlaylist(song, options = {}) {
-      if (!song || !song.hash) return false;
-      const exists = this.playlist.some(s => s.hash === song.hash);
+      const prepared = prepareQueueSong(song);
+      if (!prepared) return false;
+      const exists = getFastSongIndex(this.playlist, prepared.hash) !== -1;
       if (exists) {
-        if (!options.silent) this.showToast('歌曲已在播放列表中');
+        if (!options.silent) {
+          const isPlayingNow = !this.isFmModePlaylist && this.currentSong && normalizeSongKey(this.currentSong) === prepared.hash;
+          this.showToast(isPlayingNow ? `「${prepared.name}」正在播放中` : `「${prepared.name}」已在播放列表中`, {
+            type: 'info',
+            actionText: isPlayingNow ? '' : '移至下一首',
+            onAction: isPlayingNow ? null : () => this.insertNext(prepared)
+          });
+        }
         return false;
       }
-      this.playlist.push(song);
-      if (!options.silent) this.showToast('已添加到播放列表');
-      this.triggerPreload();
-      if (this.rememberState) schedulePersistState(this);
+      if (this.playlist.length >= this.maxPlaylistSize) {
+        if (!options.silent) {
+          this.showToast(`播放列表已达上限 (${this.maxPlaylistSize}首)，请先清理部分歌曲`, {
+            type: 'warning',
+            actionText: '打开列表',
+            onAction: () => { this.isPlaylistVisible = true; }
+          });
+        }
+        return false;
+      }
+      this.playlist.push(prepared);
+      playlistKeyMap.set(prepared.hash, this.playlist.length - 1);
+      if (this.isFmModePlaylist) {
+        this._syncFmBackupFlags();
+      } else if (!preloadState.hash || this.playlist.length <= 2) {
+        this.triggerPreload();
+      }
+      if (!options.silent) this.showToast('已添加到播放列表', { type: 'success' });
+      if (this.rememberState) schedulePersistQueue(this);
       return true;
     },
 
     insertNext(song) {
-      if (!song || !song.hash) return false;
-      if (this.currentSong?.hash === song.hash) {
-        this.showToast('当前歌曲正在播放');
+      const prepared = prepareQueueSong(song);
+      if (!prepared) return false;
+      if (this.isFmModePlaylist) {
+        this._exitFmModeSilent({ keepCurrentFmSong: true });
+      }
+      if (this.currentSong && normalizeSongKey(this.currentSong) === prepared.hash) {
+        this.showToast('当前歌曲正在播放', { type: 'info' });
         return false;
       }
 
-      const existingIndex = this.playlist.findIndex(s => s.hash === song.hash);
-      if (existingIndex !== -1) this.playlist.splice(existingIndex, 1);
+      const existingIndex = getFastSongIndex(this.playlist, prepared.hash);
+      let evicted = false;
+      if (existingIndex !== -1) {
+        this.playlist.splice(existingIndex, 1);
+      } else if (this.playlist.length >= this.maxPlaylistSize) {
+        const curIdxBefore = getFastSongIndex(this.playlist, this.currentSong);
+        if (curIdxBefore > 0) {
+          this.playlist.shift();
+        } else {
+          this.playlist.pop();
+        }
+        evicted = true;
+      }
 
-      let currentIndex = this.playlist.findIndex(s => s.hash === this.currentSong?.hash);
+      let currentIndex = this.playlist.findIndex(s => normalizeSongKey(s) === normalizeSongKey(this.currentSong));
       if (this.currentSong && currentIndex === -1) {
-        this.playlist.unshift(this.currentSong);
+        const curPrepared = prepareQueueSong(this.currentSong) || this.currentSong;
+        if (this.playlist.length >= this.maxPlaylistSize) {
+          this.playlist.pop();
+          evicted = true;
+        }
+        this.playlist.unshift(curPrepared);
         currentIndex = 0;
       }
 
       const insertIndex = currentIndex === -1 ? 0 : currentIndex + 1;
-      this.playlist.splice(insertIndex, 0, song);
-      this.showToast('已添加到下一首播放');
+      this.playlist.splice(insertIndex, 0, prepared);
+      rebuildPlaylistKeyMap(this.playlist);
+      this.showToast(
+        evicted ? '已设为下一首播放（队列已满，自动移除 1 首边缘歌曲）' : '已添加到下一首播放',
+        { type: evicted ? 'info' : 'success' }
+      );
       this.triggerPreload();
-      if (this.rememberState) schedulePersistState(this);
+      if (this.rememberState) schedulePersistQueue(this);
       return true;
+    },
+
+    removeSongsByHashes(hashes = [], options = {}) {
+      const keySet = new Set((Array.isArray(hashes) ? hashes : []).map(normalizeSongKey).filter(Boolean));
+      if (keySet.size === 0 || this.playlist.length === 0) return 0;
+
+      if (options.withUndo !== false) {
+        this.saveUndoSnapshot('batch-remove');
+      }
+
+      const currentKey = !this.isFmModePlaylist ? normalizeSongKey(this.currentSong) : '';
+      const currentIdxBefore = !this.isFmModePlaylist ? this.getCurrentSongIndex() : -1;
+      const removingCurrent = Boolean(currentKey && keySet.has(currentKey));
+
+      let nextFallbackIndex = 0;
+      if (removingCurrent && currentIdxBefore !== -1) {
+        let removedBeforeCurrent = 0;
+        for (let i = 0; i < currentIdxBefore; i++) {
+          if (keySet.has(normalizeSongKey(this.playlist[i]))) removedBeforeCurrent++;
+        }
+        nextFallbackIndex = Math.max(0, currentIdxBefore - removedBeforeCurrent);
+      }
+
+      const prevLen = this.playlist.length;
+      this.playlist = this.playlist.filter(s => !keySet.has(normalizeSongKey(s)));
+      const removedCount = prevLen - this.playlist.length;
+      if (removedCount === 0) return 0;
+
+      rebuildPlaylistKeyMap(this.playlist);
+      if (this.isFmModePlaylist) this._syncFmBackupFlags();
+      if (this.rememberState) schedulePersistQueue(this);
+
+      if (removingCurrent) {
+        abortActivePlayback(this);
+        this.isCurrentSongPreview = false;
+        this.currentSong = null;
+        this.currentQuality = 'standard';
+        this.clearError();
+        if (this.playlist.length > 0) {
+          const targetIdx = Math.min(nextFallbackIndex, this.playlist.length - 1);
+          this.playSong(this.playlist[targetIdx], null, 0, true, { silentQueueToast: true });
+        } else {
+          this.currentTime = 0;
+          this.duration = 0;
+          this.syncTrayState();
+        }
+      } else if (!this.isFmModePlaylist) {
+        this.triggerPreload();
+      }
+
+      if (!options.silent) {
+        this.showToast(`已移除 ${removedCount} 首歌曲`, {
+          type: 'info',
+          duration: 5000,
+          actionText: options.withUndo !== false ? '撤销' : '',
+          onAction: options.withUndo !== false ? () => this.restoreUndoSnapshot() : null
+        });
+      }
+      return removedCount;
+    },
+
+    clearPlayedSongs() {
+      const curIdx = this.getCurrentSongIndex();
+      if (curIdx <= 0) {
+        this.showToast('当前歌曲前没有可清理的已播歌曲', { type: 'info' });
+        return 0;
+      }
+      this.saveUndoSnapshot('clear-played');
+      const removedCount = curIdx;
+      this.playlist = this.playlist.slice(curIdx);
+      if (this.playAllHydrationSession) {
+        const nextIns = Math.max(0, (this.playAllHydrationSession.insertIndex || 0) - removedCount);
+        this.playAllHydrationSession = { ...this.playAllHydrationSession, insertIndex: nextIns };
+      }
+      rebuildPlaylistKeyMap(this.playlist);
+      if (this.rememberState) schedulePersistQueue(this);
+      this.showToast(`已清理 ${removedCount} 首已播歌曲`, {
+        type: 'success',
+        duration: 5000,
+        actionText: '撤销',
+        onAction: () => this.restoreUndoSnapshot()
+      });
+      return removedCount;
     },
 
     async fetchSongQualityInfo(song, options = {}) {
@@ -1418,11 +2458,21 @@ export const usePlayerStore = defineStore('player', {
       try {
         let info = null;
         if (song.album_audio_id && String(song.album_audio_id) !== '0') {
-          const krmRes = await request.get('/krm/audio', { params: { album_audio_id: song.album_audio_id, fields: 'audio_info', timestamp: Date.now() }, silent: true });
+          const krmRes = await request.get('/krm/audio', {
+            params: { album_audio_id: song.album_audio_id, fields: 'audio_info', timestamp: Date.now() },
+            silent: true,
+            timeout: 8000,
+            maxRetries: 1
+          });
           info = krmRes?.data?.audio_info || krmRes?.data?.data?.audio_info || krmRes?.data;
         }
         if (!info && song.hash) {
-          const audioRes = await request.get('/audio', { params: { hash: song.hash, timestamp: Date.now() }, silent: true });
+          const audioRes = await request.get('/audio', {
+            params: { hash: song.hash, timestamp: Date.now() },
+            silent: true,
+            timeout: 8000,
+            maxRetries: 1
+          });
           info = audioRes?.data?.audio_info || audioRes?.data?.data?.audio_info || audioRes?.data || audioRes;
         }
 
@@ -1431,7 +2481,7 @@ export const usePlayerStore = defineStore('player', {
           if (!song.qualities) song.qualities = {};
           let addedNewQuality = false;
           const assignIfMissing = (key, val) => {
-            if (val && !song.qualities[key]) {
+            if (isValidKugouHash(val) && !isValidKugouHash(song.qualities[key])) {
               song.qualities[key] = val;
               addedNewQuality = true;
             }
@@ -1593,6 +2643,8 @@ export const usePlayerStore = defineStore('player', {
           platform: 'wy'
         }, {
           silent: true,
+          timeout: 10000,
+          maxRetries: 0,
           headers: { 'x-apicache-bypass': '1' }
         });
 
@@ -1623,6 +2675,8 @@ export const usePlayerStore = defineStore('player', {
           platform: 'tx'
         }, {
           silent: true,
+          timeout: 10000,
+          maxRetries: 0,
           headers: { 'x-apicache-bypass': '1' }
         });
 
@@ -1656,27 +2710,28 @@ export const usePlayerStore = defineStore('player', {
       const isRestrictedSong = !hasFullAccess && isVipSong;
 
       if (!this.hasDfid) {
-        for (let attempt = 0; attempt < 3; attempt++) {
+        for (let attempt = 0; attempt < 2; attempt++) {
           try {
-            await request.get('/register/dev', { silent: true });
+            await request.get('/register/dev', { silent: true, timeout: 6000, maxRetries: 1 });
             this.hasDfid = true;
             break;
           } catch (e) {
-            if (attempt < 2) await new Promise(r => setTimeout(r, 500));
+            if (attempt < 1) await new Promise(r => setTimeout(r, 400));
           }
         }
       }
 
       let finalResult = { url: null, quality: 'standard', isPreview: false };
+      const cleanFallbackHash = [songInfo.qualities?.standard, songInfo.hash, songInfo.FileHash]
+        .find(isValidKugouHash) || songInfo.hash || songInfo.FileHash || '';
 
       if (isRestrictedSong) {
         try {
-           const fallbackHash = songInfo.qualities?.standard || songInfo.hash || songInfo.FileHash || '';
-           const reqObject = { hash: fallbackHash, free_part: 1, quality: '128' };
+           const reqObject = { hash: cleanFallbackHash, free_part: 1, quality: '128' };
            if (songInfo.album_id) reqObject.album_id = songInfo.album_id;
            if (songInfo.album_audio_id) reqObject.album_audio_id = songInfo.album_audio_id;
 
-           const res = await request.get('/song/url', { params: reqObject, silent: true });
+           const res = await request.get('/song/url', { params: reqObject, silent: true, timeout: 8000, maxRetries: 1 });
            const targetObj = res?.data ? res.data : res;
            if (targetObj?.url && targetObj.url.length > 0) {
              const previewUrl = Array.isArray(targetObj.url) ? targetObj.url[0] : targetObj.url;
@@ -1692,12 +2747,14 @@ export const usePlayerStore = defineStore('player', {
         try {
           const newRes = await request.get('/song/url/new', {
             params: {
-              hash: songInfo.hash,
+              hash: cleanFallbackHash,
               album_audio_id: songInfo.album_audio_id,
               album_id: songInfo.album_id || 0,
               timestamp: Date.now()
             },
-            silent: true
+            silent: true,
+            timeout: 8000,
+            maxRetries: 1
           });
 
           const urlData = newRes?.data?.url || newRes?.data || newRes;
@@ -1738,17 +2795,19 @@ export const usePlayerStore = defineStore('player', {
             const isVipQ = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(q.key);
             if (isVipQ && !isVipUser) continue;
 
+            if (!songInfo.qualities) songInfo.qualities = {};
+            if (!isValidKugouHash(songInfo.qualities[q.key]) && isValidKugouHash(cleanFallbackHash)) {
+              songInfo.qualities[q.key] = cleanFallbackHash;
+            }
             setCachedUrl(songInfo.hash, q.key, { url: urlMap[paramKey], quality: q.key, isPreview: false });
           }
 
-          for (const q of QUALITY_CONFIG) {
+          const startIdx = targetQuality ? Math.max(0, QUALITY_CONFIG.findIndex(q => q.key === targetQuality)) : 0;
+          for (const q of QUALITY_CONFIG.slice(startIdx)) {
             const paramKey = Object.entries(qualityParamMap).find(([, v]) => v === q.key)?.[0];
             if (!paramKey || !urlMap[paramKey]) continue;
             const isVipQ = ['viper_atmos', 'viper_clear', 'high', 'sq'].includes(q.key);
             if (isVipQ && !isVipUser) continue;
-
-            if (!songInfo.qualities) songInfo.qualities = {};
-            songInfo.qualities[q.key] = songInfo.qualities[q.key] || urlMap[paramKey];
 
             finalResult = { url: urlMap[paramKey], quality: q.key, isPreview: false };
             break;
@@ -1775,11 +2834,15 @@ export const usePlayerStore = defineStore('player', {
         tryQueue = tryQueue.filter(q => !vipQualities.includes(q.key));
       }
 
-      const fallbackHash = songInfo.qualities?.standard || songInfo.hash || songInfo.FileHash || '';
-
       {
           for (const qObj of tryQueue) {
-            let hashToTry = songInfo.qualities?.[qObj.key] || fallbackHash;
+            const cachedPerQ = getCachedUrl(songInfo.hash, qObj.key);
+            if (cachedPerQ && !cachedPerQ.isPreview && cachedPerQ.url) {
+              finalResult = cachedPerQ;
+              break;
+            }
+            const rawCandidateHash = songInfo.qualities?.[qObj.key];
+            const hashToTry = isValidKugouHash(rawCandidateHash) ? rawCandidateHash : cleanFallbackHash;
             if (!hashToTry) continue;
 
             try {
@@ -1787,7 +2850,7 @@ export const usePlayerStore = defineStore('player', {
               if (songInfo.album_id) reqObject.album_id = songInfo.album_id;
               if (songInfo.album_audio_id) reqObject.album_audio_id = songInfo.album_audio_id;
               
-              const res = await request.get('/song/url', { params: reqObject, silent: true });
+              const res = await request.get('/song/url', { params: reqObject, silent: true, timeout: 8000, maxRetries: 1 });
               const targetObj = res?.data ? res.data : res;
               
               let url = null;
@@ -1799,6 +2862,7 @@ export const usePlayerStore = defineStore('player', {
               
               if (url && typeof url === 'string' && url.startsWith('http')) {
                 finalResult = { url, quality: qObj.key, isPreview: false };
+                setCachedUrl(songInfo.hash, qObj.key, finalResult);
                 break; 
               }
             } catch (e) { continue; }
@@ -1816,12 +2880,11 @@ export const usePlayerStore = defineStore('player', {
 
       if (!finalResult.url) {
         try {
-           let hashToTry = fallbackHash;
-           const reqObject = { hash: hashToTry, free_part: 1, quality: '128' };
+           const reqObject = { hash: cleanFallbackHash, free_part: 1, quality: '128' };
            if (songInfo.album_id) reqObject.album_id = songInfo.album_id;
            if (songInfo.album_audio_id) reqObject.album_audio_id = songInfo.album_audio_id;
            
-           const res = await request.get('/song/url', { params: reqObject, silent: true });
+           const res = await request.get('/song/url', { params: reqObject, silent: true, timeout: 8000, maxRetries: 1 });
            const targetObj = res?.data ? res.data : res;
            if (targetObj?.url && targetObj.url.length > 0) {
              let previewUrl = Array.isArray(targetObj.url) ? targetObj.url[0] : targetObj.url;
@@ -1847,12 +2910,28 @@ export const usePlayerStore = defineStore('player', {
     },
 
     calculateNextSong(isAuto = true) {
+      if (this.isFmModePlaylist) {
+        const fmNext = fmController?.peekNextSong?.();
+        return fmNext ? (prepareQueueSong(fmNext) || fmNext) : null;
+      }
       if (this.playlist.length <= 1) return null;
-      let nextIndex = this.playlist.findIndex(s => s.hash === this.currentSong?.hash);
+      const nextIndex = this.getCurrentSongIndex();
       if (nextIndex === -1) return null;
 
       const userStore = useUserStore();
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
+
+      if (this.playMode !== 'random') {
+        for (let offset = 1; offset < this.playlist.length; offset++) {
+          const idx = (nextIndex + offset) % this.playlist.length;
+          const candidate = this.playlist[idx];
+          const isVipSong = candidate.is_vip || candidate.is_paid;
+          if (!isVipSong || isVipUser || !isAuto || this.canTryFullPlayback(candidate)) {
+            return candidate;
+          }
+        }
+        return null;
+      }
 
       const playableIndices = [];
       for (let i = 0; i < this.playlist.length; i++) {
@@ -1863,15 +2942,8 @@ export const usePlayerStore = defineStore('player', {
       }
 
       if (playableIndices.length === 0) return null;
-
-      if (this.playMode === 'random') {
-        const rand = playableIndices[Math.floor(Math.random() * playableIndices.length)];
-        return this.playlist[rand];
-      } else {
-        let sequential = playableIndices.find(i => i > nextIndex);
-        if (sequential === undefined) sequential = playableIndices[0];
-        return this.playlist[sequential];
-      }
+      const rand = playableIndices[Math.floor(Math.random() * playableIndices.length)];
+      return this.playlist[rand];
     },
 
     async triggerPreload() {
@@ -1902,10 +2974,15 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
-    async playSong(songInfo, targetQuality = null, maintainTime = 0, autoPlay = true) {
-      if (!songInfo) return;
+    async playSong(rawSongInfo, targetQuality = null, maintainTime = 0, autoPlay = true, options = {}) {
+      if (!rawSongInfo) return;
+      const isFmTrack = !!options.isFmTrack;
+      const silentQueueToast = !!options.silentQueueToast;
+      const songInfo = prepareQueueSong(rawSongInfo) || rawSongInfo;
       if (this._errorSkipTimer) { clearTimeout(this._errorSkipTimer); this._errorSkipTimer = null; }
       if (this._vipActionTimer) { clearTimeout(this._vipActionTimer); this._vipActionTimer = null; }
+      if (this._playWatchdogTimer) { clearTimeout(this._playWatchdogTimer); this._playWatchdogTimer = null; }
+      if (this._playbackProgressTimer) { clearTimeout(this._playbackProgressTimer); this._playbackProgressTimer = null; }
 
       const thisPlayVersion = ++playVersion;
       this.isLoading = true;
@@ -1920,23 +2997,57 @@ export const usePlayerStore = defineStore('player', {
         isCurrentSongPreview: this.isCurrentSongPreview,
         wasPlaying: this.isPlaying
       };
-      const isSongChange = !previousSong || previousSong.hash !== songInfo.hash;
+      const isSongChange = !previousSong || normalizeSongKey(previousSong) !== normalizeSongKey(songInfo);
+
+      if (!isFmTrack && this.isFmModePlaylist) {
+        this._exitFmModeSilent({ keepCurrentFmSong: false });
+      }
 
       if (this.peakMode && isSongChange) {
-        const isInPlaylist = this.playlist.some(s => s.hash === songInfo.hash);
-        if (!isInPlaylist) {
+        if (!isFmTrack) {
           this.peakMode = false;
           this.peakStartOffset = 0;
           this.peakDuration = 30;
         }
       }
 
+      if (isSongChange && previousSong && previousSong.hash && !this.isFmModePlaylist && !isFmTrack) {
+        if (!Array.isArray(this.playbackHistory)) this.playbackHistory = [];
+        const prevPrepared = prepareQueueSong(previousSong) || previousSong;
+        this.playbackHistory.push(prevPrepared);
+        if (this.playbackHistory.length > 50) this.playbackHistory.shift();
+      }
+
       if (maintainTime === 0 || isSongChange) {
         this.hasReportedCurrentSong = false;
       }
 
-      const exists = this.playlist.find(s => s.hash === songInfo.hash);
-      if (!exists) this.playlist.push(songInfo);
+      let queueMutated = false;
+      let evictedEdgeSong = false;
+      if (!isFmTrack) {
+        const existingIdx = getFastSongIndex(this.playlist, songInfo);
+        if (existingIdx === -1) {
+          if (this.playlist.length >= this.maxPlaylistSize) {
+            const curIdx = this.getCurrentSongIndex();
+            if (curIdx > 0) {
+              this.playlist.shift();
+            } else {
+              this.playlist.pop();
+            }
+            evictedEdgeSong = true;
+          }
+          this.playlist.push(songInfo);
+          rebuildPlaylistKeyMap(this.playlist);
+          queueMutated = true;
+          if (!silentQueueToast) {
+            if (evictedEdgeSong) {
+              this.showToast(`队列已满 (${this.maxPlaylistSize}首)，已淘汰 1 首边缘歌曲并开始播放`, { type: 'info' });
+            } else {
+              this.showToast('已加入播放列表并开始播放', { type: 'success' });
+            }
+          }
+        }
+      }
 
       if (isExternalImportSong(songInfo)) {
         songInfo.qualities = extractQualities(songInfo);
@@ -1944,11 +3055,12 @@ export const usePlayerStore = defineStore('player', {
         songInfo.qualities = extractQualities(songInfo);
       }
 
+      const reactiveSong = toReactiveCurrentSong(songInfo);
       const userStore = useUserStore();
       const autoTargetQuality = targetQuality;
 
       // 1. 优先命中预加载实例：0ms 瞬切音频流与歌曲元数据
-      if (!isExternalImportSong(songInfo) && songInfo.hash === preloadState.hash && preloadAudio.src && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
+      if (!isExternalImportSong(songInfo) && songInfo.hash === preloadState.hash && hasLoadedAudioSource(preloadAudio) && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
           safePauseAudio(activeAudio);
           activeAudio.currentTime = 0;
           
@@ -1957,7 +3069,7 @@ export const usePlayerStore = defineStore('player', {
           preloadAudio = tempAudio;
           activeAudio._songHash = songInfo.hash;
 
-          this.currentSong = songInfo;
+          this.currentSong = reactiveSong;
           this.currentQuality = preloadState.quality;
           this.isCurrentSongPreview = preloadState.isPreview;
           this.currentTime = 0;
@@ -1995,16 +3107,19 @@ export const usePlayerStore = defineStore('player', {
           preloadState.hash = null;
           this.triggerPreload();
           this.syncTrayState();
-          if (this.rememberState) this.persistPlaybackState();
+          if (this.rememberState) {
+            this.persistProgressState();
+            if (queueMutated) schedulePersistQueue(this);
+          }
           return;
       }
 
-      // 2. 未命中预加载时：立即乐观更新 currentSong 与预期时长，使锁屏和底栏 0ms 切换信息与封面，并清空旧音频源防止串音
-      if (isSongChange && maintainTime === 0) {
+      // 2. 未命中预加载时：无论 maintainTime 是否大于 0，只要切歌就立即停止旧音频源并更新 currentSong，杜绝旧流串音与假死
+      if (isSongChange) {
         resetAudioElementSource(activeAudio);
         this.isPlaying = false;
-        this.currentSong = songInfo;
-        this.currentTime = 0;
+        this.currentSong = reactiveSong;
+        this.currentTime = maintainTime > 0 ? maintainTime : 0;
         this.duration = getExpectedDuration(songInfo) || Number(songInfo.duration) || 0;
         this.isCurrentSongPreview = false;
         this.syncTrayState();
@@ -2013,21 +3128,22 @@ export const usePlayerStore = defineStore('player', {
         this.isCurrentSongPreview = false;
       }
 
-      const triggerFallback = () => {
+      const triggerFallback = (reasonText = '') => {
         if (thisPlayVersion !== playVersion) return;
+        if (this._playWatchdogTimer) { clearTimeout(this._playWatchdogTimer); this._playWatchdogTimer = null; }
         this.isLoading = false;
         this.isError = true;
         this.isPlaying = false;
-        this.failedSong = songInfo;
+        this.failedSong = reactiveSong;
         const isVipSong = songInfo.is_vip || songInfo.is_paid;
         const currentUserStore = useUserStore();
         if (isVipSong && !currentUserStore.isLoggedIn) {
           this.errorMessage = 'VIP 歌曲需要登录后播放';
         } else {
-          this.errorMessage = '音频获取失败，请尝试其他歌曲';
+          this.errorMessage = reasonText === '播放请求超时' ? '音频请求超时，请检查网络或重试' : '音频获取失败，请尝试其他歌曲';
         }
 
-        if (!isSongChange && previousSong && activeAudio.src && activeAudio._songHash === previousSong.hash) {
+        if (!isSongChange && previousSong && hasLoadedAudioSource(activeAudio) && activeAudio._songHash === previousSong.hash) {
           // 同一首歌切换音质失败时，保留原播放流继续播放
           this.currentSong = previousSong;
           this.currentQuality = previousPlaybackState.currentQuality;
@@ -2045,7 +3161,7 @@ export const usePlayerStore = defineStore('player', {
         } else {
           // 切歌失败：保持 currentSong 在当前目标歌曲（不回退到更早歌曲造成连切死循环），清空无效流等待自动跳过或手动重试
           resetAudioElementSource(activeAudio);
-          this.currentSong = songInfo;
+          this.currentSong = reactiveSong;
           this.currentTime = 0;
           this.duration = getExpectedDuration(songInfo) || Number(songInfo.duration) || 0;
           this.isCurrentSongPreview = false;
@@ -2056,9 +3172,10 @@ export const usePlayerStore = defineStore('player', {
           if (thisPlayVersion === playVersion) this.clearError();
         }, 5000);
 
-        if (this.autoSkipOnError && autoPlay && this.playlist && this.playlist.length > 1) {
+        const canSkipNext = (this.playlist && this.playlist.length > 1) || Boolean(this.isFmModePlaylist && fmController);
+        if (this.autoSkipOnError && autoPlay && canSkipNext) {
           this.consecutiveErrorCount = (this.consecutiveErrorCount || 0) + 1;
-          const maxErrors = Math.min(Math.max(3, this.playlist.length), 5);
+          const maxErrors = this.isFmModePlaylist ? 5 : Math.min(Math.max(3, this.playlist.length), 5);
           if (this.consecutiveErrorCount >= maxErrors) {
             this.consecutiveErrorCount = 0;
             this.showToast('连续多首歌曲资源失效，已停止自动跳过');
@@ -2076,6 +3193,14 @@ export const usePlayerStore = defineStore('player', {
         }
       };
 
+      this._playWatchdogTimer = setTimeout(() => {
+        this._playWatchdogTimer = null;
+        if (thisPlayVersion !== playVersion || !this.isLoading) return;
+        pendingResolves.clear();
+        triggerFallback('播放请求超时');
+        playVersion++;
+      }, 15000);
+
       try {
         await this.prepareAutoQuality(songInfo, targetQuality);
         if (thisPlayVersion !== playVersion) return;
@@ -2086,14 +3211,18 @@ export const usePlayerStore = defineStore('player', {
         if (res?.url) {
           this.failedSong = null;
           this.consecutiveErrorCount = 0;
-          this.currentSong = songInfo;
+          reactiveSong.qualities = { ...(songInfo.qualities || {}) };
+          this.currentSong = reactiveSong;
           this.currentQuality = res.quality;
           this.isCurrentSongPreview = res.isPreview; 
           setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this), songInfo.hash);
           console.log('[Player playSong] res:', JSON.stringify(res), 'activeAudio.src:', activeAudio.src);
           if (maintainTime === 0) this.currentTime = 0;
           if (res.isPreview && autoPlay) this.showToast(getPreviewToastMessage(userStore));
-          if (this.rememberState) this.persistPlaybackState();
+          if (this.rememberState) {
+            this.persistProgressState();
+            if (queueMutated) schedulePersistQueue(this);
+          }
         } else {
           triggerFallback('所有音质接口均拒绝访问');
           return;
@@ -2147,6 +3276,7 @@ export const usePlayerStore = defineStore('player', {
             });
           }
           this.isPlaying = true;
+          this._startPlaybackProgressWatchdog(thisPlayVersion, songInfo);
         } else {
           safePauseAudio(activeAudio);
           this.isPlaying = false;
@@ -2160,6 +3290,10 @@ export const usePlayerStore = defineStore('player', {
         if (thisPlayVersion !== playVersion) return;
         triggerFallback('网络请求异常');
       } finally {
+        if (this._playWatchdogTimer && thisPlayVersion === playVersion) {
+          clearTimeout(this._playWatchdogTimer);
+          this._playWatchdogTimer = null;
+        }
         if (thisPlayVersion === playVersion) {
           this.isLoading = false;
         }
@@ -2223,7 +3357,10 @@ export const usePlayerStore = defineStore('player', {
       const savedTime = activeAudio.currentTime;
       const wasPlaying = this.isPlaying;
 
-      await this.playSong(this.currentSong, targetQuality, savedTime, wasPlaying);
+      await this.playSong(this.currentSong, targetQuality, savedTime, wasPlaying, {
+        silentQueueToast: true,
+        isFmTrack: this.isFmModePlaylist
+      });
 
       if (!this.isError) {
         if (this.currentQuality !== targetQuality) {
@@ -2236,7 +3373,9 @@ export const usePlayerStore = defineStore('player', {
     },
 
     async downgradeForLogout() {
-      clearUrlResolutionState();
+      pendingResolves.clear();
+      urlCache.clear();
+      resetPreloadAudio();
       this.hasDfid = false;
       
       if (!this.currentSong) return;
@@ -2250,9 +3389,9 @@ export const usePlayerStore = defineStore('player', {
     },
 
     async reloadCurrentSongForVip() {
-      if (!this.currentSong) return;
+      if (!this.currentSong || this.isLoading) return;
       const wasPlaying = this.isPlaying;
-      if (!wasPlaying && !activeAudio.src) {
+      if (!wasPlaying && !hasLoadedAudioSource(activeAudio)) {
         const bestQuality = this.getBestAvailableQuality(this.currentSong);
         if (bestQuality) this.currentQuality = bestQuality;
         return;
@@ -2263,13 +3402,17 @@ export const usePlayerStore = defineStore('player', {
       const songRef = this.currentSong;
       if (this._vipActionTimer) clearTimeout(this._vipActionTimer);
       this._vipActionTimer = setTimeout(async () => {
-         if (this.currentSong !== songRef) return;
+         if (this.currentSong !== songRef || this.isLoading) return;
 
          await this.fetchSongQualityInfo(songRef);
+         if (this.currentSong !== songRef || this.isLoading) return;
          const bestQuality = this.getBestAvailableQuality(songRef);
          if (!this.isCurrentSongPreview && this.currentQuality === bestQuality) return;
 
-         clearUrlResolutionState();
+         // 仅清理 URL 缓存与预加载流，绝对不递增 playVersion，避免将并发中的 playSong 变为死锁孤儿
+         pendingResolves.clear();
+         urlCache.clear();
+         resetPreloadAudio();
 
          if (this.isCurrentSongPreview) {
            this.showToast('✨ VIP 身份确认，正在解除限制并为您自动匹配最高音质...');
@@ -2279,7 +3422,7 @@ export const usePlayerStore = defineStore('player', {
 
          try {
            const res = await this.resolveSongUrl(songRef, null);
-           if (this.currentSong !== songRef) return;
+           if (this.currentSong !== songRef || this.isLoading) return;
 
            if (res?.url) {
              const shouldSwapSource = res.quality !== this.currentQuality || res.isPreview !== this.isCurrentSongPreview || activeAudio._rawSourceUrl !== res.url;
@@ -2287,7 +3430,7 @@ export const usePlayerStore = defineStore('player', {
 
              this.currentQuality = res.quality;
              this.isCurrentSongPreview = res.isPreview;
-             setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this), targetHash);
+             setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this), songRef.hash || '');
              const targetTime = res.isPreview && savedTime > 59 ? 59.5 : savedTime;
              if (targetTime > 0) {
                const applySeek = () => {
@@ -2319,29 +3462,59 @@ export const usePlayerStore = defineStore('player', {
 
     handleAuthCapabilityChanged(reason = 'auth') {
       if (reason === 'logout' || reason === 'vip-downgrade') {
-        clearUrlResolutionState();
+        pendingResolves.clear();
+        urlCache.clear();
+        resetPreloadAudio();
         this.hasDfid = false;
         return;
       }
-      if (this.currentSong && (this.isPlaying || activeAudio.src)) {
+      if (this.currentSong && !this.isLoading && (this.isPlaying || hasLoadedAudioSource(activeAudio))) {
         this.reloadCurrentSongForVip();
       }
     },
 
+    _startPlaybackProgressWatchdog(version, songInfo) {
+      if (this._playbackProgressTimer) {
+        clearTimeout(this._playbackProgressTimer);
+        this._playbackProgressTimer = null;
+      }
+      this._playbackProgressTimer = setTimeout(() => {
+        this._playbackProgressTimer = null;
+        if (version !== playVersion || !this.isPlaying) return;
+        if (activeAudio.currentTime === 0 && activeAudio.readyState <= 1 && hasLoadedAudioSource(activeAudio)) {
+          console.warn('[Player Watchdog] Audio stalled at 00:00, attempting auto recovery...', activeAudio.src);
+          if (activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
+            activeAudio.dispatchEvent(new Event('error'));
+          } else if (songInfo) {
+            this.playSong(songInfo, null, 0, true, { silentQueueToast: true, isFmTrack: this.isFmModePlaylist });
+          }
+        }
+      }, 6000);
+    },
+
     mediaPlay() {
       if (!this.currentSong) {
-        if (this.playlist.length > 0) this.playSong(this.playlist[0]);
+        if (this.playlist.length > 0) this.playSong(this.playlist[0], null, 0, true, { silentQueueToast: true });
         return;
       }
       if (this.isLoading) return;
       if (this.isError) {
         const retrySong = this.failedSong || this.currentSong;
         this.clearError();
-        if (retrySong) this.playSong(retrySong);
+        if (retrySong) {
+          this.playSong(retrySong, null, 0, true, {
+            silentQueueToast: true,
+            isFmTrack: this.isFmModePlaylist
+          });
+        }
         return;
       }
-      if (!activeAudio.src || (activeAudio._songHash && activeAudio._songHash !== this.currentSong.hash)) {
-        this.playSong(this.currentSong, null, this.currentTime, true);
+      const isSourceDeadOrStalled = activeAudio.currentTime === 0 && activeAudio.readyState <= 1;
+      if (!hasLoadedAudioSource(activeAudio) || (activeAudio._songHash && activeAudio._songHash !== this.currentSong.hash) || isSourceDeadOrStalled) {
+        this.playSong(this.currentSong, null, this.currentTime, true, {
+          silentQueueToast: true,
+          isFmTrack: this.isFmModePlaylist
+        });
         return;
       }
       const playPromise = safePlayAudio(activeAudio);
@@ -2353,17 +3526,19 @@ export const usePlayerStore = defineStore('player', {
       }
       this.isPlaying = true;
       this.syncTrayState();
+      this._startPlaybackProgressWatchdog(playVersion, this.currentSong);
     },
 
     mediaPause() {
       if (this._errorSkipTimer) { clearTimeout(this._errorSkipTimer); this._errorSkipTimer = null; }
+      if (this._playbackProgressTimer) { clearTimeout(this._playbackProgressTimer); this._playbackProgressTimer = null; }
       if (this.isLoading) {
-        playVersion++;
-        this.isLoading = false;
+        abortActivePlayback(this);
+      } else {
+        safePauseAudio(activeAudio);
+        this.isPlaying = false;
       }
-      safePauseAudio(activeAudio);
-      this.isPlaying = false;
-      if (this.rememberState) this.persistPlaybackState();
+      if (this.rememberState) this.persistProgressState();
       this.syncTrayState();
     },
 
@@ -2373,10 +3548,10 @@ export const usePlayerStore = defineStore('player', {
         return;
       }
       if (!this.currentSong) {
-        if (this.playlist.length > 0) this.playSong(this.playlist[0]);
+        if (this.playlist.length > 0) this.playSong(this.playlist[0], null, 0, true, { silentQueueToast: true });
         return;
       }
-      const isActuallyActive = this.isLoading || (this.isPlaying && !activeAudio.paused && Boolean(activeAudio.src));
+      const isActuallyActive = this.isLoading || (this.isPlaying && !activeAudio.paused && hasLoadedAudioSource(activeAudio));
       if (isActuallyActive) {
         this.mediaPause();
       } else {
@@ -2393,22 +3568,41 @@ export const usePlayerStore = defineStore('player', {
       if (this.duration > 0 && time > this.duration) {
         time = this.duration;
       }
-      if (activeAudio.src) {
+      if (hasLoadedAudioSource(activeAudio)) {
         activeAudio.currentTime = time;
       }
       this.currentTime = time;
-      if (this.rememberState) schedulePersistState(this, 300);
+      if (this.rememberState) schedulePersistProgress(this, 300);
     },
 
     clearError() { this.isError = false; this.errorMessage = ''; this.failedSong = null; },
 
     playPrev() {
       this.consecutiveErrorCount = 0;
+      if (this.isFmModePlaylist) {
+        if (this.playMode === 'loop' && this.currentSong) {
+          if (!hasLoadedAudioSource(activeAudio) || (activeAudio._songHash && activeAudio._songHash !== this.currentSong.hash)) {
+            this.playSong(this.currentSong, null, 0, true, { silentQueueToast: true, isFmTrack: true });
+            return;
+          }
+          activeAudio.currentTime = 0;
+          this.currentTime = 0;
+          const p = safePlayAudio(activeAudio);
+          if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+          this.isPlaying = true;
+          this.syncTrayState();
+          return;
+        }
+        if (fmController?.playPrev) {
+          fmController.playPrev();
+          return;
+        }
+      }
       if (this.playlist.length === 0) return;
       if (this.playlist.length === 1 || this.playMode === 'loop') {
         const target = this.currentSong || this.playlist[0];
-        if (!activeAudio.src || (target && activeAudio._songHash && activeAudio._songHash !== target.hash)) {
-          if (target) this.playSong(target);
+        if (!hasLoadedAudioSource(activeAudio) || (target && activeAudio._songHash && activeAudio._songHash !== target.hash)) {
+          if (target) this.playSong(target, null, 0, true, { silentQueueToast: true });
           return;
         }
         activeAudio.currentTime = 0;
@@ -2422,8 +3616,16 @@ export const usePlayerStore = defineStore('player', {
 
       let prevIndex;
       if (this.playMode === 'random') {
+        if (Array.isArray(this.playbackHistory) && this.playbackHistory.length > 0) {
+          const lastSong = this.playbackHistory.pop();
+          const foundIndex = getFastSongIndex(this.playlist, lastSong);
+          if (foundIndex !== -1) {
+            this.playSong(this.playlist[foundIndex], null, 0, true, { silentQueueToast: true });
+            return;
+          }
+        }
         if (this.playlist.length > 1) {
-          const currentIndex = this.playlist.findIndex(s => s.hash === this.currentSong?.hash);
+          const currentIndex = this.getCurrentSongIndex();
           let rand;
           do { rand = Math.floor(Math.random() * this.playlist.length); } while (rand === currentIndex);
           prevIndex = rand;
@@ -2431,21 +3633,40 @@ export const usePlayerStore = defineStore('player', {
           prevIndex = 0;
         }
       } else {
-        const currentIndex = this.playlist.findIndex(s => s.hash === this.currentSong?.hash);
+        const currentIndex = this.getCurrentSongIndex();
         prevIndex = currentIndex - 1;
         if (prevIndex < 0) prevIndex = this.playlist.length - 1;
       }
-      this.playSong(this.playlist[prevIndex]);
+      this.playSong(this.playlist[prevIndex], null, 0, true, { silentQueueToast: true });
     },
 
     playNext(isAuto = false, baseSong = null) {
       if (!isAuto) this.consecutiveErrorCount = 0;
+      if (this.isFmModePlaylist) {
+        if (this.playMode === 'loop' && !baseSong && this.currentSong) {
+          if (!hasLoadedAudioSource(activeAudio) || (activeAudio._songHash && activeAudio._songHash !== this.currentSong.hash)) {
+            this.playSong(this.currentSong, null, 0, true, { silentQueueToast: true, isFmTrack: true });
+            return;
+          }
+          activeAudio.currentTime = 0;
+          this.currentTime = 0;
+          const p = safePlayAudio(activeAudio);
+          if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+          this.isPlaying = true;
+          this.syncTrayState();
+          return;
+        }
+        if (fmController?.playNext) {
+          fmController.playNext({ isAuto, baseSong });
+          return;
+        }
+      }
       if (this.playlist.length === 0) return;
       
       if (this.playlist.length === 1 || this.playMode === 'loop') {
         const target = this.currentSong || this.playlist[0];
-        if (!activeAudio.src || (target && activeAudio._songHash && activeAudio._songHash !== target.hash)) {
-          if (target) this.playSong(target);
+        if (!hasLoadedAudioSource(activeAudio) || (target && activeAudio._songHash && activeAudio._songHash !== target.hash)) {
+          if (target) this.playSong(target, null, 0, true, { silentQueueToast: true });
           return;
         }
         activeAudio.currentTime = 0;
@@ -2461,9 +3682,10 @@ export const usePlayerStore = defineStore('player', {
       const isVipUser = userStore.isLoggedIn && userStore.userInfo?.vip > 0;
 
       const refSong = baseSong || this.currentSong;
-      let nextIndex = this.playlist.findIndex(s => s.hash === refSong?.hash);
+      const baseKey = baseSong ? normalizeSongKey(baseSong) : '';
+      let nextIndex = getFastSongIndex(this.playlist, refSong);
       if (nextIndex === -1 && this.currentSong) {
-        nextIndex = this.playlist.findIndex(s => s.hash === this.currentSong.hash);
+        nextIndex = this.getCurrentSongIndex();
       }
       if (nextIndex === -1) nextIndex = 0;
 
@@ -2472,7 +3694,7 @@ export const usePlayerStore = defineStore('player', {
         for (let i = 0; i < this.playlist.length; i++) {
           if (i === nextIndex) continue;
           const candidate = this.playlist[i];
-          if (baseSong && candidate.hash === baseSong.hash) continue;
+          if (baseKey && normalizeSongKey(candidate) === baseKey) continue;
           const isVipSong = candidate.is_vip || candidate.is_paid;
           if (!isVipSong || isVipUser || !isAuto) playableIndices.push(i);
         }
@@ -2493,7 +3715,7 @@ export const usePlayerStore = defineStore('player', {
         if (skippedCount > 0) this.showToast(`已为您自动跳过 ${skippedCount} 首 VIP 专属歌曲`);
 
         const rand = playableIndices[Math.floor(Math.random() * playableIndices.length)];
-        this.playSong(this.playlist[rand]);
+        this.playSong(this.playlist[rand], null, 0, true, { silentQueueToast: true });
         return;
       }
 
@@ -2507,7 +3729,7 @@ export const usePlayerStore = defineStore('player', {
         if (nextIndex >= this.playlist.length) nextIndex = 0;
 
         const candidate = this.playlist[nextIndex];
-        if (baseSong && candidate.hash === baseSong.hash) continue;
+        if (baseKey && normalizeSongKey(candidate) === baseKey) continue;
         const isVipSong = candidate.is_vip || candidate.is_paid;
 
         if (isAuto && isVipSong && !isVipUser) {
@@ -2532,113 +3754,123 @@ export const usePlayerStore = defineStore('player', {
         return;
       }
       
-      this.playSong(this.playlist[nextIndex]);
+      this.playSong(this.playlist[nextIndex], null, 0, true, { silentQueueToast: true });
     },
 
-    removeFromPlaylist(index) {
-      const removedSong = this.playlist[index];
+    removeFromPlaylist(index, expectedHash = null) {
+      let targetIndex = index;
+      if (expectedHash) {
+        const matched = getFastSongIndex(this.playlist, expectedHash);
+        if (matched !== -1) targetIndex = matched;
+      }
+      const removedSong = this.playlist[targetIndex];
       if (!removedSong) return;
-      const removedHash = removedSong.hash;
-      const isCurrentSong = this.currentSong && this.currentSong.hash === removedHash;
+      const removedKey = normalizeSongKey(removedSong);
+      const isCurrentSong = !this.isFmModePlaylist && Boolean(this.currentSong && normalizeSongKey(this.currentSong) === removedKey);
       
-      this.playlist.splice(index, 1);
-      if (this.rememberState) schedulePersistState(this);
+      this.playlist.splice(targetIndex, 1);
+      if (this.playAllHydrationSession && targetIndex < (this.playAllHydrationSession.insertIndex || 0)) {
+        this.playAllHydrationSession = {
+          ...this.playAllHydrationSession,
+          insertIndex: Math.max(0, (this.playAllHydrationSession.insertIndex || 1) - 1)
+        };
+      }
+      rebuildPlaylistKeyMap(this.playlist);
+      if (this.isFmModePlaylist) this._syncFmBackupFlags();
+      if (this.rememberState) schedulePersistQueue(this);
       
       if (isCurrentSong) {
-        activeAudio.pause();
-        activeAudio.src = '';
-        activeAudio._rawSourceUrl = '';
-        activeAudio._usingProxy = false;
-        activeAudio._proxyFallbackAttempted = false;
-        activeAudio._proxyRestoreTime = 0;
-        activeAudio._proxyResumeOnLoad = false;
-        this.isPlaying = false;
+        abortActivePlayback(this);
         this.isCurrentSongPreview = false;
         this.currentSong = null;
         this.currentQuality = 'standard';
-        this.isError = false;
-        this.errorMessage = '';
-        this.failedSong = null;
+        this.clearError();
         
         if (this.playlist.length > 0) {
-          const nextIndex = Math.min(index, this.playlist.length - 1);
-          this.playSong(this.playlist[nextIndex]);
+          const nextIndex = Math.min(targetIndex, this.playlist.length - 1);
+          this.playSong(this.playlist[nextIndex], null, 0, true, { silentQueueToast: true });
+          return;
+        } else {
+          this.currentTime = 0;
+          this.duration = 0;
+          this.syncTrayState();
         }
       }
       
-      this.triggerPreload();
+      if (!this.isFmModePlaylist) {
+        this.triggerPreload();
+      }
     },
 
-    clearPlaylist() {
+    clearPlaylist(options = {}) {
+      const prevCount = this.playlist.length;
+      const canUndo = options.withUndo !== false && prevCount > 0;
+      if (canUndo) {
+        this.saveUndoSnapshot('clear');
+      }
       this.cancelPlayAllHydration();
+      if (this.isFmModePlaylist) {
+        this._exitFmModeSilent({ keepCurrentFmSong: false });
+      }
       this.playlist = [];
-      activeAudio.pause();
-      preloadAudio.pause();
-      activeAudio.removeAttribute('src');
-      preloadAudio.removeAttribute('src');
-      activeAudio._rawSourceUrl = '';
-      activeAudio._usingProxy = false;
-      activeAudio._proxyFallbackAttempted = false;
-      activeAudio._proxyRestoreTime = 0;
-      activeAudio._proxyResumeOnLoad = false;
-      preloadAudio._rawSourceUrl = '';
-      preloadAudio._usingProxy = false;
-      preloadAudio._proxyFallbackAttempted = false;
-      preloadAudio._proxyRestoreTime = 0;
-      preloadAudio._proxyResumeOnLoad = false;
-      this.isPlaying = false;
+      this.isFmModePlaylist = false;
+      regularPlaylistSavedState = null;
+      this._syncFmBackupFlags();
+      rebuildPlaylistKeyMap(this.playlist);
+      this.playbackHistory = [];
+      abortActivePlayback(this, { resetPreload: true });
       this.currentSong = null;
       this.currentTime = 0;
       this.duration = 0;
-      this.isLoading = false;
       this.isCurrentSongPreview = false;
-      this.isError = false;
-      this.errorMessage = '';
-      this.failedSong = null;
+      this.clearError();
       this.currentQuality = 'standard';
       this.isPlaylistVisible = false;
       this.peakMode = false;
       this.peakStartOffset = 0;
       this.peakDuration = 30;
-      preloadState.hash = null;
-      if (this._vipActionTimer) { clearTimeout(this._vipActionTimer); this._vipActionTimer = null; }
       this.syncTrayState();
-      this.clearPersistedState();
+      if (this.rememberState) {
+        this.persistQueueState();
+        this.persistProgressState();
+      } else {
+        this.clearPersistedState();
+      }
+      if (canUndo && !options.silent) {
+        this.showToast(`已清空播放列表 (共 ${prevCount} 首)`, {
+          type: 'info',
+          duration: 5000,
+          actionText: '撤销',
+          onAction: () => this.restoreUndoSnapshot()
+        });
+      }
     },
 
     clearNeteaseImportPlaybackState() {
       this.cancelPlayAllHydration();
       clearUrlResolutionState();
       this.playlist = this.playlist.filter(song => !isNeteaseImportSong(song));
-      if (this.rememberState) schedulePersistState(this);
+      rebuildPlaylistKeyMap(this.playlist);
+      if (this.isFmModePlaylist) this._syncFmBackupFlags();
+      if (this.rememberState) schedulePersistQueue(this);
 
       if (!isNeteaseImportSong(this.currentSong)) {
-        this.triggerPreload();
+        if (!this.isFmModePlaylist) this.triggerPreload();
         this.syncTrayState();
         return;
       }
 
-      activeAudio.pause();
-      activeAudio.removeAttribute('src');
-      activeAudio._rawSourceUrl = '';
-      activeAudio._usingProxy = false;
-      activeAudio._proxyFallbackAttempted = false;
-      activeAudio._proxyRestoreTime = 0;
-      activeAudio._proxyResumeOnLoad = false;
-      activeAudio.load();
-      this.isPlaying = false;
+      abortActivePlayback(this, { resetPreload: true });
       this.currentSong = null;
       this.currentTime = 0;
       this.duration = 0;
-      this.isLoading = false;
       this.isCurrentSongPreview = false;
-      this.isError = false;
-      this.errorMessage = '';
-      this.failedSong = null;
+      this.clearError();
       this.currentQuality = 'standard';
       this.peakMode = false;
       this.peakStartOffset = 0;
       this.peakDuration = 30;
+      if (this.rememberState) this.persistProgressState();
       this.syncTrayState();
     },
 
@@ -2646,35 +3878,27 @@ export const usePlayerStore = defineStore('player', {
       this.cancelPlayAllHydration();
       clearUrlResolutionState();
       this.playlist = this.playlist.filter(song => !isQQImportSong(song));
-      if (this.rememberState) schedulePersistState(this);
+      rebuildPlaylistKeyMap(this.playlist);
+      if (this.isFmModePlaylist) this._syncFmBackupFlags();
+      if (this.rememberState) schedulePersistQueue(this);
 
       if (!isQQImportSong(this.currentSong)) {
-        this.triggerPreload();
+        if (!this.isFmModePlaylist) this.triggerPreload();
         this.syncTrayState();
         return;
       }
 
-      activeAudio.pause();
-      activeAudio.removeAttribute('src');
-      activeAudio._rawSourceUrl = '';
-      activeAudio._usingProxy = false;
-      activeAudio._proxyFallbackAttempted = false;
-      activeAudio._proxyRestoreTime = 0;
-      activeAudio._proxyResumeOnLoad = false;
-      activeAudio.load();
-      this.isPlaying = false;
+      abortActivePlayback(this, { resetPreload: true });
       this.currentSong = null;
       this.currentTime = 0;
       this.duration = 0;
-      this.isLoading = false;
       this.isCurrentSongPreview = false;
-      this.isError = false;
-      this.errorMessage = '';
-      this.failedSong = null;
+      this.clearError();
       this.currentQuality = 'standard';
       this.peakMode = false;
       this.peakStartOffset = 0;
       this.peakDuration = 30;
+      if (this.rememberState) this.persistProgressState();
       this.syncTrayState();
     },
 

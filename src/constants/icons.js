@@ -557,5 +557,33 @@ export const ICONS = {
     stroke: 'currentColor',
     strokeWidth: 2,
     content: '<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>'
+  },
+  'playlist': {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    content: '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10"/><path stroke-linecap="round" stroke-linejoin="round" d="M18 15v6m-3-3h6"/>'
+  },
+  'locate': {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    content: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>'
+  },
+  'list-check': {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    content: '<path stroke-linecap="round" stroke-linejoin="round" d="M11 6h10M11 12h10M11 18h10"/><polyline stroke-linecap="round" stroke-linejoin="round" points="3 6 5 8 8 4"/><polyline stroke-linecap="round" stroke-linejoin="round" points="3 12 5 14 8 10"/><rect x="3.5" y="16.5" width="3.5" height="3.5" rx="0.8"/>'
+  },
+  'broom': {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    content: '<path stroke-linecap="round" stroke-linejoin="round" d="M14.5 4.5l5 5L8 21H3v-5L14.5 4.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7l5 5"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 21h6"/>'
   }
 };

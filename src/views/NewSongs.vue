@@ -235,8 +235,6 @@ const fetchSongs = async (isLoadMore = false) => {
 
 const switchCategory = (key) => {
   if (activeCategory.value === key) return;
-  cancelPlayAllHydration();
-  playerStore.cancelPlayAllHydration();
   activeCategory.value = key;
 
   clearTimeout(switchTimer);
@@ -272,10 +270,12 @@ const playAll = () => {
   if (songs.value.length === 0) return;
   const initialSongs = songs.value.map(song => buildPlayPayload(song, defaultImg));
   const currentCategory = CATEGORIES.find(c => c.key === activeCategory.value);
-  const result = playerStore.startPlayAllHydrationSession(initialSongs, { sourceKey: `new-songs:${activeCategory.value}` });
+  const result = playerStore.startPlayAllHydrationSession(initialSongs, {
+    sourceKey: `new-songs:${activeCategory.value}`,
+    hasMore: hasMore.value
+  });
   if (!result.sessionId || !hasMore.value || !currentCategory) return;
 
-  const categoryKey = currentCategory.key;
   startPlayAllHydration({
     sessionId: result.sessionId,
     startPage: page.value + 1,
@@ -302,7 +302,7 @@ const playAll = () => {
       };
     },
     appendSongs: (sessionId, payloads) => playerStore.extendPlayAllHydration(sessionId, payloads),
-    shouldContinue: () => activeCategory.value === categoryKey && playerStore.isPlayAllHydrationActive(result.sessionId)
+    shouldContinue: () => playerStore.isPlayAllHydrationActive(result.sessionId)
   });
 };
 
@@ -323,8 +323,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  cancelPlayAllHydration();
-  playerStore.cancelPlayAllHydration();
   if (observer) observer.disconnect();
   clearTimeout(switchTimer);
 });

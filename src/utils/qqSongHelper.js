@@ -153,8 +153,10 @@ const getQQPayloadId = (song = {}) => {
 
 export const buildQQPlayPayload = (song, fallbackCover = defaultCover) => {
   const qqMid = getQQPayloadId(song);
-  const hash = song._hash || song.hash || (qqMid ? `qq:${qqMid}` : '');
+  const hash = qqMid ? `qq:${qqMid}` : (song._hash || song.hash || '');
   const qualities = song._qualities || buildQQQualities({ ...song, mid: qqMid });
+  const artists = song._singers || song.artists || [];
+  const durationSec = Number(song._durationSec || song.duration || song.interval || 0);
 
   return {
     source: 'qq-import',
@@ -166,18 +168,18 @@ export const buildQQPlayPayload = (song, fallbackCover = defaultCover) => {
     name: song._title || song.title || song.name || '未知歌曲',
     singer: song._singer || song.singer || '',
     singer_id: song._singer_id || song.singer_id || '',
-    _singers: song._singers || song.artists || [],
-    artists: song.artists || song._singers || [],
+    _singers: artists,
+    artists,
     album: song._album || song.album?.name || song.album?.title || '',
     cover: song._cover || song.cover || fallbackCover,
-    album_id: song._album_id || song.album_id || '',
+    album_id: String(song._album_id || song.album_id || ''),
     album_audio_id: '',
     is_vip: song._is_vip ?? (song.pay?.pay_play === 1),
     is_paid: song._is_paid ?? false,
-    duration: song._durationSec || song.duration || song.interval || 0,
-    interval: song._durationSec || song.interval || song.duration || 0,
+    duration: durationSec > 36000 ? Math.floor(durationSec / 1000) : durationSec,
+    _duration: song._duration || formatDuration(durationSec),
+    interval: durationSec > 36000 ? Math.floor(durationSec / 1000) : (song.interval || durationSec),
     qualities,
-    sourceSongInfo: song,
     strMediaMid: song.strMediaMid || song.file?.media_mid || qqMid,
   };
 };

@@ -149,10 +149,25 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
     upstreamHeaders['Referer'] = referer;
   }
 
+  let headerTimeout = setTimeout(() => {
+    headerTimeout = null;
+    if (!upstreamReq.destroyed) {
+      upstreamReq.destroy(new Error('Audio proxy upstream header timeout (10000ms)'));
+    }
+  }, 10000);
+
+  const clearHeaderTimeout = () => {
+    if (headerTimeout) {
+      clearTimeout(headerTimeout);
+      headerTimeout = null;
+    }
+  };
+
   const upstreamReq = client.request(target, {
     method: 'GET',
     headers: upstreamHeaders,
   }, (upstreamRes) => {
+    clearHeaderTimeout();
     upstreamRes.on('error', (err) => {
       console.error('[AudioProxy upstreamRes error]', err?.message);
       if (!res.headersSent) {
@@ -200,16 +215,22 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
   });
 
   upstreamReq.on('error', (err) => {
+    clearHeaderTimeout();
     console.error('[AudioProxy upstreamReq error]', err?.message);
     if (!res.headersSent) {
       setCorsHeaders(res);
-      res.status(502).send({ code: 502, msg: 'Audio proxy upstream failed' });
+      const isTimeout = String(err?.message || '').includes('header timeout');
+      res.status(isTimeout ? 504 : 502).send({
+        code: isTimeout ? 504 : 502,
+        msg: isTimeout ? 'Audio proxy upstream timeout' : 'Audio proxy upstream failed'
+      });
     } else {
       res.end();
     }
   });
 
   res.on('close', () => {
+    clearHeaderTimeout();
     if (!upstreamReq.destroyed) {
       upstreamReq.destroy();
     }

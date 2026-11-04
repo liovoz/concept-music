@@ -267,7 +267,7 @@ const handleSongContextMenu = (event, song) => {
 
 const playAllDaily = () => {
   if (dailySongs.value.length === 0) return;
-  store.prependPlaylistAndPlay(dailySongs.value.map(song => buildPlayPayload(song, defaultImg)));
+  store.playAllSongs(dailySongs.value.map(song => buildPlayPayload(song, defaultImg)));
 };
 
 watch(() => userStore.isLoggedIn, (newVal) => { 

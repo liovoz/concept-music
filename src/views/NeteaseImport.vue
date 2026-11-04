@@ -599,8 +599,6 @@ const fetchPlaylist = async (target, options = {}) => {
   hasMore.value = false;
   playlistInfo.value = {};
   songs.value = [];
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
 
   try {
     const params = { timestamp: Date.now() };
@@ -726,10 +724,15 @@ const handleSongContextMenu = (event, song) => {
 
 const playAll = () => {
   if (songs.value.length === 0) return;
-  const result = store.startPlayAllHydrationSession(playPayloads.value, { sourceKey: `netease:${currentId.value}` });
+  const routeId = String(currentId.value);
+  const targetCover = playlistInfo.value.cover || defaultImg;
+  const result = store.startPlayAllHydrationSession(playPayloads.value, {
+    sourceKey: `netease:${routeId}`,
+    hasMore: hasMore.value,
+    expectedTotal: Number(playlistInfo.value.trackCount || 0),
+  });
   if (!result.sessionId || !hasMore.value) return;
 
-  const routeId = String(currentId.value);
   startPlayAllHydration({
     sessionId: result.sessionId,
     startPage: page.value + 1,
@@ -743,11 +746,11 @@ const playAll = () => {
       return {
         rawCount: normalized.length,
         done: !res?.hasMore,
-        songs: normalized.map(song => buildNeteasePlayPayload(song, playlistInfo.value.cover || defaultImg)),
+        songs: normalized.map(song => buildNeteasePlayPayload(song, targetCover)),
       };
     },
     appendSongs: (sessionId, payloads) => store.extendPlayAllHydration(sessionId, payloads),
-    shouldContinue: () => currentId.value === routeId && store.isPlayAllHydrationActive(result.sessionId),
+    shouldContinue: () => store.isPlayAllHydrationActive(result.sessionId),
   });
 };
 
@@ -759,21 +762,44 @@ const handleAddToQueue = async () => {
     return;
   }
 
-  isAddingToQueue.value = true;
-  const targetId = String(currentId.value);
-  const targetCover = playlistInfo.value.cover || defaultImg;
-
   const initialResult = store.addSongsToPlaylist(playPayloads.value, { silent: true });
   let totalAdded = initialResult.added;
   let totalSkipped = initialResult.skipped;
-  store.showToast(`已先将 ${initialResult.added} 首歌曲加入队列，正在后台载入剩余歌曲...`);
+  let totalDropped = initialResult.dropped || 0;
+
+  if (initialResult.full) {
+    if (totalAdded === 0) {
+      store.showToast(`播放列表已达上限 (${store.maxPlaylistSize}首)，请先清理部分歌曲`, {
+        type: 'warning',
+        actionText: '打开列表',
+        onAction: () => { store.isPlaylistVisible = true; }
+      });
+    } else {
+      const skippedText = totalSkipped > 0 ? `（跳过 ${totalSkipped} 首重复）` : '';
+      store.showToast(`已加入 ${totalAdded} 首${skippedText}，已达播放列表上限 (${store.maxPlaylistSize}首)`, {
+        type: 'warning',
+        duration: 4500
+      });
+    }
+    return;
+  }
+
+  isAddingToQueue.value = true;
+  const targetId = String(currentId.value);
+  const targetCover = playlistInfo.value.cover || defaultImg;
+  store.showToast(`已先将 ${initialResult.added} 首歌曲加入队列，正在后台载入剩余歌曲...`, { type: 'info' });
 
   let currentOffset = songs.value.length;
   const batchLimit = 200;
+  let stoppedByCap = false;
 
   try {
     let keepFetching = true;
     while (keepFetching) {
+      if (store.playlist.length >= store.maxPlaylistSize) {
+        stoppedByCap = true;
+        break;
+      }
       const res = await request.get('/netease/playlist/track/all', {
         params: {
           id: targetId,
@@ -791,6 +817,7 @@ const handleAddToQueue = async () => {
       const batchResult = store.addSongsToPlaylist(payloads, { silent: true });
       totalAdded += batchResult.added;
       totalSkipped += batchResult.skipped;
+      totalDropped += batchResult.dropped || 0;
 
       if (currentId.value === targetId) {
         songs.value.push(...normalized);
@@ -800,16 +827,29 @@ const handleAddToQueue = async () => {
       }
 
       currentOffset += normalized.length;
+      if (batchResult.full) {
+        stoppedByCap = true;
+        break;
+      }
       if (!res?.hasMore || normalized.length < batchLimit) {
         keepFetching = false;
       }
     }
 
-    const skippedText = totalSkipped > 0 ? `，已跳过 ${totalSkipped} 首重复歌曲` : '';
-    store.showToast(`已将网易歌单全部歌曲加入播放列表（新增 ${totalAdded} 首${skippedText}）`);
+    const skippedText = totalSkipped > 0 ? `，跳过 ${totalSkipped} 首重复` : '';
+    if (stoppedByCap || totalDropped > 0) {
+      store.showToast(`已加入 ${totalAdded} 首歌曲${skippedText}，已达播放列表上限 (${store.maxPlaylistSize}首)`, {
+        type: 'warning',
+        duration: 4500
+      });
+    } else {
+      store.showToast(`已将网易歌单全部歌曲加入播放列表（新增 ${totalAdded} 首${skippedText}）`, {
+        type: 'success'
+      });
+    }
   } catch (error) {
     console.error('[NeteaseImport] 后台加入队列失败:', error);
-    store.showToast('部分剩余歌曲加入队列失败，请检查网络');
+    store.showToast('部分剩余歌曲加入队列失败，请检查网络', { type: 'error' });
   } finally {
     isAddingToQueue.value = false;
   }
@@ -849,8 +889,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
   scrollContainerRef.value?.removeEventListener('scroll', queueSavedPlaylistListHeightUpdate);
   window.removeEventListener('resize', queueSavedPlaylistListHeightUpdate);
   if (savedPlaylistHeightFrame) cancelAnimationFrame(savedPlaylistHeightFrame);

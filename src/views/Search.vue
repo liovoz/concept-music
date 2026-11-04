@@ -213,8 +213,6 @@ const fetchSearch = async () => {
   const keyword = route.query.keyword;
   if (!keyword) return;
 
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
   currentKeyword.value = keyword;
   isLoading.value = true;
   isError.value = false;
@@ -307,8 +305,6 @@ watch(
   () => route.query.keyword,
   (newKeyword) => {
     if (newKeyword && newKeyword !== currentKeyword.value) {
-      cancelPlayAllHydration();
-      store.cancelPlayAllHydration();
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(() => {
         fetchSearch().then(() => setupObserver());
@@ -319,8 +315,6 @@ watch(
 
 onMounted(() => { if (route.query.keyword) { fetchSearch().then(() => setupObserver()); } });
 onUnmounted(() => {
-  cancelPlayAllHydration();
-  store.cancelPlayAllHydration();
   clearTimeout(searchDebounceTimer);
   if (observer) observer.disconnect();
 });
@@ -339,7 +333,10 @@ const playAll = () => {
   if (songs.value.length === 0) return;
   const initialSongs = songs.value.map(song => buildPlayPayload(song, defaultImg));
   const keyword = currentKeyword.value;
-  const result = store.startPlayAllHydrationSession(initialSongs, { sourceKey: `search:${keyword}` });
+  const result = store.startPlayAllHydrationSession(initialSongs, {
+    sourceKey: `search:${keyword}`,
+    hasMore: hasMore.value
+  });
   if (!result.sessionId || !hasMore.value || !keyword) return;
 
   startPlayAllHydration({
@@ -370,7 +367,7 @@ const playAll = () => {
       };
     },
     appendSongs: (sessionId, payloads) => store.extendPlayAllHydration(sessionId, payloads),
-    shouldContinue: () => currentKeyword.value === keyword && store.isPlayAllHydrationActive(result.sessionId)
+    shouldContinue: () => store.isPlayAllHydrationActive(result.sessionId)
   });
 };
 </script>
