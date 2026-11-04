@@ -79,6 +79,8 @@ contextBridge.exposeInMainWorld('lyricAPI', {
   setMouseAuto: () => ipcRenderer.send('set-mouse-auto'),
   unlockLyric: () => ipcRenderer.send('unlock-lyric'),
   updateHotArea: (rect) => ipcRenderer.send('lyric-hot-area', rect),
+  setLayout: (direction) => ipcRenderer.send('set-lyric-layout', direction),
+  getLayout: () => ipcRenderer.invoke('get-lyric-layout'),
   onMouseEnter: (callback) => {
     lyricEnterMgr.set(() => callback());
   },

@@ -823,6 +823,65 @@ let lyricLockedHoverCount = 0;
 let lyricMouseTracker = null;
 let lyricHotArea = null;
 const LYRIC_LOCKED_HOVER_TICKS = 13;
+let lyricLayoutDirection = 'horizontal';
+const lyricLayoutBounds = {
+  horizontal: null,
+  vertical: null
+};
+
+function getDefaultLyricBounds(direction) {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const workArea = primaryDisplay.workArea;
+  const screenWidth = workArea.width;
+  const screenHeight = workArea.height;
+  const displayX = workArea.x || 0;
+  const displayY = workArea.y || 0;
+
+  if (direction === 'vertical') {
+    const width = 200;
+    const height = Math.min(700, screenHeight - 60);
+    const x = displayX + Math.max(0, screenWidth - width - 40);
+    const y = displayY + Math.max(0, Math.floor((screenHeight - height) / 2));
+    return { x, y, width, height };
+  } else {
+    const width = Math.min(900, screenWidth - 100);
+    const height = 160;
+    const x = displayX + Math.max(0, Math.floor((screenWidth - width) / 2));
+    const y = displayY + Math.max(0, screenHeight - height - 30);
+    return { x, y, width, height };
+  }
+}
+
+function clampBoundsToScreen(bounds) {
+  if (!bounds) return getDefaultLyricBounds(lyricLayoutDirection);
+  const currentDisplay = screen.getDisplayMatching(bounds) || screen.getPrimaryDisplay();
+  const { x: areaX, y: areaY, width: areaW, height: areaH } = currentDisplay.workArea;
+
+  const width = Math.min(bounds.width, areaW);
+  const height = Math.min(bounds.height, areaH);
+  const x = Math.max(areaX, Math.min(bounds.x, areaX + areaW - width));
+  const y = Math.max(areaY, Math.min(bounds.y, areaY + areaH - height));
+  return { x, y, width, height };
+}
+
+function setLyricLayout(direction) {
+  const targetDirection = direction === 'vertical' ? 'vertical' : 'horizontal';
+  if (lyricWindow && !lyricWindow.isDestroyed()) {
+    lyricLayoutBounds[lyricLayoutDirection] = lyricWindow.getBounds();
+    lyricLayoutDirection = targetDirection;
+
+    let targetBounds = lyricLayoutBounds[targetDirection];
+    if (!targetBounds) {
+      targetBounds = getDefaultLyricBounds(targetDirection);
+    }
+    const safeBounds = clampBoundsToScreen(targetBounds);
+    lyricLayoutBounds[targetDirection] = safeBounds;
+    lyricWindow.setBounds(safeBounds);
+    lyricWindow.webContents.send('lyric-layout-updated', targetDirection);
+  } else {
+    lyricLayoutDirection = targetDirection;
+  }
+}
 
 function isPointInRect(point, rect) {
   if (!rect) return false;
@@ -914,19 +973,15 @@ function stopLyricMouseTracker() {
 
 function createLyricWindow() {
   if (lyricWindow) return;
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
-
-  const lyricWidth = Math.min(900, screenWidth - 100);
-  const lyricHeight = 160;
-  const lyricX = Math.max(0, Math.floor((screenWidth - lyricWidth) / 2));
-  const lyricY = Math.max(0, Math.min(60, screenHeight - lyricHeight - 10));
+  const initialBounds = clampBoundsToScreen(
+    lyricLayoutBounds[lyricLayoutDirection] || getDefaultLyricBounds(lyricLayoutDirection)
+  );
 
   lyricWindow = new BrowserWindow({
-    width: lyricWidth,
-    height: lyricHeight,
-    x: lyricX,
-    y: lyricY,
+    width: initialBounds.width,
+    height: initialBounds.height,
+    x: initialBounds.x,
+    y: initialBounds.y,
     transparent: true,
     backgroundColor: '#00000000',
     frame: false,
@@ -974,6 +1029,8 @@ function createLyricWindow() {
 }
 
 ipcMain.on('toggle-desktop-lyric', () => { if (lyricWindow) closeLyricWindow(); else createLyricWindow(); });
+ipcMain.on('set-lyric-layout', (event, direction) => { setLyricLayout(direction); });
+ipcMain.handle('get-lyric-layout', () => lyricLayoutDirection);
 ipcMain.on('sync-lyric', (event, data) => { if (lyricWindow && !lyricWindow.isDestroyed()) lyricWindow.webContents.send('update-lyric', data); });
 ipcMain.on('lyric-control-cmd', (event, cmd) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('main-lyric-control', cmd); });
 ipcMain.on('lyric-hot-area', (event, rect) => {
@@ -1070,6 +1127,9 @@ ipcMain.on('lyric-window-drag', (event) => {
     if (!dragging) return;
     dragging = false;
     activeLyricDragCleanup = null;
+    if (win && !win.isDestroyed()) {
+      lyricLayoutBounds[lyricLayoutDirection] = win.getBounds();
+    }
     screen.off('display-metrics-changed', onMove);
     clearInterval(moveInterval);
     if (dragTimeout) {

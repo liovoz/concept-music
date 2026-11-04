@@ -600,6 +600,44 @@
                   </button>
                 </section>
 
+                <!-- 排版模式卡片 -->
+                <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">排版显示方向</h3>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg p-1.5">
+                    <button
+                      type="button"
+                      @click="setLyricLayout('horizontal')"
+                      class="flex items-center justify-center space-x-2 py-2 px-3 rounded-md text-xs font-bold transition-all cursor-pointer"
+                      :class="lyricConfig.layoutDirection !== 'vertical'
+                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'"
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                        <rect x="2" y="4" width="12" height="3" rx="1.5" />
+                        <rect x="2" y="9" width="8" height="3" rx="1.5" />
+                      </svg>
+                      <span>横排显示</span>
+                    </button>
+                    <button
+                      type="button"
+                      @click="setLyricLayout('vertical')"
+                      class="flex items-center justify-center space-x-2 py-2 px-3 rounded-md text-xs font-bold transition-all cursor-pointer"
+                      :class="lyricConfig.layoutDirection === 'vertical'
+                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'"
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                        <rect x="9" y="2" width="3" height="12" rx="1.5" />
+                        <rect x="4" y="2" width="3" height="8" rx="1.5" />
+                      </svg>
+                      <span>竖排显示</span>
+                    </button>
+                  </div>
+                </section>
+
                 <!-- 字号调节卡片 -->
                 <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3">
                   <div class="flex items-center space-x-2">
@@ -1393,6 +1431,7 @@ const lyricThemes = [
   { id: 'purple', label: '幻紫', color: '#a78bfa' }
 ];
 const lyricConfig = reactive({
+  layoutDirection: 'horizontal',
   fontSize: 34,
   subFontSize: 28,
   colorTheme: 'white',
@@ -1400,6 +1439,13 @@ const lyricConfig = reactive({
   showSub: true,
   karaokeMode: true
 });
+const setLyricLayout = (dir) => {
+  lyricConfig.layoutDirection = dir;
+  if (window.lyricAPI?.setLayout) {
+    window.lyricAPI.setLayout(dir);
+  }
+};
+
 const selectCustomColorTheme = () => {
   lyricConfig.colorTheme = 'custom';
   if (!lyricConfig.customColor) {
