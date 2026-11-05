@@ -56,12 +56,245 @@
                   v-if="tab.id === 'about' && hasUpdateAvailable" 
                   class="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse"
                 ></span>
+
               </button>
             </nav>
 
             <!-- 右侧配置区域：高反差层次底板 -->
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4 bg-slate-100/50 dark:bg-slate-900/40">
               
+              <!-- TAB 0: 账号与资产 -->
+              <div v-show="currentTab === 'account'" class="space-y-4">
+                
+                <!-- 模态 1: 未登录引导卡片 -->
+                <div 
+                  v-if="!userStore.isLoggedIn" 
+                  class="py-8 px-6 flex flex-col items-center justify-center text-center bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs space-y-5"
+                >
+                  <!-- 品牌发光图标容器 -->
+                  <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500/10 via-indigo-500/10 to-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-inner">
+                    <AppIcon name="user" class="w-8 h-8" />
+                  </div>
+
+                  <!-- 文案引导 -->
+                  <div class="space-y-1.5 max-w-sm">
+                    <h3 class="text-sm font-extrabold text-gray-900 dark:text-white">登录酷狗音乐账号</h3>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
+                      登录后即可同步云端歌单、查看听歌时长与等级进阶、享有概念版 VIP 专属权益与自动续领。
+                    </p>
+                  </div>
+
+                  <!-- 核心功能徽章胶囊 -->
+                  <div class="grid grid-cols-3 gap-2 w-full max-w-md pt-1">
+                    <div class="px-2.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-gray-200/60 dark:border-slate-700/50 flex flex-col items-center text-center">
+                      <span class="text-base mb-1">☁️</span>
+                      <span class="text-[11px] font-bold text-gray-700 dark:text-slate-300">云端歌单同步</span>
+                      <span class="text-[10px] text-gray-400 dark:text-slate-500 scale-95">自建与收藏云同步</span>
+                    </div>
+                    <div class="px-2.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-gray-200/60 dark:border-slate-700/50 flex flex-col items-center text-center">
+                      <span class="text-base mb-1">📊</span>
+                      <span class="text-[11px] font-bold text-gray-700 dark:text-slate-300">听歌等级成长</span>
+                      <span class="text-[10px] text-gray-400 dark:text-slate-500 scale-95">记录累计听歌数据</span>
+                    </div>
+                    <div class="px-2.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-gray-200/60 dark:border-slate-700/50 flex flex-col items-center text-center">
+                      <span class="text-base mb-1">💎</span>
+                      <span class="text-[11px] font-bold text-gray-700 dark:text-slate-300">概念版 VIP</span>
+                      <span class="text-[10px] text-gray-400 dark:text-slate-500 scale-95">每日全自动续领</span>
+                    </div>
+                  </div>
+
+                  <!-- 行动按钮 (CTA) -->
+                  <div class="pt-2">
+                    <button 
+                      @click="handleAccountLoginClick" 
+                      class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <AppIcon name="phone" class="w-4 h-4" />
+                      <span>立即登录账号</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 模态 2: 已登录资产与概览卡片 -->
+                <div v-else class="space-y-4">
+                  <!-- 卡片 1: 个人身份基础信息卡片 -->
+                  <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 flex items-center">
+                    <div class="flex items-center space-x-4 min-w-0 flex-1">
+                      <!-- 头像 -->
+                      <div class="relative w-12 h-12 shrink-0">
+                        <img 
+                          :src="userStore.userInfo?.avatar || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=160&q=80'" 
+                          alt="Avatar" 
+                          class="w-12 h-12 rounded-full object-cover border-2 border-blue-500/40 shadow-xs"
+                          @error="$event.target.src = 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=160&q=80'"
+                        >
+                      </div>
+
+                      <!-- 昵称、UID与会员标签 -->
+                      <div class="space-y-1.5 min-w-0 flex-1">
+                        <!-- 第一行：身份层（昵称与成长等级） -->
+                        <div class="flex items-center space-x-2">
+                          <h3 class="text-sm font-extrabold text-gray-900 dark:text-white truncate">
+                            {{ userStore.userInfo?.nickname || '酷狗用户' }}
+                          </h3>
+                          <!-- 等级徽章 -->
+                          <span 
+                            class="px-1.5 py-0.5 rounded text-[10px] font-black italic bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/50 leading-none shadow-2xs shrink-0"
+                            title="听歌成长等级"
+                          >
+                            Lv.{{ userStore.userInfo?.level ?? 0 }}
+                          </span>
+                        </div>
+
+                        <!-- 第二行：特权层（VIP 状态与到期时间） -->
+                        <div class="flex items-center space-x-2 text-[11px] whitespace-nowrap">
+                          <!-- VIP 状态徽章 -->
+                          <span 
+                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-xs shrink-0"
+                            :class="userStore.vipStatus?.isVip 
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
+                              : 'bg-slate-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'"
+                          >
+                            <AppIcon v-if="userStore.vipStatus?.isVip" name="star-solid" class="w-2.5 h-2.5" />
+                            <span>{{ userStore.vipStatus?.displayName || '普通用户' }}</span>
+                          </span>
+
+                          <!-- VIP 有效期与剩余天数 -->
+                          <span 
+                            class="truncate font-medium"
+                            :class="userStore.vipStatus?.isVip ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-slate-500'"
+                            :title="rawVipExpireTime ? `精准到期时间：${rawVipExpireTime}` : ''"
+                          >
+                            {{ formattedVipExpireText }}
+                          </span>
+                        </div>
+
+                        <!-- 第三行：资产层（UID、听歌时长、乐龄） -->
+                        <div class="flex items-center space-x-2.5 text-[11px] text-gray-500 dark:text-slate-400 whitespace-nowrap overflow-hidden">
+                          <!-- UID 与一键复制 -->
+                          <div class="flex items-center space-x-1 font-mono shrink-0">
+                            <span>UID: {{ displayUid }}</span>
+                            <button 
+                              v-if="displayUid !== '-'"
+                              @click="handleCopyUid(displayUid)" 
+                              class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer" 
+                              title="复制 UID"
+                            >
+                              <AppIcon name="copy" class="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <span v-if="userStore.userInfo?.durationStr || userStore.userInfo?.musicAge" class="w-1 h-1 rounded-full bg-gray-300 dark:bg-slate-700 shrink-0"></span>
+
+                          <!-- 累计听歌时长 -->
+                          <span v-if="userStore.userInfo?.durationStr" class="flex items-center gap-1 shrink-0">
+                            <AppIcon name="clock" class="w-3 h-3 text-blue-500/70" />
+                            <span>累计听歌 {{ userStore.userInfo.durationStr }}</span>
+                          </span>
+
+                          <span v-if="userStore.userInfo?.durationStr && userStore.userInfo?.musicAge" class="w-1 h-1 rounded-full bg-gray-300 dark:bg-slate-700 shrink-0"></span>
+
+                          <!-- 乐龄 -->
+                          <span v-if="userStore.userInfo?.musicAge" class="flex items-center gap-1 shrink-0">
+                            <AppIcon name="music" class="w-3 h-3 text-purple-500/70" />
+                            <span>{{ userStore.userInfo.musicAge }}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- 卡片 2: 自动领取 VIP 特权 -->
+                  <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="flex items-center space-x-2">
+                          <span class="w-1.5 h-3.5 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></span>
+                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">自动领取 VIP 特权</p>
+                          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60">特权助手</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 ml-3.5">登录后在后台自动签到「1天VIP」及按时领取「3小时特权」，内置防风控智能离散调度</p>
+                      </div>
+                      <button 
+                        type="button"
+                        @click="toggleAutoClaimVip"
+                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                        :class="autoClaimVipEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-slate-700'"
+                      >
+                        <span 
+                          class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                          :class="autoClaimVipEnabled ? 'translate-x-5' : 'translate-x-0'"
+                        />
+                      </button>
+                    </div>
+
+                    <!-- 实时状态看板 (开启时展开) -->
+                    <div 
+                      v-if="autoClaimVipEnabled"
+                      class="pt-3 border-t border-gray-100 dark:border-slate-800/80 grid grid-cols-3 gap-2"
+                    >
+                      <!-- 1. 服务运行状态 -->
+                      <div class="p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/60 dark:border-amber-900/40 flex flex-col justify-between">
+                        <div class="flex items-center space-x-1.5 text-amber-700 dark:text-amber-400 font-bold text-[11px]">
+                          <span class="w-1.5 h-1.5 rounded-full" :class="userStore.isLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'"></span>
+                          <span>{{ userStore.isLoggedIn ? '调度服务运行中' : '未登录账号' }}</span>
+                        </div>
+                        <p class="text-[10px] text-gray-500 dark:text-slate-400 mt-1">
+                          {{ userStore.isLoggedIn ? '后台心跳检测正常' : '登录后自动打卡' }}
+                        </p>
+                      </div>
+
+                      <!-- 2. 今日 1天VIP 状态 -->
+                      <div class="p-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60 flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-gray-700 dark:text-slate-200 font-bold text-[11px]">
+                          <span>👑 1天VIP</span>
+                          <span class="text-[10px]" :class="userStore.dayVipState?.claimed ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-amber-600 dark:text-amber-400'">
+                            {{ userStore.dayVipState?.claimed ? '已入账' : '待领取' }}
+                          </span>
+                        </div>
+                        <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1">
+                          {{ userStore.dayVipState?.claimed ? '今日额度已完成' : '调度器将自动签到' }}
+                        </p>
+                      </div>
+
+                      <!-- 3. 今日 3小时特权 进度 -->
+                      <div class="p-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60 flex flex-col justify-between">
+                        <div class="flex items-center justify-between text-gray-700 dark:text-slate-200 font-bold text-[11px]">
+                          <span>🎁 3小时特权</span>
+                          <span class="text-[10px] font-mono font-bold" :class="(userStore.vipState?.count || 0) >= 8 ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'">
+                            {{ (userStore.vipState?.count || 0) >= 8 ? '已拉满' : `${userStore.vipState?.count || 0}/8 次` }}
+                          </span>
+                        </div>
+                        <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1 truncate">
+                          {{ autoVipNextActionHint }}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- 卡片 3: 账号安全与退出登录 -->
+                  <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 flex items-center justify-between">
+                    <div class="space-y-0.5">
+                      <div class="flex items-center space-x-1.5">
+                        <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-500" />
+                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">账号登录状态健康</p>
+                      </div>
+                      <p class="text-[11px] text-gray-400 dark:text-slate-500">退出登录将安全擦除本地 DPAPI 加密凭据与缓存，再次使用需重新鉴权</p>
+                    </div>
+
+                    <!-- 退出登录按钮 -->
+                    <button 
+                      @click="handleAccountLogout" 
+                      class="px-3.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer"
+                    >
+                      <AppIcon name="logout" class="w-3.5 h-3.5" />
+                      <span>退出登录</span>
+                    </button>
+                  </section>
+                </div>
+
+              </div>
+
               <!-- TAB 1: 常规与外观 -->
               <div v-show="currentTab === 'general'" class="space-y-4">
                 <!-- 主题外观卡片 -->
@@ -267,74 +500,6 @@
                         :class="autoStartEnabled ? 'translate-x-5' : 'translate-x-0'"
                       />
                     </button>
-                  </div>
-                </section>
-
-                <!-- 账号特权卡片 -->
-                <section class="bg-white dark:bg-slate-800/90 rounded-xl border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <div class="flex items-center space-x-2">
-                        <span class="w-1.5 h-3.5 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></span>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">自动领取 VIP 特权</p>
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60">特权助手</span>
-                      </div>
-                      <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 ml-3.5">登录后在后台自动签到「1天VIP」及按时领取「3小时特权」，内置防风控智能离散调度</p>
-                    </div>
-                    <button 
-                      type="button"
-                      @click="toggleAutoClaimVip"
-                      class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                      :class="autoClaimVipEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-slate-700'"
-                    >
-                      <span 
-                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                        :class="autoClaimVipEnabled ? 'translate-x-5' : 'translate-x-0'"
-                      />
-                    </button>
-                  </div>
-
-                  <!-- 实时状态看板 (开启时展开) -->
-                  <div 
-                    v-if="autoClaimVipEnabled"
-                    class="pt-3 border-t border-gray-100 dark:border-slate-800/80 grid grid-cols-3 gap-2"
-                  >
-                    <!-- 1. 服务运行状态 -->
-                    <div class="p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/60 dark:border-amber-900/40 flex flex-col justify-between">
-                      <div class="flex items-center space-x-1.5 text-amber-700 dark:text-amber-400 font-bold text-[11px]">
-                        <span class="w-1.5 h-1.5 rounded-full" :class="userStore.isLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'"></span>
-                        <span>{{ userStore.isLoggedIn ? '调度服务运行中' : '未登录账号' }}</span>
-                      </div>
-                      <p class="text-[10px] text-gray-500 dark:text-slate-400 mt-1">
-                        {{ userStore.isLoggedIn ? '后台心跳检测正常' : '登录后自动打卡' }}
-                      </p>
-                    </div>
-
-                    <!-- 2. 今日 1天VIP 状态 -->
-                    <div class="p-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60 flex flex-col justify-between">
-                      <div class="flex items-center justify-between text-gray-700 dark:text-slate-200 font-bold text-[11px]">
-                        <span>👑 1天畅听VIP</span>
-                        <span class="text-[10px]" :class="userStore.dayVipState?.claimed ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-amber-600 dark:text-amber-400'">
-                          {{ userStore.dayVipState?.claimed ? '已入账' : '待领取' }}
-                        </span>
-                      </div>
-                      <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1">
-                        {{ userStore.dayVipState?.claimed ? '今日额度已完成' : '调度器将自动签到' }}
-                      </p>
-                    </div>
-
-                    <!-- 3. 今日 3小时特权 进度 -->
-                    <div class="p-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60 flex flex-col justify-between">
-                      <div class="flex items-center justify-between text-gray-700 dark:text-slate-200 font-bold text-[11px]">
-                        <span>🎁 3小时特权</span>
-                        <span class="text-[10px] font-mono font-bold" :class="(userStore.vipState?.count || 0) >= 8 ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'">
-                          {{ (userStore.vipState?.count || 0) >= 8 ? '已拉满' : `${userStore.vipState?.count || 0}/8 次` }}
-                        </span>
-                      </div>
-                      <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1 truncate">
-                        {{ autoVipNextActionHint }}
-                      </p>
-                    </div>
                   </div>
                 </section>
 
@@ -1143,11 +1308,11 @@ import TimePicker from './common/TimePicker.vue';
 import { getSystemMediaControlsPreference, setMediaSessionEnabled } from '../utils/mediaSessionBridge';
 
 const props = defineProps({
-  initialTab: { type: String, default: 'general' }
+  initialTab: { type: String, default: 'account' }
 });
 
 const isVisible = ref(false);
-const currentTab = ref('general');
+const currentTab = ref('account');
 const modalContainerRef = ref(null);
 
 const playerStore = usePlayerStore();
@@ -1202,12 +1367,118 @@ const { history, clearHistory, syncHistory } = useSearchHistory();
 const disclaimerModalRef = inject('disclaimerModalRef', null);
 
 const tabs = [
+  { id: 'account', name: '账号与资产', icon: 'user' },
   { id: 'general', name: '常规与外观', icon: 'settings' },
   { id: 'playback', name: '播放与音频', icon: 'music' },
   { id: 'lyrics', name: '桌面歌词', icon: 'typography' },
   { id: 'shortcuts', name: '快捷键', icon: 'keyboard' },
   { id: 'about', name: '关于与更新', icon: 'info' }
 ];
+
+// --- 0. 账号与资产 ---
+const isRefreshingAccount = ref(false);
+const displayUid = computed(() => {
+  return userStore.userInfo?.userid || localStorage.getItem('kg_desktop_userid') || '-';
+});
+
+const rawVipExpireTime = computed(() => {
+  return userStore.vipExpirationTime || userStore.vipStatus?.expireTime || '';
+});
+
+const formattedVipExpireText = computed(() => {
+  if (!userStore.vipStatus?.isVip) return '未开通 VIP 会员';
+  const raw = rawVipExpireTime.value;
+  if (!raw) return '永久有效';
+
+  const ts = new Date(String(raw).replace(/-/g, '/')).getTime();
+  if (!Number.isFinite(ts) || isNaN(ts)) {
+    return `到期: ${raw}`;
+  }
+
+  const d = new Date(ts);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const now = Date.now();
+  const diffDays = Math.ceil((ts - now) / (1000 * 60 * 60 * 24));
+
+  let remain = '';
+  if (diffDays > 0) {
+    remain = ` (剩余 ${diffDays} 天)`;
+  } else if (diffDays === 0) {
+    remain = ' (今日到期)';
+  } else {
+    remain = ' (已到期)';
+  }
+  return `有效期至 ${year}年${month}月${day}日${remain}`;
+});
+
+const handleAccountLoginClick = () => {
+  closeModal();
+  userStore.openLoginModal();
+};
+
+const handleCopyUid = (uid) => {
+  if (!uid) return;
+  if (navigator?.clipboard?.writeText) {
+    navigator.clipboard.writeText(String(uid)).then(() => {
+      playerStore.showToast(`已复制 UID (${uid}) 到剪贴板`);
+    }).catch(() => {
+      playerStore.showToast(`已复制 UID (${uid})`);
+    });
+  } else {
+    playerStore.showToast(`已复制 UID (${uid})`);
+  }
+};
+
+const handleRefreshAccountData = async () => {
+  if (isRefreshingAccount.value) return;
+  isRefreshingAccount.value = true;
+  try {
+    await userStore.fetchUserInfo({ forceAuthRefresh: true });
+    playerStore.showToast('个人账号信息已同步更新');
+  } catch (e) {
+    playerStore.showToast('数据刷新失败，请稍后重试');
+  } finally {
+    setTimeout(() => {
+      isRefreshingAccount.value = false;
+    }, 500);
+  }
+};
+
+const handleManualClaimDayVip = async () => {
+  const res = await userStore.claimOneDayVip();
+  if (res?.msg) {
+    playerStore.showToast(res.msg);
+  }
+};
+
+const handleManualClaim3HourVip = async () => {
+  const res = await userStore.claimDailyVip();
+  if (res?.msg) {
+    playerStore.showToast(res.msg);
+  }
+};
+
+const handleAccountLogout = () => {
+  playerStore.showDialog({
+    type: 'danger',
+    title: '确认退出登录？',
+    message: '退出后将清除本地会话凭据与缓存，再次使用需要重新扫码或验证码登录。',
+    confirmText: '退出登录',
+    cancelText: '取消',
+    onConfirm: () => {
+      userStore.logout();
+      playerStore.showToast('已安全退出酷狗账号');
+    }
+  });
+};
+
+watch(currentTab, (val) => {
+  if (val === 'account' && userStore.isLoggedIn) {
+    userStore.fetchUserInfo({ notifyPlayer: false }).catch(() => {});
+  }
+});
 
 // --- 1. 常规与外观 ---
 const autoClaimVipEnabled = ref(localStorage.getItem('kg_desktop_auto_claim_vip') === 'true');
@@ -1620,8 +1891,14 @@ const openExternalLink = (url) => {
 };
 
 // --- 模态窗控制 ---
-const showModal = (tab = 'general') => {
-  currentTab.value = tab;
+const VALID_TABS = ['account', 'general', 'playback', 'lyrics', 'shortcuts', 'about'];
+
+const showModal = (tab = 'account') => {
+  const targetTab = (typeof tab === 'string' && VALID_TABS.includes(tab)) ? tab : 'account';
+  currentTab.value = targetTab;
+  if (targetTab === 'account' && userStore.isLoggedIn) {
+    userStore.fetchUserInfo({ notifyPlayer: false }).catch(() => {});
+  }
   isVisible.value = true;
   closeBehavior.value = localStorage.getItem('kg_desktop_close_action') || 'ask';
   autoClaimVipEnabled.value = (localStorage.getItem('kg_desktop_auto_claim_vip') === 'true');

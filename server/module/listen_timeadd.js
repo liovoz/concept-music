@@ -1,11 +1,11 @@
 const { clientver, appid, signParamsKey, cryptoRSAEncrypt } = require('../util');
 
 module.exports = (params, useAxios) => {
-  const userid = params?.userid || params?.cookie?.userid || 0;
-  const token = params?.token || params?.cookie.token || ''
-  const mid = params?.cookie?.KUGOU_API_MID;
+  const userid = Number(params?.userid || params?.cookie?.userid || 0);
+  const token = params?.token || params?.cookie?.token || '';
+  const mid = params?.cookie?.KUGOU_API_MID || params?.cookie?.kg_mid || '0';
   const clienttime = Math.floor(Date.now() / 1000);
-  const p = cryptoRSAEncrypt({ token, clienttime_ms: clienttime }).toUpperCase();
+  const p = cryptoRSAEncrypt({ token, clienttime, clienttime_ms: clienttime }).toUpperCase();
 
   const datamap = {
     p,
@@ -13,13 +13,14 @@ module.exports = (params, useAxios) => {
     mid,
     clientver,
     clienttime,
-    type: '1',
-    uuid: '',
+    type: params?.type || '1',
+    uuid: params?.uuid || '',
     userid,
     key: signParamsKey(clienttime.toString()),
   };
 
-  
+  if (params?.d_sec !== undefined) datamap.d_sec = params.d_sec;
+  if (params?.diff_sec !== undefined) datamap.diff_sec = params.diff_sec;
 
   return useAxios({
     baseURL: 'http://userinfo.user.kugou.com',
@@ -27,7 +28,7 @@ module.exports = (params, useAxios) => {
     encryptType: 'android',
     method: 'POST',
     data: datamap,
-    cookie: params?.cookie,
-    // headers: { 'Content-Type': 'text/plain;charset=ISO-8859-1' },
+    cookie: params?.cookie || {},
+    headers: { 'x-router': 'userinfo.user.kugou.com' }
   });
 };

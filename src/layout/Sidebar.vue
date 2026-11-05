@@ -6,56 +6,38 @@
     
     <div class="px-4 mb-2 overflow-visible">
       <div 
-        @click="!userStore.isLoggedIn ? userStore.openLoginModal() : null"
-        class="relative flex items-center p-2.5 rounded-xl transition-all duration-300 no-drag group"
-        :class="userStore.isLoggedIn ? 'bg-white dark:bg-slate-800 shadow-sm border border-gray-200 dark:border-slate-700 cursor-default' : 'hover:bg-gray-200 dark:hover:bg-slate-800 cursor-pointer'"
+        @click="handleUserCardClick"
+        class="relative flex items-center p-2.5 rounded-xl transition-all duration-200 no-drag group cursor-pointer active:scale-[0.98]"
+        :class="userStore.isLoggedIn 
+          ? 'bg-white dark:bg-slate-800 shadow-xs border border-gray-200 dark:border-slate-700 hover:border-blue-400/60 dark:hover:border-blue-500/50 hover:shadow-md' 
+          : 'hover:bg-gray-200 dark:hover:bg-slate-800 border border-transparent'"
+        :title="userStore.isLoggedIn ? '点击查看账号与资产详情' : '点击登录酷狗账号'"
       >
-        <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200">
+        <!-- 头像 -->
+        <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-slate-700 border border-gray-200/80 dark:border-slate-600 shadow-2xs">
           <img v-if="userStore.isLoggedIn && userStore.userInfo" :src="userStore.userInfo.avatar" :alt="userStore.userInfo.nickname || '用户头像'" class="w-full h-full object-cover" />
           <AppIcon v-else name="artists" class="w-full h-full text-gray-400 p-1.5" />
         </div>
         
-        <div class="ml-3 flex-1 min-w-0 pr-6">
-          <div v-if="userStore.isLoggedIn" class="text-sm font-bold text-gray-800 truncate" v-tooltip="userStore.userInfo.nickname">{{ userStore.userInfo.nickname }}</div>
-          <div v-else class="text-sm font-bold text-gray-600 group-hover:text-blue-600 transition-colors truncate">点击登录</div>
+        <!-- 用户身份与特权信息 -->
+        <div class="ml-3 flex-1 min-w-0 pr-1">
+          <div v-if="userStore.isLoggedIn" class="text-sm font-extrabold text-gray-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            {{ userStore.userInfo.nickname }}
+          </div>
+          <div v-else class="text-sm font-bold text-gray-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+            点击登录
+          </div>
           
-          <div v-if="userStore.isLoggedIn" class="text-[10px] text-gray-400 mt-0.5 flex items-center">
+          <div v-if="userStore.isLoggedIn" class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center">
             <span 
-              @mouseenter="showVipCard"
-              @mouseleave="hideVipCard"
-              class="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider mr-1 transition-all cursor-pointer shadow-sm relative z-10"
-              :class="userStore.userInfo.vip > 0 ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400 opacity-60'"
+              class="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider mr-1 shadow-2xs leading-none"
+              :class="userStore.userInfo.vip > 0 ? 'bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400' : 'bg-gray-100 text-gray-400 dark:bg-slate-700 dark:text-slate-400 opacity-70'"
             >
               VIP
             </span>
             <span class="truncate">{{ userStore.userInfo.vip > 0 ? userStore.vipLevelName : '普通用户' }}</span>
           </div>
         </div>
-
-        <button v-if="userStore.isLoggedIn" @click.stop="showLogoutConfirm = true" class="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all" v-tooltip="'退出登录'"><AppIcon name="logout" class="w-3.5 h-3.5" /></button>
-
-        <transition name="pop-down">
-          <div 
-            v-if="isVipCardVisible && userStore.isLoggedIn" 
-            class="absolute left-0 right-0 top-full mt-2 bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl p-4 z-[100] origin-top pointer-events-none"
-          >
-            <div class="flex flex-col space-y-2 relative z-10">
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-black text-orange-600 uppercase tracking-tighter">Asset Detail</span>
-                <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-              </div>
-              <div class="h-px w-full bg-gray-100"></div>
-              <div class="text-[11px] font-bold text-gray-800 flex items-center">
-                <AppIcon name="star-solid" class="w-3 h-3 mr-1.5 text-orange-400" />
-                {{ userStore.vipLevelName }}
-              </div>
-              <div class="text-[10px] text-gray-500 font-medium bg-gray-50 rounded-lg p-2 leading-relaxed">
-                到期时间：<br/>
-                <span class="text-gray-900 font-mono font-bold break-all">{{ userStore.vipExpirationTime || '永久或同步中...' }}</span>
-              </div>
-            </div>
-          </div>
-        </transition>
       </div>
     </div>
 
@@ -127,7 +109,7 @@
 
     <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 dark:border-slate-800 pt-3">
       <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">系统</div>
-      <div @click="openSettings" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center justify-between transition-colors text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800 group relative">
+      <div @click="openSettings('account')" class="px-3 py-2 text-sm rounded cursor-pointer no-drag flex items-center justify-between transition-colors text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800 group relative">
         <div class="flex items-center">
           <AppIcon name="settings" class="w-4 h-4 mr-3 text-gray-400 dark:text-slate-400 group-hover:text-blue-500 transition-colors" />
           <span>设置</span>
@@ -142,21 +124,7 @@
       </div>
     </nav>
 
-    <Teleport to="body">
-      <transition name="fade-scale">
-        <div v-if="showLogoutConfirm" ref="logoutModalRef" tabindex="-1" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag outline-none" @keydown.escape="showLogoutConfirm = false" @click.self="showLogoutConfirm = false">
-          <div class="bg-white w-[320px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
-            <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4"><AppIcon name="warning" class="w-6 h-6 text-red-500" /></div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2">退出登录</h3>
-            <p class="text-sm text-gray-500 mb-6">确定要退出当前账号吗？</p>
-            <div class="flex space-x-3 w-full">
-              <button @click="showLogoutConfirm = false" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold">取消</button>
-              <button @click="executeLogout" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold shadow-md">确认退出</button>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </Teleport>
+
 
     <Teleport to="body">
       <transition name="fade-scale">
@@ -196,27 +164,7 @@ const playerStore = usePlayerStore();
 const updateStore = useUpdateStore();
 const settingsModalRef = inject('settingsModalRef', null);
 
-const showLogoutConfirm = ref(false);
-const isVipCardVisible = ref(false);
-const logoutModalRef = ref(null);
 const vipUpgradeModalRef = ref(null);
-let showTimer = null;
-let hideTimer = null;
-
-const showVipCard = () => {
-  clearTimeout(hideTimer);
-  if (!isVipCardVisible.value) {
-    showTimer = setTimeout(() => {
-      isVipCardVisible.value = true;
-    }, 80);
-  }
-};
-const hideVipCard = () => {
-  clearTimeout(showTimer);
-  hideTimer = setTimeout(() => {
-    isVipCardVisible.value = false;
-  }, 120);
-};
 
 const now = ref(Date.now());
 let timer = null;
@@ -234,16 +182,25 @@ const handleGatewayDown = (e) => {
    playerStore.showToast(`⚠️ ${msg}`);
 };
 
-const openSettings = () => {
+const openSettings = (tab = 'account') => {
   if (settingsModalRef?.value) {
-    settingsModalRef.value.showModal();
+    const targetTab = typeof tab === 'string' ? tab : 'account';
+    settingsModalRef.value.showModal(targetTab);
+  }
+};
+
+const handleUserCardClick = () => {
+  if (!userStore.isLoggedIn) {
+    userStore.openLoginModal();
+  } else {
+    openSettings('account');
   }
 };
 
 onMounted(() => {
   window.addEventListener('API_GATEWAY_DOWN', handleGatewayDown);
 
-  watch(showLogoutConfirm, (v) => { if (v) nextTick(() => { logoutModalRef.value?.focus(); }); });
+
   watch(() => userStore.showVipUpgradeModal, (v) => { if (v) nextTick(() => { vipUpgradeModalRef.value?.focus(); }); });
 
   timer = setInterval(() => {
@@ -307,11 +264,7 @@ const handleVipUpgradeClaim = async () => {
   }
 };
 
-const executeLogout = () => {
-  userStore.logout();
-  showLogoutConfirm.value = false;
-  router.push('/');
-};
+
 
 const isLikedMusicActive = computed(() => {
   if (route.path === '/liked') return true;

@@ -67,9 +67,29 @@ const DEFAULT_VIP_STATUS = {
   isPaidVip: false
 };
 
+export const formatListeningDuration = (minutes) => {
+  const mins = Number(minutes) || 0;
+  if (!mins) return '0 分钟';
+  const hours = Math.floor(mins / 60);
+  const rem = mins % 60;
+  if (hours > 0) {
+    return `${hours} 小时 ${rem} 分钟`;
+  }
+  return `${rem} 分钟`;
+};
+
+export const formatRegistrationAge = (timestamp) => {
+  const ts = Number(timestamp) || 0;
+  if (!ts) return '';
+  const date = new Date(ts > 1e11 ? ts : ts * 1000);
+  const now = new Date();
+  const years = Math.max(1, now.getFullYear() - date.getFullYear());
+  return `乐龄 ${years} 年`;
+};
+
 const CONCEPT_VIP_LEVELS = {
-  svip: { rank: 40, level: 'concept_svip', displayName: '畅听版VIP' },
-  tvip: { rank: 30, level: 'concept_tvip', displayName: '概念版VIP' }
+  svip: { rank: 40, level: 'concept_svip', displayName: '概念版 VIP' },
+  tvip: { rank: 30, level: 'concept_tvip', displayName: '概念版 VIP (体验)' }
 };
 
 const safeParseJson = (key, fallback) => {
@@ -81,8 +101,33 @@ const safeParseJson = (key, fallback) => {
   }
 };
 
+const loadUserInfo = () => {
+  const info = safeParseJson('kg_desktop_userInfo', {
+    userid: localStorage.getItem('kg_desktop_userid') || '',
+    nickname: '',
+    avatar: '',
+    vip: 0,
+    level: 0,
+    duration: 0,
+    durationStr: '',
+    regTime: 0,
+    musicAge: ''
+  });
+  if (info.duration && !info.durationStr) {
+    info.durationStr = formatListeningDuration(info.duration);
+  }
+  if (info.regTime && !info.musicAge) {
+    info.musicAge = formatRegistrationAge(info.regTime);
+  }
+  return info;
+};
+
 const loadVipStatus = () => {
-  return { ...DEFAULT_VIP_STATUS, ...safeParseJson('kg_desktop_vip_status', {}) };
+  const status = { ...DEFAULT_VIP_STATUS, ...safeParseJson('kg_desktop_vip_status', {}) };
+  if (status.displayName && (status.displayName.includes('畅听版') || status.displayName === '畅听版 VIP')) {
+    status.displayName = '概念版 VIP';
+  }
+  return status;
 };
 
 const parseVipTime = (value) => {
@@ -107,37 +152,54 @@ const resolveVipStatusFromDetail = (data, now = Date.now()) => {
 
   if (Array.isArray(data?.busi_vip)) {
     data.busi_vip.forEach((vip) => {
-      if (vip?.busi_type !== 'concept' || Number(vip?.is_vip) !== 1 || !isActiveVipTime(vip?.vip_end_time, now)) return;
+      const isVipActive = Number(vip?.is_vip) === 1 && isActiveVipTime(vip?.vip_end_time, now);
+      if (!isVipActive) return;
 
+      const busiType = String(vip.busi_type || '').toLowerCase();
       const productType = String(vip.product_type || '').toLowerCase();
-      const levelMeta = CONCEPT_VIP_LEVELS[productType] || {
-        rank: 20,
-        level: 'concept_vip',
-        displayName: '概念版VIP'
-      };
 
-      selected = pickBetterVip(selected, {
-        ...levelMeta,
-        isVip: true,
-        productType,
-        source: 'concept',
-        expireTime: vip.vip_end_time || '',
-        quotaTotal: Number(vip?.vip_limit_quota?.total || 0),
-        isPaidVip: Number(vip?.is_paid_vip || 0) === 1,
-        raw: vip
-      });
+      if (busiType === 'concept') {
+        const isTvip = productType === 'tvip' || String(vip.purchased_type || '').toLowerCase() === 'tvip';
+        selected = pickBetterVip(selected, {
+          rank: isTvip ? 30 : 40,
+          level: isTvip ? 'concept_tvip' : 'concept_svip',
+          displayName: isTvip ? '概念版 VIP (体验)' : '概念版 VIP',
+          isVip: true,
+          productType,
+          source: 'concept',
+          expireTime: vip.vip_end_time || '',
+          quotaTotal: Number(vip?.vip_limit_quota?.total || 0),
+          isPaidVip: Number(vip?.is_paid_vip || 0) === 1,
+          raw: vip
+        });
+      } else if (busiType === 'changting') {
+        selected = pickBetterVip(selected, {
+          rank: 25,
+          level: 'changting_vip',
+          displayName: '畅听 VIP',
+          isVip: true,
+          productType,
+          source: 'changting',
+          expireTime: vip.vip_end_time || '',
+          quotaTotal: Number(vip?.vip_limit_quota?.total || 0),
+          isPaidVip: Number(vip?.is_paid_vip || 0) === 1,
+          raw: vip
+        });
+      }
     });
   }
 
   const rootVipExpireTime = data?.vip_end_time || data?.vip_y_endtime || '';
-  if (Number(data?.vip_type || 0) > 0 && isActiveVipTime(rootVipExpireTime, now)) {
+  const vipTypeNum = Number(data?.vip_type || 0);
+  if (vipTypeNum > 0 && isActiveVipTime(rootVipExpireTime, now)) {
+    const isSvip = vipTypeNum === 6 || vipTypeNum === 7;
     selected = pickBetterVip(selected, {
       isVip: true,
-      rank: 10,
-      level: 'kugou_vip',
-      productType: String(data.vip_type),
+      rank: isSvip ? 15 : 10,
+      level: isSvip ? 'kugou_svip' : 'kugou_vip',
+      productType: String(vipTypeNum),
       source: 'kugou',
-      displayName: '酷狗VIP',
+      displayName: isSvip ? '超级 VIP' : '豪华 VIP',
       expireTime: rootVipExpireTime,
       quotaTotal: 0,
       isPaidVip: true,
@@ -154,7 +216,7 @@ const resolveVipStatusFromDetail = (data, now = Date.now()) => {
       level: 'kugou_music_pack',
       productType: String(musicVipType),
       source: 'kugou_music_pack',
-      displayName: '酷狗音乐包',
+      displayName: '音乐包',
       expireTime: musicVipExpireTime,
       quotaTotal: 0,
       isPaidVip: true,
@@ -207,7 +269,7 @@ const resolveHumanError = (raw, fallback = '操作失败，请稍后重试') => 
 export const useUserStore = defineStore('user', {
   state: () => ({
     isLoggedIn: localStorage.getItem('kg_desktop_isLoggedIn') === 'true',
-    userInfo: safeParseJson('kg_desktop_userInfo', { nickname: '', avatar: '', vip: 0 }),
+    userInfo: loadUserInfo(),
     showLoginModal: false,
     showVipUpgradeModal: false,
     
@@ -230,7 +292,7 @@ export const useUserStore = defineStore('user', {
     vipState: safeParseJson('kg_desktop_vip_state', { date: '', count: 0, lastTime: 0 }),
     dayVipState: { date: '', uid: '', claimed: false },
     vipExpirationTime: localStorage.getItem('kg_desktop_vip_expire') || '', 
-    vipLevelName: localStorage.getItem('kg_desktop_vip_name') || '普通用户',
+    vipLevelName: (localStorage.getItem('kg_desktop_vip_name') || '').replace(/畅听版\s*VIP/g, '概念版 VIP') || '普通用户',
     vipStatus: loadVipStatus(),
     
     localHistory: safeParseJson('kg_desktop_local_history', []),
@@ -240,7 +302,20 @@ export const useUserStore = defineStore('user', {
     isDayVipProcessing: false,
     _lastVipPollTime: 0,
     _lastAuthTokenRefreshTime: 0,
-    autoClaimVip: localStorage.getItem('kg_desktop_auto_claim_vip') === 'true'
+    autoClaimVip: localStorage.getItem('kg_desktop_auto_claim_vip') === 'true',
+    listenGradeInfo: safeParseJson('kg_desktop_listen_grade_info', {
+      level: 0,
+      durationMinutes: 0,
+      durationHours: '0.0',
+      currentPoint: 0,
+      currentGradePoint: 0,
+      nextGrade: 0,
+      nextGradePoint: 0,
+      remainingPoints: 0,
+      progressPercent: 0,
+      servertime: '',
+      loading: false
+    })
   }),
 
   actions: {
@@ -469,7 +544,15 @@ export const useUserStore = defineStore('user', {
         silent: true
       }).then((res) => {
         const ok = !!(res && (res.status === 1 || res.error_code === 0 || res.data));
-        if (ok) this._lastAuthTokenRefreshTime = Date.now();
+        if (ok) {
+          this._lastAuthTokenRefreshTime = Date.now();
+          const tokenUid = res?.data?.userid || res?.userid;
+          if (tokenUid) {
+            const uidStr = String(tokenUid);
+            localStorage.setItem('kg_desktop_userid', uidStr);
+            if (!this.userInfo.userid) this.userInfo.userid = uidStr;
+          }
+        }
         return ok;
       }).catch(() => {
         this._lastAuthTokenRefreshTime = 0;
@@ -489,6 +572,19 @@ export const useUserStore = defineStore('user', {
         this.userInfo.vip = 0;
         this.vipLevelName = '普通用户';
         this.vipExpirationTime = '';
+      this.listenGradeInfo = {
+        level: 0,
+        durationMinutes: 0,
+        durationHours: '0.0',
+        currentPoint: 0,
+        currentGradePoint: 0,
+        nextGrade: 0,
+        nextGradePoint: 0,
+        remainingPoints: 0,
+        progressPercent: 0,
+        servertime: '',
+        loading: false
+      };
         this.vipStatus = { ...DEFAULT_VIP_STATUS };
         localStorage.setItem('kg_desktop_userInfo', JSON.stringify(this.userInfo));
         localStorage.setItem('kg_desktop_vip_name', '普通用户');
@@ -1288,6 +1384,71 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    async fetchListenGradeInfo(options = {}) {
+      if (!this.isLoggedIn) return;
+      this.listenGradeInfo.loading = true;
+      const uid = this.userInfo.userid || localStorage.getItem('kg_desktop_userid') || '';
+      try {
+        let res = null;
+        try {
+          res = await request.get('/user/grade/info', {
+            params: { userid: uid, timestamp: Date.now() },
+            silent: true
+          });
+        } catch (e) {
+          res = await request.get('/listen/timeadd', {
+            params: { userid: uid, timestamp: Date.now() },
+            silent: true
+          }).catch(() => null);
+        }
+
+        const rawData = res?.data || res;
+        const data = (rawData && rawData.data && (rawData.data.p_grade !== undefined || rawData.data.duration !== undefined))
+          ? rawData.data
+          : (rawData && (rawData.p_grade !== undefined || rawData.duration !== undefined || rawData.d_sec !== undefined))
+            ? rawData
+            : null;
+
+        if (data && (res?.status === 1 || res?.error_code === 0 || data.p_grade !== undefined || data.duration !== undefined)) {
+          const pGrade = Number(data.p_grade || 0);
+          const duration = Number(data.duration || (data.d_sec ? Math.floor(data.d_sec / 60) : 0));
+          const currentPoint = Number(data.p_current_point !== undefined ? data.p_current_point : 0);
+          const gradePoint = Number(data.p_grade_point !== undefined ? data.p_grade_point : 0);
+          const nextGrade = Number(data.p_next_grade || (pGrade + 1));
+          const nextGradePoint = Number(data.p_next_grade_point || (gradePoint + 1000));
+          const remaining = Math.max(0, nextGradePoint - currentPoint);
+          
+          const range = nextGradePoint - gradePoint;
+          const currentOffset = currentPoint - gradePoint;
+          let percent = 0;
+          if (range > 0 && currentOffset >= 0) {
+            percent = Math.min(100, Math.max(0, Math.round((currentOffset / range) * 100)));
+          }
+
+          this.listenGradeInfo = {
+            level: pGrade,
+            durationMinutes: duration,
+            durationHours: (duration / 60).toFixed(1),
+            currentPoint,
+            currentGradePoint: gradePoint,
+            nextGrade,
+            nextGradePoint,
+            remainingPoints: remaining,
+            progressPercent: percent,
+            servertime: data.servertime || '',
+            loading: false
+          };
+
+          try {
+            localStorage.setItem('kg_desktop_listen_grade_info', JSON.stringify(this.listenGradeInfo));
+          } catch (e) {}
+        }
+      } catch (err) {
+      } finally {
+        this.listenGradeInfo.loading = false;
+      }
+    },
+
     async fetchUserInfo(options = {}) {
       try {
         const { notifyPlayer = true, forceAuthRefresh = false, skipSchedulerTrigger = false } = options;
@@ -1304,13 +1465,36 @@ export const useUserStore = defineStore('user', {
         traverse(res);
 
         if (info) {
+          let extractedUid = '';
+          if (res?.data?.userid) extractedUid = String(res.data.userid);
+          else if (res?.userid) extractedUid = String(res.userid);
+          else if (res?.data?.user_id) extractedUid = String(res.data.user_id);
+          else if (info?.userid || info?.uid || info?.id) extractedUid = String(info.userid || info.uid || info.id);
+          else if (localStorage.getItem('kg_desktop_userid')) extractedUid = localStorage.getItem('kg_desktop_userid');
+
+          if (extractedUid) {
+            localStorage.setItem('kg_desktop_userid', extractedUid);
+          }
+
           const isVip = (info.vip_type > 0 || (info.m_vip_type ?? info.m_type ?? 0) > 0) || 
             (this.vipExpirationTime && new Date(this.vipExpirationTime.replace(/-/g, '/')).getTime() > Date.now());
+          
+          const pGrade = Number(res?.data?.p_grade ?? info?.p_grade ?? this.userInfo?.level ?? 0);
+          const durationMins = Number(res?.data?.duration ?? info?.duration ?? this.userInfo?.duration ?? 0);
+          const rtimeTs = Number(res?.data?.rtime ?? info?.rtime ?? this.userInfo?.regTime ?? 0);
+          const durationStr = formatListeningDuration(durationMins);
+          const musicAge = formatRegistrationAge(rtimeTs);
+
           this.userInfo = {
-            userid: String(info.userid || info.uid || info.id || ''),
+            userid: extractedUid,
             nickname: info.nickname || info.username || '概念版用户',
             avatar: info.pic || info.avatar || info.head_img || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&q=80',
-            vip: isVip ? 1 : 0
+            vip: isVip ? 1 : 0,
+            level: pGrade,
+            duration: durationMins,
+            durationStr,
+            regTime: rtimeTs,
+            musicAge
           };
           this.isLoggedIn = true;
           localStorage.setItem('kg_desktop_isLoggedIn', 'true');
@@ -1318,6 +1502,7 @@ export const useUserStore = defineStore('user', {
           
           this.fetchLikedPlaylistMeta(); 
           await this.fetchVipDetail({ notifyPlayer }); 
+          this.fetchListenGradeInfo({ silent: true }).catch(() => {}); 
           
           this.checkVipReset();
           this.checkDayVipReset();
@@ -1378,10 +1563,12 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('kg_desktop_daily_rec_home');
         localStorage.removeItem('kg_desktop_daily_date');
         localStorage.removeItem('kg_desktop_cookies');
+        localStorage.removeItem('kg_desktop_listen_grade_info');
+        localStorage.removeItem('kg_desktop_userid');
       } catch (e) {}
       
       this.isLoggedIn = false;
-      this.userInfo = { userid: '', nickname: '', avatar: '', vip: 0 }; 
+      this.userInfo = { userid: '', nickname: '', avatar: '', vip: 0, level: 0, duration: 0, durationStr: '', regTime: 0, musicAge: '' }; 
       this.likedPlaylistGlobalId = null;
       this.likedListId = null;
       this.likedHashes = [];
