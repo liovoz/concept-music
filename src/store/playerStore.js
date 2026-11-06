@@ -2764,8 +2764,8 @@ export const usePlayerStore = defineStore('player', {
             if (!val) return null;
             if (typeof val === 'string' && val.startsWith('http')) return val;
             if (Array.isArray(val) && val.length > 0) {
-              const first = val[0];
-              if (typeof first === 'string' && first.startsWith('http')) return first;
+              const first = val.find(u => typeof u === 'string' && u.startsWith('http'));
+              if (first) return first;
             }
             return null;
           };
@@ -2773,7 +2773,7 @@ export const usePlayerStore = defineStore('player', {
           if (Array.isArray(urlData)) {
             for (const item of urlData) {
               if (!item?.quality) continue;
-              const url = extractUrl(item.url) || extractUrl(item.backupUrl);
+              const url = extractUrl(item.url) || extractUrl(item.info?.tracker_url) || extractUrl(item.info?.url) || extractUrl(item.backupUrl);
               if (url) urlMap[item.quality] = url;
             }
           } else if (typeof urlData === 'object' && urlData !== null) {

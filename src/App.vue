@@ -2,7 +2,7 @@
 // 文件：src/App.vue
 // ====================
 <template>
-  <div v-if="$route.path === '/desktop-lyric'" class="w-screen h-screen bg-transparent overflow-hidden">
+  <div v-if="isLyricMode" class="w-screen h-screen bg-transparent overflow-hidden">
     <router-view></router-view>
   </div>
 
@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, provide, watch } from 'vue';
+import { onMounted, onUnmounted, ref, provide, watch, computed } from 'vue';
 import Header from './layout/Header.vue';
 import Sidebar from './layout/Sidebar.vue';
 import PlayerBar from './layout/PlayerBar.vue';
@@ -53,6 +53,13 @@ import GlobalToast from './components/GlobalToast.vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
+const checkIsLyricMode = () => {
+  if (typeof window === 'undefined') return false;
+  if (typeof window.location?.hash === 'string' && window.location.hash.startsWith('#/desktop-lyric')) return true;
+  if (typeof window.location?.pathname === 'string' && window.location.pathname.includes('desktop-lyric')) return true;
+  return route.path === '/desktop-lyric';
+};
+const isLyricMode = computed(() => checkIsLyricMode());
 const cachedComponents = new Set(['PersonalFM', 'PlaylistCategory']);
 const getComponentName = (Component) => Component?.type?.name || Component?.name || '';
 const isCached = (Component) => cachedComponents.has(getComponentName(Component)); 

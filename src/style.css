@@ -27,6 +27,13 @@ html, body, #app {
   color: #333333;
 }
 
+html.desktop-lyric-window,
+html.desktop-lyric-window body,
+html.desktop-lyric-window #app {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
 .dark body,
 .dark #app {
   background-color: #020617;

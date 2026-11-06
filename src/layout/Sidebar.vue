@@ -218,8 +218,6 @@ onMounted(() => {
 
 onUnmounted(() => { 
   if (timer) clearInterval(timer); 
-  if (showTimer) clearTimeout(showTimer);
-  if (hideTimer) clearTimeout(hideTimer);
   window.removeEventListener('API_GATEWAY_DOWN', handleGatewayDown);
 });
 
