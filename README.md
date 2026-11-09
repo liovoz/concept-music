@@ -249,7 +249,7 @@ concept-music/
 
 - 本地内置 API 服务内核基于开源项目 [KuGouMusicApi](https://github.com/MakcRe/KuGouMusicApi) 进行深度定制、架构适配与并发性能重构。
 - 架构全景解析详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
-- 第三方音源规则规范详见 [music_source/README.md](music_source/README.md)。
+- 第三方音源规则规范详见 [music_source/README.md](music_source/README.md)，音源获取与维护来源参考 GitHub 仓库 [guoyue2010/lxmusic-](https://github.com/guoyue2010/lxmusic-)。
 
 ---
 

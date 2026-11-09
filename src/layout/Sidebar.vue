@@ -44,27 +44,61 @@
     </div>
 
     <div v-if="userStore.isLoggedIn" class="px-4 mb-6 transition-all flex flex-col space-y-2">
-      <div v-if="userStore.dayVipState.claimed" v-squircle="'sm'" class="w-full py-1.5 rounded-lg bg-gray-50 text-gray-400 text-[10px] font-bold flex items-center justify-center border border-gray-100 shadow-inner cursor-not-allowed">
-        ✅ 今日 1天VIP 已入账
-        <div class="ml-1 cursor-help pointer-events-auto" v-tooltip="'每日 0 点刷新领取次数'">
-          <AppIcon name="info" class="w-3.5 h-3.5 text-gray-300 hover:text-gray-500 transition-colors" />
+      <!-- 1天VIP特权：已领入账状态 -->
+      <div 
+        v-if="userStore.dayVipState.claimed" 
+        v-squircle="'sm'" 
+        class="w-full py-1.5 px-2 rounded-lg bg-emerald-500/[0.07] dark:bg-emerald-500/15 border border-emerald-500/20 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10.5px] font-bold flex items-center justify-center gap-1.5 transition-all select-none"
+      >
+        <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <span>今日 1天VIP 已入账</span>
+        <div class="cursor-help pointer-events-auto flex items-center opacity-60 hover:opacity-100 transition-opacity ml-0.5" v-tooltip="'每日 0 点刷新领取次数'">
+          <AppIcon name="info" class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
         </div>
       </div>
-      <button v-else @click="handleClaimOneDayVip" :disabled="userStore.isDayVipProcessing" v-squircle="'sm'" class="w-full py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-600 text-[10px] font-bold flex items-center justify-center transition-all hover:bg-purple-100 hover:shadow-sm disabled:opacity-50">
+      <!-- 1天VIP特权：可领取状态 -->
+      <button 
+        v-else 
+        @click="handleClaimOneDayVip" 
+        :disabled="userStore.isDayVipProcessing" 
+        v-squircle="'sm'" 
+        class="w-full py-1.5 rounded-lg border border-purple-300/60 dark:border-purple-500/35 bg-gradient-to-r from-purple-50 to-purple-100/60 dark:from-purple-950/40 dark:to-purple-900/30 text-purple-700 dark:text-purple-300 text-[10.5px] font-extrabold flex items-center justify-center transition-all hover:from-purple-100 hover:to-purple-200/70 dark:hover:from-purple-900/50 dark:hover:to-purple-800/40 hover:border-purple-400/80 hover:shadow-xs active:scale-[0.98] disabled:opacity-50"
+      >
         <AppIcon v-if="userStore.isDayVipProcessing" name="spinner" spin class="h-3 w-3 mr-1.5" />
-        <span v-else class="mr-1.5">👑</span>
+        <span v-else class="mr-1.5 text-xs">👑</span>
         免费领 1 天畅听 VIP
       </button>
 
-      <div v-if="userStore.vipState.count >= 8" v-squircle="'sm'" class="w-full py-1.5 rounded-lg bg-green-50 text-green-600 text-[10px] font-bold flex items-center justify-center border border-green-100 shadow-inner">
-        ✅ 今日 3小时特权 已拉满
+      <!-- 3小时VIP特权：已达今日上限 (8/8) -->
+      <div 
+        v-if="userStore.vipState.count >= 8" 
+        v-squircle="'sm'" 
+        class="w-full py-1.5 px-2 rounded-lg bg-emerald-500/[0.07] dark:bg-emerald-500/15 border border-emerald-500/20 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10.5px] font-bold flex items-center justify-center gap-1.5 transition-all select-none"
+      >
+        <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <span>今日 3小时特权 已拉满</span>
       </div>
-      <div v-else-if="cooldownRemaining > 0 && !userStore.isVipProcessing" v-squircle="'sm'" class="w-full py-1.5 rounded-lg bg-gray-50 text-gray-400 text-[10px] font-bold flex items-center justify-center border border-gray-100 font-mono">
-        ⏳ {{ formattedCooldown }} 后可领 ({{ userStore.vipState.count }}/8)
+      <!-- 3小时VIP特权：冷却计时状态 -->
+      <div 
+        v-else-if="cooldownRemaining > 0 && !userStore.isVipProcessing" 
+        v-squircle="'sm'" 
+        class="w-full py-1.5 px-2 rounded-lg bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 text-[10.5px] font-medium flex items-center justify-center gap-1.5 transition-all select-none"
+      >
+        <AppIcon name="clock" class="w-3 h-3 text-amber-500/90 dark:text-amber-400 shrink-0" />
+        <span class="font-mono font-bold text-slate-700 dark:text-slate-200 px-1 py-0.5 rounded bg-slate-200/50 dark:bg-slate-700/50 text-[10px] leading-none">{{ formattedCooldown }}</span>
+        <span>后可领</span>
+        <span class="text-[9.5px] text-slate-400 dark:text-slate-500 font-semibold">({{ userStore.vipState.count }}/8)</span>
       </div>
-      <button v-else @click="handleClaimDailyVip" :disabled="userStore.isVipProcessing" v-squircle="'sm'" class="w-full py-1.5 rounded-lg border border-orange-200 bg-orange-50 text-orange-600 text-[10px] font-bold flex items-center justify-center transition-all hover:bg-orange-100 hover:shadow-sm disabled:opacity-50">
+      <!-- 3小时VIP特权：可领取状态 -->
+      <button 
+        v-else 
+        @click="handleClaimDailyVip" 
+        :disabled="userStore.isVipProcessing" 
+        v-squircle="'sm'" 
+        class="w-full py-1.5 rounded-lg border border-orange-300/60 dark:border-orange-500/35 bg-gradient-to-r from-orange-50 to-amber-100/60 dark:from-orange-950/40 dark:to-amber-900/30 text-orange-700 dark:text-orange-300 text-[10.5px] font-extrabold flex items-center justify-center transition-all hover:from-orange-100 hover:to-amber-200/70 dark:hover:from-orange-900/50 dark:hover:to-amber-800/40 hover:border-orange-400/80 hover:shadow-xs active:scale-[0.98] disabled:opacity-50"
+      >
         <AppIcon v-if="userStore.isVipProcessing" name="spinner" spin class="h-3 w-3 mr-1.5" />
-        <span v-else class="mr-1.5">🎁</span>
+        <span v-else class="mr-1.5 text-xs">🎁</span>
         {{ claimBtnText }}
       </button>
     </div>

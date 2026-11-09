@@ -1,33 +1,44 @@
 # Music Source Notice
 
-本目录用于存放概念音乐客户端支持的本地第三方音源脚本，按平台分类存放：
+本目录用于存放概念音乐客户端支持的本地第三方音源脚本，按平台分类物理隔离存放：
 
 - `Netease/`：网易云音乐导入歌单专用的第三方音源脚本
-- `QQ/`：企鹅音乐（QQ音乐）导入歌单专用的第三方音源脚本
+- `QQ/`：企鹅音乐（QQ 音乐）导入歌单专用的第三方音源脚本
 
 ---
 
 ## 声明与来源说明
 
-部分音源脚本来自开源社区（如 Macrohard0001/lx-ikun-music-sources 等开源项目）：
-- 原始仓库：Macrohard0001/lx-ikun-music-sources
-- 仓库地址：https://github.com/Macrohard0001/lx-ikun-music-sources
-- 许可证：Macrohard Simple License (Edition 2)
-- 许可证地址：https://github.com/Macrohard0001/lx-ikun-music-sources/blob/main/License.md
+本项目使用的第三方音源脚本来自开源社区维护的音源仓库：
+- **音源来源仓库**：[guoyue2010/lxmusic-](https://github.com/guoyue2010/lxmusic-)
+- **仓库地址**：https://github.com/guoyue2010/lxmusic-
 
-这些脚本仅用于个人学习、研究和非商业技术交流。音源脚本的版权、许可限制、免责声明和使用风险以原始仓库及其许可证说明为准。
+> [!NOTE]
+> 原旧音源仓库由于接口大面积停服与失效已全部弃用。当前所有第三方音源均统一更新为来自 `guoyue2010/lxmusic-` 仓库的新版本音源。
 
-请勿将本目录中的内容用于商业用途、倒卖、变相售卖、收费服务或任何违反原始许可证及相关法律法规的场景。若继续公开分发、修改或引用这些文件，请保留来源说明，并遵守原始仓库许可证要求。
+这些脚本仅用于个人学习、研究和非商业技术交流。音源脚本的版权、许可限制、免责声明和使用风险以原始仓库及其声明为准。
+
+请勿将本目录中的内容用于商业用途、倒卖、变相售卖、收费服务或任何违反相关法律法规的场景。若继续公开分发、修改或引用这些文件，请保留来源说明，并遵守原始仓库要求。
 
 ---
 
 ## 目录结构与包含音源 (Directory Structure)
 
 ### 1. `Netease/`（网易云音乐音源）
-- `(推荐)全豆要-聚合音源 v4.1.js`
-- `【推荐】长青SVIP音源v1.2.0（全平台支持无损）.js`
-- `念心音源-V1.0.1.js`
+- `星海音乐源 v2.3.18.js`
+- `墨澜音乐源v2.3.6.js`
+- `stellarwave-v0.0.14.js`
 
 ### 2. `QQ/`（企鹅音乐音源）
-- `屿溪-终章.js`
-- `K×H测试 v1.7.17.js`
+- `星海音乐源 v2.3.18.js`
+- `墨澜音乐源v2.3.6.js`
+- `stellarwave-v0.0.14.js`
+
+---
+
+## 获取与更新指引 (Update Guide)
+
+如需获取最新音源脚本或替换维护：
+1. 访问 GitHub 仓库 [guoyue2010/lxmusic-](https://github.com/guoyue2010/lxmusic-) 获取最新的可用音源文件；
+2. 将下载的音源脚本分别放入 `music_source/Netease/` 或 `music_source/QQ/` 对应目录；
+3. 重启概念音乐客户端，内置音源调度器与沙箱将自动完成解析与加载。
