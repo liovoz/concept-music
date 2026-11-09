@@ -1163,6 +1163,7 @@ export const useUserStore = defineStore('user', {
       }
       const title = (options.name || '').trim();
       if (!title) return { success: false, msg: '歌单名称不能为空' };
+      if (title.length > 40) return { success: false, msg: '歌单名称不能超过 40 个字符' };
 
       const playerStore = usePlayerStore();
       try {

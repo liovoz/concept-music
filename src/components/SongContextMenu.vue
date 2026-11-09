@@ -3,7 +3,7 @@
     <div
       v-if="visible"
       ref="menuRef"
-      class="song-context-menu fixed z-[100001] w-56 overflow-visible rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 py-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
+      class="song-context-menu fixed z-[100001] w-56 overflow-visible rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
       :style="{ left: position.x + 'px', top: position.y + 'px' }"
       @contextmenu.prevent
     >
@@ -40,15 +40,14 @@
 
           <!-- 歌单二级子菜单 -->
           <div
-            class="hidden group-hover/playlist:flex flex-col absolute top-0 w-48 max-h-64 rounded-xl shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] z-10"
+            class="hidden group-hover/playlist:flex flex-col absolute top-0 w-52 max-h-64 rounded-xl shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] z-10"
             :class="submenuPlacement === 'left' ? 'right-full mr-1' : 'left-full ml-1'"
           >
             <div
-              v-squircle="'lg'"
-              class="w-full h-full flex flex-col overflow-y-auto custom-scrollbar rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 py-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 backdrop-blur-xl"
+              class="w-full h-full flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 backdrop-blur-xl"
             >
             <button
-              class="menu-item text-blue-600 hover:text-blue-700 hover:bg-blue-50/80"
+              class="menu-item text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 dark:text-blue-400 dark:hover:bg-blue-900/30"
               @click="openQuickCreate"
             >
               <AppIcon name="plus" class="menu-icon" />
@@ -58,12 +57,12 @@
             <button
               v-for="p in userPlaylists"
               :key="p.listid"
-              class="menu-item"
+              class="menu-item min-w-0"
               @click="addToPlaylist(p)"
               v-tooltip="p.name"
             >
               <AppIcon name="music" class="menu-icon text-gray-400" />
-              <span class="truncate">{{ p.name }}</span>
+              <span class="truncate flex-1 min-w-0">{{ p.name }}</span>
             </button>
             <div v-if="userStore.isFetchingPlaylists && userPlaylists.length === 0" class="px-3 py-2 text-gray-400 text-[11px] text-center font-normal flex items-center justify-center space-x-1.5">
               <AppIcon name="spinner" spin class="w-3.5 h-3.5 text-blue-500" />
@@ -132,15 +131,36 @@
           </button>
         </div>
         <div class="mb-5">
-          <input
-            v-model="quickPlaylistName"
-            type="text"
-            maxlength="40"
-            placeholder="输入新歌单标题..."
-            @keyup.enter="handleQuickCreateAndAdd"
-            class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all"
-            autofocus
-          />
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold text-gray-600 dark:text-slate-300">歌单标题</label>
+            <span
+              class="text-[11px] font-semibold tabular-nums"
+              :class="quickPlaylistName.length >= 40 ? 'text-amber-500 font-bold' : 'text-gray-400 dark:text-slate-500'"
+            >
+              {{ quickPlaylistName.length }}/40
+            </span>
+          </div>
+          <div class="relative flex items-center">
+            <input
+              v-model="quickPlaylistName"
+              type="text"
+              maxlength="40"
+              placeholder="输入新歌单标题..."
+              @keyup.enter="handleQuickCreateAndAdd"
+              class="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all"
+              autofocus
+            />
+            <button
+              v-if="quickPlaylistName"
+              type="button"
+              @click="quickPlaylistName = ''"
+              class="absolute right-2.5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 rounded-full transition-colors cursor-pointer"
+              v-tooltip="'清空标题'"
+            >
+              <AppIcon name="close" class="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1 pl-0.5">歌单名称最多支持 40 个字符</p>
         </div>
         <div class="flex items-center justify-end space-x-2.5">
           <button @click="showQuickCreate = false" class="px-3.5 py-1.5 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
@@ -313,6 +333,10 @@ const openQuickCreate = () => {
 const handleQuickCreateAndAdd = async () => {
   const name = quickPlaylistName.value.trim();
   if (!name || isQuickCreating.value) return;
+  if (name.length > 40) {
+    playerStore.showToast('歌单名称最多支持 40 个字符');
+    return;
+  }
   isQuickCreating.value = true;
   try {
     const res = await userStore.createCustomPlaylist({ name, isPrivate: false });
@@ -422,18 +446,19 @@ onUnmounted(() => {
   width: 100%;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.625rem 0.875rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
   text-align: left;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .menu-item:hover {
-  background: rgba(239, 246, 255, 0.8);
+  background: rgba(239, 246, 255, 0.85);
   color: rgb(37, 99, 235);
 }
 
 :global(.dark) .menu-item:hover {
-  background: rgba(37, 99, 235, 0.18);
+  background: rgba(59, 130, 246, 0.2);
   color: rgb(96, 165, 250);
 }
 
@@ -468,14 +493,23 @@ onUnmounted(() => {
   color: rgb(239, 68, 68);
 }
 
+:global(.dark) .menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: rgb(248, 113, 113);
+}
+
 .menu-item.liked .menu-icon {
   color: rgb(239, 68, 68);
 }
 
-
 .menu-item.liked:hover {
   background: rgba(254, 242, 242, 0.9);
   color: rgb(220, 38, 38);
+}
+
+:global(.dark) .menu-item.liked:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: rgb(248, 113, 113);
 }
 
 .menu-icon {
@@ -485,7 +519,7 @@ onUnmounted(() => {
   color: currentColor;
 }
 
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 0; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.5); border-radius: 2px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.8); }

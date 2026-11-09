@@ -26,7 +26,7 @@
           <div v-else class="text-xs font-bold text-blue-600 tracking-widest uppercase mb-2">Playlist</div>
 
           <div v-if="isLoading && page === 1" class="w-3/4 h-10 bg-gray-200 rounded animate-pulse mb-4"></div>
-          <h2 v-else class="text-4xl font-extrabold text-gray-900 tracking-tight line-clamp-2 mb-3" v-tooltip="playlistInfo.name">{{ playlistInfo.name || '未知歌单' }}</h2>
+          <h2 v-else class="text-4xl font-extrabold text-gray-900 dark:text-slate-50 tracking-tight line-clamp-2 break-all mb-3" v-tooltip="playlistInfo.name">{{ playlistInfo.name || '未知歌单' }}</h2>
 
           <div v-if="isLoading && page === 1" class="w-1/2 h-4 bg-gray-200 rounded animate-pulse mb-6"></div>
           <p v-else class="text-sm text-gray-500 line-clamp-2 mb-6 leading-relaxed pr-10 cursor-default whitespace-pre-wrap" v-tooltip="playlistInfo.intro">{{ playlistInfo.intro || '该歌单暂无简介...' }}</p>
@@ -149,24 +149,29 @@
     <!-- 删除自建歌单确认对话框 -->
     <Teleport to="body">
       <div v-if="showDeletePlaylistModal" class="fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-drag" @click.self="showDeletePlaylistModal = false">
-        <div class="w-full max-w-sm rounded-2xl shadow-2xl relative">
-          <div v-squircle="'2xl'" class="w-full bg-white rounded-2xl border border-gray-100 p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+        <div class="w-full max-w-sm rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.6)] relative">
+          <div v-squircle="'2xl'" class="w-full bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
           <div class="flex items-center space-x-3 mb-4">
-            <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
+            <div class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/60 text-red-500 dark:text-red-400 flex items-center justify-center flex-shrink-0">
               <AppIcon name="trash" class="w-5 h-5" />
             </div>
             <div>
-              <h3 class="text-base font-bold text-gray-800">删除自建歌单</h3>
-              <p class="text-xs text-gray-500 mt-0.5">此操作将永久删除该歌单</p>
+              <h3 class="text-base font-bold text-gray-800 dark:text-slate-100">删除自建歌单</h3>
+              <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">此操作将永久删除该歌单</p>
             </div>
           </div>
 
-          <p v-squircle="'md'" class="text-xs text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100 mb-5">
-            确定要删除歌单「<span class="font-bold text-gray-800">{{ playlistInfo.name }}</span>」吗？删除后将无法恢复该歌单。
-          </p>
+          <div class="text-xs text-gray-600 dark:text-slate-300 leading-relaxed bg-gray-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-gray-100 dark:border-slate-700/60 mb-5 break-all overflow-hidden">
+            <p>
+              确定要删除歌单「<span class="font-bold text-gray-900 dark:text-slate-50">{{ playlistInfo.name }}</span>」吗？
+            </p>
+            <p class="mt-1 text-[11px] text-gray-400 dark:text-slate-400">
+              删除后将从云端彻底删除，无法恢复该歌单。
+            </p>
+          </div>
 
           <div class="flex items-center justify-end space-x-3">
-            <button @click="showDeletePlaylistModal = false" v-squircle="'md'" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <button @click="showDeletePlaylistModal = false" v-squircle="'md'" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
               取消
             </button>
             <button

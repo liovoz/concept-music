@@ -107,7 +107,7 @@
               
               </div>
               <div class="mt-3 flex flex-col px-1">
-                <h4 class="text-sm font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors" v-tooltip="playlist.name">{{ playlist.name }}</h4>
+                <h4 class="text-sm font-bold text-gray-800 dark:text-slate-100 leading-snug line-clamp-2 break-all group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.name">{{ playlist.name }}</h4>
                 <p class="text-xs text-gray-400 mt-1.5 font-medium truncate" v-tooltip="'By ' + (playlist.list_create_username || '未知用户')">By {{ playlist.list_create_username || '未知用户' }}</p>
               </div>
             </div>
@@ -148,16 +148,36 @@
 
           <div class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-gray-600 dark:text-slate-300 mb-1.5">歌单标题</label>
-              <input
-                ref="createInputRef"
-                v-model="newPlaylistName"
-                type="text"
-                maxlength="40"
-                placeholder="请输入歌单标题..."
-                @keyup.enter="handleCreatePlaylist"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none text-sm text-gray-800 dark:text-slate-100 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
-              />
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold text-gray-600 dark:text-slate-300">歌单标题</label>
+                <span
+                  class="text-[11px] font-semibold tabular-nums"
+                  :class="newPlaylistName.length >= 40 ? 'text-amber-500 font-bold' : 'text-gray-400 dark:text-slate-500'"
+                >
+                  {{ newPlaylistName.length }}/40
+                </span>
+              </div>
+              <div class="relative flex items-center">
+                <input
+                  ref="createInputRef"
+                  v-model="newPlaylistName"
+                  type="text"
+                  maxlength="40"
+                  placeholder="请输入歌单标题..."
+                  @keyup.enter="handleCreatePlaylist"
+                  class="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none text-sm text-gray-800 dark:text-slate-100 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
+                />
+                <button
+                  v-if="newPlaylistName"
+                  type="button"
+                  @click="newPlaylistName = ''; createInputRef?.focus();"
+                  class="absolute right-2.5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 rounded-full transition-colors cursor-pointer"
+                  v-tooltip="'清空标题'"
+                >
+                  <AppIcon name="close" class="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 pl-0.5">歌单名称最多支持 40 个字符</p>
             </div>
 
             <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60">
@@ -205,9 +225,14 @@
             </div>
           </div>
 
-          <p class="text-xs text-gray-600 dark:text-slate-300 leading-relaxed bg-gray-50 dark:bg-slate-800/60 p-3 rounded-xl border border-gray-100 dark:border-slate-700/60 mb-5">
-            确定要{{ isCollectedPlaylist(playlistToDelete) ? '取消收藏' : '删除' }}歌单「<span class="font-bold text-gray-800 dark:text-slate-100">{{ playlistToDelete?.name }}</span>」吗？{{ isCollectedPlaylist(playlistToDelete) ? '取消后可随时重新收藏。' : '删除后将无法恢复该歌单。' }}
-          </p>
+          <div class="text-xs text-gray-600 dark:text-slate-300 leading-relaxed bg-gray-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-gray-100 dark:border-slate-700/60 mb-5 break-all overflow-hidden">
+            <p>
+              确定要{{ isCollectedPlaylist(playlistToDelete) ? '取消收藏' : '删除' }}歌单「<span class="font-bold text-gray-900 dark:text-slate-50">{{ playlistToDelete?.name }}</span>」吗？
+            </p>
+            <p class="mt-1 text-[11px] text-gray-400 dark:text-slate-400">
+              {{ isCollectedPlaylist(playlistToDelete) ? '取消后可随时在歌单广场重新收藏。' : '删除后将从云端彻底删除，无法恢复该歌单。' }}
+            </p>
+          </div>
 
           <div class="flex items-center justify-end space-x-3">
             <button @click="closeDeleteModal" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
@@ -275,6 +300,10 @@ const closeCreateModal = () => {
 const handleCreatePlaylist = async () => {
   const name = newPlaylistName.value.trim();
   if (!name || isCreating.value) return;
+  if (name.length > 40) {
+    playerStore.showToast('歌单名称最多支持 40 个字符');
+    return;
+  }
   isCreating.value = true;
   try {
     const res = await userStore.createCustomPlaylist({

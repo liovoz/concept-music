@@ -433,14 +433,19 @@
                 @contextmenu="handlePlaylistContextMenu($event, item.song, item.realIndex)"
                 @mouseenter="playlistHoverIndex = item.realIndex"
                 @mouseleave="playlistHoverIndex = -1"
-                class="group h-[52px] flex items-center justify-between px-3.5 rounded-xl select-none transition-colors"
-                :class="[
-                  isPlaylistBatchMode ? 'cursor-pointer' : 'cursor-default',
-                  { 'song-row-current': isCurrentRowSong(item.song) },
-                  { 'ring-1 ring-blue-400/70 dark:ring-blue-500/70': locatedFlashKey && locatedFlashKey === item.normKey }
-                ]"
-                :style="getPlaylistRowStyle(item.song, item.realIndex, item.normKey)"
+                class="group w-full py-[3px] flex items-center"
+                :style="{ height: `${PLAYLIST_ROW_HEIGHT}px` }"
+                :class="isPlaylistBatchMode ? 'cursor-pointer' : 'cursor-default'"
               >
+                <div
+                  class="w-full h-full flex items-center justify-between px-3.5 rounded-[10px] select-none transition-colors border border-transparent"
+                  :class="[
+                    { 'song-row-current': isCurrentRowSong(item.song) },
+                    { 'ring-1 ring-blue-400/70 dark:ring-blue-500/70': locatedFlashKey && locatedFlashKey === item.normKey },
+                    isPlaylistBatchMode && selectedPlaylistKeys.has(item.normKey) ? 'border-blue-200/80 dark:border-blue-700/60 shadow-xs' : ''
+                  ]"
+                  :style="getPlaylistRowStyle(item.song, item.realIndex, item.normKey)"
+                >
                 <div class="flex items-center flex-1 min-w-0">
                   <!-- 批量多选复选框 / 序号与正在播放图标 -->
                   <div
@@ -540,6 +545,7 @@
                   >
                     <AppIcon name="close" class="w-4 h-4" />
                   </button>
+                </div>
                 </div>
               </div>
             </div>
@@ -1334,7 +1340,7 @@ const isClearingPlaylist = ref(false);
 let clearConfirmTimer = null;
 
 // --- 队列虚拟滚动与交互管理状态 ---
-const PLAYLIST_ROW_HEIGHT = 52;
+const PLAYLIST_ROW_HEIGHT = 54;
 const PLAYLIST_OVERSCAN = 6;
 const playlistScrollTop = ref(0);
 const playlistViewportHeight = ref(360);
@@ -2215,14 +2221,14 @@ const getPlaylistRowStyle = (song, index, normKey = '') => {
     if (isSelected) return { backgroundColor: 'rgba(30, 58, 138, 0.45)' };
     if (isCurrent && isHovered) return { backgroundColor: 'rgba(51, 65, 85, 0.92)' };
     if (isCurrent) return { backgroundColor: 'rgba(30, 41, 59, 0.86)' };
-    if (isHovered) return { backgroundColor: 'rgba(30, 41, 59, 0.78)' };
+    if (isHovered) return { backgroundColor: 'rgba(51, 65, 85, 0.55)' };
     return { backgroundColor: 'transparent' };
   }
 
   if (isSelected) return { backgroundColor: 'rgba(219, 234, 254, 0.78)' };
   if (isCurrent && isHovered) return { backgroundColor: 'rgba(219, 234, 254, 0.86)' };
   if (isCurrent) return { backgroundColor: 'rgba(239, 246, 255, 0.76)' };
-  if (isHovered) return { backgroundColor: 'rgba(249, 250, 251, 0.95)' };
+  if (isHovered) return { backgroundColor: 'rgba(243, 244, 246, 0.85)' };
   return { backgroundColor: 'transparent' };
 };
 
