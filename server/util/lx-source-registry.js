@@ -2,12 +2,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const BUILTIN_SOURCE_NAMES = [
-  '屿溪-终章.js',
-  'K×H测试 v1.7.17.js',
-  '(推荐)全豆要-聚合音源 v4.1.js',
-  '【推荐】长青SVIP音源v1.2.0（全平台支持无损）.js',
-  '念心音源-V1.0.1.js',
+  '星海音乐源 v2.3.18.js',
+  '墨澜音乐源v2.3.6.js',
+  'stellarwave-v0.0.14.js',
 ];
+
+const normalizeSourceName = (name = '') => name.replace(/\s+/g, '').toLowerCase();
 
 const getSourceDirCandidates = (subDir = '') => {
   const baseCandidates = [
@@ -45,14 +45,22 @@ const listSources = (subDir = '') => {
 
   const files = fs.readdirSync(dir)
     .filter(file => file.endsWith('.js'))
-    .map(file => ({
-      id: file,
-      name: file.replace(/\.js$/i, ''),
-      file,
-      path: path.join(dir, file),
-      builtinOrder: BUILTIN_SOURCE_NAMES.indexOf(file),
-      subDir: resolvedSubDir || '',
-    }));
+    .filter(file => {
+      const norm = normalizeSourceName(file);
+      return BUILTIN_SOURCE_NAMES.some(b => normalizeSourceName(b) === norm);
+    })
+    .map(file => {
+      const norm = normalizeSourceName(file);
+      const builtinIdx = BUILTIN_SOURCE_NAMES.findIndex(b => normalizeSourceName(b) === norm);
+      return {
+        id: file,
+        name: file.replace(/\.js$/i, ''),
+        file,
+        path: path.join(dir, file),
+        builtinOrder: builtinIdx === -1 ? 999 : builtinIdx,
+        subDir: resolvedSubDir || '',
+      };
+    });
 
   return files.sort((a, b) => {
     const ao = a.builtinOrder === -1 ? 999 : a.builtinOrder;

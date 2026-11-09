@@ -2651,7 +2651,7 @@ export const usePlayerStore = defineStore('player', {
         if (res?.url && typeof res.url === 'string' && res.url.startsWith('http')) {
           const finalResult = {
             url: res.url,
-            quality: quality === 'best' ? (res.quality || 'standard') : quality,
+            quality: res.quality || quality,
             isPreview: false,
             sourceInfo: res.source || null
           };
@@ -2683,7 +2683,7 @@ export const usePlayerStore = defineStore('player', {
         if (res?.url && typeof res.url === 'string' && res.url.startsWith('http')) {
           const finalResult = {
             url: res.url,
-            quality: quality === 'best' ? (res.quality || 'standard') : quality,
+            quality: res.quality || quality,
             isPreview: false,
             sourceInfo: res.source || null
           };

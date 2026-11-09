@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const http = require('node:http');
 const https = require('node:https');
-
+const crypto = require('node:crypto');
 const path = require('node:path');
 
 const EVENT_NAMES = {
@@ -94,11 +94,31 @@ const normalizeUrl = (value) => {
 // 内存脚本编译缓存池，避免高频切歌时重复读取磁盘和重复编译
 const scriptCache = new Map();
 
+const buildLxUtils = () => ({
+  buffer: {
+    from: (data, encoding) => Buffer.from(data, encoding),
+    bufToString: (buf, encoding) => Buffer.from(buf).toString(encoding),
+  },
+  crypto: {
+    md5: (str) => crypto.createHash('md5').update(String(str)).digest('hex'),
+    sha1: (str) => crypto.createHash('sha1').update(String(str)).digest('hex'),
+    sha256: (str) => crypto.createHash('sha256').update(String(str)).digest('hex'),
+    aesEncrypt: (data, mode, key, iv) => {
+      let cipherMode = String(mode || '').toLowerCase();
+      if (!cipherMode.startsWith('aes-')) {
+        cipherMode = `aes-128-${cipherMode}`;
+      }
+      const cipher = crypto.createCipheriv(cipherMode, Buffer.from(key), iv ? Buffer.from(iv) : Buffer.alloc(0));
+      return Buffer.concat([cipher.update(Buffer.isBuffer(data) ? data : Buffer.from(String(data))), cipher.final()]);
+    },
+  },
+});
+
 const getCachedScript = (filePath, fileName) => {
   const stat = fs.statSync(filePath);
   const cached = scriptCache.get(filePath);
   if (cached && cached.mtimeMs === stat.mtimeMs) {
-    return cached.script;
+    return cached;
   }
 
   const code = fs.readFileSync(filePath, 'utf8');
@@ -108,11 +128,12 @@ const getCachedScript = (filePath, fileName) => {
     timeout: 3000,
   });
 
-  scriptCache.set(filePath, { mtimeMs: stat.mtimeMs, script });
-  return script;
+  const cacheItem = { mtimeMs: stat.mtimeMs, script, code };
+  scriptCache.set(filePath, cacheItem);
+  return cacheItem;
 };
 
-const buildSourceContext = (source) => {
+const buildSourceContext = (source, rawCode = '') => {
   const handlers = new Map();
   const messages = [];
   const activeRequests = new Set();
@@ -126,11 +147,11 @@ const buildSourceContext = (source) => {
 
   const originalJsonParse = JSON.parse;
   const safeJSON = {
-    ...JSON,
     parse: (str, ...args) => {
       if (typeof str === 'object' && str !== null) return str;
       return originalJsonParse(str, ...args);
     },
+    stringify: JSON.stringify,
   };
 
   const timers = new Set();
@@ -275,6 +296,7 @@ const buildSourceContext = (source) => {
     encodeURI,
     decodeURI,
     JSON: safeJSON,
+    Buffer,
     btoa: (str) => Buffer.from(String(str), 'binary').toString('base64'),
     atob: (str) => Buffer.from(String(str), 'base64').toString('binary'),
   };
@@ -292,6 +314,11 @@ const buildSourceContext = (source) => {
     env: 'desktop',
     EVENT_NAMES,
     request: contextLxRequest,
+    utils: buildLxUtils(),
+    currentScriptInfo: {
+      name: source.name || path.basename(source.file || source.path || '', '.js'),
+      rawScript: rawCode || '',
+    },
     on: (eventName, handler) => {
       if (typeof handler === 'function') handlers.set(eventName, handler);
     },
@@ -308,8 +335,8 @@ const buildSourceContext = (source) => {
 };
 
 const runSource = async (source, payload, timeoutMs = 12000) => {
-  const script = getCachedScript(source.path, source.file || source.id);
-  const { context, handlers, messages, cleanup } = buildSourceContext(source);
+  const { script, code } = getCachedScript(source.path, source.file || source.id);
+  const { context, handlers, messages, cleanup } = buildSourceContext(source, code);
 
   try {
     script.runInContext(context, { timeout: 3000 });

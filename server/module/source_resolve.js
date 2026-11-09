@@ -21,6 +21,17 @@ const qualityMapTx = {
   best: 'flac',
 };
 
+const qTypeToConceptQuality = {
+  atmos: 'viper_atmos',
+  master: 'viper_clear',
+  hires: 'high',
+  flac24bit: 'high',
+  '24bit': 'high',
+  flac: 'sq',
+  '320k': 'hq',
+  '128k': 'standard',
+};
+
 const fallbackChainMap = {
   atmos: ['master', 'hires', 'flac24bit', '24bit', 'flac', '320k', '128k'],
   master: ['hires', 'flac24bit', '24bit', 'flac', '320k', '128k'],
@@ -164,12 +175,14 @@ module.exports = async (params) => {
           },
         };
 
-        const result = await runSource(source, payload);
+        const result = await runSource(source, payload, 5000);
         if (result?.url) {
+          const resolvedQualityKey = qTypeToConceptQuality[qType] || 'standard';
           return ok({
             code: 200,
             url: result.url,
-            quality,
+            quality: resolvedQualityKey,
+            requestedQuality: quality,
             resolvedQuality: qType,
             source: {
               id: source.id,
