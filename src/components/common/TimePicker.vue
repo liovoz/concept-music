@@ -15,11 +15,11 @@
     >
       <!-- 左侧：高质感等宽时间显示 -->
       <div class="flex items-center space-x-1 font-mono text-xs font-bold text-gray-800 dark:text-slate-100">
-        <span class="px-1 py-0.5 rounded transition-colors" :class="isOpen ? 'text-blue-600 dark:text-blue-400' : ''">
+        <span class="px-1 py-0.5 rounded-[5px] transition-colors" :class="isOpen ? 'text-blue-600 dark:text-blue-400' : ''">
           {{ displayHour }}
         </span>
         <span class="text-gray-400 dark:text-slate-500 font-normal">:</span>
-        <span class="px-1 py-0.5 rounded transition-colors" :class="isOpen ? 'text-blue-600 dark:text-blue-400' : ''">
+        <span class="px-1 py-0.5 rounded-[5px] transition-colors" :class="isOpen ? 'text-blue-600 dark:text-blue-400' : ''">
           {{ displayMinute }}
         </span>
       </div>
@@ -49,7 +49,7 @@
     >
       <div
         v-if="isOpen"
-        class="absolute left-0 z-50 w-full min-w-[200px] rounded-xl no-drag"
+        class="absolute left-0 z-50 w-full min-w-[200px] rounded-[14px] no-drag"
         :class="[
           popDirection === 'up' 
             ? 'bottom-full mb-1.5 shadow-[0_-12px_36px_rgba(15,23,42,0.18)] dark:shadow-[0_-16px_40px_rgba(0,0,0,0.6)]' 
@@ -58,7 +58,7 @@
       >
         <div
           v-squircle="'lg'"
-          class="w-full rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-slate-700/80 p-2.5 space-y-2"
+          class="w-full rounded-[14px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-slate-700/80 p-2.5 space-y-2"
         >
         <!-- 顶部列标题 -->
         <div class="grid grid-cols-2 gap-2 text-center text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider pb-1 border-b border-gray-100 dark:border-slate-800">
@@ -122,14 +122,13 @@
             <button
               type="button"
               @click.stop="cancel"
-              class="px-2 py-1 rounded text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer"
+              class="px-2 py-1 rounded-md text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer"
             >
               取消
             </button>
             <button
               type="button"
               @click.stop="confirm"
-              v-squircle="'xs'"
               class="px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-2xs transition-colors cursor-pointer"
             >
               确定
