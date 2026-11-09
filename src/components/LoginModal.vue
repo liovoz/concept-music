@@ -9,7 +9,8 @@
         @keydown.escape="closeModal"
         @click.self="closeModal"
       >
-        <div class="bg-white w-[400px] rounded-3xl shadow-2xl p-7 relative flex flex-col items-center">
+        <div class="w-[400px] rounded-[18px] shadow-2xl relative">
+          <div v-squircle="'xl'" class="w-full bg-white dark:bg-slate-900 rounded-[18px] p-7 flex flex-col items-center border border-gray-100 dark:border-slate-800">
           <!-- 关闭按钮 -->
           <button
             @click="closeModal"
@@ -22,12 +23,12 @@
           <p class="text-xs text-gray-400 mb-5">畅享高品质音乐与多端权益同步</p>
 
           <!-- 登录模式切换 Tab -->
-          <div class="flex p-1 bg-gray-100 rounded-2xl mb-6 w-full text-xs font-semibold text-gray-500 select-none">
+          <div v-squircle="'lg'" class="flex p-1 bg-gray-100 rounded-[14px] mb-6 w-full text-xs font-semibold text-gray-500 select-none">
             <button
               type="button"
               @click="switchTab('phone')"
               :class="[
-                'flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5',
+                'flex-1 py-2 rounded-[10px] transition-all flex items-center justify-center gap-1.5',
                 loginType === 'phone' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'hover:text-gray-800'
               ]"
             >
@@ -55,7 +56,8 @@
               <div class="w-full mb-3">
                 <label class="block text-[11px] font-bold text-gray-500 dark:text-slate-400 mb-1.5 px-0.5">手机号码</label>
                 <div
-                  class="flex items-center w-full bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:bg-white dark:focus-within:!bg-slate-800 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-500/20 transition-all px-3 py-2.5"
+                  v-squircle="'md'"
+                  class="flex items-center w-full bg-gray-50 dark:bg-slate-800/80 rounded-[10px] border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:bg-white dark:focus-within:!bg-slate-800 transition-all px-3 py-2.5"
                 >
                   <span class="text-xs font-bold text-gray-500 dark:text-slate-400 pr-2.5 border-r border-gray-200 dark:border-slate-700 select-none">+86</span>
                   <input
@@ -83,6 +85,7 @@
               <div class="w-full mb-2">
                 <label class="block text-[11px] font-bold text-gray-500 dark:text-slate-400 mb-1.5 px-0.5">短信验证码</label>
                 <div
+                  v-squircle="'md'"
                   class="flex items-center w-full bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:bg-white dark:focus-within:!bg-slate-800 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-500/20 transition-all px-3 py-1.5"
                 >
                   <input
@@ -98,6 +101,7 @@
                     type="button"
                     :disabled="!canSendCode"
                     @click="handleSendCode"
+                    v-squircle="'sm'"
                     class="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-xl transition-all select-none"
                     :class="
                       canSendCode
@@ -151,6 +155,7 @@
               <button
                 type="submit"
                 :disabled="!canSubmit"
+                v-squircle="'lg'"
                 class="w-full py-3 rounded-2xl font-bold text-sm text-white shadow-lg transition-all flex items-center justify-center gap-2 select-none"
                 :class="
                   canSubmit
@@ -200,6 +205,7 @@
           <!-- ==================== 2. 扫码登录模式 ==================== -->
           <div v-else-if="loginType === 'qr'" class="w-full flex flex-col items-center">
             <div
+              v-squircle="'xl'"
               class="relative w-48 h-48 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden p-2 shadow-inner"
             >
               <div v-if="isLoading" class="flex flex-col items-center justify-center w-full h-full text-blue-500">
@@ -255,6 +261,7 @@
             <p class="mt-5 text-xs text-gray-500 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
               请打开 <span class="text-blue-600 font-bold tracking-wide">酷狗概念版 APP</span> 扫一扫
             </p>
+          </div>
           </div>
         </div>
       </div>

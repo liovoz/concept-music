@@ -9,7 +9,7 @@
         tabindex="-1"
         ref="modalContainerRef"
       >
-        <div class="modal-dialog-box bg-white dark:bg-slate-900 rounded-[20px] shadow-[0_24px_70px_rgba(0,0,0,0.22)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.7)] border border-gray-200/90 dark:border-slate-800 w-[720px] max-w-[92vw] h-[540px] max-h-[90vh] flex flex-col overflow-hidden relative text-gray-800 dark:text-slate-100 transition-colors duration-200">
+        <div v-squircle="'xl'" class="modal-dialog-box bg-white dark:bg-slate-900 rounded-[18px] shadow-[0_24px_70px_rgba(0,0,0,0.22)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.7)] border border-gray-200/90 dark:border-slate-800 w-[720px] max-w-[92vw] h-[540px] max-h-[90vh] flex flex-col overflow-hidden relative text-gray-800 dark:text-slate-100 transition-colors duration-200">
           
           <!-- 弹窗顶栏 -->
           <div class="h-14 px-6 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0 select-none z-10">
@@ -150,7 +150,7 @@
                           <!-- 等级徽章 -->
                           <span 
                             class="px-1.5 py-0.5 text-[10px] font-black italic bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/50 rounded leading-none shadow-2xs shrink-0"
-                            title="听歌成长等级"
+                            v-tooltip="'听歌成长等级'"
                           >
                             Lv.{{ userStore.userInfo?.level ?? 0 }}
                           </span>
@@ -173,7 +173,7 @@
                           <span 
                             class="truncate font-medium"
                             :class="userStore.vipStatus?.isVip ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-slate-500'"
-                            :title="rawVipExpireTime ? `精准到期时间：${rawVipExpireTime}` : ''"
+                            v-tooltip="rawVipExpireTime ? `精准到期时间：${rawVipExpireTime}` : ''"
                           >
                             {{ formattedVipExpireText }}
                           </span>
@@ -188,7 +188,7 @@
                               v-if="displayUid !== '-'"
                               @click="handleCopyUid(displayUid)" 
                               class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer" 
-                              title="复制 UID"
+                              v-tooltip="'复制 UID'"
                             >
                               <AppIcon name="copy" class="w-3.5 h-3.5" />
                             </button>
@@ -962,7 +962,7 @@
                           type="color" 
                           v-model="lyricConfig.customColor" 
                           class="absolute -inset-2 w-12 h-12 cursor-pointer opacity-0"
-                          title="点击打开调色盘"
+                          v-tooltip="'点击打开调色盘'"
                         />
                         <div 
                           class="w-full h-full rounded-full pointer-events-none transition-transform group-hover:scale-110" 

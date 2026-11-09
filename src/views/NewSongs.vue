@@ -18,23 +18,24 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-4 mb-6">
-        <div class="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 transition-colors">
           <button v-for="cat in CATEGORIES" :key="cat.key" @click="switchCategory(cat.key)"
-            class="px-4 py-1.5 rounded-md text-xs font-bold transition-all no-drag"
-            :class="activeCategory === cat.key ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
+            v-squircle="{ radius: 6, smoothing: 0.6 }"
+            class="px-4 py-1.5 text-xs font-bold transition-colors no-drag"
+            :class="activeCategory === cat.key ? 'bg-white text-emerald-600 shadow-sm dark:!bg-slate-800 dark:text-emerald-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'">
             {{ cat.label }}
           </button>
         </div>
       </div>
 
       <div v-if="isLoading && songs.length === 0" class="space-y-4 w-full mt-2">
-        <div v-for="i in 10" :key="i" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-xl">
+        <div v-for="i in 10" :key="i" v-squircle="'lg'" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-[14px]">
           <div class="w-8 h-4 bg-gray-200 rounded animate-pulse"></div>
           <div class="flex-1 ml-4 h-4 bg-gray-200 rounded animate-pulse max-w-md"></div>
         </div>
       </div>
 
-      <div v-else-if="isError && songs.length === 0" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100 mt-4">
+      <div v-else-if="isError && songs.length === 0" v-squircle="'2xl'" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-[24px] border border-red-100 mt-4">
         <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">获取新歌失败</p>
         <button @click="fetchSongs()" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
@@ -56,7 +57,8 @@
 
         <div class="space-y-1">
           <div v-for="(song, index) in songs" :key="song._hash + index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)"
-            class="flex items-center px-4 py-3 rounded-xl hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 group transition-colors cursor-pointer no-drag min-w-0">
+            v-squircle="'lg'"
+            class="flex items-center px-4 py-3 rounded-[14px] hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm font-bold group-hover:hidden flex-shrink-0 flex flex-col items-center justify-center"
               :class="index === 0 ? 'text-emerald-500' : index === 1 ? 'text-teal-500' : index === 2 ? 'text-cyan-500' : 'text-gray-400'">
               {{ (index + 1).toString().padStart(2, '0') }}
@@ -66,10 +68,10 @@
             </div>
 
             <div class="flex-1 flex items-center pl-2 pr-4 min-w-0" v-tooltip="song._title">
-              <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
+              <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded-[8px] shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
               <span class="truncate text-sm text-gray-800 font-medium min-w-0">{{ song._title }}</span>
-              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
+              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
             </div>
 
             <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">

@@ -21,7 +21,7 @@
         </button>
       </div>
 
-      <div v-if="isError" class="flex flex-col items-center justify-center py-20 text-red-500 bg-red-50 rounded-2xl border border-red-100 shadow-inner">
+      <div v-if="isError" class="flex flex-col items-center justify-center py-20 text-red-500 bg-red-50 rounded-[18px] border border-red-100 shadow-inner">
         <AppIcon name="warning" class="w-12 h-12 mb-4" />
         <p class="text-sm font-bold">{{ errorMessage }}</p>
         <p class="text-xs text-red-400 mt-2 max-w-sm text-center">系统尝试了多种通道仍被服务端拦截，这通常是因为网络波动。</p>
@@ -30,7 +30,7 @@
         </button>
       </div>
 
-      <div v-else-if="!isLoading && songs.length === 0 && page === 1 && isDrmRestricted" class="flex flex-col items-center justify-center py-28 text-gray-600 bg-blue-50/50 rounded-3xl border border-blue-100/50">
+      <div v-else-if="!isLoading && songs.length === 0 && page === 1 && isDrmRestricted" class="flex flex-col items-center justify-center py-28 text-gray-600 bg-blue-50/50 rounded-[24px] border border-blue-100/50">
         <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm mb-5">
            <AppIcon name="lock" class="w-10 h-10 text-blue-500 opacity-80" />
         </div>
@@ -48,7 +48,7 @@
       </div>
 
       <div v-else-if="isLoading && page === 1" class="space-y-4">
-        <div v-for="i in 10" :key="i" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-xl">
+        <div v-for="i in 10" :key="i" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-[14px]">
           <div class="w-8 h-4 bg-gray-200 rounded animate-pulse"></div>
           <div class="flex-1 ml-4 h-4 bg-gray-200 rounded animate-pulse max-w-md"></div>
         </div>
@@ -64,7 +64,7 @@
         </div>
         
         <div class="space-y-1">
-          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
+          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm text-gray-400 dark:text-slate-500 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
@@ -72,8 +72,8 @@
             
             <div class="flex-1 flex items-center pl-2 pr-4 min-w-0" v-tooltip="song._title">
               <span class="truncate text-sm text-gray-800 font-medium min-w-0">{{ song._title }}</span>
-              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
-              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
+              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
+              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
             </div>
             
             <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">

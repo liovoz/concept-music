@@ -51,10 +51,11 @@
               :key="playlist.id"
               :data-playlist-id="playlist.id"
               @click="openSavedPlaylist(playlist)"
-              class="group flex w-72 flex-shrink-0 items-center min-w-0 rounded-lg border p-2.5 text-left transition-all no-drag lg:w-full"
+              v-squircle="'lg'"
+              class="group flex w-72 flex-shrink-0 items-center min-w-0 rounded-[14px] border p-2.5 text-left transition-all no-drag lg:w-full"
               :class="currentId === playlist.id ? 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-500/30 dark:bg-emerald-500/10' : 'border-gray-100 bg-white/80 hover:border-emerald-100 hover:bg-emerald-50/60 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-emerald-500/20 dark:hover:bg-emerald-500/10'"
             >
-              <img :src="playlist.cover || defaultImg" :alt="playlist.name" class="w-11 h-11 rounded-lg object-cover flex-shrink-0 bg-gray-100 dark:bg-slate-800" @error="e => e.target.src = defaultImg" />
+              <img :src="playlist.cover || defaultImg" :alt="playlist.name" class="w-11 h-11 rounded-[8px] object-cover flex-shrink-0 bg-gray-100 dark:bg-slate-800" @error="e => e.target.src = defaultImg" />
               <div class="min-w-0 flex-1 ml-3">
                 <div class="text-sm font-bold truncate" :class="currentId === playlist.id ? 'text-emerald-600 dark:text-emerald-300' : 'text-gray-800 dark:text-slate-100'" v-tooltip="playlist.name">{{ playlist.name }}</div>
                 <div class="text-xs text-gray-400 truncate mt-0.5">{{ formatSavedPlaylistMeta(playlist) }}</div>
@@ -74,7 +75,7 @@
         <section class="flex-1 min-w-0 flex flex-col">
           <div v-if="isPlaylistLoading && page === 1" class="space-y-4 w-full">
             <div class="flex items-end gap-6 mb-10">
-              <div class="w-48 h-48 rounded-2xl bg-gray-200 dark:bg-slate-800 animate-pulse flex-shrink-0"></div>
+              <div v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 dark:bg-slate-800 animate-pulse flex-shrink-0 shadow-md"></div>
               <div class="flex-1 space-y-4">
                 <div class="w-28 h-5 bg-gray-200 dark:bg-slate-800 rounded animate-pulse"></div>
                 <div class="w-2/3 h-10 bg-gray-200 dark:bg-slate-800 rounded animate-pulse"></div>
@@ -112,9 +113,11 @@
 
           <template v-else>
             <div class="flex items-end mb-10 gap-6">
-              <div class="relative w-48 h-48 rounded-2xl flex-shrink-0 shadow-lg overflow-hidden border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 group">
-                <img :src="playlistInfo.cover" :alt="playlistInfo.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" @error="e => e.target.src = defaultImg" />
-                <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+              <div class="relative w-48 h-48 rounded-[18px] shadow-lg flex-shrink-0 group">
+                <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white dark:bg-slate-900 transform-gpu [transform:translateZ(0)]">
+                  <img :src="playlistInfo.cover" :alt="playlistInfo.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" @error="e => e.target.src = defaultImg" />
+                  <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                </div>
               </div>
 
               <div class="flex flex-col justify-end flex-1 min-w-0">
@@ -156,17 +159,17 @@
               </div>
 
               <div class="space-y-1 w-full">
-                <div v-for="(song, index) in songs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 group transition-colors cursor-pointer no-drag min-w-0">
+                <div v-for="(song, index) in songs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 group transition-colors cursor-pointer no-drag min-w-0">
                   <div class="w-10 text-center text-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
                   <div class="w-10 text-center hidden group-hover:flex justify-center text-emerald-600 dark:text-emerald-400 flex-shrink-0" @click.stop="handlePlay(song)">
                     <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
                   </div>
 
                   <div class="flex-1 pl-2 text-sm text-gray-800 dark:text-slate-100 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
-                    <img :src="song._cover" :alt="song._title" class="w-9 h-9 rounded shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100 dark:bg-slate-800" @error="e => e.target.src = defaultImg" />
+                    <img :src="song._cover" :alt="song._title" class="w-9 h-9 rounded-[8px] shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100 dark:bg-slate-800" @error="e => e.target.src = defaultImg" />
                     <span class="truncate min-w-0">{{ song._title }}</span>
-                    <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-                    <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-emerald-50 text-emerald-600 border border-emerald-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+                    <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
+                    <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-emerald-50 text-emerald-600 border border-emerald-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
                   </div>
 
                   <div class="w-1/4 hidden sm:block text-xs text-gray-500 dark:text-slate-400 truncate pr-4 min-w-0" v-tooltip="song._singer">{{ song._singer }}</div>
@@ -179,6 +182,10 @@
                 <div v-if="isLoadingMore" class="flex items-center text-emerald-500">
                   <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
                   正在获取更多歌曲...
+                </div>
+                <div v-else-if="loadMoreError" class="flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
+                  <span>部分歌曲加载失败</span>
+                  <button @click="loadMore" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full font-bold transition-all active:scale-95 no-drag">重试加载</button>
                 </div>
                 <div v-else-if="!hasMore && songs.length > 0" class="text-gray-300 dark:text-slate-700 flex items-center space-x-2">
                   <span class="w-8 h-px bg-gray-200 dark:bg-slate-800"></span>
@@ -203,9 +210,9 @@
           aria-modal="true"
           aria-labelledby="qq-notice-title"
         >
-          <div class="w-full max-w-[520px] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
+          <div v-squircle="'xl'" class="w-full max-w-[520px] overflow-hidden rounded-[18px] border border-gray-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
             <div class="flex items-center gap-3 border-b border-gray-100 bg-emerald-50/70 px-6 py-5 dark:border-slate-800 dark:bg-emerald-500/10">
-              <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm">
+              <div v-squircle="'md'" class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-emerald-500 text-white shadow-sm">
                 <AppIcon name="qq-music" class="h-5 w-5" />
               </div>
               <div class="min-w-0">
@@ -300,6 +307,7 @@ const hasMore = ref(false);
 const isImporting = ref(false);
 const isPlaylistLoading = ref(false);
 const isLoadingMore = ref(false);
+const loadMoreError = ref(false);
 const isAddingToQueue = ref(false);
 const isError = ref(false);
 const errorMessage = ref('');
@@ -313,6 +321,19 @@ let observer = null;
 let savedPlaylistHeightFrame = 0;
 let playlistRequestSeq = 0;
 const playlistSessionCache = new Map();
+
+const mergeSongs = (existing, incoming) => {
+  const seen = new Set(existing.map(s => s._hash || s.id || s.songId || s.mid || `${s._title || s.name}_${s._singer || s.singer}`));
+  const newItems = [];
+  for (const song of incoming) {
+    const key = song._hash || song.id || song.songId || song.mid || `${song._title || song.name}_${song._singer || song.singer}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      newItems.push(song);
+    }
+  }
+  return [...existing, ...newItems];
+};
 
 const playPayloads = computed(() => songs.value.map(song => buildQQPlayPayload(song, playlistInfo.value.cover || defaultImg)));
 const savedPlaylistListStyle = computed(() => ({
@@ -437,6 +458,7 @@ const restoreCachedPlaylist = (id) => {
   isImporting.value = false;
   isPlaylistLoading.value = false;
   isLoadingMore.value = false;
+  loadMoreError.value = false;
   isError.value = false;
   errorMessage.value = '';
   cancelPlayAllHydration();
@@ -455,6 +477,7 @@ const clearPlaylistView = () => {
   isImporting.value = false;
   isPlaylistLoading.value = false;
   isLoadingMore.value = false;
+  loadMoreError.value = false;
   isError.value = false;
   errorMessage.value = '';
   inputValue.value = '';
@@ -593,6 +616,7 @@ const fetchPlaylist = async (target, options = {}) => {
   if (isManualImport) isImporting.value = true;
   else isImporting.value = false;
   isPlaylistLoading.value = true;
+  loadMoreError.value = false;
   isError.value = false;
   page.value = 1;
   hasMore.value = false;
@@ -691,15 +715,20 @@ const submitImport = () => {
 const loadMore = async () => {
   if (!hasMore.value || isLoadingMore.value || isPlaylistLoading.value) return;
   isLoadingMore.value = true;
+  loadMoreError.value = false;
   try {
     const nextPage = page.value + 1;
     const nextSongs = await fetchTracks(nextPage, currentId.value);
-    songs.value.push(...nextSongs);
-    page.value = nextPage;
+    if (!nextSongs || nextSongs.length === 0) {
+      hasMore.value = false;
+    } else {
+      songs.value = mergeSongs(songs.value, nextSongs);
+      page.value = nextPage;
+    }
     rememberCurrentPlaylist();
   } catch (e) {
-    hasMore.value = false;
-    rememberCurrentPlaylist();
+    loadMoreError.value = true;
+    console.warn('[QQImport] 获取更多歌曲失败:', e?.message || e);
   } finally {
     isLoadingMore.value = false;
   }
@@ -819,7 +848,7 @@ const handleAddToQueue = async () => {
       totalDropped += batchResult.dropped || 0;
 
       if (currentId.value === targetId) {
-        songs.value.push(...normalized);
+        songs.value = mergeSongs(songs.value, normalized);
         hasMore.value = !!res?.hasMore;
         page.value = Math.ceil(songs.value.length / pageSize);
         rememberCurrentPlaylist();

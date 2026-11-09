@@ -35,7 +35,8 @@
         </button>
 
         <transition name="fade">
-          <div v-if="isFocused" class="absolute top-11 left-0 w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] border border-gray-100 dark:border-slate-700 overflow-hidden z-50 flex flex-col py-2 max-h-[460px]">
+          <div v-if="isFocused" class="absolute top-11 left-0 w-full rounded-[14px] shadow-xl dark:shadow-[0_18px_48px_rgba(0,0,0,0.45)] z-50">
+            <div v-squircle="'lg'" class="w-full bg-white dark:bg-slate-900 rounded-[14px] border border-gray-100 dark:border-slate-700 overflow-hidden flex flex-col py-2 max-h-[460px]">
             
             <template v-if="!searchKeyword.trim()">
               <div v-if="history.length > 0" class="pb-2 border-b border-gray-100">
@@ -78,7 +79,7 @@
                   正在获取热搜...
                 </div>
                 
-                <div v-else-if="hotList.length > 0" class="max-h-[300px] overflow-y-auto custom-scrollbar" ref="hotListRef">
+                <div v-else-if="hotList.length > 0" class="max-h-[300px] overflow-y-auto custom-scrollbar mr-1" ref="hotListRef">
                   <div 
                     v-for="(item, index) in hotList" 
                     :key="'hot-'+index"
@@ -109,7 +110,7 @@
                 正在获取搜索建议...
               </div>
 
-              <div v-else-if="suggestGroups.songs.length || suggestGroups.artists.length || suggestGroups.albums.length" class="max-h-[360px] overflow-y-auto custom-scrollbar" ref="suggestListRef">
+              <div v-else-if="suggestGroups.songs.length || suggestGroups.artists.length || suggestGroups.albums.length" class="max-h-[360px] overflow-y-auto custom-scrollbar mr-1" ref="suggestListRef">
                 
                 <div v-if="suggestGroups.songs.length">
                   <div class="px-4 py-1.5 flex items-center">
@@ -176,6 +177,7 @@
               </div>
             </template>
 
+            </div>
           </div>
         </transition>
 
@@ -192,75 +194,87 @@
         <AppIcon v-if="isDark" name="sun" class="w-4 h-4 transition-transform duration-200 group-active:rotate-45" />
         <AppIcon v-else name="moon" class="w-4 h-4 transition-transform duration-200 group-active:-rotate-12" />
       </button>
-      <button @click="minimize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50 no-drag"><AppIcon name="minimize" class="w-4 h-4" /></button>
-      <button @click="maximize" class="hover:text-blue-500 transition-colors p-1 rounded hover:bg-blue-50 no-drag"><AppIcon name="maximize" class="w-4 h-4" /></button>
-      <button @click="close" class="hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50 no-drag"><AppIcon name="close" class="w-4 h-4" /></button>
+      <button @click="minimize" v-squircle="'sm'" class="hover:text-blue-500 transition-colors p-1 rounded-lg hover:bg-blue-50 no-drag"><AppIcon name="minimize" class="w-4 h-4" /></button>
+      <button @click="maximize" v-squircle="'sm'" class="hover:text-blue-500 transition-colors p-1 rounded-lg hover:bg-blue-50 no-drag"><AppIcon name="maximize" class="w-4 h-4" /></button>
+      <button @click="close" v-squircle="'sm'" class="hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50 no-drag"><AppIcon name="close" class="w-4 h-4" /></button>
     </div>
   </header>
 
   <Teleport to="body">
     <transition name="fade-scale" :css="false" @enter="onDialogEnter" @leave="onDialogLeave">
       <div v-if="showCloseDialog" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag" @keydown.escape="showCloseDialog = false" tabindex="-1">
-        <div class="bg-white dark:bg-slate-900 w-[360px] rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.55)] p-6 relative flex flex-col border border-transparent dark:border-slate-700 text-gray-800 dark:text-slate-100">
-          <div class="flex items-center space-x-2 mb-1">
-            <span class="w-1.5 h-4 bg-blue-600 rounded-full"></span>
-            <h3 class="text-base font-extrabold text-gray-900 dark:text-white">关闭概念音乐</h3>
-          </div>
-          <p class="text-xs text-gray-400 dark:text-slate-500 mb-4 ml-3.5">请选择关闭主窗口时的操作</p>
+        <div class="w-[360px] rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.55)] relative">
+          <div v-squircle="'2xl'" class="w-full bg-white dark:bg-slate-900 rounded-2xl p-6 flex flex-col border border-transparent dark:border-slate-700 text-gray-800 dark:text-slate-100">
+            <div class="flex items-center space-x-2 mb-1">
+              <span class="w-1.5 h-4 bg-blue-600 rounded-full"></span>
+              <h3 class="text-base font-extrabold text-gray-900 dark:text-white">关闭概念音乐</h3>
+            </div>
+            <p class="text-xs text-gray-400 dark:text-slate-500 mb-4 ml-3.5">请选择关闭主窗口时的操作</p>
 
-          <div class="flex flex-col space-y-2.5 mb-4">
-            <div 
-              @click="closeChoice = 'minimize'" 
-              class="flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all no-drag select-none" 
-              :class="closeChoice === 'minimize' 
-                ? 'border-blue-500 bg-white dark:bg-slate-800/80 shadow-xs' 
-                : 'border-gray-200/80 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-blue-300'"
-            >
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mr-3 shadow-xs" :class="closeChoice === 'minimize' ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600' : 'bg-gray-100 dark:bg-slate-700 text-gray-400'">
-                <AppIcon name="minimize-tray" class="w-4 h-4" />
+            <div class="flex flex-col space-y-2.5 mb-4">
+              <div 
+                @click="closeChoice = 'minimize'" 
+                v-squircle="{
+                  size: 'lg',
+                  border: closeChoice === 'minimize' ? 2 : 1,
+                  borderColor: closeChoice === 'minimize' ? '#3b82f6' : (isDark ? 'rgba(51, 65, 85, 0.8)' : 'rgba(229, 231, 235, 0.9)')
+                }"
+                class="flex items-center p-3 rounded-xl cursor-pointer transition-colors no-drag select-none" 
+                :class="closeChoice === 'minimize' 
+                  ? 'bg-blue-50/40 dark:bg-slate-800/80 shadow-xs' 
+                  : 'bg-white dark:bg-slate-800/40 hover:bg-gray-50/80 dark:hover:bg-slate-800/60'"
+              >
+                <div v-squircle="'sm'" class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mr-3 shadow-xs" :class="closeChoice === 'minimize' ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600' : 'bg-gray-100 dark:bg-slate-700 text-gray-400'">
+                  <AppIcon name="minimize-tray" class="w-4 h-4" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold" :class="closeChoice === 'minimize' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-slate-200'">最小化到系统托盘</p>
+                  <p class="text-[11px] mt-0.5" :class="closeChoice === 'minimize' ? 'text-blue-500/80 dark:text-blue-400/80' : 'text-gray-400 dark:text-slate-500'">继续在系统后台播放音乐</p>
+                </div>
+                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" :class="closeChoice === 'minimize' ? 'border-blue-500' : 'border-gray-300 dark:border-slate-600'">
+                  <div v-if="closeChoice === 'minimize'" class="w-2 h-2 rounded-full bg-blue-500"></div>
+                </div>
               </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-xs font-bold" :class="closeChoice === 'minimize' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-slate-200'">最小化到系统托盘</p>
-                <p class="text-[11px] mt-0.5" :class="closeChoice === 'minimize' ? 'text-blue-500/80 dark:text-blue-400/80' : 'text-gray-400 dark:text-slate-500'">继续在系统后台播放音乐</p>
-              </div>
-              <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" :class="closeChoice === 'minimize' ? 'border-blue-500' : 'border-gray-300 dark:border-slate-600'">
-                <div v-if="closeChoice === 'minimize'" class="w-2 h-2 rounded-full bg-blue-500"></div>
+
+              <div 
+                @click="closeChoice = 'quit'" 
+                v-squircle="{
+                  size: 'lg',
+                  border: closeChoice === 'quit' ? 2 : 1,
+                  borderColor: closeChoice === 'quit' ? '#ef4444' : (isDark ? 'rgba(51, 65, 85, 0.8)' : 'rgba(229, 231, 235, 0.9)')
+                }"
+                class="flex items-center p-3 rounded-xl cursor-pointer transition-colors no-drag select-none" 
+                :class="closeChoice === 'quit' 
+                  ? 'bg-red-50/40 dark:bg-red-950/20 shadow-xs' 
+                  : 'bg-white dark:bg-slate-800/40 hover:bg-gray-50/80 dark:hover:bg-slate-800/60'"
+              >
+                <div v-squircle="'sm'" class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mr-3 shadow-xs" :class="closeChoice === 'quit' ? 'bg-red-100 dark:bg-red-950/60 text-red-500' : 'bg-gray-100 dark:bg-slate-700 text-gray-400'">
+                  <AppIcon name="logout" class="w-4 h-4" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold" :class="closeChoice === 'quit' ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-slate-200'">退出概念音乐</p>
+                  <p class="text-[11px] mt-0.5" :class="closeChoice === 'quit' ? 'text-red-500/80 dark:text-red-400/80' : 'text-gray-400 dark:text-slate-500'">完全关闭概念音乐程序</p>
+                </div>
+                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" :class="closeChoice === 'quit' ? 'border-red-500' : 'border-gray-300 dark:border-slate-600'">
+                  <div v-if="closeChoice === 'quit'" class="w-2 h-2 rounded-full bg-red-500"></div>
+                </div>
               </div>
             </div>
 
-            <div 
-              @click="closeChoice = 'quit'" 
-              class="flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all no-drag select-none" 
-              :class="closeChoice === 'quit' 
-                ? 'border-red-500 bg-red-50/40 dark:bg-red-950/20 shadow-xs' 
-                : 'border-gray-200/80 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-red-300'"
-            >
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mr-3 shadow-xs" :class="closeChoice === 'quit' ? 'bg-red-100 dark:bg-red-950/60 text-red-500' : 'bg-gray-100 dark:bg-slate-700 text-gray-400'">
-                <AppIcon name="logout" class="w-4 h-4" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-xs font-bold" :class="closeChoice === 'quit' ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-slate-200'">退出概念音乐</p>
-                <p class="text-[11px] mt-0.5" :class="closeChoice === 'quit' ? 'text-red-500/80 dark:text-red-400/80' : 'text-gray-400 dark:text-slate-500'">完全关闭概念音乐程序</p>
-              </div>
-              <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" :class="closeChoice === 'quit' ? 'border-red-500' : 'border-gray-300 dark:border-slate-600'">
-                <div v-if="closeChoice === 'quit'" class="w-2 h-2 rounded-full bg-red-500"></div>
-              </div>
+            <div class="mb-4">
+              <label class="flex items-center text-xs text-gray-600 dark:text-slate-400 cursor-pointer no-drag select-none">
+                <input type="checkbox" v-model="rememberCloseChoice" class="mr-2 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500" />
+                <span class="font-medium">记住我的选择，以后不再询问</span>
+              </label>
+              <p class="text-[10px] text-gray-400 dark:text-slate-500 ml-5 mt-0.5">(可在「设置」-「常规与外观」中随时更改)</p>
             </div>
-          </div>
 
-          <div class="mb-4">
-            <label class="flex items-center text-xs text-gray-600 dark:text-slate-400 cursor-pointer no-drag select-none">
-              <input type="checkbox" v-model="rememberCloseChoice" class="mr-2 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500" />
-              <span class="font-medium">记住我的选择，以后不再询问</span>
-            </label>
-            <p class="text-[10px] text-gray-400 dark:text-slate-500 ml-5 mt-0.5">(可在「设置」-「常规与外观」中随时更改)</p>
-          </div>
-
-          <div class="flex space-x-3">
-            <button @click="showCloseDialog = false" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 rounded-xl text-sm font-bold transition-colors no-drag">取消</button>
-            <button @click="executeCloseAction" class="flex-1 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95 no-drag" :class="closeChoice === 'quit' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
-              {{ closeChoice === 'quit' ? '退出软件' : '最小化' }}
-            </button>
+            <div class="flex space-x-3">
+              <button @click="showCloseDialog = false" v-squircle="'md'" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 rounded-xl text-sm font-bold transition-colors no-drag">取消</button>
+              <button @click="executeCloseAction" v-squircle="'md'" class="flex-1 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95 no-drag" :class="closeChoice === 'quit' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
+                {{ closeChoice === 'quit' ? '退出软件' : '最小化' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>

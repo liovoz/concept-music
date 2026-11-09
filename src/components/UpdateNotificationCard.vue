@@ -6,9 +6,11 @@
         class="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 backdrop-blur-md no-drag p-4 outline-none"
         @click.self="handleBackdropClick"
       >
-        <div
-          class="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/60 dark:border-slate-800/80 rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.8)] w-[520px] max-w-[94vw] flex flex-col overflow-hidden transform transition-all text-slate-800 dark:text-slate-100 select-none"
-        >
+        <div class="w-[520px] max-w-[94vw] rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.8)] relative">
+          <div
+            v-squircle="'2xl'"
+            class="relative w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/60 dark:border-slate-800/80 rounded-3xl flex flex-col overflow-hidden transform transition-all text-slate-800 dark:text-slate-100 select-none"
+          >
           <!-- 顶部装饰性极光光晕背景 -->
           <div class="absolute -top-16 -left-16 w-48 h-48 bg-blue-500/15 dark:bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
           <div class="absolute -top-10 -right-10 w-44 h-44 bg-indigo-500/15 dark:bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -28,6 +30,7 @@
             <div class="flex items-start space-x-3.5">
               <!-- 图标徽章：高质感 3D 渐变 -->
               <div
+                v-squircle="'md'"
                 class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0 transition-transform duration-300 hover:scale-105"
                 :class="headerIconStyle.wrap"
               >
@@ -118,7 +121,7 @@
               </div>
 
               <!-- 结构化更新日志卡片列表 -->
-              <div class="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/50 rounded-2xl p-3 max-h-72 overflow-y-auto custom-scrollbar shadow-inner">
+              <div v-squircle="'lg'" class="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/50 rounded-2xl p-3 max-h-72 overflow-y-auto custom-scrollbar shadow-inner">
                 <!-- 导语描述 -->
                 <div 
                   v-if="parsedNotesData.lead" 
@@ -435,6 +438,7 @@
               </div>
             </div>
           </transition>
+          </div>
         </div>
       </div>
     </transition>

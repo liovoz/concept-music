@@ -115,6 +115,7 @@ const getCachedScript = (filePath, fileName) => {
 const buildSourceContext = (source) => {
   const handlers = new Map();
   const messages = [];
+  const activeRequests = new Set();
 
   const safeConsole = {
     log: (...args) => console.log('[LX-Source]', ...args),
@@ -165,6 +166,99 @@ const buildSourceContext = (source) => {
     intervals.clear();
   };
 
+  const contextLxRequest = (url, options = {}, callback = null) => {
+    if (typeof options === 'function') {
+      callback = options;
+      options = {};
+    }
+
+    const task = new Promise((resolve, reject) => {
+      let target;
+      try {
+        target = new URL(url);
+      } catch (e) {
+        reject(new Error('Invalid request url'));
+        return;
+      }
+
+      if (!['http:', 'https:'].includes(target.protocol)) {
+        reject(new Error('Unsupported request protocol'));
+        return;
+      }
+
+      const body = options.body || options.data || null;
+      const method = (options.method || (body ? 'POST' : 'GET')).toUpperCase();
+      const client = target.protocol === 'https:' ? https : http;
+      let req;
+      try {
+        req = client.request(target, {
+          method,
+          headers: {
+            'User-Agent': 'ConceptMusic/LXSource',
+            ...(options.headers || {}),
+          },
+          timeout: Number(options.timeout || 8000),
+        }, (res) => {
+          res.on('error', (err) => {
+            activeRequests.delete(req);
+            reject(err);
+          });
+          const chunks = [];
+          res.on('data', chunk => chunks.push(chunk));
+          res.on('end', () => {
+            activeRequests.delete(req);
+            const text = Buffer.concat(chunks).toString('utf8');
+            let parsedBody = text;
+            try {
+              parsedBody = JSON.parse(text);
+            } catch (e) {}
+            resolve({
+              statusCode: res.statusCode || 0,
+              status: res.statusCode || 0,
+              headers: res.headers || {},
+              body: parsedBody,
+            });
+          });
+        });
+      } catch (e) {
+        reject(e);
+        return;
+      }
+
+      activeRequests.add(req);
+
+      req.on('timeout', () => {
+        activeRequests.delete(req);
+        req.destroy(new Error('Request timeout'));
+      });
+      req.on('error', (err) => {
+        activeRequests.delete(req);
+        reject(err);
+      });
+      if (body) req.write(typeof body === 'string' ? body : JSON.stringify(body));
+      req.end();
+    });
+
+    if (typeof callback === 'function') {
+      task.then(res => callback(null, res)).catch(err => callback(err));
+      return;
+    }
+
+    return task;
+  };
+
+  const cleanup = () => {
+    cleanupTimers();
+    for (const req of activeRequests) {
+      try {
+        req.destroy(new Error('Source execution finished or timed out'));
+      } catch (_) {}
+    }
+    activeRequests.clear();
+    handlers.clear();
+    messages.length = 0;
+  };
+
   const sandbox = {
     console: safeConsole,
     Promise,
@@ -197,7 +291,7 @@ const buildSourceContext = (source) => {
     version: '2.10.0',
     env: 'desktop',
     EVENT_NAMES,
-    request: lxRequest,
+    request: contextLxRequest,
     on: (eventName, handler) => {
       if (typeof handler === 'function') handlers.set(eventName, handler);
     },
@@ -210,12 +304,12 @@ const buildSourceContext = (source) => {
     name: `lx-source:${source.file || source.id || 'unknown'}`,
   });
 
-  return { context, handlers, messages, cleanupTimers };
+  return { context, handlers, messages, cleanup };
 };
 
 const runSource = async (source, payload, timeoutMs = 12000) => {
   const script = getCachedScript(source.path, source.file || source.id);
-  const { context, handlers, messages, cleanupTimers } = buildSourceContext(source);
+  const { context, handlers, messages, cleanup } = buildSourceContext(source);
 
   try {
     script.runInContext(context, { timeout: 3000 });
@@ -234,7 +328,7 @@ const runSource = async (source, payload, timeoutMs = 12000) => {
 
     return { url, messages };
   } finally {
-    cleanupTimers();
+    cleanup();
   }
 };
 

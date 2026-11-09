@@ -40,9 +40,13 @@
 
           <!-- 歌单二级子菜单 -->
           <div
-            class="hidden group-hover/playlist:flex flex-col absolute top-0 w-48 max-h-64 overflow-y-auto custom-scrollbar rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 py-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl z-10"
+            class="hidden group-hover/playlist:flex flex-col absolute top-0 w-48 max-h-64 rounded-xl shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] z-10"
             :class="submenuPlacement === 'left' ? 'right-full mr-1' : 'left-full ml-1'"
           >
+            <div
+              v-squircle="'lg'"
+              class="w-full h-full flex flex-col overflow-y-auto custom-scrollbar rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 py-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 backdrop-blur-xl"
+            >
             <button
               class="menu-item text-blue-600 hover:text-blue-700 hover:bg-blue-50/80"
               @click="openQuickCreate"
@@ -67,6 +71,7 @@
             </div>
             <div v-else-if="userPlaylists.length === 0" class="px-3 py-2 text-gray-400 text-[11px] text-center font-normal">
               暂无可选歌单
+            </div>
             </div>
           </div>
         </div>

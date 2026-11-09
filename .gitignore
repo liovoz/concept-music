@@ -87,6 +87,7 @@ test-results/
 # Documentation (local only)
 docs/*
 !docs/ARCHITECTURE.md
+!docs/PROGRESS.md
 
 # Local design/browser capture scratch state
 design/

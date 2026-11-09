@@ -2,6 +2,19 @@ import axios from 'axios';
 
 const isElectron = typeof window !== 'undefined' && window.apiBridge && typeof window.apiBridge.request === 'function';
 
+const sanitizeUrl = (url = '') => {
+  return String(url).replace(/([?&](?:token|vip_token|dfid|userid)=)[^&]+/gi, '$1***');
+};
+
+const sanitizeHeaders = (headers = {}) => {
+  if (!headers || typeof headers !== 'object') return {};
+  const cleaned = { ...headers };
+  // 杜绝渲染层意外携带或覆盖明文凭据，统一由主进程金库透明注入
+  delete cleaned['Cookie'];
+  delete cleaned['cookie'];
+  return cleaned;
+};
+
 const ipcAdapter = async (config) => {
   let cleanConfig;
   try {
@@ -10,7 +23,7 @@ const ipcAdapter = async (config) => {
       method: config.method,
       data: config.data,
       params: config.params,
-      headers: config.headers,
+      headers: sanitizeHeaders(config.headers),
       timeout: config.timeout,
       maxRetries: config.maxRetries
     }));
@@ -20,7 +33,7 @@ const ipcAdapter = async (config) => {
       method: String(config.method || 'GET'),
       data: config.data,
       params: config.params,
-      headers: config.headers,
+      headers: sanitizeHeaders(config.headers),
       timeout: config.timeout,
       maxRetries: config.maxRetries
     };
@@ -103,12 +116,12 @@ request.interceptors.response.use(
 
     if (config && isNetworkError && config.retryCount < 2) {
        config.retryCount += 1;
-       console.warn(`本地连接波动，正在进行第 ${config.retryCount} 次自动重试: ${config.url}`);
+       console.warn(`本地连接波动，正在进行第 ${config.retryCount} 次自动重试: ${sanitizeUrl(config.url)}`);
        await new Promise(resolve => setTimeout(resolve, 500));
        return request(config);
     }
 
-    console.error(`API 请求失败 [${config?.url}]:`, error.message);
+    console.error(`API 请求失败 [${sanitizeUrl(config?.url)}]:`, error.message);
     
     if (errcode === 20028 || status === 500) {
        localStorage.removeItem('kg_desktop_has_dfid');
@@ -137,7 +150,7 @@ request.get = async function(...args) {
   const url = args[0];
   if (url === '/register/dev' || url === '/api/register/dev') {
     if (localStorage.getItem('kg_desktop_has_dfid') === 'true') {
-        return Promise.resolve({ status: 1, error_code: 0, msg: 'dfid cached' });
+      return Promise.resolve({ status: 1, error_code: 0, msg: 'dfid cached' });
     }
     if (!devPromise) {
       devPromise = originalGet.apply(this, args).then(res => {

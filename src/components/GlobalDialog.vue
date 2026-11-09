@@ -5,7 +5,8 @@
   <Teleport to="body">
     <transition name="dialog-fade">
       <div v-if="store.dialogState.visible" ref="dialogRef" tabindex="-1" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm no-drag outline-none" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
-        <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-800 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] w-[380px] flex flex-col overflow-hidden transform transition-all text-gray-800 dark:text-slate-100">
+        <div class="w-[380px] rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative">
+          <div v-squircle="'2xl'" class="w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-800 rounded-[24px] flex flex-col overflow-hidden transform transition-all text-gray-800 dark:text-slate-100">
           
           <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-800 flex items-center bg-gray-50/50 dark:bg-slate-800/40">
              <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 shadow-inner" :class="dialogTone.iconWrap">
@@ -29,6 +30,7 @@
             </button>
           </div>
 
+          </div>
         </div>
       </div>
     </transition>

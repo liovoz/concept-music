@@ -28,6 +28,7 @@ export const hideTooltip = () => {
   }
   tooltipState.visible = false;
   tooltipState.activeEl = null;
+  tooltipState.activeRect = null;
 };
 
 const handleGlobalPointerMove = (e) => {
@@ -38,8 +39,8 @@ const handleGlobalPointerMove = (e) => {
     return;
   }
 
-  const rect = tooltipState.activeEl.getBoundingClientRect();
-  const buffer = 6;
+  const rect = tooltipState.activeRect || tooltipState.activeEl.getBoundingClientRect();
+  const buffer = 8;
   const isInside = (
     e.clientX >= rect.left - buffer &&
     e.clientX <= rect.right + buffer &&
@@ -146,6 +147,7 @@ const positionTooltip = (el, text) => {
   }
 
   tooltipState.activeEl = el;
+  tooltipState.activeRect = rect;
   tooltipState.text = text;
   tooltipState.x = posX;
   tooltipState.y = posY;
@@ -164,6 +166,10 @@ export const tooltipDirective = {
         clearTimeout(hideTimer);
         hideTimer = null;
       }
+      if (showTimer) {
+        clearTimeout(showTimer);
+        showTimer = null;
+      }
       const text = el.getAttribute('data-tooltip');
       if (!text) return;
 
@@ -173,10 +179,17 @@ export const tooltipDirective = {
         if (!isElementOverflowing(el)) return;
       }
 
-      positionTooltip(el, text);
+      showTimer = setTimeout(() => {
+        positionTooltip(el, text);
+        showTimer = null;
+      }, 180);
     };
 
     el._mouseleave = () => {
+      if (showTimer) {
+        clearTimeout(showTimer);
+        showTimer = null;
+      }
       if (tooltipState.activeEl === el) {
         hideTooltip();
       }
@@ -201,6 +214,10 @@ export const tooltipDirective = {
   },
 
   unmounted(el) {
+    if (showTimer) {
+      clearTimeout(showTimer);
+      showTimer = null;
+    }
     el.removeEventListener('mouseenter', el._mouseenter);
     el.removeEventListener('mouseleave', el._mouseleave);
     if (tooltipState.activeEl === el) {

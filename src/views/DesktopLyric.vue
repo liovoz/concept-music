@@ -560,13 +560,13 @@ const getCharProgress = (w) => {
   if (!w || !w.duration || t <= w.startTime) return 0;
   if (t >= w.endTime) return 100;
   const p = ((t - w.startTime) / w.duration) * 100;
-  return Math.max(0, Math.min(100, p));
+  return Math.max(0, Math.min(100, Math.round(p * 10) / 10));
 };
 
 const startAnimation = () => {
   if (animationFrameId) return;
   const loop = () => {
-    if (!isPlaying.value || !config.karaokeMode) {
+    if (!isPlaying.value || !config.karaokeMode || !currentWords.value || currentWords.value.length === 0) {
       animationFrameId = null;
       return;
     }
@@ -829,7 +829,7 @@ watch(config, (v) => {
   padding: 6px 14px;
   margin-top: 8px;
   background: rgba(30, 30, 30, 0.9);
-  border-radius: 20px;
+  border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
@@ -913,7 +913,8 @@ watch(config, (v) => {
   padding: 0 30px;
   pointer-events: none;
   min-height: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: opacity, transform;
   box-sizing: border-box;
 }
 
@@ -1005,7 +1006,7 @@ watch(config, (v) => {
   row-gap: 6px;
   width: 164px;
   padding: 8px 6px;
-  border-radius: 16px;
+  border-radius: 18px;
   justify-content: center;
   align-items: center;
   margin-top: 4px;
@@ -1324,7 +1325,7 @@ watch(config, (v) => {
   position: relative;
   width: 34px;
   height: 18px;
-  border-radius: 9px;
+  border-radius: 9999px;
   border: none;
   background: rgba(255, 255, 255, 0.18);
   cursor: pointer;
@@ -1368,23 +1369,26 @@ watch(config, (v) => {
   border-radius: 14px;
   border: none;
   background: #fff;
-  color: #000;
+  color: #0f172a;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.1s ease;
   white-space: nowrap;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translateZ(0);
+  will-change: background, box-shadow;
+  backface-visibility: hidden;
 }
 
 .st-done:hover {
-  background: #f1f5f9;
-  transform: scale(1.03);
+  background: #f8fafc;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.28);
 }
 
 .st-done:active {
-  transform: scale(0.96);
+  transform: scale(0.96) translateZ(0);
 }
 
 /* ================= 竖排：方案 C (浮岛层级卡 Vertical Island) ================= */
@@ -1584,7 +1588,7 @@ watch(config, (v) => {
   color: rgba(0, 0, 0, 0.75);
   font-size: 11px;
   font-weight: 600;
-  border-radius: 20px;
+  border-radius: 9999px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   white-space: nowrap;
@@ -1594,7 +1598,8 @@ watch(config, (v) => {
 
 .panel-fade-enter-active,
 .panel-fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: opacity, transform;
 }
 
 .panel-fade-enter-from,

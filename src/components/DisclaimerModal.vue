@@ -2,7 +2,8 @@
   <Teleport to="body">
     <transition name="fade-scale">
       <div v-if="isVisible" class="fixed inset-0 z-[100000] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm no-drag p-4">
-        <div class="bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-[480px] max-w-full max-h-[85vh] flex flex-col overflow-hidden transform transition-all">
+        <div class="w-[480px] max-w-full max-h-[85vh] rounded-[18px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] relative">
+          <div v-squircle="'xl'" class="w-full h-full bg-white/95 backdrop-blur-2xl border border-gray-100 rounded-[18px] flex flex-col overflow-hidden transform transition-all">
 
           <div class="px-6 py-5 border-b border-gray-100 flex items-center bg-gray-50/50">
             <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mr-3 shadow-inner">
@@ -76,6 +77,7 @@
             </button>
           </div>
 
+          </div>
         </div>
       </div>
     </transition>

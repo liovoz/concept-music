@@ -33,11 +33,21 @@
     <transition name="fade-tooltip">
       <div 
         v-if="tooltipState.visible"
-        :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px', maxHeight: tooltipState.maxHeight + 'px' }"
-        class="fixed z-[1000001] w-max max-w-xs sm:max-w-sm overflow-y-auto overscroll-contain px-3 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.5)] text-xs text-gray-700 dark:text-slate-200 leading-normal whitespace-normal break-words pointer-events-none font-medium custom-scrollbar"
+        :style="{ left: tooltipState.x + 'px', top: tooltipState.y + 'px' }"
+        class="fixed z-[1000001] w-max max-w-xs sm:max-w-sm rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.5)] pointer-events-none"
         :class="tooltipState.isBottom ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2'"
       >
-        {{ tooltipState.text }}
+        <div
+          v-squircle="'md'"
+          class="relative px-3 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-xl overflow-hidden"
+        >
+          <div
+            class="text-xs text-gray-700 dark:text-slate-200 leading-normal whitespace-normal break-words font-medium overflow-y-auto overflow-x-hidden overscroll-contain custom-scrollbar"
+            :style="{ maxHeight: `${(tooltipState.maxHeight || 320) - 16}px` }"
+          >
+            {{ tooltipState.text }}
+          </div>
+        </div>
       </div>
     </transition>
   </div>

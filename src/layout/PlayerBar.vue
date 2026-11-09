@@ -15,15 +15,20 @@
     <div class="flex items-center w-[320px]">
       <div 
         @click="openLyricsPage" 
-        class="relative w-12 h-12 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 flex-shrink-0 flex items-center justify-center text-gray-300 dark:text-slate-500 overflow-hidden cursor-pointer group shadow-sm hover:shadow transition-all"
+        class="relative w-12 h-12 rounded-[10px] shadow-sm hover:shadow flex-shrink-0 cursor-pointer group transition-shadow"
         v-tooltip="'展开/收起歌词'"
       >
-        <img v-if="store.currentSong && store.currentSong.cover" :src="store.currentSong.cover" :alt="store.currentSong.name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <AppIcon v-else name="album" class="w-6 h-6 transition-transform duration-500 group-hover:scale-105" />
-        
-        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px]">
-          <AppIcon v-if="!store.isLyricsVisible" name="chevron-up" class="w-5 h-5 text-white drop-shadow-md transform translate-y-1 group-hover:translate-y-0 transition-all duration-300" />
-          <AppIcon v-else name="chevron-down" class="w-5 h-5 text-white drop-shadow-md transform -translate-y-1 group-hover:translate-y-0 transition-all duration-300" />
+        <div 
+          v-squircle="'md'"
+          class="relative w-full h-full rounded-[10px] bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-300 dark:text-slate-500 transform-gpu [transform:translateZ(0)]"
+        >
+          <img v-if="store.currentSong && store.currentSong.cover" :src="store.currentSong.cover" :alt="store.currentSong.name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <AppIcon v-else name="album" class="w-6 h-6 transition-transform duration-500 group-hover:scale-105" />
+          
+          <div class="absolute inset-0 bg-black/35 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <AppIcon v-if="!store.isLyricsVisible" name="chevron-up" class="w-5 h-5 text-white drop-shadow-md transform translate-y-1 group-hover:translate-y-0 transition-all duration-300" />
+            <AppIcon v-else name="chevron-down" class="w-5 h-5 text-white drop-shadow-md transform -translate-y-1 group-hover:translate-y-0 transition-all duration-300" />
+          </div>
         </div>
       </div>
       
@@ -35,9 +40,9 @@
               <span v-if="isTitleOverflow" class="player-title-text player-title-copy" aria-hidden="true">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
             </span>
           </span>
-          <span v-if="store.isCurrentSongPreview" class="ml-2 flex-shrink-0 bg-green-50 text-green-600 border border-green-200 px-1 py-0.5 rounded text-[8px] font-black tracking-widest uppercase leading-none mt-0.5 shadow-sm">试听</span>
-          <span v-else-if="store.currentSong?.is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-          <span v-else-if="store.currentSong?.is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+          <span v-if="store.isCurrentSongPreview" v-squircle="'xs'" class="ml-2 flex-shrink-0 bg-green-50 text-green-600 border border-green-200 px-1 py-0.5 rounded text-[8px] font-black tracking-widest uppercase leading-none mt-0.5 shadow-sm">试听</span>
+          <span v-else-if="store.currentSong?.is_paid" v-squircle="'xs'" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
+          <span v-else-if="store.currentSong?.is_vip" v-squircle="'xs'" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
         </div>
         <div class="flex items-center mt-0.5 space-x-2">
           <SingerLink v-if="store.currentSong" :singers="store.currentSong._singers || store.currentSong.artists" :singer-name="store.currentSong.singer" :singer-id="store.currentSong.singer_id" size="small" :disabled="isExternalImportSong(store.currentSong)" :disabled-tooltip="getImportDisabledTooltip(store.currentSong)" />
@@ -86,17 +91,17 @@
 
     <div class="flex items-center justify-end w-[360px] space-x-4 text-gray-500 dark:text-slate-400 pr-2">
        
-       <button @click="store.toggleDesktopLyric" class="no-drag cursor-pointer font-bold tracking-wide transition-all min-w-[32px] h-7 px-2 flex items-center justify-center text-[13px] rounded-md border relative flex-shrink-0" :class="store.isDesktopLyricVisible ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-400/30 dark:text-blue-300' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400'" v-tooltip="'开启/关闭桌面歌词'">
+       <button @click="store.toggleDesktopLyric" v-squircle="'sm'" class="no-drag cursor-pointer font-bold tracking-wide transition-all min-w-[32px] h-7 px-2 flex items-center justify-center text-[13px] rounded-md border relative flex-shrink-0" :class="store.isDesktopLyricVisible ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-400/30 dark:text-blue-300' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400'" v-tooltip="'开启/关闭桌面歌词'">
          词
        </button>
 
        <div v-if="store.currentSong" ref="qualityMenuRef" class="relative flex flex-col items-center justify-center no-drag z-[60]">
-         <div @click="qualityMenuOpen = !qualityMenuOpen" class="cursor-pointer font-bold tracking-wide uppercase transition-all h-7 px-2.5 flex items-center text-[13px] rounded-md border border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400" v-tooltip="'音质选择'">
+         <div @click="qualityMenuOpen = !qualityMenuOpen" v-squircle="'sm'" class="cursor-pointer font-bold tracking-wide uppercase transition-all h-7 px-2.5 flex items-center text-[13px] rounded-md border border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400" v-tooltip="'音质选择'">
            {{ qualityDisplayName }}
          </div>
          
          <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 pb-2 transition-all duration-300 origin-bottom" :class="qualityMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'">
-           <div class="flex flex-col bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden w-32 py-1.5 relative">
+           <div v-squircle="'lg'" class="flex flex-col bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden w-32 py-1.5 relative">
              <div class="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none"></div>
 
              <div v-for="(q, index) in qualityMenuOptions" :key="q.key" @click="handleQualitySelect(q)"
@@ -141,6 +146,7 @@
       <div
         v-show="store.isPlaylistVisible"
         ref="playlistPanelRef"
+        v-squircle="'xl'"
         class="absolute bottom-24 right-6 w-[420px] min-h-[390px] max-h-[68vh] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.55)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-slate-100"
         tabindex="-1"
         @keydown.escape="handlePlaylistEscape"
@@ -890,10 +896,12 @@
           <!-- 模式 2：【动感流体大词模式】(Fluid Wave - Apple Music 风格) -->
           <div v-else-if="store.immersiveLyricMode === 'fluid'" class="w-full h-full flex flex-col justify-center relative">
             <!-- 悬浮左上角艺术徽章 -->
-            <div class="absolute top-0 left-0 flex items-center space-x-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-3.5 shadow-2xl z-20 max-w-sm">
-              <div class="w-14 h-14 rounded-xl overflow-hidden shadow-lg flex-shrink-0 relative">
-                <img :src="store.currentSong?.cover || defaultImg" :alt="store.currentSong?.name" class="w-full h-full object-cover" />
-                <div v-if="store.isPlaying" class="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
+            <div v-squircle="'lg'" class="absolute top-0 left-0 flex items-center space-x-4 bg-white/10 backdrop-blur-xl border border-white/10 p-3.5 shadow-2xl z-20 max-w-sm rounded-[14px] transform-gpu [transform:translateZ(0)]">
+              <div class="w-14 h-14 rounded-[10px] shadow-lg flex-shrink-0 relative">
+                <div v-squircle="'md'" class="relative w-full h-full rounded-[10px] bg-slate-900 transform-gpu [transform:translateZ(0)]">
+                  <img :src="store.currentSong?.cover || defaultImg" :alt="store.currentSong?.name" class="w-full h-full object-cover" />
+                  <div v-if="store.isPlaying" class="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
+                </div>
               </div>
               <div class="flex-1 min-w-0 pr-2">
                 <h4 class="text-base font-extrabold text-white truncate">{{ store.currentSong?.name || '概念音乐' }}</h4>
@@ -946,18 +954,20 @@
             <!-- 左侧：3D 悬浮超清专辑大图 (Ken Burns 呼吸动画) -->
             <div class="w-5/12 flex flex-col items-center justify-center relative select-none">
               <div class="relative group">
-                <div class="w-[340px] h-[340px] xl:w-[420px] xl:h-[420px] 2xl:w-[460px] 2xl:h-[460px] rounded-3xl overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.7)] border border-white/20 relative bg-slate-900">
-                  <img 
-                    :src="store.currentSong?.cover || defaultImg" 
-                    :alt="store.currentSong?.name" 
-                    class="w-full h-full object-cover transition-transform duration-[12s] ease-in-out hover:scale-110"
-                    :class="{ 'animate-kenburns': store.isPlaying }"
-                  />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
-                  <div class="absolute bottom-6 left-6 right-6">
-                    <span v-if="store.currentQuality" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-600/90 text-white tracking-widest shadow-md inline-block mb-1.5">{{ qualityDisplayName }}</span>
-                    <h3 class="text-2xl font-black text-white truncate drop-shadow-lg">{{ store.currentSong?.name }}</h3>
-                    <p class="text-sm font-semibold text-slate-300 truncate mt-0.5 drop-shadow-md">{{ store.currentSong?.singer }}</p>
+                <div class="w-[340px] h-[340px] xl:w-[420px] xl:h-[420px] 2xl:w-[460px] 2xl:h-[460px] rounded-[24px] shadow-[0_30px_70px_rgba(0,0,0,0.7)] relative">
+                  <div v-squircle="'2xl'" class="relative w-full h-full rounded-[24px] border border-white/20 bg-slate-900 transform-gpu [transform:translateZ(0)]">
+                    <img 
+                      :src="store.currentSong?.cover || defaultImg" 
+                      :alt="store.currentSong?.name" 
+                      class="w-full h-full object-cover transition-transform duration-[12s] ease-in-out hover:scale-110"
+                      :class="{ 'animate-kenburns': store.isPlaying }"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
+                    <div class="absolute bottom-6 left-6 right-6">
+                      <span v-if="store.currentQuality" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-600/90 text-white tracking-widest shadow-md inline-block mb-1.5">{{ qualityDisplayName }}</span>
+                      <h3 class="text-2xl font-black text-white truncate drop-shadow-lg">{{ store.currentSong?.name }}</h3>
+                      <p class="text-sm font-semibold text-slate-300 truncate mt-0.5 drop-shadow-md">{{ store.currentSong?.singer }}</p>
+                    </div>
                   </div>
                 </div>
                 <!-- 底部氛围投影光晕 -->
@@ -1008,10 +1018,12 @@
           <!-- 模式 4：【映画光影·逐字音符跳跃与空间波浪错落】(Kinetic Staggered Word Reveal) -->
           <div v-else-if="store.immersiveLyricMode === 'cinematic'" class="w-full h-full flex flex-col justify-center items-center relative overflow-hidden select-none">
             <!-- 悬浮左上角极简微型艺术徽章 (Minimalist Art Float) -->
-            <div class="absolute top-0 left-0 flex items-center space-x-3.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 shadow-2xl z-20 max-w-sm transition-all hover:bg-white/10">
-              <div class="w-12 h-12 rounded-xl overflow-hidden shadow-md flex-shrink-0 relative bg-slate-900 border border-white/15">
-                <img :src="store.currentSong?.cover || defaultImg" :alt="store.currentSong?.name" class="w-full h-full object-cover" />
-                <div v-if="store.isPlaying" class="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
+            <div v-squircle="'lg'" class="absolute top-0 left-0 flex items-center space-x-3.5 bg-white/10 backdrop-blur-xl border border-white/10 p-2.5 shadow-2xl z-20 max-w-sm transition-colors hover:bg-white/15 rounded-[14px] transform-gpu [transform:translateZ(0)]">
+              <div class="w-12 h-12 rounded-[10px] shadow-md flex-shrink-0 relative">
+                <div v-squircle="'md'" class="relative w-full h-full rounded-[10px] bg-slate-900 border border-white/15 transform-gpu [transform:translateZ(0)]">
+                  <img :src="store.currentSong?.cover || defaultImg" :alt="store.currentSong?.name" class="w-full h-full object-cover" />
+                  <div v-if="store.isPlaying" class="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
+                </div>
               </div>
               <div class="flex-1 min-w-0 pr-2">
                 <h4 class="text-sm font-extrabold text-white truncate drop-shadow-sm">{{ store.currentSong?.name || '概念音乐' }}</h4>

@@ -14,39 +14,41 @@
       </div>
 
       <div v-if="isTagsLoading" class="mb-6 space-y-3">
-        <div class="inline-flex items-center space-x-1 bg-gray-50 dark:bg-slate-900/80 p-1 rounded-lg border border-gray-100 dark:border-slate-700">
-          <div v-for="i in 7" :key="'cat-'+i" class="h-7 w-14 bg-gray-200/60 dark:bg-slate-800 rounded-md animate-pulse"></div>
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="inline-flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 rounded-lg border border-gray-200/60 dark:!border-slate-800">
+          <div v-for="i in 7" :key="'cat-'+i" v-squircle="{ radius: 6, smoothing: 0.6 }" class="h-7 w-14 bg-gray-200/60 dark:bg-slate-800 rounded-md animate-pulse"></div>
         </div>
-        <div class="p-3 bg-gray-50/70 dark:bg-slate-900/50 rounded-xl border border-gray-100/80 dark:border-slate-800/80 flex flex-wrap gap-1.5">
-          <div v-for="i in 12" :key="'tag-'+i" class="h-6 w-14 bg-gray-200/50 dark:bg-slate-800/80 rounded-md animate-pulse"></div>
+        <div v-squircle="'lg'" class="p-3 bg-gray-50/70 dark:bg-slate-900/50 rounded-[14px] border border-gray-100/80 dark:border-slate-800/80 flex flex-wrap gap-1.5">
+          <div v-for="i in 12" :key="'tag-'+i" v-squircle="{ radius: 6, smoothing: 0.6 }" class="h-6 w-14 bg-gray-200/50 dark:bg-slate-800/80 rounded-md animate-pulse"></div>
         </div>
       </div>
 
       <div v-else class="mb-6">
         <div class="overflow-x-auto pb-1 scrollbar-hide">
-          <div class="inline-flex items-center space-x-1 bg-gray-50 dark:bg-slate-900/80 p-1 rounded-lg border border-gray-100 dark:border-slate-700 min-w-max">
+          <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="inline-flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 min-w-max transition-colors">
             <button
               v-for="category in categories"
               :key="category.id"
               @click="selectCategory(category)"
-              class="px-4 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap no-drag"
+              v-squircle="{ radius: 6, smoothing: 0.6 }"
+              class="px-4 py-1.5 text-xs font-bold transition-colors whitespace-nowrap no-drag"
               :class="activeCategory.id === category.id
-                ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/30'
-                : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-100'"
+                ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40'
+                : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'"
             >
               {{ category.name }}
             </button>
           </div>
         </div>
 
-        <div v-if="activeCategory.tags && activeCategory.tags.length > 0" class="mt-3 p-3 bg-gray-50/70 dark:bg-slate-900/50 rounded-xl border border-gray-100/80 dark:border-slate-800/80 flex flex-wrap gap-1.5">
+        <div v-if="activeCategory.tags && activeCategory.tags.length > 0" v-squircle="'lg'" class="mt-3 p-3 bg-gray-50/70 dark:bg-slate-900/50 border border-gray-100/80 dark:border-slate-800/80 flex flex-wrap gap-1.5">
           <button
             v-for="tag in activeCategory.tags"
             :key="tag.tagId"
             @click="selectTag(tag)"
-            class="px-3 py-1.5 rounded-md text-xs font-medium transition-all no-drag whitespace-nowrap"
+            v-squircle="{ radius: 6, smoothing: 0.6 }"
+            class="px-3 py-1.5 text-xs font-semibold transition-colors no-drag whitespace-nowrap"
             :class="activeTag?.tagId === tag.tagId
-              ? 'bg-white text-blue-600 font-bold shadow-xs border border-blue-100/80 dark:!bg-slate-800 dark:text-blue-400 dark:border-slate-700 dark:shadow-black/20'
+              ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40'
               : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-800/60'"
           >
             {{ tag.name }}
@@ -58,33 +60,35 @@
         <h3 class="text-xl font-bold text-gray-800 dark:text-slate-100 flex items-center">
           <span class="text-2xl mr-2">{{ activeTag?.name || activeCategory?.name || '全部' }}</span>
         </h3>
-        <div class="flex items-center space-x-1 bg-gray-50 dark:bg-slate-900/80 p-1 rounded-lg border border-gray-100 dark:border-slate-700">
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 transition-colors">
           <button
             @click="sortMode = 1"
-            class="px-3.5 py-1.5 rounded-md text-xs font-bold transition-all no-drag"
+            v-squircle="{ radius: 6, smoothing: 0.6 }"
+            class="px-3.5 py-1.5 text-xs font-bold transition-colors no-drag"
             :class="sortMode === 1
-              ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/30'
-              : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-100'"
+              ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40'
+              : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'"
           >热门</button>
           <button
             @click="sortMode = 2"
-            class="px-3.5 py-1.5 rounded-md text-xs font-bold transition-all no-drag"
+            v-squircle="{ radius: 6, smoothing: 0.6 }"
+            class="px-3.5 py-1.5 text-xs font-bold transition-colors no-drag"
             :class="sortMode === 2
-              ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/30'
-              : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-100'"
+              ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40'
+              : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'"
           >最新</button>
         </div>
       </div>
 
       <div v-if="isPlaylistsLoading && playlists.length === 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 lg:gap-5">
         <div v-for="i in 15" :key="i" class="flex flex-col space-y-3">
-          <div class="w-full aspect-square bg-gray-100 dark:bg-slate-850 rounded-2xl animate-pulse shadow-sm border border-gray-50 dark:border-slate-800"></div>
+          <div v-squircle="'xl'" class="w-full aspect-square bg-gray-100 dark:bg-slate-850 rounded-[18px] animate-pulse shadow-sm border border-gray-50 dark:border-slate-800"></div>
           <div class="w-3/4 h-4 bg-gray-100 dark:bg-slate-800 rounded animate-pulse"></div>
           <div class="w-1/2 h-3 bg-gray-50 dark:bg-slate-800/80 rounded animate-pulse"></div>
         </div>
       </div>
 
-      <div v-else-if="playlistsError && playlists.length === 0" class="flex-1 flex flex-col items-center justify-center py-10 text-red-500 bg-red-50/50 rounded-2xl border border-red-100">
+      <div v-else-if="playlistsError && playlists.length === 0" v-squircle="'xl'" class="flex-1 flex flex-col items-center justify-center py-10 text-red-500 bg-red-50/50 rounded-[18px] border border-red-100">
         <p class="text-sm font-bold text-red-600 mb-2">获取歌单失败</p>
         <button @click="fetchPlaylists" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
@@ -92,19 +96,21 @@
       <div v-else-if="playlists.length > 0">
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 lg:gap-5 mb-8">
           <div v-for="playlist in playlists" :key="playlist.global_collection_id || playlist.specialid" @click="goToPlaylist(playlist.global_collection_id || playlist.specialid)" class="flex flex-col group cursor-pointer no-drag">
-            <div class="relative w-full aspect-square rounded-2xl overflow-hidden fix-clip shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1 bg-gray-100 dark:bg-slate-850 border border-gray-50/50 dark:border-slate-800">
+            <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1">
+              <div v-squircle="'xl'" class="relative w-full h-full bg-gray-100 dark:bg-slate-850 transform-gpu [transform:translateZ(0)]">
               <img :src="formatImg(playlist.imgurl || playlist.flexible_cover || playlist.pic)" :alt="playlist.specialname" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
 
-              <div class="absolute top-2 right-2 bg-black/30 backdrop-blur-md text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
+              <div class="absolute top-2 right-2 bg-black/45 text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
                 <AppIcon name="play" class="w-3 h-3 mr-1" />
                 <span class="text-[10px] font-bold tracking-wider">{{ formatPlayCount(playlist.play_count) }}</span>
               </div>
 
-              <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-lg border border-white/30 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+              <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <div class="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
                   <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
                 </div>
               </div>
+            </div>
             </div>
             <div class="mt-3 flex flex-col px-1 min-w-0">
               <h4 class="text-sm font-bold text-gray-800 dark:text-slate-200 leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>
@@ -119,7 +125,7 @@
         </div>
 
         <div v-else-if="!hasMore" class="w-full flex flex-col items-center justify-center mt-2 mb-8">
-          <div class="group px-10 py-6 bg-gray-50/50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60 dark:hover:bg-slate-800/60 dark:hover:border-slate-700/80">
+          <div v-squircle="'2xl'" class="group px-10 py-6 bg-gray-50/50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60 dark:hover:bg-slate-800/60 dark:hover:border-slate-700/80">
             <div class="w-10 h-10 bg-white dark:!bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 border border-transparent dark:border-slate-700/60 transition-transform">
               <AppIcon name="music" class="w-5 h-5 text-gray-300 dark:text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
             </div>
@@ -357,12 +363,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.fix-clip {
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-  mask-image: radial-gradient(white, black);
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
 .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.4); border-radius: 4px; }

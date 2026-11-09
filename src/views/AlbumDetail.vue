@@ -12,12 +12,13 @@
       </button>
 
       <div class="flex items-end mb-10 gap-6">
-        <div v-if="isLoading && page === 1" class="w-48 h-48 rounded-2xl bg-gray-200 animate-pulse flex-shrink-0 shadow-md"></div>
-        <div v-else class="relative w-48 h-48 rounded-2xl flex-shrink-0 shadow-lg overflow-hidden border border-gray-100 bg-white group z-10">
-          <img :src="albumInfo.cover || defaultImg" :alt="albumInfo.name || '专辑封面'" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 relative z-10" />
-          <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20"></div>
-          
-          <div class="absolute -right-5 top-1/2 transform -translate-y-1/2 w-[90%] h-[90%] bg-[#111] rounded-full shadow-[0_0_15px_rgba(0,0,0,0.6)] -z-10 group-hover:translate-x-4 transition-transform duration-700 border border-gray-800" style="background: repeating-radial-gradient(#111 0px, #1c1c1c 2px, #111 4px);"></div>
+        <div v-if="isLoading && page === 1" v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 animate-pulse flex-shrink-0 shadow-md"></div>
+        <div v-else class="relative w-48 h-48 rounded-[18px] shadow-lg flex-shrink-0 group z-10">
+          <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white transform-gpu [transform:translateZ(0)]">
+            <img :src="albumInfo.cover || defaultImg" :alt="albumInfo.name || '专辑封面'" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 relative z-10" />
+            <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20"></div>
+            <div class="absolute -right-5 top-1/2 transform -translate-y-1/2 w-[90%] h-[90%] bg-[#111] rounded-full shadow-[0_0_15px_rgba(0,0,0,0.6)] -z-10 group-hover:translate-x-4 transition-transform duration-700 border border-gray-800" style="background: repeating-radial-gradient(#111 0px, #1c1c1c 2px, #111 4px);"></div>
+          </div>
         </div>
 
         <div class="flex flex-col justify-end flex-1 min-w-0">
@@ -50,7 +51,7 @@
         </div>
       </div>
 
-      <div v-if="albumInfo.intro && !isLoading" class="mb-8 p-5 bg-gray-50/50 rounded-2xl border border-gray-100 group relative">
+      <div v-if="albumInfo.intro && !isLoading" class="mb-8 p-5 bg-gray-50/50 rounded-[18px] border border-gray-100 group relative">
         <h4 class="text-xs font-bold text-gray-800 mb-2">专辑简介</h4>
         <p class="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap transition-all duration-300" :class="isIntroExpanded ? '' : 'line-clamp-3'">{{ albumInfo.intro }}</p>
         <button v-if="albumInfo.intro.length > 120" @click="isIntroExpanded = !isIntroExpanded" class="mt-2 text-blue-500 hover:text-blue-600 text-xs font-bold focus:outline-none no-drag transition-colors">
@@ -59,12 +60,12 @@
       </div>
 
       <div v-if="isLoading && page === 1" class="space-y-4 w-full">
-        <div v-for="i in 10" :key="i" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-xl">
+        <div v-for="i in 10" :key="i" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-[14px]">
           <div class="w-8 h-4 bg-gray-200 rounded animate-pulse"></div><div class="flex-1 ml-4 h-4 bg-gray-200 rounded animate-pulse max-w-md"></div>
         </div>
       </div>
 
-      <div v-else-if="isError && page === 1" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100">
+      <div v-else-if="isError && page === 1" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-[24px] border border-red-100">
         <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">获取专辑信息失败</p>
         <button @click="fetchDetail" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
@@ -84,7 +85,7 @@
         </div>
         
         <div class="space-y-1 w-full">
-          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
+          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm text-gray-400 dark:text-slate-500 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
@@ -92,8 +93,8 @@
             
             <div class="flex-1 pl-2 text-sm text-gray-800 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
               <span class="truncate min-w-0">{{ song._title }}</span>
-              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
+              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
             </div>
             
             <div class="w-1/3 hidden sm:block text-xs truncate pr-4 min-w-0">

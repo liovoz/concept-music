@@ -27,7 +27,7 @@
           </button>
         </div>
 
-        <div v-if="!userStore.isLoggedIn" class="w-full bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-slate-900/90 dark:to-blue-950/30 border border-blue-100/50 dark:border-slate-800 rounded-3xl p-10 flex flex-col items-center justify-center text-center shadow-inner dark:shadow-none transition-colors">
+        <div v-if="!userStore.isLoggedIn" v-squircle="'2xl'" class="w-full bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-slate-900/90 dark:to-blue-950/30 border border-blue-100/50 dark:border-slate-800 rounded-3xl p-10 flex flex-col items-center justify-center text-center shadow-inner dark:shadow-none transition-colors">
           <div class="w-16 h-16 bg-white dark:!bg-blue-950/50 rounded-full flex items-center justify-center mb-4 shadow-sm dark:shadow-inner border border-transparent dark:border-blue-900/40 transition-colors">
             <AppIcon name="lock" class="w-8 h-8 text-blue-500 dark:text-blue-400" />
           </div>
@@ -39,8 +39,8 @@
         </div>
 
         <div v-else-if="isDailyLoading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <div v-for="i in 10" :key="i" class="flex items-center p-3 bg-gray-50/50 border border-gray-100 rounded-xl">
-            <div class="w-12 h-12 bg-gray-200 rounded-md animate-pulse flex-shrink-0"></div>
+          <div v-for="i in 10" :key="i" v-squircle="'lg'" class="flex items-center p-3 bg-gray-50/50 border border-gray-100 rounded-[14px]">
+            <div v-squircle="'sm'" class="w-12 h-12 bg-gray-200 rounded-[8px] animate-pulse flex-shrink-0"></div>
             <div class="flex-1 ml-3 flex flex-col space-y-2">
               <div class="w-3/4 h-3 bg-gray-200 rounded animate-pulse"></div>
               <div class="w-1/2 h-2.5 bg-gray-200 rounded animate-pulse"></div>
@@ -48,18 +48,18 @@
           </div>
         </div>
 
-        <div v-else-if="dailyError" class="w-full py-10 flex flex-col items-center justify-center text-red-500 bg-red-50/50 rounded-2xl border border-red-100">
+        <div v-else-if="dailyError" v-squircle="'xl'" class="w-full py-10 flex flex-col items-center justify-center text-red-500 bg-red-50/50 rounded-[18px] border border-red-100">
           <p class="text-sm font-bold text-red-600 mb-2">获取每日推荐失败，请检查网络</p>
           <button @click="fetchDailyRecommend" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold shadow-md transition-all active:scale-95 no-drag">重试加载</button>
         </div>
 
         <div v-else-if="dailySongs.length > 0" class="w-full flex flex-col">
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
-            <div v-for="song in dailySongs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="group flex items-center p-2.5 bg-white dark:!bg-slate-900/80 border border-gray-100 dark:border-slate-800 shadow-sm rounded-xl hover:shadow-md hover:border-blue-100 dark:hover:border-blue-500/40 dark:hover:bg-slate-800/80 transition-all cursor-pointer no-drag min-w-0">
-              <div class="relative w-[50px] h-[50px] flex-shrink-0 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-800 mr-3 border border-gray-50 dark:border-slate-700/50">
+            <div v-for="song in dailySongs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="group flex items-center p-2.5 rounded-[14px] bg-white dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-100 dark:hover:border-blue-500/40 dark:hover:bg-slate-800/80 transition-colors cursor-pointer no-drag min-w-0">
+              <div v-squircle="'sm'" class="relative w-[50px] h-[50px] rounded-[8px] flex-shrink-0 bg-gray-100 dark:bg-slate-800 mr-3 transform-gpu [transform:translateZ(0)]">
                 <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
                 
-                <div @click.stop="handlePlay(song)" class="absolute inset-0 bg-black/20 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                <div @click.stop="handlePlay(song)" class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
                   <AppIcon name="play" class="w-6 h-6 text-white ml-0.5 drop-shadow-md transform scale-75 group-hover:scale-100 transition-transform duration-300" />
                 </div>
               </div>
@@ -67,8 +67,8 @@
               <div class="flex-1 min-w-0 flex flex-col justify-center">
                 <div class="flex items-center w-full">
                   <span class="text-sm font-bold text-gray-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate" v-tooltip="song._title">{{ song._title }}</span>
-                  <span v-if="song._is_paid" class="ml-1.5 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-px rounded text-[8px] font-bold tracking-widest uppercase transform scale-90 origin-left">付费</span>
-                  <span v-else-if="song._is_vip" class="ml-1.5 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-px rounded text-[8px] font-bold tracking-widest uppercase transform scale-90 origin-left">VIP</span>
+                  <span v-if="song._is_paid" class="ml-1.5 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-px rounded-[5px] text-[8px] font-bold tracking-widest uppercase transform scale-90 origin-left">付费</span>
+                  <span v-else-if="song._is_vip" class="ml-1.5 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-px rounded-[5px] text-[8px] font-bold tracking-widest uppercase transform scale-90 origin-left">VIP</span>
                 </div>
                 <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" size="small" />
               </div>
@@ -86,13 +86,13 @@
 
         <div v-if="isPlaylistsLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 lg:gap-5">
           <div v-for="i in 15" :key="i" class="flex flex-col space-y-3">
-            <div class="w-full aspect-square bg-gray-100 rounded-2xl animate-pulse shadow-sm border border-gray-50"></div>
+            <div v-squircle="'xl'" class="w-full aspect-square bg-gray-100 rounded-[18px] animate-pulse shadow-sm border border-gray-50"></div>
             <div class="w-3/4 h-4 bg-gray-100 rounded animate-pulse"></div>
             <div class="w-1/2 h-3 bg-gray-50 rounded animate-pulse"></div>
           </div>
         </div>
 
-        <div v-else-if="playlistsError" class="flex-1 flex flex-col items-center justify-center py-10 text-red-500 bg-red-50/50 rounded-2xl border border-red-100">
+        <div v-else-if="playlistsError" v-squircle="'xl'" class="flex-1 flex flex-col items-center justify-center py-10 text-red-500 bg-red-50/50 rounded-[18px] border border-red-100">
           <p class="text-sm font-bold text-red-600 mb-2">获取精选歌单失败</p>
           <button @click="fetchPlaylists" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
         </div>
@@ -100,19 +100,21 @@
         <div v-else-if="playlists.length > 0">
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 lg:gap-5 mb-8">
             <div v-for="playlist in playlists" :key="playlist.global_collection_id || playlist.specialid" @click="goToPlaylist(playlist.global_collection_id || playlist.specialid)" class="flex flex-col group cursor-pointer no-drag">
-              <div class="relative w-full aspect-square rounded-2xl overflow-hidden fix-clip shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1 bg-gray-100 border border-gray-50/50">
+              <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1">
+                <div v-squircle="'xl'" class="relative w-full h-full bg-gray-100 dark:bg-slate-800 transform-gpu [transform:translateZ(0)]">
                 <img :src="formatImg(playlist.imgurl || playlist.flexible_cover || playlist.pic)" :alt="playlist.specialname" loading="lazy" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 
-                <div class="absolute top-2 right-2 bg-black/30 backdrop-blur-md text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
+                <div class="absolute top-2 right-2 bg-black/45 text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
                   <AppIcon name="play" class="w-3 h-3 mr-1" />
                   <span class="text-[10px] font-bold tracking-wider">{{ formatPlayCount(playlist.play_count) }}</span>
                 </div>
 
-                <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-lg border border-white/30 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div class="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
                     <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
                   </div>
                 </div>
+              </div>
               </div>
               <div class="mt-3 flex flex-col px-1 min-w-0">
                 <h4 class="text-sm font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>
@@ -122,7 +124,7 @@
           </div>
 
           <div class="w-full flex flex-col items-center justify-center mt-2 mb-8">
-            <div class="group px-10 py-6 bg-gray-50/50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60 dark:hover:bg-slate-800/60 dark:hover:border-slate-700/80">
+            <div v-squircle="'2xl'" class="group px-10 py-6 bg-gray-50/50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60 dark:hover:bg-slate-800/60 dark:hover:border-slate-700/80">
               <div class="w-10 h-10 bg-white dark:!bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 border border-transparent dark:border-slate-700/60 transition-transform">
                 <AppIcon name="music" class="w-5 h-5 text-gray-300 dark:text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
               </div>
@@ -291,12 +293,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.fix-clip {
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-  mask-image: radial-gradient(white, black);
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
 .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.4); border-radius: 4px; }

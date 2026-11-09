@@ -35,6 +35,18 @@ const fallbackChainMap = {
 const ok = (body) => ({ status: 200, body, cookie: [], headers: {} });
 const fail = (status, msg, data = null) => ({ status, body: { code: status, msg, data }, cookie: [], headers: {} });
 
+const isFatalSourceError = (err) => {
+  if (!err) return false;
+  const msg = String(err.message || '');
+  const code = String(err.code || '');
+  if (msg.includes('音源未注册播放解析能力') || msg.includes('音源未注册')) return true;
+  if (code === 'ECONNREFUSED' || msg.includes('ECONNREFUSED')) return true;
+  if (code === 'ENOTFOUND' || msg.includes('ENOTFOUND')) return true;
+  if (code === 'EHOSTUNREACH' || msg.includes('EHOSTUNREACH')) return true;
+  if (msg.includes('Script execution timed out') || msg.includes('execution timed out')) return true;
+  return false;
+};
+
 const getNeteaseId = (song = {}) => {
   return String(song.neteaseId || song.songId || song.id || song.hash || song._hash || '')
     .replace(/^netease:/, '')
@@ -135,11 +147,13 @@ module.exports = async (params) => {
 
   const musicInfo = isQQ ? buildTxMusicInfo(song) : buildWyMusicInfo(song);
   const qualityCandidates = [targetQualityType, ...(fallbackChainMap[targetQualityType] || [])];
-  const uniqueQualityCandidates = [...new Set(qualityCandidates)];
+  const uniqueQualityCandidates = [...new Set(qualityCandidates.filter(Boolean))];
 
   const errors = [];
   for (const source of sources) {
+    let sourceFailed = false;
     for (const qType of uniqueQualityCandidates) {
+      if (sourceFailed) break;
       try {
         const payload = {
           action: 'musicUrl',
@@ -165,11 +179,18 @@ module.exports = async (params) => {
           });
         }
       } catch (e) {
+        const errMsg = e?.message || '解析失败';
         errors.push({
           source: source.name,
           quality: qType,
-          message: e?.message || '解析失败',
+          message: errMsg,
         });
+
+        // 若音源出现未注册方法、脚本崩溃、网络无法连通或解析超时，触发快速熔断，平滑切换到备选音源
+        if (isFatalSourceError(e) || errMsg.includes('音源解析超时') || errMsg.includes('Request timeout')) {
+          sourceFailed = true;
+          break;
+        }
       }
     }
   }

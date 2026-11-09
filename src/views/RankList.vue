@@ -18,8 +18,8 @@
       </div>
 
       <div v-if="isLoading" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
-        <div v-for="i in 8" :key="i" class="flex p-4 rounded-2xl bg-gray-50/50 border border-gray-100">
-          <div class="w-28 h-28 rounded-xl bg-gray-200 animate-pulse flex-shrink-0"></div>
+        <div v-for="i in 8" :key="i" v-squircle="'xl'" class="flex p-4 rounded-[18px] bg-gray-50/50 border border-gray-100">
+          <div v-squircle="'lg'" class="w-28 h-28 rounded-[14px] bg-gray-200 animate-pulse flex-shrink-0"></div>
           <div class="flex-1 ml-5 flex flex-col justify-center space-y-3">
             <div class="w-1/2 h-5 bg-gray-200 rounded animate-pulse mb-1"></div>
             <div class="w-full h-3 bg-gray-100 rounded animate-pulse"></div>
@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div v-else-if="isError" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100 mt-4">
+      <div v-else-if="isError" v-squircle="'2xl'" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-[24px] border border-red-100 mt-4">
         <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">获取排行榜失败</p>
         <p class="text-xs text-red-400 max-w-lg text-center">{{ errorMessage }}</p>
@@ -47,16 +47,17 @@
             v-for="rank in ranks" 
             :key="rank._id"
             @click="goToRankDetail(rank._id)"
-            class="flex items-center p-3.5 bg-white rounded-[20px] shadow-sm hover:shadow-xl border border-gray-100 hover:border-blue-100 transition-all duration-500 transform hover:-translate-y-1 cursor-pointer group no-drag"
+            v-squircle="'xl'"
+            class="flex items-center p-3.5 rounded-[18px] bg-white dark:bg-slate-900/80 shadow-sm hover:shadow-xl border border-gray-100 dark:border-slate-800 hover:border-blue-100 dark:hover:border-blue-500/40 transition-colors cursor-pointer group no-drag"
           >
-            <div class="relative w-[110px] h-[110px] rounded-xl overflow-hidden fix-clip flex-shrink-0 bg-gray-100 border border-gray-50">
+            <div v-squircle="'lg'" class="relative w-[110px] h-[110px] rounded-[14px] flex-shrink-0 bg-gray-100 dark:bg-slate-800 transform-gpu [transform:translateZ(0)]">
               <img :src="rank._cover" :alt="rank._name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
-              <div class="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
+              <div class="absolute bottom-1.5 right-1.5 bg-black/55 text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
                 <AppIcon name="play" class="w-2.5 h-2.5 mr-1" />
                 <span class="text-[9px] font-bold tracking-wider">{{ formatPlayCount(rank._playCount) }}</span>
               </div>
-              <div class="absolute inset-0 bg-black/10 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <div class="w-10 h-10 rounded-full bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
+              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <div class="w-10 h-10 rounded-full bg-white/95 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
                   <AppIcon name="play" class="w-5 h-5 text-blue-600 ml-1" />
                 </div>
               </div>
@@ -155,12 +156,6 @@ onMounted(() => fetchRankData());
 </script>
 
 <style scoped>
-.fix-clip {
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-  mask-image: radial-gradient(white, black);
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
 .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.4); border-radius: 4px; }

@@ -23,13 +23,14 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-4 mb-8">
-        <div class="grid grid-cols-3 gap-1 bg-gray-50 dark:bg-slate-900/80 p-1 rounded-lg border border-gray-100 dark:border-slate-700 w-full sm:w-auto sm:min-w-[330px]">
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="grid grid-cols-3 gap-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 rounded-lg border border-gray-200/60 dark:!border-slate-800 w-full sm:w-auto sm:min-w-[330px] transition-colors">
           <button
             v-for="profile in tasteProfiles"
             :key="profile.id"
             @click="switchTasteMode(profile.id)"
+            v-squircle="{ radius: 6, smoothing: 0.6 }"
             class="px-4 py-1.5 rounded-md text-xs font-bold transition-all no-drag whitespace-nowrap"
-            :class="tasteMode === profile.id ? 'bg-white text-purple-600 shadow-sm dark:!bg-slate-800 dark:text-purple-300 dark:shadow-black/30' : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-100'"
+            :class="tasteMode === profile.id ? 'bg-white text-purple-600 shadow-sm dark:!bg-slate-800 dark:text-purple-300 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'"
           >
             {{ profile.label }}
           </button>
@@ -86,8 +87,8 @@
 
         <div class="flex flex-col lg:flex-row items-center gap-8 mb-10">
 
-          <div class="flex-shrink-0 p-[4px] bg-white dark:bg-slate-900 rounded-[28px] shadow-2xl shadow-purple-200/50 dark:shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
-            <div class="w-64 h-64 lg:w-72 lg:h-72 rounded-[22px] overflow-hidden">
+          <div class="flex-shrink-0 p-[4px] bg-white dark:bg-slate-900 rounded-[24px] shadow-2xl shadow-purple-200/50 dark:shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
+            <div v-squircle="'xl'" class="w-64 h-64 lg:w-72 lg:h-72 rounded-[18px] transform-gpu [transform:translateZ(0)]">
               <img :src="currentFMSong._cover" :alt="currentFMSong._name || '电台封面'" class="w-full h-full object-cover" @error="e => e.target.src = defaultImg" />
             </div>
           </div>
@@ -188,7 +189,8 @@
 
           <div v-else class="space-y-1">
             <div v-for="(song, idx) in displayedUpcomingSongs" :key="song._hash + idx" @contextmenu="handleSongContextMenu($event, song)" @dblclick="playFromQueue(idx)"
-              class="flex items-center px-4 py-3 rounded-xl hover:bg-purple-50/60 dark:hover:bg-purple-500/10 group transition-colors cursor-pointer no-drag min-w-0">
+              v-squircle="'lg'"
+              class="flex items-center px-4 py-3 rounded-[14px] hover:bg-purple-50/60 dark:hover:bg-purple-500/10 group transition-colors cursor-pointer no-drag min-w-0">
               <div class="w-10 text-center text-sm font-bold text-gray-300 dark:text-slate-600 group-hover:hidden flex-shrink-0">
                 {{ (idx + 1).toString().padStart(2, '0') }}
               </div>
@@ -197,10 +199,10 @@
               </div>
 
               <div class="flex-1 flex items-center pl-2 pr-4 min-w-0">
-                <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100 dark:bg-slate-800" @error="e => e.target.src = defaultImg" />
+                <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded-[8px] shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100 dark:bg-slate-800" @error="e => e.target.src = defaultImg" />
                 <span class="truncate text-sm text-gray-800 dark:text-slate-100 font-medium min-w-0" v-tooltip="song._title">{{ song._title }}</span>
-                <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 dark:bg-orange-500/15 text-orange-500 dark:text-orange-300 border border-orange-200 dark:border-orange-300/20 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-                <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 dark:bg-blue-500/15 text-blue-500 dark:text-blue-300 border border-blue-200 dark:border-blue-300/20 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+                <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 dark:bg-orange-500/15 text-orange-500 dark:text-orange-300 border border-orange-200 dark:border-orange-300/20 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
+                <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 dark:bg-blue-500/15 text-blue-500 dark:text-blue-300 border border-blue-200 dark:border-blue-300/20 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
               </div>
 
               <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">

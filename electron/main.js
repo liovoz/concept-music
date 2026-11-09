@@ -83,21 +83,23 @@ function loadVaultCookies() {
     const vaultPath = getVaultPath();
     if (fs.existsSync(vaultPath)) {
       const raw = fs.readFileSync(vaultPath);
-      let content = null;
-      if (safeStorage && safeStorage.isEncryptionAvailable()) {
-        try {
-          content = safeStorage.decryptString(raw);
-        } catch (_) {
-          // 若解密失败，可能是旧版明文格式，继续向下尝试读取
+      if (raw && raw.length > 0) {
+        let content = null;
+        if (safeStorage && safeStorage.isEncryptionAvailable()) {
+          try {
+            content = safeStorage.decryptString(raw);
+          } catch (_) {
+            // 若解密失败，可能是旧版明文格式，继续向下尝试读取
+          }
         }
+        if (!content) {
+          content = raw.toString('utf8');
+        }
+        vaultMemoryCache = JSON.parse(content);
+        return vaultMemoryCache;
       }
-      if (!content) {
-        content = raw.toString('utf8');
-      }
-      vaultMemoryCache = JSON.parse(content);
-      return vaultMemoryCache;
     }
-  } catch (e) { console.error('读取金库失败:', e); }
+  } catch (e) { console.error('[Vault] 读取金库失败:', e?.message || e); }
   vaultMemoryCache = {}; 
   return vaultMemoryCache;
 }
@@ -105,48 +107,66 @@ function saveVaultCookies(newCookiesArray) {
   if (vaultMemoryCache === null) loadVaultCookies(); 
   let changed = false;
   const protectedKeys = ['token', 'kg_mid', 'kg_dfid', 'userid', 'vip_token', 'KugooID'];
-  newCookiesArray.forEach(cookieStr => {
-    if (!cookieStr) return;
-    const mainPart = cookieStr.split(';')[0]; 
-    const parts = mainPart.split('=');
-    if (parts.length >= 2 && parts[0]) {
-      const key = parts[0].trim();
-      const val = parts.slice(1).join('=').trim();
-      if (key === 'kg_dfid' && vaultMemoryCache['token'] && vaultMemoryCache['kg_dfid']) {
-         if (val !== vaultMemoryCache['kg_dfid']) return; 
-      }
-      if (val && val !== 'deleted' && val !== '""') {
-        if (vaultMemoryCache[key] !== val) {
-          vaultMemoryCache[key] = val; 
-          changed = true;
+  const cookieList = Array.isArray(newCookiesArray) ? newCookiesArray : (newCookiesArray ? [newCookiesArray] : []);
+  cookieList.forEach(cookieStr => {
+    if (!cookieStr || typeof cookieStr !== 'string') return;
+    const lines = cookieStr.split(/[\r\n]+/);
+    lines.forEach(line => {
+      const mainPart = line.split(';')[0]; 
+      const parts = mainPart.split('=');
+      if (parts.length >= 2 && parts[0]) {
+        const key = parts[0].trim();
+        const val = parts.slice(1).join('=').trim();
+        if (key === 'kg_dfid' && vaultMemoryCache['token'] && vaultMemoryCache['kg_dfid']) {
+           if (val !== vaultMemoryCache['kg_dfid']) return; 
         }
-      } else {
-        if (!protectedKeys.includes(key)) {
-          if (vaultMemoryCache[key] !== undefined) {
-            delete vaultMemoryCache[key];
+        if (val && val !== 'deleted' && val !== '""') {
+          if (vaultMemoryCache[key] !== val) {
+            vaultMemoryCache[key] = val; 
             changed = true;
+          }
+        } else {
+          if (!protectedKeys.includes(key)) {
+            if (vaultMemoryCache[key] !== undefined) {
+              delete vaultMemoryCache[key];
+              changed = true;
+            }
           }
         }
       }
-    }
+    });
   });
   if (changed) {
     try {
       const dataStr = JSON.stringify(vaultMemoryCache);
+      const vaultPath = getVaultPath();
+      const tempPath = `${vaultPath}.tmp`;
       if (safeStorage && safeStorage.isEncryptionAvailable()) {
-        fs.writeFileSync(getVaultPath(), safeStorage.encryptString(dataStr));
+        fs.writeFileSync(tempPath, safeStorage.encryptString(dataStr));
       } else {
-        fs.writeFileSync(getVaultPath(), dataStr, 'utf8');
+        fs.writeFileSync(tempPath, dataStr, 'utf8');
       }
-    } catch (e) {}
+      fs.renameSync(tempPath, vaultPath);
+    } catch (e) {
+      console.error('[Vault] 保存凭据金库失败:', e?.message || e);
+    }
   }
 }
-ipcMain.on('clear-vault', () => {
+function clearVaultStorage() {
   vaultMemoryCache = {}; 
   try {
     const vaultPath = getVaultPath();
     if (fs.existsSync(vaultPath)) fs.unlinkSync(vaultPath);
-  } catch(e) {}
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+ipcMain.on('clear-vault', () => {
+  clearVaultStorage();
+});
+ipcMain.handle('clear-vault', () => {
+  return clearVaultStorage();
 });
 
 // --- 服务端逻辑 (保持原样) ---
@@ -867,7 +887,7 @@ function clampBoundsToScreen(bounds) {
 function setLyricLayout(direction) {
   const targetDirection = direction === 'vertical' ? 'vertical' : 'horizontal';
   if (lyricWindow && !lyricWindow.isDestroyed()) {
-    lyricLayoutBounds[lyricLayoutDirection] = lyricWindow.getBounds();
+    lyricLayoutBounds[lyricLayoutDirection] = clampBoundsToScreen(lyricWindow.getBounds());
     lyricLayoutDirection = targetDirection;
 
     let targetBounds = lyricLayoutBounds[targetDirection];
@@ -880,6 +900,21 @@ function setLyricLayout(direction) {
     lyricWindow.webContents.send('lyric-layout-updated', targetDirection);
   } else {
     lyricLayoutDirection = targetDirection;
+  }
+}
+
+function recheckLyricWindowBounds() {
+  if (!lyricWindow || lyricWindow.isDestroyed()) return;
+  const currentBounds = lyricWindow.getBounds();
+  const safeBounds = clampBoundsToScreen(currentBounds);
+  if (
+    currentBounds.x !== safeBounds.x ||
+    currentBounds.y !== safeBounds.y ||
+    currentBounds.width !== safeBounds.width ||
+    currentBounds.height !== safeBounds.height
+  ) {
+    lyricWindow.setBounds(safeBounds);
+    lyricLayoutBounds[lyricLayoutDirection] = safeBounds;
   }
 }
 
@@ -1009,6 +1044,12 @@ function createLyricWindow() {
   if (app.isPackaged) lyricWindow.loadURL('app://localhost/#/desktop-lyric');
   else lyricWindow.loadURL(`${DEV_FRONTEND_URL}/#/desktop-lyric`);
 
+  const onDisplayChanged = () => {
+    recheckLyricWindowBounds();
+  };
+  screen.on('display-removed', onDisplayChanged);
+  screen.on('display-metrics-changed', onDisplayChanged);
+
   lyricWindow.once('ready-to-show', () => {
     lyricWindow.showInactive();
     startLyricMouseTracker();
@@ -1016,6 +1057,8 @@ function createLyricWindow() {
     if (trayManager) trayManager.updateLyricState(true);
   });
   lyricWindow.on('closed', () => {
+    screen.off('display-removed', onDisplayChanged);
+    screen.off('display-metrics-changed', onDisplayChanged);
     stopLyricMouseTracker();
     lyricWindow = null;
     lyricInteractive = false;
@@ -1128,7 +1171,12 @@ ipcMain.on('lyric-window-drag', (event) => {
     dragging = false;
     activeLyricDragCleanup = null;
     if (win && !win.isDestroyed()) {
-      lyricLayoutBounds[lyricLayoutDirection] = win.getBounds();
+      const currentBounds = win.getBounds();
+      const safeBounds = clampBoundsToScreen(currentBounds);
+      if (currentBounds.x !== safeBounds.x || currentBounds.y !== safeBounds.y) {
+        win.setPosition(safeBounds.x, safeBounds.y);
+      }
+      lyricLayoutBounds[lyricLayoutDirection] = safeBounds;
     }
     screen.off('display-metrics-changed', onMove);
     clearInterval(moveInterval);

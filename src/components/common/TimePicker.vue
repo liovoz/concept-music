@@ -4,10 +4,11 @@
     <button
       type="button"
       @click="toggleDropdown"
+      v-squircle="'sm'"
       class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg border text-left transition-all duration-150 group"
       :class="[
         isOpen 
-          ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/30 ring-2 ring-blue-500/20 shadow-xs' 
+          ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/30 shadow-xs' 
           : 'border-gray-200/90 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-slate-600 shadow-2xs',
         disabled ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
       ]"
@@ -48,13 +49,17 @@
     >
       <div
         v-if="isOpen"
-        class="absolute left-0 z-50 w-full min-w-[200px] rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-slate-700/80 p-2.5 space-y-2 no-drag"
+        class="absolute left-0 z-50 w-full min-w-[200px] rounded-xl no-drag"
         :class="[
           popDirection === 'up' 
             ? 'bottom-full mb-1.5 shadow-[0_-12px_36px_rgba(15,23,42,0.18)] dark:shadow-[0_-16px_40px_rgba(0,0,0,0.6)]' 
             : 'top-full mt-1.5 shadow-[0_12px_36px_rgba(15,23,42,0.18)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.6)]'
         ]"
       >
+        <div
+          v-squircle="'lg'"
+          class="w-full rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-gray-200/90 dark:border-slate-700/80 p-2.5 space-y-2"
+        >
         <!-- 顶部列标题 -->
         <div class="grid grid-cols-2 gap-2 text-center text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider pb-1 border-b border-gray-100 dark:border-slate-800">
           <span>小时</span>
@@ -124,10 +129,12 @@
             <button
               type="button"
               @click.stop="confirm"
+              v-squircle="'xs'"
               class="px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-2xs transition-colors cursor-pointer"
             >
               确定
             </button>
+          </div>
           </div>
         </div>
       </div>

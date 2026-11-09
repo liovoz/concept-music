@@ -6,7 +6,16 @@ export default {
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      borderRadius: {
+        'hig-xs': '5px',
+        'hig-sm': '8px',
+        'hig-md': '10px',
+        'hig-lg': '14px',
+        'hig-xl': '18px',
+        'hig-2xl': '24px',
+      },
+    },
   },
   plugins: [],
 }

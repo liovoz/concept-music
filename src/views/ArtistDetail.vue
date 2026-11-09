@@ -52,9 +52,9 @@
             <AppIcon name="play" class="w-4 h-4 mr-1" />
             {{ songSort === 'hot' ? '播放全部热门单曲' : '播放全部最新单曲' }}
           </button>
-          <div class="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
-            <button @click="songSort = 'hot'" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all no-drag" :class="songSort === 'hot' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'">最热</button>
-            <button @click="songSort = 'latest'" class="px-4 py-1.5 rounded-md text-xs font-bold transition-all no-drag" :class="songSort === 'latest' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'">最新</button>
+          <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 transition-colors">
+            <button @click="songSort = 'hot'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="songSort === 'hot' ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'">最热</button>
+            <button @click="songSort = 'latest'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="songSort === 'latest' ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'">最新</button>
           </div>
         </div>
 
@@ -106,15 +106,17 @@
         </div>
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
           <div v-for="album in albums" :key="album.albumid" @click="goToAlbum(album.albumid)" class="flex flex-col group cursor-pointer no-drag">
-            <div class="relative w-full aspect-square rounded-2xl overflow-hidden fix-clip shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1 bg-gray-100 border border-gray-50/50">
+            <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1">
+              <div v-squircle="'xl'" class="relative w-full h-full bg-gray-100 dark:bg-slate-800 transform-gpu [transform:translateZ(0)]">
               <img :src="album.cover" :alt="album.albumname" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div class="absolute -right-4 top-1/2 transform -translate-y-1/2 w-[80%] h-[80%] bg-black rounded-full shadow-[0_0_10px_rgba(0,0,0,0.4)] -z-10 group-hover:translate-x-2 transition-transform duration-500"></div>
               
-              <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-lg border border-white/30 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+              <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <div class="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
                   <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
                 </div>
               </div>
+            </div>
             </div>
             <div class="mt-3 flex flex-col px-1 min-w-0">
               <h4 class="text-sm font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors" v-tooltip="album.albumname">{{ album.albumname }}</h4>
@@ -437,12 +439,6 @@ const playAllSongs = () => {
 </script>
 
 <style scoped>
-.fix-clip {
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-  mask-image: radial-gradient(white, black);
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
 .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.4); border-radius: 4px; }

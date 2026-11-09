@@ -13,10 +13,12 @@
       </button>
 
       <div class="flex items-end mb-10 gap-6">
-        <div v-if="isLoading && page === 1" class="w-48 h-48 rounded-2xl bg-gray-200 animate-pulse flex-shrink-0 shadow-md"></div>
-        <div v-else class="relative w-48 h-48 rounded-2xl flex-shrink-0 shadow-lg overflow-hidden border border-gray-100 bg-white group">
-          <img :key="playlistCover" :src="playlistCover" :alt="playlistInfo.name || '歌单封面'" @error="handleCoverError" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-          <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+        <div v-if="isLoading && page === 1" v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 dark:bg-slate-800 animate-pulse flex-shrink-0 shadow-md"></div>
+        <div v-else class="relative w-48 h-48 rounded-[18px] shadow-lg flex-shrink-0 group">
+          <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white dark:bg-slate-900 transform-gpu [transform:translateZ(0)]">
+            <img :key="playlistCover" :src="playlistCover" :alt="playlistInfo.name || '歌单封面'" @error="handleCoverError" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+          </div>
         </div>
 
         <div class="flex flex-col justify-end flex-1 min-w-0">
@@ -58,13 +60,13 @@
       </div>
 
       <div v-if="isLoading && page === 1" class="space-y-4 w-full">
-        <div v-for="i in 10" :key="i" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-xl">
+        <div v-for="i in 10" :key="i" v-squircle="'lg'" class="flex items-center px-4 py-3 bg-gray-50/50 rounded-[14px]">
           <div class="w-8 h-4 bg-gray-200 rounded animate-pulse"></div>
           <div class="flex-1 ml-4 h-4 bg-gray-200 rounded animate-pulse max-w-md"></div>
         </div>
       </div>
 
-      <div v-else-if="isError && page === 1" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100">
+      <div v-else-if="isError && page === 1" v-squircle="'2xl'" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-[24px] border border-red-100">
          <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
         <p class="text-base font-bold text-red-600 mb-2">获取歌曲列表失败</p>
         <button @click="fetchDetail" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
@@ -85,17 +87,17 @@
         </div>
         
         <div class="space-y-1 w-full">
-          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song, index)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
+          <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song, index)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
             <div class="w-10 text-center text-sm text-gray-400 dark:text-slate-500 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
             
             <div class="flex-1 pl-2 text-sm text-gray-800 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
-              <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
+              <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded-[8px] shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
               <span class="truncate min-w-0">{{ song._title }}</span>
-              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
+              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
             </div>
             
             <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">
@@ -117,6 +119,7 @@
               <button
                 v-if="isCreatedByMe"
                 @click.stop="removeSongFromList(song, index)"
+                v-squircle="'sm'"
                 class="hidden group-hover:flex items-center justify-center p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                 v-tooltip="'从歌单中删除'"
               >
@@ -146,7 +149,8 @@
     <!-- 删除自建歌单确认对话框 -->
     <Teleport to="body">
       <div v-if="showDeletePlaylistModal" class="fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-drag" @click.self="showDeletePlaylistModal = false">
-        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+        <div class="w-full max-w-sm rounded-2xl shadow-2xl relative">
+          <div v-squircle="'2xl'" class="w-full bg-white rounded-2xl border border-gray-100 p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
           <div class="flex items-center space-x-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
               <AppIcon name="trash" class="w-5 h-5" />
@@ -157,17 +161,18 @@
             </div>
           </div>
 
-          <p class="text-xs text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100 mb-5">
+          <p v-squircle="'md'" class="text-xs text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100 mb-5">
             确定要删除歌单「<span class="font-bold text-gray-800">{{ playlistInfo.name }}</span>」吗？删除后将无法恢复该歌单。
           </p>
 
           <div class="flex items-center justify-end space-x-3">
-            <button @click="showDeletePlaylistModal = false" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <button @click="showDeletePlaylistModal = false" v-squircle="'md'" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               取消
             </button>
             <button
               @click="handleDeleteCurrentPlaylist"
               :disabled="isDeletePlaylistLoading"
+              v-squircle="'md'"
               class="px-5 py-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
             >
               <AppIcon v-if="isDeletePlaylistLoading" name="spinner" spin class="w-3.5 h-3.5 mr-1.5" />
@@ -175,6 +180,7 @@
             </button>
           </div>
         </div>
+      </div>
       </div>
     </Teleport>
   </div>
