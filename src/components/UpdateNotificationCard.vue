@@ -30,8 +30,7 @@
             <div class="flex items-start space-x-3.5">
               <!-- 图标徽章：高质感 3D 渐变 -->
               <div
-                v-squircle="'md'"
-                class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0 transition-transform duration-300 hover:scale-105"
+                class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0"
                 :class="headerIconStyle.wrap"
               >
                 <AppIcon :name="headerIconStyle.icon" class="w-6 h-6 text-white" />
@@ -75,10 +74,12 @@
           <!-- 紧急安全更新/熔断公告横幅 -->
           <div 
             v-if="updateStore.isForced || updateStore.isBlacklisted" 
+            v-squircle="'lg'"
             class="mx-6 mt-3 px-3.5 py-2.5 rounded-2xl text-xs flex items-start gap-3 border shadow-2xs"
             :class="updateStore.isBlacklisted ? 'bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-300' : 'bg-amber-500/10 border-amber-500/25 text-amber-800 dark:text-amber-200'"
           >
             <div 
+              v-squircle="'sm'"
               class="w-6 h-6 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs"
               :class="updateStore.isBlacklisted ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'"
             >
@@ -120,12 +121,12 @@
                 </span>
               </div>
 
-              <!-- 结构化更新日志卡片列表 -->
-              <div v-squircle="'lg'" class="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/50 rounded-2xl p-3 max-h-72 overflow-y-auto custom-scrollbar shadow-inner">
+              <!-- 结构化更新日志：优雅文档排版流 (方案 4) -->
+              <div class="bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl p-4 max-h-72 overflow-y-auto custom-scrollbar">
                 <!-- 导语描述 -->
                 <div 
                   v-if="parsedNotesData.lead" 
-                  class="p-3 mb-3 rounded-xl bg-gradient-to-r from-blue-500/8 via-indigo-500/8 to-transparent border border-blue-500/15 text-xs text-slate-700 dark:text-slate-200 leading-relaxed font-normal"
+                  class="pb-3 mb-3.5 border-b border-dashed border-slate-200/90 dark:border-slate-700/80 text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal select-text"
                   v-html="formatInline(parsedNotesData.lead)"
                 ></div>
 
@@ -134,40 +135,40 @@
                   <div 
                     v-for="(section, sIdx) in parsedNotesData.sections" 
                     :key="sIdx" 
-                    class="space-y-2"
+                    class="space-y-2.5"
                   >
                     <!-- 章节标题 -->
-                    <div v-if="section.title" class="flex items-center gap-2 pt-1 border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5 sticky top-0 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md z-10">
-                      <span class="px-2.5 py-0.5 rounded-lg bg-blue-500/10 dark:bg-blue-400/15 text-blue-600 dark:text-blue-300 font-black text-xs">
-                        {{ section.title }}
-                      </span>
+                    <div v-if="section.title" class="flex items-center gap-2 pt-1 pb-0.5">
+                      <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                        <span>{{ section.title }}</span>
+                      </h4>
                     </div>
 
-                    <div class="space-y-1.5 pl-0.5">
+                    <!-- 列表项与内容 -->
+                    <ul class="space-y-2 pl-0.5">
                       <template v-for="(item, iIdx) in section.items" :key="iIdx">
                         <!-- 小节标题（例如：### 1. 企鹅歌单跨平台无缝导入） -->
-                        <div v-if="item.type === 'subtitle'" class="pt-2 pb-0.5 text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                          <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        <li v-if="item.type === 'subtitle'" class="pt-1.5 pb-0.5 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                          <span class="text-blue-500 font-mono text-[11px] font-bold">#</span>
                           <span>{{ item.text }}</span>
-                        </div>
+                        </li>
 
-                        <!-- 列表项卡片 -->
-                        <div v-else-if="item.type === 'bullet'" class="flex items-start gap-2.5 p-2 rounded-xl bg-white/70 dark:bg-slate-800/70 border border-slate-100/80 dark:border-slate-800/80 hover:border-blue-200 dark:hover:border-blue-800/60 hover:shadow-xs transition-all">
-                          <span v-if="item.num" class="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-blue-600 dark:text-blue-300 text-[11px] font-bold font-mono flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                            {{ item.num.padStart(2, '0') }}
-                          </span>
-                          <span v-else class="w-1.5 h-1.5 rounded-full bg-blue-500/70 mt-2 shrink-0 ml-1 mr-0.5"></span>
-                          <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-normal select-text flex-1" v-html="formatInline(item.text)"></div>
-                        </div>
+                        <!-- 列表项：纯粹雅致的无序/有序排版 -->
+                        <li v-else-if="item.type === 'bullet'" class="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed select-text">
+                          <span v-if="item.num" class="text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400 select-none shrink-0 mt-0.5">{{ item.num }}.</span>
+                          <span v-else class="text-slate-400 dark:text-slate-500 font-bold select-none shrink-0 mt-0.5">–</span>
+                          <div class="flex-1" v-html="formatInline(item.text)"></div>
+                        </li>
 
                         <!-- 普通段落 -->
-                        <p v-else class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed p-1" v-html="formatInline(item.text)"></p>
+                        <li v-else class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-3.5 list-none select-text" v-html="formatInline(item.text)"></li>
                       </template>
-                    </div>
+                    </ul>
                   </div>
                 </div>
 
-                <p v-else class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed p-3">
+                <p v-else class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed p-2">
                   概念音乐发布了全新版本，带来多项性能优化、国内镜像加速通道及体验修复，推荐更新以获取最佳视听体验。
                 </p>
               </div>
@@ -203,6 +204,7 @@
                 <button
                   v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                   @click="updateStore.dismissCard('snooze')"
+                  v-squircle="'md'"
                   class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all"
                   v-tooltip="'稍后提醒 (24小时内不再提示)'"
                 >
@@ -213,6 +215,7 @@
                 <button
                   v-else
                   @click="updateStore.quitApp()"
+                  v-squircle="'md'"
                   class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
                 >
                   退出软件
@@ -220,12 +223,13 @@
 
                 <button
                   @click="updateStore.startDownload()"
-                  class="px-6 py-2.5 text-white rounded-xl text-xs font-black shadow-lg active:scale-95 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center gap-2 group"
+                  v-squircle="'md'"
+                  class="px-6 py-2.5 text-white rounded-xl text-xs font-black shadow-md shadow-blue-500/20 active:scale-95 transition-all duration-150 flex items-center gap-2"
                   :class="updateStore.isBlacklisted 
-                    ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 shadow-rose-500/25 hover:shadow-rose-500/35' 
-                    : 'bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25 hover:shadow-blue-500/35'"
+                    ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:brightness-105 shadow-rose-500/25 hover:shadow-rose-500/35' 
+                    : 'bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:brightness-105 shadow-blue-500/25 hover:shadow-blue-500/35'"
                 >
-                  <AppIcon :name="updateStore.isPortable ? 'share' : 'download'" class="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
+                  <AppIcon :name="updateStore.isPortable ? 'share' : 'download'" class="w-3.5 h-3.5" />
                   <span>{{ updateStore.isPortable ? '前往下载 Release' : '立即更新' }}</span>
                 </button>
               </div>
@@ -283,6 +287,7 @@
               <button
                 v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
+                v-squircle="'md'"
                 class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-700 active:scale-95 transition-all border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-1.5 shadow-2xs"
                 v-tooltip="'收起窗口，下载将在后台继续进行'"
               >
@@ -292,6 +297,7 @@
               <button
                 v-else
                 @click="updateStore.quitApp()"
+                v-squircle="'md'"
                 class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200/60 dark:border-slate-700/60"
               >
                 <span>退出软件</span>
@@ -319,6 +325,7 @@
               <button
                 v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
+                v-squircle="'md'"
                 class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 active:scale-95 transition-all"
               >
                 稍后重启
@@ -326,13 +333,15 @@
               <button
                 v-else
                 @click="updateStore.quitApp()"
+                v-squircle="'md'"
                 class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
               >
                 退出软件
               </button>
               <button
                 @click="updateStore.quitAndInstall()"
-                class="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/35 transition-all duration-200 flex items-center gap-2"
+                v-squircle="'md'"
+                class="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-105 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/25 transition-all duration-150 flex items-center gap-2"
               >
                 <AppIcon name="refresh" class="w-3.5 h-3.5" />
                 <span>立即重启并安装</span>
@@ -357,6 +366,7 @@
             <div class="px-6 py-4 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-2.5">
               <button
                 @click="openDetails"
+                v-squircle="'md'"
                 class="px-4 py-2 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
               >
                 切换下载线路
@@ -364,6 +374,7 @@
               <button
                 v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
+                v-squircle="'md'"
                 class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors"
               >
                 关闭
@@ -371,6 +382,7 @@
               <button
                 v-else
                 @click="updateStore.quitApp()"
+                v-squircle="'md'"
                 class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors border border-slate-200 dark:border-slate-700"
               >
                 退出软件
@@ -385,9 +397,9 @@
               class="absolute inset-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl flex flex-col justify-between p-6 rounded-3xl animate-in fade-in zoom-in-95 duration-200"
             >
               <div>
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3.5">
                   <div class="flex items-center space-x-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <div v-squircle="'sm'" class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                       <AppIcon name="settings" class="w-4 h-4" />
                     </div>
                     <div>
@@ -403,13 +415,14 @@
                   </button>
                 </div>
 
-                <div class="space-y-2">
+                <div class="space-y-2.5 mb-4">
                   <button
                     v-for="ch in channelOptions"
                     :key="ch.id"
                     @click="handleSelectChannel(ch.id)"
-                    class="w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between group"
-                    :class="updateStore.updateChannel === ch.id
+                    v-squircle="'lg'"
+                    class="w-full text-left px-3.5 py-2.5 rounded-2xl border transition-all flex items-center justify-between group"
+                    :class="selectedChannel === ch.id
                       ? 'bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-300 shadow-xs'
                       : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300'"
                   >
@@ -420,17 +433,18 @@
                       </div>
                       <div class="text-[11px] text-slate-400 dark:text-slate-500">{{ ch.desc }}</div>
                     </div>
-                    <div v-if="updateStore.updateChannel === ch.id" class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <div v-if="selectedChannel === ch.id" class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                       <AppIcon name="check" class="w-3 h-3" />
                     </div>
                   </button>
                 </div>
               </div>
 
-              <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span class="text-xs text-slate-400 dark:text-slate-500">当前已选：<strong class="text-blue-600 dark:text-blue-400">{{ currentChannelName }}</strong></span>
+              <div class="pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-400 dark:text-slate-500">当前已选：<strong class="text-blue-600 dark:text-blue-400">{{ drawerSelectedName }}</strong></span>
                 <button
-                  @click="showChannelMenu = false"
+                  @click="handleConfirmChannel"
+                  v-squircle="'md'"
                   class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all shadow-md shadow-blue-500/20"
                 >
                   确定完成
@@ -453,6 +467,7 @@ const updateStore = useUpdateStore();
 const settingsModalRef = inject('settingsModalRef', null);
 
 const showChannelMenu = ref(false);
+const selectedChannel = ref(updateStore.updateChannel);
 
 const channelOptions = [
   { id: 'auto', name: '自动优选 (推荐)', desc: '智能并发测速，自动选择延迟最低的国内加速节点' },
@@ -460,6 +475,11 @@ const channelOptions = [
   { id: 'ghproxy', name: 'ghproxy 镜像', desc: '稳定老牌 GitHub 代理中转节点' },
   { id: 'official', name: 'GitHub 官方直连', desc: '直连 GitHub 官方 Releases（适合已开启网络代理或海外环境）' }
 ];
+
+const drawerSelectedName = computed(() => {
+  const target = channelOptions.find(c => c.id === selectedChannel.value);
+  return target ? target.name : '自动优选';
+});
 
 const currentChannelName = computed(() => {
   const target = channelOptions.find(c => c.id === updateStore.updateChannel);
@@ -474,7 +494,12 @@ const currentChannelBrief = computed(() => {
 });
 
 const handleSelectChannel = (id) => {
-  updateStore.setChannel(id);
+  selectedChannel.value = id;
+};
+
+const handleConfirmChannel = () => {
+  updateStore.setChannel(selectedChannel.value);
+  showChannelMenu.value = false;
 };
 
 const handleBackdropClick = () => {
@@ -787,8 +812,10 @@ const formatDate = (isoStr) => {
 };
 
 const openDetails = () => {
+  selectedChannel.value = updateStore.updateChannel;
   showChannelMenu.value = true;
 };
+
 </script>
 
 <style scoped>

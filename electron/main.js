@@ -751,7 +751,7 @@ function initAutoUpdater() {
           updatePhase = null;
           sendToWindow({
             type: 'downloaded',
-            info: { version: '3.8.0' }
+            info: { version: (cachedVersionRules && cachedVersionRules.latestVersion) || '3.9.0' }
           });
         } else {
           sendToWindow({
@@ -803,7 +803,22 @@ function initAutoUpdater() {
     }
   });
 
-  ipcMain.on('quit-and-install', () => autoUpdater.quitAndInstall(false, true));
+  ipcMain.on('quit-and-install', () => {
+    if (!app.isPackaged) {
+      console.log('[Updater][Dev] 模拟重启并应用新版本（开发模式通过重载主窗口模拟，避免中断 Vite 服务）');
+      closeLyricWindow({ destroy: true });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.reload();
+      }
+      return;
+    }
+    isQuitting = true;
+    if (trayManager) trayManager.setIsQuitting(true);
+    closeLyricWindow({ destroy: true });
+    // isSilent = true: 全程静默无感安装，不弹窗向导，无需用户点击“下一步”
+    // isForceRunAfter = true: 静默安装完成后自动立即启动新版本软件
+    autoUpdater.quitAndInstall(true, true);
+  });
   ipcMain.handle('get-app-version', () => app.getVersion());
 
   ipcMain.handle('updater-get-channel', () => activeChannel);
