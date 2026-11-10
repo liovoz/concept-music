@@ -4,11 +4,11 @@
 <template>
   <Teleport to="body">
     <transition name="dialog-fade">
-      <div v-if="store.dialogState.visible" ref="dialogRef" tabindex="-1" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm no-drag outline-none" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
-        <div class="w-[380px] rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative">
-          <div v-squircle="'2xl'" class="w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-800 rounded-[24px] flex flex-col overflow-hidden transform transition-all text-gray-800 dark:text-slate-100">
+      <div v-if="store.dialogState.visible" ref="dialogRef" tabindex="-1" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm no-drag outline-none p-4" @click.self="store.closeDialog(false)" @keydown.escape="store.closeDialog(false)">
+        <div class="w-[380px] max-w-[92vw] max-h-[85vh] rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative flex flex-col">
+          <div v-squircle="'2xl'" class="w-full h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-800 rounded-[24px] flex flex-col overflow-hidden transform transition-all text-gray-800 dark:text-slate-100">
           
-          <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-800 flex items-center bg-gray-50/50 dark:bg-slate-800/40">
+          <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-800 flex items-center bg-gray-50/50 dark:bg-slate-800/40 shrink-0">
              <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 shadow-inner" :class="dialogTone.iconWrap">
                <AppIcon v-if="store.dialogState.type === 'danger'" name="danger" class="w-5 h-5" />
                <AppIcon v-else name="info" class="w-5 h-5" />
@@ -16,15 +16,15 @@
              <h3 class="text-base font-bold text-gray-800 dark:text-white tracking-wide">{{ store.dialogState.title }}</h3>
           </div>
           
-          <div class="px-7 py-6 text-sm text-gray-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium max-h-[60vh] overflow-y-auto custom-scrollbar break-all text-left">
+          <div class="flex-1 min-h-0 px-7 py-6 text-sm text-gray-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium max-h-[60vh] overflow-y-auto custom-scrollbar break-all text-left">
             {{ store.dialogState.message }}
           </div>
           
-          <div class="px-6 py-4 bg-gray-50/50 dark:bg-slate-800/40 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end space-x-3">
-            <button @click="store.closeDialog(false)" class="px-5 py-2 rounded-full text-xs font-bold text-gray-500 dark:text-slate-400 hover:bg-gray-200/80 dark:hover:bg-slate-800 hover:text-gray-800 dark:hover:text-slate-200 transition-colors no-drag focus:outline-none">
+          <div class="px-6 py-4 bg-gray-50/50 dark:bg-slate-800/40 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end space-x-3 shrink-0">
+            <button @click="store.closeDialog(false)" class="px-5 py-2 rounded-full text-xs font-bold text-gray-500 dark:text-slate-400 hover:bg-gray-200/80 dark:hover:bg-slate-800 hover:text-gray-800 dark:hover:text-slate-200 transition-colors no-drag focus:outline-none cursor-pointer">
               {{ store.dialogState.cancelText }}
             </button>
-            <button @click="store.closeDialog(true)" class="px-6 py-2 rounded-full text-xs font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center min-w-[100px] no-drag focus:outline-none" :class="dialogTone.confirmButton">
+            <button @click="store.closeDialog(true)" class="px-6 py-2 rounded-full text-xs font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center min-w-[100px] no-drag focus:outline-none cursor-pointer" :class="dialogTone.confirmButton">
               {{ store.dialogState.confirmText }}
               <span v-if="store.dialogState.countdown > 0" class="ml-1 opacity-90 font-mono">({{ store.dialogState.countdown }}s后自动执行)</span>
             </button>
@@ -74,4 +74,12 @@ watch(() => store.dialogState.visible, (newVal) => {
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.4); border-radius: 4px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.8); }
+:deep(.dark) .custom-scrollbar::-webkit-scrollbar-thumb,
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(71, 85, 105, 0.4);
+}
+:deep(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(71, 85, 105, 0.8);
+}
 </style>
