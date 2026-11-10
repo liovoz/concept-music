@@ -12,10 +12,13 @@ import { squircleDirective } from './directives/squircle.js' // ✨ 引入 Apple
 import AppIcon from './components/common/AppIcon.vue' // ✨ 引入全局统一图标组件
 
 if (typeof window !== 'undefined') {
-  const isLyricContext = (typeof window.location?.hash === 'string' && window.location.hash.startsWith('#/desktop-lyric')) ||
-                         (typeof window.location?.pathname === 'string' && window.location.pathname.includes('desktop-lyric'));
-  if (isLyricContext) {
+  const hash = String(window.location?.hash || '');
+  const pathname = String(window.location?.pathname || '');
+  if (hash.startsWith('#/desktop-lyric') || pathname.includes('desktop-lyric')) {
     document.documentElement.classList.add('desktop-lyric-window');
+  }
+  if (hash.startsWith('#/tray-menu') || pathname.includes('tray-menu')) {
+    document.documentElement.classList.add('tray-menu-window');
   }
 }
 

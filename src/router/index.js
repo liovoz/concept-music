@@ -11,6 +11,7 @@ import RankDetail from '../views/RankDetail.vue';
 import History from '../views/History.vue'; 
 import LikedMusic from '../views/LikedMusic.vue';
 import DesktopLyric from '../views/DesktopLyric.vue';
+import TrayMenu from '../views/TrayMenu.vue';
 // ✨ 引入全新的歌手与专辑详情页
 import ArtistDetail from '../views/ArtistDetail.vue';
 import ArtistList from '../views/ArtistList.vue';
@@ -31,6 +32,7 @@ const routes = [
   { path: '/history', name: 'History', component: History },
   { path: '/liked', name: 'LikedMusic', component: LikedMusic },
   { path: '/desktop-lyric', name: 'DesktopLyric', component: DesktopLyric },
+  { path: '/tray-menu', name: 'TrayMenu', component: TrayMenu },
   { path: '/artist/:id', name: 'ArtistDetail', component: ArtistDetail },
   { path: '/artists', name: 'ArtistList', component: ArtistList },
   { path: '/album/:id', name: 'AlbumDetail', component: AlbumDetail },

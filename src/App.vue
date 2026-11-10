@@ -2,7 +2,7 @@
 // 文件：src/App.vue
 // ====================
 <template>
-  <div v-if="isLyricMode" class="w-screen h-screen bg-transparent overflow-hidden">
+  <div v-if="isStandaloneMode" class="w-screen h-screen bg-transparent overflow-hidden">
     <router-view></router-view>
   </div>
 
@@ -63,13 +63,15 @@ import GlobalToast from './components/GlobalToast.vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
-const checkIsLyricMode = () => {
+const checkIsStandaloneMode = () => {
   if (typeof window === 'undefined') return false;
-  if (typeof window.location?.hash === 'string' && window.location.hash.startsWith('#/desktop-lyric')) return true;
-  if (typeof window.location?.pathname === 'string' && window.location.pathname.includes('desktop-lyric')) return true;
-  return route.path === '/desktop-lyric';
+  const hash = String(window.location?.hash || '');
+  const pathname = String(window.location?.pathname || '');
+  return hash.startsWith('#/desktop-lyric') || pathname.includes('desktop-lyric') ||
+         hash.startsWith('#/tray-menu') || pathname.includes('tray-menu') ||
+         route.path === '/desktop-lyric' || route.path === '/tray-menu';
 };
-const isLyricMode = computed(() => checkIsLyricMode());
+const isStandaloneMode = computed(() => checkIsStandaloneMode());
 const cachedComponents = new Set(['PersonalFM', 'PlaylistCategory']);
 const getComponentName = (Component) => Component?.type?.name || Component?.name || '';
 const isCached = (Component) => cachedComponents.has(getComponentName(Component)); 
@@ -131,19 +133,17 @@ const handleTrayAction = (action) => {
   }
 };
 
-const isDesktopLyricWindow = () =>
-  route.path === '/desktop-lyric' ||
-  (typeof window !== 'undefined' && typeof window.location?.hash === 'string' && window.location.hash.startsWith('#/desktop-lyric'));
+const isStandaloneWindow = () => checkIsStandaloneMode();
 
 onMounted(() => { 
-  const isLyricWin = isDesktopLyricWindow();
-  if (disclaimerAccepted && !isLyricWin) userStore.verifySession(); 
-  if (window.trayAPI && !isLyricWin) {
+  const isStandalone = isStandaloneWindow();
+  if (disclaimerAccepted && !isStandalone) userStore.verifySession(); 
+  if (window.trayAPI && !isStandalone) {
     window.trayAPI.onTrayAction(handleTrayAction);
     // 仅主窗口在启动时同步一次托盘状态，恢复上次退出时的播放模式显示（歌词窗口不参与，避免覆盖播放状态）
     playerStore.syncTrayState();
   }
-  if (!isLyricWin) {
+  if (!isStandalone) {
     updateStore.initUpdater();
     // 锁屏 / 系统媒体控件（SMTC）桥接，仅主窗口初始化，避免桌面歌词窗口产生第二个会话
     initMediaSessionBridge(playerStore);

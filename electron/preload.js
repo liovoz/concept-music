@@ -29,6 +29,7 @@ const lyricLeaveMgr = createListenerManager('lyric-mouse-leave');
 const lyricClosedMgr = createListenerManager('lyric-window-closed');
 const lyricReadyMgr = createListenerManager('lyric-window-ready');
 const trayActionMgr = createListenerManager('tray-action');
+const trayStateMgr = createListenerManager('tray-state-update');
 
 contextBridge.exposeInMainWorld('windowControls', {
   minimize: () => ipcRenderer.send('window-min'),
@@ -110,6 +111,12 @@ contextBridge.exposeInMainWorld('trayAPI', {
   setTheme: (theme) => ipcRenderer.send('set-theme', theme),
   onTrayAction: (callback) => {
     trayActionMgr.set((event, action) => callback(action));
+  },
+  sendAction: (action) => ipcRenderer.send('tray-menu-action', action),
+  closeMenu: () => ipcRenderer.send('tray-menu-close'),
+  getTrayState: () => ipcRenderer.invoke('get-tray-state'),
+  onStateUpdate: (callback) => {
+    trayStateMgr.set((event, data) => callback(data));
   }
 });
 

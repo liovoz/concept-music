@@ -40,8 +40,8 @@
 
           <!-- 歌单二级子菜单 -->
           <div
-            class="hidden group-hover/playlist:flex flex-col absolute top-0 w-52 max-h-64 rounded-xl shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] z-10"
-            :class="submenuPlacement === 'left' ? 'right-full mr-1' : 'left-full ml-1'"
+            class="hidden group-hover/playlist:flex flex-col absolute w-52 max-h-64 rounded-xl shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] z-10"
+            :class="[submenuPlacement === 'left' ? 'right-full mr-1' : 'left-full ml-1', submenuVerticalPlacement === 'bottom' ? 'bottom-0' : 'top-0']"
           >
             <div
               class="w-full h-full flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 backdrop-blur-xl"
@@ -200,6 +200,7 @@ const contextData = ref({});
 const position = ref({ x: 0, y: 0 });
 const menuRef = ref(null);
 const submenuPlacement = ref('right');
+const submenuVerticalPlacement = ref('top');
 
 const showQuickCreate = ref(false);
 const quickPlaylistName = ref('');
@@ -259,10 +260,15 @@ const close = () => {
 };
 
 const checkSubmenuPosition = () => {
-  if (position.value.x + 224 + 192 > window.innerWidth) {
+  if (position.value.x + 224 + 208 > window.innerWidth) {
     submenuPlacement.value = 'left';
   } else {
     submenuPlacement.value = 'right';
+  }
+  if (position.value.y + 120 + 256 > window.innerHeight - 8) {
+    submenuVerticalPlacement.value = 'bottom';
+  } else {
+    submenuVerticalPlacement.value = 'top';
   }
 };
 

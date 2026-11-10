@@ -9,8 +9,18 @@
     <title>概念音乐 Desktop</title>
     <script>
       try {
-        if (window.location.hash.startsWith('#/desktop-lyric') || window.location.pathname.includes('desktop-lyric')) {
+        var h = window.location.hash || '';
+        var p = window.location.pathname || '';
+        if (h.startsWith('#/desktop-lyric') || p.includes('desktop-lyric')) {
           document.documentElement.classList.add('desktop-lyric-window');
+        }
+        if (h.startsWith('#/tray-menu') || p.includes('tray-menu')) {
+          document.documentElement.classList.add('tray-menu-window');
+          var savedTheme = localStorage.getItem('kg_desktop_theme');
+          var isSysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (savedTheme === 'dark' || (!savedTheme && isSysDark) || (savedTheme === 'system' && isSysDark)) {
+            document.documentElement.classList.add('dark');
+          }
         }
       } catch (e) {}
     </script>

@@ -29,7 +29,14 @@ html, body, #app {
 
 html.desktop-lyric-window,
 html.desktop-lyric-window body,
-html.desktop-lyric-window #app {
+html.desktop-lyric-window #app,
+html.tray-menu-window,
+html.tray-menu-window body,
+html.tray-menu-window #app,
+html.desktop-lyric-window.dark body,
+html.desktop-lyric-window.dark #app,
+html.tray-menu-window.dark body,
+html.tray-menu-window.dark #app {
   background-color: transparent !important;
   background: transparent !important;
 }
