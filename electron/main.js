@@ -652,7 +652,7 @@ function initAutoUpdater() {
         sendToWindow({
           type: 'available',
           info: {
-            version: rules.latestVersion || '4.0.0',
+            version: rules.latestVersion || '4.0.1',
             releaseDate: new Date().toISOString(),
             releaseNotes: evalResult.forceNotice || '### [开发调试模拟更新日志]\n- 本日志来自本地 version-rules.json 模拟分发\n- 支持完整验证：常规更新、稍后提醒、跳过版本、强制升级及高危熔断等各种场景\n- 交互体验与正式打包发布完全一致'
           },
@@ -751,7 +751,7 @@ function initAutoUpdater() {
           updatePhase = null;
           sendToWindow({
             type: 'downloaded',
-            info: { version: (cachedVersionRules && cachedVersionRules.latestVersion) || '4.0.0' }
+            info: { version: (cachedVersionRules && cachedVersionRules.latestVersion) || '4.0.1' }
           });
         } else {
           sendToWindow({

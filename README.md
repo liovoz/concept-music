@@ -6,7 +6,7 @@
 
   <p>
     <a href="https://github.com/liovoz/concept-music/releases"><img src="https://img.shields.io/github/v/release/liovoz/concept-music?color=3b82f6&label=Release" alt="Release"></a>
-    <img src="https://img.shields.io/badge/Version-v4.0.0-blue.svg" alt="Version">
+    <img src="https://img.shields.io/badge/Version-v4.0.1-blue.svg" alt="Version">
     <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078d7" alt="Platform">
     <img src="https://img.shields.io/badge/Node.js-22%20LTS-339933?logo=node.js&logoColor=white" alt="Node.js">
     <img src="https://img.shields.io/badge/Electron-30+-47848f?logo=electron&logoColor=white" alt="Electron">
@@ -59,6 +59,12 @@
 - **双阶段元数据穿透与乐观更新**：切歌瞬间以纳秒级速度乐观推送元数据，音频就绪后二次穿透补全高精度封面与时长，彻底消除面板闪烁与信息滞后。
 - **次声波防挂起保活通道**：创新注入近零电本次声波通道，防止 WebAudio 模式被 Chromium 静音挂起导致 SMTC 失去焦点。
 
+### 🖱️ 现代化系统托盘全能播控 (Apple HIG 圆角 & 零闪烁架构)
+- **全面告别 Win32 原生直角菜单**：采用独立 Vue 3 路由渲染与 Apple HIG 连续曲率超椭圆设计语言，深度定制半透明磨砂质感与明暗主题自适应的托盘弹窗。
+- **屏幕外驻留零撕裂渲染 (Off-Screen Alpha Zero-Tear)**：摒弃常规 `BrowserWindow.hide()` 导致的 Windows DWM 合成表面反复销毁与脏帧闪白，首创后台离屏常驻与 `nextTick` + `requestAnimationFrame` 双锁机制，实现托盘弹窗秒级丝滑呼出。
+- **高精度工作区定位与隐藏抽屉识别**：精确判定 Windows 任务栏位置及隐藏托盘折叠抽屉（`NotifyIconOverflowWindow`），物理光标智能投影定位，彻底根除多屏或折叠托盘弹窗错位与视口出界问题。
+- **双向安全 IPC 状态同步**：托盘弹窗实时响应主界面的播放/暂停、上一首、下一首、循环模式、桌面歌词开关与版本更新，并支持二级子菜单动态上下翻转防视口溢出。
+
 ### ⚡ 海量曲库性能治理与丝滑虚拟滚动
 - **海量歌曲虚拟滚动 (Virtual Scroll)**：重构播放列表底层内存模型与哈希索引（`normKey`），播放列表抽屉引入视口动态虚拟滚动，支撑 2000+ 首歌曲秒级展开与丝滑拖拽，大幅降低 DOM 节点数与内存消耗。
 - **容量档位管理与 5 秒撤销机制**：偏好设置提供 1000 / 1500 / 2000 首容量档位；替换播放列表时提供 **5 秒一键撤销 (Undo)** 机制，保障用户播放资产安全。
@@ -71,6 +77,7 @@
   - 外层 Wrapper 专职负责几何尺寸、位移动画与 Tailwind `rounded-[Xpx]` 兜底阴影，内层专职负责矢量剪裁与 `transform-gpu` GPU 上下文常驻；
   - 彻底清除桌面端常见的“直角阴影外溢”、“白色尖角撕裂”与“滚动频闪”。
 - **高性能微任务单例 Tooltip 引擎**：全应用共享唯一的轻量级 Tooltip 实体节点，采用微任务节流与指针缓存，杜绝反复调用 `getBoundingClientRect()` 引发的强制重排回流，维持稳定 60 FPS 交互。
+- **体验加固模态系统**：全新重构免责声明与全局对话框，采用纯粹文章流排版与底部 Alpha 渐隐羽化蒙层，集成「8秒倒计时归零 + 滚动触底」双重强制校验，全量适配暗色模式与 Esc 快捷关闭。
 
 ### 👤 账号中心与特权智能助手
 - **极速扫码登录**：支持多端二维码扫码登录，个人资产、我喜欢的音乐、自建歌单与听歌足迹云端实时同步。
@@ -208,27 +215,27 @@ concept-music/
 ├─ .github/workflows/       # GitHub Actions 自动化构建与持续发布工作流
 ├─ docs/                    # 系统全景架构指南 (ARCHITECTURE.md，单一可信源)
 ├─ electron/                # Electron 主进程模块
-│  ├─ assets/tray-icons/    # 托盘右键菜单定制高分辨率原生图标
 │  ├─ main.js               # 主进程入口、窗口生命周期、多窗口横竖排坐标记忆与视口防溢出钳制
 │  ├─ preload.js            # 安全 ContextBridge 预加载暴露接口
-│  ├─ trayManager.js        # 系统托盘菜单事件与全局快捷键调度中心
+│  ├─ trayManager.js        # 系统托盘管理、高精度坐标定位与 DWM 离屏零闪烁调度中心
 │  └─ trayIcons.js          # 原生图标动态加载器
 ├─ music_source/            # 第三方音源物理隔离目录与说明
 │  ├─ Netease/              # 网易云音乐专用第三方音源脚本
 │  ├─ QQ/                   # 企鹅音乐专用第三方音源脚本
 │  └─ README.md             # 音源规范说明与开源许可
-├─ public/                  # 静态公共资产 (Logo 图标等)
+├─ public/                  # 静态公共资产 (Logo 图标、托盘定制微标等)
+│  └─ tray-icons/           # 现代化系统托盘专用高分辨率矢量微标
 ├─ scripts/                 # 本地环境自检、自愈及多进程启动脚本
 ├─ server/                  # 内置轻量级本地 API 服务端微服务
 ├─ src/                     # Vue 3 核心前端工程源码
-│  ├─ components/           # 通用基础与业务模态框 (UpdateNotificationCard, SettingsModal, GlobalDialog, VinylTurntable 等)
+│  ├─ components/           # 通用基础与业务模态框 (DisclaimerModal, UpdateNotificationCard, SettingsModal, GlobalDialog, VinylTurntable 等)
 │  ├─ composables/          # 组合式状态逻辑 (useTheme, useSearchHistory, usePlayAllHydration 等)
 │  ├─ directives/           # 全局指令 (squircle.js 连续曲率超椭圆 GPU 剪裁)
 │  ├─ layout/               # 顶栏 Header、侧边导航 Sidebar、底栏播放器 PlayerBar（含虚拟滚动抽屉）
-│  ├─ router/               # 路由表定义 (发现、歌单、歌手、排行榜、FM、设置、独立桌面歌词等)
+│  ├─ router/               # 路由表定义 (发现、歌单、歌手、排行榜、FM、设置、独立桌面歌词、现代化系统托盘等)
 │  ├─ store/                # Pinia 全局状态仓 (playerStore 播放控制, userStore 用户数据, updateStore 版本感知与熔断)
 │  ├─ utils/                # SMTC 桥接器 (mediaSessionBridge)、单例 Tooltip、HTTP 请求库、音质映射与数据规整工具
-│  └─ views/                # 业务视图页面 (Discover, PlaylistDetail, DesktopLyric, PersonalFM, ...)
+│  └─ views/                # 业务视图页面 (Discover, PlaylistDetail, DesktopLyric, PersonalFM, TrayMenu, ...)
 ├─ AGENTS.md                # 长期 AI 开发助手与系统架构长期规范契约
 ├─ index.html               # 页面 HTML 单页入口
 ├─ package.json             # 依赖清单与构建打包配置
