@@ -77,34 +77,40 @@
         <div v-else class="w-full flex-1 flex flex-col min-w-0">
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
             <div v-for="playlist in filteredPlaylists" :key="playlist._id" @click="goToPlaylist(playlist._id)" class="flex flex-col group cursor-pointer no-drag relative">
-              <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1.5">
-                <div v-squircle="'xl'" class="relative w-full h-full bg-gray-100 dark:bg-slate-800 transform-gpu [transform:translateZ(0)]">
-                <img :src="playlist._cover" :alt="playlist.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div class="absolute top-2 right-2 bg-black/45 text-white px-2.5 py-1 rounded-full flex items-center shadow-sm">
-                  <AppIcon name="music" class="w-3 h-3 mr-1" />
-                  <span class="text-[10px] font-bold tracking-wider">{{ playlist._trackCount }}首</span>
+              <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-shadow duration-300">
+                <!-- 1. 独立图片容器（专属 v-squircle 裁切） -->
+                <div v-squircle="'xl'" class="absolute inset-0 w-full h-full bg-gray-100 dark:bg-slate-800 overflow-hidden pointer-events-none">
+                  <img :src="playlist._cover" :alt="playlist.name" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 </div>
-                <!-- 隐私标识 -->
-                <div v-if="playlist.is_pri === 1" class="absolute bottom-2 left-2 bg-black/55 text-white px-2 py-0.5 rounded-md flex items-center text-[10px] font-medium">
-                  <AppIcon name="lock" class="w-2.5 h-2.5 mr-1" />
+                
+                <!-- 2. 中间播放层（独立浮层） -->
+                <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none z-10 rounded-[18px] overflow-hidden">
+                  <div class="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                    <AppIcon name="play" class="w-6 h-6 text-white ml-0.5 flex-shrink-0" />
+                  </div>
+                </div>
+
+                <!-- 3. 右上角角标（独立浮层） -->
+                <div class="absolute top-2 right-2 bg-black/45 text-white px-2.5 py-1 rounded-full flex items-center shadow-sm pointer-events-none select-none z-20">
+                  <AppIcon name="music" class="w-3 h-3 mr-1 flex-shrink-0" />
+                  <span class="text-[10px] font-bold tracking-wider leading-none">{{ playlist._trackCount }}首</span>
+                </div>
+
+                <!-- 4. 隐私标识 -->
+                <div v-if="playlist.is_pri === 1" class="absolute bottom-2 left-2 bg-black/55 text-white px-2 py-0.5 rounded-md flex items-center text-[10px] font-medium z-20">
+                  <AppIcon name="lock" class="w-2.5 h-2.5 mr-1 flex-shrink-0" />
                   <span>私密</span>
                 </div>
-                <!-- 删除歌单按钮 -->
+
+                <!-- 5. 删除歌单按钮（独立浮层，仅过渡 opacity，杜绝位移跳跃） -->
                 <button
                   v-if="canDelete(playlist)"
                   @click.stop="openDeleteModal(playlist)"
-                  class="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-md z-10"
+                  class="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-30"
                   v-tooltip="isCollectedPlaylist(playlist) ? '取消收藏' : '删除歌单'"
                 >
-                  <AppIcon name="trash" class="w-3.5 h-3.5" />
+                  <AppIcon name="trash" class="w-3.5 h-3.5 flex-shrink-0" />
                 </button>
-                <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
-                  <div class="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                    <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
-                  </div>
-                </div>
-              </div>
-              
               </div>
               <div class="mt-3 flex flex-col px-1">
                 <h4 class="text-sm font-bold text-gray-800 dark:text-slate-100 leading-snug line-clamp-2 break-all group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.name">{{ playlist.name }}</h4>

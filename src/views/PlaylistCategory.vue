@@ -96,21 +96,24 @@
       <div v-else-if="playlists.length > 0">
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 lg:gap-5 mb-8">
           <div v-for="playlist in playlists" :key="playlist.global_collection_id || playlist.specialid" @click="goToPlaylist(playlist.global_collection_id || playlist.specialid)" class="flex flex-col group cursor-pointer no-drag">
-            <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1">
-              <div v-squircle="'xl'" class="relative w-full h-full bg-gray-100 dark:bg-slate-850 transform-gpu [transform:translateZ(0)]">
-              <img :src="formatImg(playlist.imgurl || playlist.flexible_cover || playlist.pic)" :alt="playlist.specialname" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-
-              <div class="absolute top-2 right-2 bg-black/45 text-white px-2 py-0.5 rounded-full flex items-center shadow-sm">
-                <AppIcon name="play" class="w-3 h-3 mr-1" />
-                <span class="text-[10px] font-bold tracking-wider">{{ formatPlayCount(playlist.play_count) }}</span>
+            <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-shadow duration-300">
+              <!-- 1. 独立图片容器（专属 v-squircle 裁切） -->
+              <div v-squircle="'xl'" class="absolute inset-0 w-full h-full bg-gray-100 dark:bg-slate-850 overflow-hidden pointer-events-none">
+                <img :src="formatImg(playlist.imgurl || playlist.flexible_cover || playlist.pic)" :alt="playlist.specialname" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               </div>
 
-              <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <!-- 2. 中间播放层（独立浮层） -->
+              <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none z-10 rounded-[18px] overflow-hidden">
                 <div class="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                  <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
+                  <AppIcon name="play" class="w-6 h-6 text-white ml-0.5 flex-shrink-0" />
                 </div>
               </div>
-            </div>
+
+              <!-- 3. 右上角角标（独立浮层） -->
+              <div class="absolute top-2 right-2 bg-black/45 text-white px-2 py-0.5 rounded-full flex items-center shadow-sm pointer-events-none select-none z-20">
+                <AppIcon name="play" class="w-3 h-3 mr-1 flex-shrink-0" />
+                <span class="text-[10px] font-bold tracking-wider leading-none">{{ formatPlayCount(playlist.play_count) }}</span>
+              </div>
             </div>
             <div class="mt-3 flex flex-col px-1 min-w-0">
               <h4 class="text-sm font-bold text-gray-800 dark:text-slate-200 leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>

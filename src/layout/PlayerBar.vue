@@ -96,33 +96,55 @@
        </button>
 
        <div v-if="store.currentSong" ref="qualityMenuRef" class="relative flex flex-col items-center justify-center no-drag z-[60]">
-         <div @click="qualityMenuOpen = !qualityMenuOpen" v-squircle="'sm'" class="cursor-pointer font-bold tracking-wide uppercase transition-all h-7 px-2.5 flex items-center text-[13px] rounded-md border border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400" v-tooltip="'音质选择'">
+         <button
+           type="button"
+           @click="qualityMenuOpen = !qualityMenuOpen"
+           v-squircle="'sm'"
+           class="cursor-pointer font-bold tracking-wide uppercase transition-all h-7 px-2.5 flex items-center text-[13px] rounded-md border focus:outline-none"
+           :class="qualityMenuOpen ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-400/30 dark:text-blue-300' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400'"
+           v-tooltip="'音质选择'"
+         >
            {{ qualityDisplayName }}
-         </div>
+         </button>
          
-         <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 pb-2 transition-all duration-300 origin-bottom" :class="qualityMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'">
-           <div v-squircle="'lg'" class="flex flex-col bg-white/95 backdrop-blur-xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden w-32 py-1.5 relative">
-             <div class="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none"></div>
-
-             <div v-for="(q, index) in qualityMenuOptions" :key="q.key" @click="handleQualitySelect(q)"
-                  class="text-xs py-2.5 font-bold transition-all relative z-10 flex items-center justify-between px-4"
-                  v-tooltip="q.disabled ? (isQQImportSong(store.currentSong) ? '当前企鹅歌曲未提供该音质' : '当前网易歌曲未提供该音质') : ''"
-                  :class="[
-                    index !== qualityOptions.length - 1 ? 'border-b border-gray-50/50' : '',
-                    q.disabled ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer',
-                    !q.disabled && store.currentQuality === q.key ? 'text-blue-600 bg-blue-50/50' : '',
-                    !q.disabled && store.currentQuality !== q.key ? 'text-gray-600 hover:bg-gray-50' : ''
-                  ]">
-               <div class="flex items-center">
-                 <span v-if="store.currentQuality === q.key" class="absolute left-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm"></span>
-                 <span :class="{'ml-1': store.currentQuality === q.key}">{{ q.name }}</span>
+         <div
+           class="absolute bottom-full left-1/2 transform -translate-x-1/2 pb-2.5 transition-all duration-200 origin-bottom"
+           :class="qualityMenuOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible pointer-events-none'"
+         >
+           <div class="w-[148px] rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag flex flex-col gap-0.5">
+             <button
+               v-for="q in qualityMenuOptions"
+               :key="q.key"
+               type="button"
+               @click="handleQualitySelect(q)"
+               class="quality-menu-item"
+               :class="[
+                 q.disabled ? 'disabled' : '',
+                 !q.disabled && store.currentQuality === q.key ? 'active' : ''
+               ]"
+               v-tooltip="q.disabled ? (isQQImportSong(store.currentSong) ? '当前企鹅歌曲未提供该音质' : '当前网易歌曲未提供该音质') : ''"
+             >
+               <div class="flex items-center space-x-2 min-w-0">
+                 <span
+                   class="indicator-dot"
+                   :class="!q.disabled && store.currentQuality === q.key ? 'opacity-100 scale-100' : 'opacity-0 scale-50'"
+                 ></span>
+                 <span class="truncate">{{ q.name }}</span>
                </div>
-               <span v-if="q.isVip" class="border px-1 py-[1px] rounded text-[7px] font-black tracking-widest uppercase transform scale-90 origin-right ml-2 shadow-sm" :class="q.disabled ? 'bg-gray-50 text-gray-300 border-gray-100' : 'bg-blue-50 text-blue-600 border-blue-200'">VIP</span>
-             </div>
+               <span
+                 v-if="q.isVip"
+                 class="quality-vip-badge"
+                 :class="[
+                   q.disabled ? 'disabled' : '',
+                   !q.disabled && store.currentQuality === q.key ? 'active' : ''
+                 ]"
+               >
+                 VIP
+               </span>
+             </button>
            </div>
          </div>
        </div>
-
        <button ref="playlistBtnRef" @click="store.togglePlaylist" class="no-drag transition-colors relative hover:text-blue-600 flex-shrink-0" v-tooltip="'播放列表'">
          <AppIcon name="queue" class="w-5 h-5" />
        </button>
@@ -1911,6 +1933,11 @@ const handleGlobalKeyDown = (e) => {
   }
 
   if (e.key === 'Escape') {
+    if (qualityMenuOpen.value) {
+      e.preventDefault();
+      qualityMenuOpen.value = false;
+      return;
+    }
     if (store.isImmersiveLyrics) {
       e.preventDefault();
       store.exitImmersiveLyrics();
@@ -2775,6 +2802,119 @@ const openLyricsPage = () => {
 </script>
 
 <style scoped>
+/* 音质选择浮动菜单 - 与 SongContextMenu 保持统一视觉规范 */
+.quality-menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: left;
+  user-select: none;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: rgb(55, 65, 81);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+:global(.dark) .quality-menu-item {
+  color: rgb(241, 245, 249);
+}
+
+.quality-menu-item:hover:not(.disabled) {
+  background: rgba(239, 246, 255, 0.85);
+  color: rgb(37, 99, 235);
+}
+
+:global(.dark) .quality-menu-item:hover:not(.disabled) {
+  background: rgba(59, 130, 246, 0.2);
+  color: rgb(96, 165, 250);
+}
+
+.quality-menu-item.active {
+  background: rgba(239, 246, 255, 0.95);
+  color: rgb(37, 99, 235);
+}
+
+:global(.dark) .quality-menu-item.active {
+  background: rgba(59, 130, 246, 0.25);
+  color: rgb(96, 165, 250);
+}
+
+.quality-menu-item.disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  color: rgb(203, 213, 225);
+}
+
+:global(.dark) .quality-menu-item.disabled {
+  color: rgb(71, 85, 105);
+}
+
+.indicator-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background-color: rgb(37, 99, 235);
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.45);
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:global(.dark) .indicator-dot {
+  background-color: rgb(96, 165, 250);
+  box-shadow: 0 0 6px rgba(96, 165, 250, 0.6);
+}
+
+.quality-vip-badge {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1.1;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(191, 219, 254, 0.8);
+  background-color: rgba(239, 246, 255, 0.85);
+  color: rgb(37, 99, 235);
+  transition: all 0.15s ease;
+}
+
+:global(.dark) .quality-vip-badge {
+  border-color: rgba(59, 130, 246, 0.35);
+  background-color: rgba(30, 58, 138, 0.35);
+  color: rgb(147, 197, 253);
+}
+
+.quality-vip-badge.active {
+  border-color: rgba(147, 197, 253, 0.9);
+  background-color: rgba(219, 234, 254, 0.95);
+  color: rgb(29, 78, 216);
+}
+
+:global(.dark) .quality-vip-badge.active {
+  border-color: rgba(96, 165, 250, 0.6);
+  background-color: rgba(37, 99, 235, 0.4);
+  color: rgb(191, 219, 254);
+}
+
+.quality-vip-badge.disabled {
+  border-color: rgba(229, 231, 235, 0.6);
+  background-color: rgba(243, 244, 246, 0.6);
+  color: rgb(156, 163, 175);
+}
+
+:global(.dark) .quality-vip-badge.disabled {
+  border-color: rgba(51, 65, 85, 0.5);
+  background-color: rgba(30, 41, 59, 0.5);
+  color: rgb(100, 116, 139);
+}
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translate(-50%, 10px); }
 .lyric-fade-enter-active, .lyric-fade-leave-active { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1); }

@@ -106,21 +106,23 @@
         </div>
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
           <div v-for="album in albums" :key="album.albumid" @click="goToAlbum(album.albumid)" class="flex flex-col group cursor-pointer no-drag">
-            <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-all duration-500 transform group-hover:-translate-y-1">
-              <div v-squircle="'xl'" class="relative w-full h-full bg-gray-100 dark:bg-slate-800 transform-gpu [transform:translateZ(0)]">
-              <img :src="album.cover" :alt="album.albumname" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-shadow duration-300">
+              <!-- 1. 独立图片容器（专属 v-squircle 裁切） -->
+              <div v-squircle="'xl'" class="absolute inset-0 w-full h-full bg-gray-100 dark:bg-slate-800 overflow-hidden pointer-events-none">
+                <img :src="album.cover" :alt="album.albumname" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              </div>
               <div class="absolute -right-4 top-1/2 transform -translate-y-1/2 w-[80%] h-[80%] bg-black rounded-full shadow-[0_0_10px_rgba(0,0,0,0.4)] -z-10 group-hover:translate-x-2 transition-transform duration-500"></div>
               
-              <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <!-- 2. 中间播放层（独立浮层） -->
+              <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none z-10 rounded-[18px] overflow-hidden">
                 <div class="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                  <AppIcon name="play" class="w-6 h-6 text-white ml-1" />
+                  <AppIcon name="play" class="w-6 h-6 text-white ml-0.5 flex-shrink-0" />
                 </div>
               </div>
             </div>
-            </div>
             <div class="mt-3 flex flex-col px-1 min-w-0">
-              <h4 class="text-sm font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors" v-tooltip="album.albumname">{{ album.albumname }}</h4>
-              <p class="text-xs text-gray-400 mt-1.5 font-medium truncate font-mono">{{ album.publishtime ? album.publishtime.split(' ')[0] : '' }}</p>
+              <h4 class="text-sm font-bold text-gray-800 dark:text-slate-100 leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="album.albumname">{{ album.albumname }}</h4>
+              <p class="text-xs text-gray-400 dark:text-slate-400 mt-1.5 font-medium truncate font-mono">{{ album.publishtime ? album.publishtime.split(' ')[0] : '' }}</p>
             </div>
           </div>
         </div>
