@@ -12,10 +12,21 @@
 
 :root.dark {
   color-scheme: dark;
-  --brand-primary: #60a5fa;
-  --brand-hover: #3b82f6;
-  --brand-light: rgba(37, 99, 235, 0.16);
-  --brand-border: rgba(96, 165, 250, 0.35);
+  --brand-primary: #3b82f6;
+  --brand-hover: #2563eb;
+  --brand-light: rgba(59, 130, 246, 0.14);
+  --brand-border: rgba(59, 130, 246, 0.32);
+
+  /* Graphite 中性深色色阶 (unslop) */
+  --surface-deepest: #0f0f10;
+  --surface-base: #141415;
+  --surface-card: #19191b;
+  --surface-raised: #232325;
+  --hairline-subtle: rgba(237, 237, 237, 0.08);
+  --hairline-strong: rgba(237, 237, 237, 0.14);
+  --text-primary: #ededed;
+  --text-secondary: #a1a1a6;
+  --text-muted: #85858b;
 }
 
 html, body, #app {
@@ -43,8 +54,8 @@ html.tray-menu-window.dark #app {
 
 .dark body,
 .dark #app {
-  background-color: #020617;
-  color: #e2e8f0;
+  background-color: #141415;
+  color: #ededed;
 }
 
 .drag-region {
@@ -78,41 +89,43 @@ html.tray-menu-window.dark #app {
   background-color: rgba(148, 163, 184, 1);
 }
 
-.dark .bg-white { background-color: rgb(15 23 42); }
-.dark .bg-white\/95 { background-color: rgb(15 23 42 / 0.95); }
-.dark .bg-white\/90 { background-color: rgb(15 23 42 / 0.9); }
-.dark .bg-white\/85 { background-color: rgb(15 23 42 / 0.85); }
-.dark .bg-white\/40 { background-color: rgb(15 23 42 / 0.45); }
+.dark .bg-white { background-color: #19191b; }
+.dark .bg-white\/95 { background-color: rgb(25 25 27 / 0.95); }
+.dark .bg-white\/90 { background-color: rgb(25 25 27 / 0.9); }
+.dark .bg-white\/85 { background-color: rgb(25 25 27 / 0.85); }
+.dark .bg-white\/40 { background-color: rgb(25 25 27 / 0.45); }
 .dark .bg-gray-50,
-.dark .bg-gray-50\/50 { background-color: rgb(30 41 59 / 0.72); }
-.dark .bg-gray-100 { background-color: rgb(30 41 59); }
-.dark .bg-gray-100\/60 { background-color: rgb(51 65 85 / 0.72); }
-.dark .bg-gray-200 { background-color: rgb(51 65 85); }
-.dark .hover\:bg-gray-50:hover { background-color: rgb(30 41 59 / 0.72); }
+.dark .bg-gray-50\/50 { background-color: rgb(35 35 37 / 0.72); }
+.dark .bg-gray-100 { background-color: #232325; }
+.dark .bg-gray-100\/60 { background-color: rgb(35 35 37 / 0.72); }
+.dark .bg-gray-200 { background-color: #2c2c2f; }
+.dark .hover\:bg-gray-50:hover { background-color: rgb(35 35 37 / 0.72); }
 .dark .hover\:bg-gray-100:hover,
 .dark .hover\:bg-gray-100\/60:hover,
-.dark .hover\:bg-gray-200:hover { background-color: rgb(51 65 85 / 0.8); }
+.dark .hover\:bg-gray-200:hover { background-color: rgb(44 44 47 / 0.85); }
 .dark .hover\:bg-white:hover,
 .dark .focus\:bg-white:focus,
-.dark .focus-within\:bg-white:focus-within { background-color: rgb(30 41 59); }
+.dark .focus-within\:bg-white:focus-within { background-color: #232325; }
 .dark .hover\:bg-blue-50:hover,
 .dark .hover\:bg-blue-50\/60:hover,
 .dark .hover\:bg-blue-50\/80:hover { background-color: rgb(59 130 246 / 0.12); }
 .dark .hover\:bg-emerald-50:hover,
-.dark .hover\:bg-emerald-50\/60:hover { background-color: rgb(16 185 129 / 0.12); }
+.dark .hover\:bg-emerald-50\/60:hover { background-color: rgb(76 195 138 / 0.12); }
 .dark .border-gray-50,
 .dark .border-gray-50\/50,
 .dark .border-gray-100,
-.dark .border-gray-200 { border-color: rgb(51 65 85 / 0.9); }
+.dark .border-gray-200 { border-color: rgba(237, 237, 237, 0.08); }
 .dark .text-gray-900,
 .dark .text-gray-800,
-.dark .text-gray-700 { color: rgb(241 245 249); }
+.dark .text-gray-700,
+.dark .hover\:text-gray-800:hover,
+.dark .hover\:text-gray-700:hover { color: #ededed; }
 .dark .text-gray-600,
-.dark .text-gray-500 { color: rgb(203 213 225); }
-.dark .text-gray-400 { color: rgb(148 163 184); }
-.dark .text-gray-300 { color: rgb(100 116 139); }
-.dark .text-gray-200 { color: rgb(71 85 105); }
-.dark .placeholder-gray-400::placeholder { color: rgb(100 116 139); }
+.dark .text-gray-500 { color: #a1a1a6; }
+.dark .text-gray-400 { color: #85858b; }
+.dark .text-gray-300 { color: #636369; }
+.dark .text-gray-200 { color: #48484d; }
+.dark .placeholder-gray-400::placeholder { color: #6e6e73; }
 .dark input:not([type="checkbox"]):not([type="radio"]),
 .dark textarea {
   color-scheme: dark;
@@ -122,16 +135,16 @@ html.tray-menu-window.dark #app {
 .dark .shadow-lg,
 .dark .shadow-xl,
 .dark .shadow-2xl {
-  --tw-shadow-color: rgb(0 0 0 / 0.45);
+  --tw-shadow-color: rgb(0 0 0 / 0.35);
   --tw-shadow: var(--tw-shadow-colored);
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb,
 .dark::-webkit-scrollbar-thumb {
-  background-color: rgba(100, 116, 139, 0.35);
+  background-color: rgba(237, 237, 237, 0.14);
 }
 .dark .custom-scrollbar:hover::-webkit-scrollbar-thumb,
 .dark:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.65);
+  background-color: rgba(237, 237, 237, 0.28);
 }
 
 .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }

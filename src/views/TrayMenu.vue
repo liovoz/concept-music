@@ -10,18 +10,18 @@
     <!-- 托盘主卡片：干净微边框，深色模式下使用柔和的 slate-800 边框 -->
     <div
       ref="cardRef"
-      class="tray-menu-card w-48 rounded-xl border border-gray-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 backdrop-blur-xl"
+      class="tray-menu-card w-48 rounded-xl border border-gray-200/90 dark:border-white/[0.08] bg-white dark:bg-[#19191b] p-1.5 text-xs font-bold text-gray-700 dark:text-[#ededed] backdrop-blur-xl"
       @click.stop
     >
       <!-- 当前播放歌曲简要信息（如果有） -->
       <div
         v-if="state.currentSong?.name"
-        class="px-2.5 py-1.5 mb-1 rounded-lg bg-gray-50 dark:bg-slate-800/80 border border-gray-200/60 dark:border-slate-700/60 text-[11px]"
+        class="px-2.5 py-1.5 mb-1 rounded-lg bg-gray-50 dark:bg-[#232325]/80 border border-gray-200/60 dark:border-white/[0.08] text-[11px]"
       >
-        <div class="font-bold text-gray-800 dark:text-slate-200 truncate leading-tight">
+        <div class="font-bold text-gray-800 dark:text-[#ededed] truncate leading-tight">
           {{ state.currentSong.name }}
         </div>
-        <div class="text-[10px] truncate text-gray-400 dark:text-slate-400 font-normal mt-0.5">
+        <div class="text-[10px] truncate text-gray-400 dark:text-[#a1a1a6] font-normal mt-0.5">
           {{ state.currentSong.singer || '概念音乐' }}
         </div>
       </div>
@@ -86,7 +86,7 @@
         <!-- 模式子菜单：智能自适应方向 + 安全透明防脱桥接 -->
         <div
           v-show="showSubmenu"
-          class="absolute w-36 rounded-xl border border-gray-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 backdrop-blur-xl z-20 bottom-0"
+          class="absolute w-36 rounded-xl border border-gray-200/90 dark:border-white/[0.08] bg-white dark:bg-[#19191b] p-1.5 text-xs font-bold text-gray-700 dark:text-[#ededed] backdrop-blur-xl z-20 bottom-0"
           :class="[
             placement.openSubmenuLeft
               ? 'right-full mr-1.5 before:absolute before:inset-y-0 before:-right-2 before:w-2'

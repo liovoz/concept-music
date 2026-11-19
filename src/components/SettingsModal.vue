@@ -9,23 +9,23 @@
         tabindex="-1"
         ref="modalContainerRef"
       >
-        <div v-squircle="'xl'" class="modal-dialog-box bg-white dark:bg-slate-900 rounded-[18px] shadow-[0_24px_70px_rgba(0,0,0,0.22)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.7)] border border-gray-200/90 dark:border-slate-800 w-[720px] max-w-[92vw] h-[540px] max-h-[90vh] flex flex-col overflow-hidden relative text-gray-800 dark:text-slate-100 transition-colors duration-200">
+        <div v-squircle="'xl'" class="modal-dialog-box bg-white dark:bg-[#141415] rounded-[18px] shadow-[0_24px_70px_rgba(0,0,0,0.22)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.75)] border border-gray-200/90 dark:border-white/[0.08] w-[720px] max-w-[92vw] h-[540px] max-h-[90vh] flex flex-col overflow-hidden relative text-gray-800 dark:text-[#ededed] transition-colors duration-200">
           
           <!-- 弹窗顶栏 -->
-          <div class="h-14 px-6 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0 select-none z-10">
+          <div class="h-14 px-6 border-b border-gray-100 dark:border-white/[0.08] bg-white dark:bg-[#141415] flex items-center justify-between shrink-0 select-none z-10">
             <div class="flex items-center space-x-2.5">
-              <div v-squircle="'sm'" class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-inner">
+              <div v-squircle="'sm'" class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-[#232325] text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-inner dark:shadow-none">
                 <AppIcon name="settings" class="w-4 h-4" />
               </div>
               <div>
-                <h2 class="text-sm font-extrabold tracking-wide text-gray-900 dark:text-white">偏好设置</h2>
-                <p class="text-[10px] text-gray-400 dark:text-slate-500">Settings & Preferences</p>
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-[#ededed]">偏好设置</h2>
+                <p class="text-[10px] text-gray-400 dark:text-[#85858b]">Settings & Preferences</p>
               </div>
             </div>
 
             <button 
               @click="closeModal" 
-              class="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all focus:outline-none"
+              class="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 dark:text-[#85858b] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors focus:outline-none"
               v-tooltip="'关闭 (Esc)'"
             >
               <AppIcon name="close" class="w-4 h-4" />
@@ -36,7 +36,7 @@
           <div class="flex flex-1 min-h-0 overflow-hidden">
             
             <!-- 左侧分类导航 -->
-            <nav class="w-44 border-r border-gray-200/70 dark:border-slate-800/80 p-3 space-y-1.5 shrink-0 select-none bg-slate-50/90 dark:bg-slate-950/60">
+            <nav class="w-44 border-r border-gray-200/70 dark:border-white/[0.08] p-3 space-y-1.5 shrink-0 select-none bg-slate-50/90 dark:bg-[#0f0f10]">
               <div
                 v-for="tab in tabs"
                 :key="tab.id"
@@ -45,27 +45,27 @@
                 <button
                   v-squircle="'md'"
                   @click="currentTab = tab.id"
-                  class="w-full flex items-center px-3.5 py-2.5 text-xs font-bold transition-colors text-left group relative cursor-pointer rounded-[10px]"
+                  class="w-full flex items-center px-3.5 py-2.5 text-xs font-medium transition-colors text-left group relative cursor-pointer rounded-[10px]"
                   :class="currentTab === tab.id 
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25' 
-                    : 'text-gray-600 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-800/70 hover:text-gray-900 dark:hover:text-slate-200'"
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 dark:bg-[#232325] dark:text-[#ededed] dark:shadow-none' 
+                    : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#19191b] hover:text-gray-900 dark:hover:text-[#ededed]'"
                 >
                   <AppIcon 
                     :name="tab.icon" 
-                    class="w-4 h-4 mr-2.5 transition-transform group-hover:scale-110" 
-                    :class="currentTab === tab.id ? 'text-white' : 'text-gray-400 dark:text-slate-500 group-hover:text-blue-500'" 
+                    class="w-4 h-4 mr-2.5 transition-colors" 
+                    :class="currentTab === tab.id ? 'text-white dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-blue-500 dark:group-hover:text-[#ededed]'" 
                   />
                   <span class="truncate">{{ tab.name }}</span>
                   <span 
                     v-if="tab.id === 'about' && hasUpdateAvailable" 
-                    class="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse"
+                    class="ml-auto w-2 h-2 rounded-full bg-red-500"
                   ></span>
                 </button>
               </div>
             </nav>
 
             <!-- 右侧配置区域：高反差层次底板 -->
-            <div class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-5 bg-slate-100/50 dark:bg-slate-900/40">
+            <div class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-5 bg-slate-100/50 dark:bg-[#141415]">
               
               <!-- TAB 0: 账号与资产 -->
               <div v-show="currentTab === 'account'" class="space-y-4">
@@ -73,40 +73,40 @@
                 <!-- 模态 1: 未登录引导卡片 -->
                 <div 
                   v-if="!userStore.isLoggedIn" 
-                  class="py-8 px-6 flex flex-col items-center justify-center text-center bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs space-y-5"
+                  class="py-8 px-6 flex flex-col items-center justify-center text-center bg-white dark:bg-[#19191b] rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs dark:shadow-none space-y-5"
                 >
-                  <!-- 品牌发光图标容器 -->
+                  <!-- 图标容器 -->
                   <div 
                     v-squircle="'xl'"
-                    class="w-16 h-16 rounded-[18px] bg-gradient-to-tr from-blue-500/10 via-indigo-500/10 to-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-inner"
+                    class="w-14 h-14 rounded-[16px] bg-gradient-to-tr from-blue-500/10 via-indigo-500/10 to-blue-500/20 dark:bg-none dark:bg-[#232325] text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-inner dark:shadow-none border border-transparent dark:border-white/[0.08]"
                   >
-                    <AppIcon name="user" class="w-8 h-8" />
+                    <AppIcon name="user" class="w-7 h-7" />
                   </div>
 
                   <!-- 文案引导 -->
                   <div class="space-y-1.5 max-w-sm">
-                    <h3 class="text-sm font-extrabold text-gray-900 dark:text-white">登录酷狗音乐账号</h3>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-[#ededed]">登录酷狗音乐账号</h3>
+                    <p class="text-xs text-gray-500 dark:text-[#a1a1a6] leading-relaxed">
                       登录后即可同步云端歌单、查看听歌时长与等级进阶、享有概念版 VIP 专属权益与自动续领。
                     </p>
                   </div>
 
                   <!-- 核心功能徽章胶囊 -->
                   <div class="grid grid-cols-3 gap-2 w-full max-w-md pt-1">
-                    <div class="px-2.5 py-2 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-gray-200/60 dark:border-slate-700/60 flex flex-col items-center text-center">
+                    <div class="px-2.5 py-2 bg-slate-50 dark:bg-[#19191b]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col items-center text-center">
                       <span class="text-base mb-1">☁️</span>
-                      <span class="text-[11px] font-bold text-gray-700 dark:text-slate-300">云端歌单同步</span>
-                      <span class="text-[10px] text-gray-400 dark:text-slate-500 scale-95">自建与收藏云同步</span>
+                      <span class="text-[11px] font-bold text-gray-700 dark:text-[#a1a1a6]">云端歌单同步</span>
+                      <span class="text-[10px] text-gray-400 dark:text-[#85858b] scale-95">自建与收藏云同步</span>
                     </div>
-                    <div class="px-2.5 py-2 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-gray-200/60 dark:border-slate-700/60 flex flex-col items-center text-center">
+                    <div class="px-2.5 py-2 bg-slate-50 dark:bg-[#19191b]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col items-center text-center">
                       <span class="text-base mb-1">📊</span>
-                      <span class="text-[11px] font-bold text-gray-700 dark:text-slate-300">听歌等级成长</span>
-                      <span class="text-[10px] text-gray-400 dark:text-slate-500 scale-95">记录累计听歌数据</span>
+                      <span class="text-[11px] font-bold text-gray-700 dark:text-[#a1a1a6]">听歌等级成长</span>
+                      <span class="text-[10px] text-gray-400 dark:text-[#85858b] scale-95">记录累计听歌数据</span>
                     </div>
-                    <div class="px-2.5 py-2 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-gray-200/60 dark:border-slate-700/60 flex flex-col items-center text-center">
+                    <div class="px-2.5 py-2 bg-slate-50 dark:bg-[#19191b]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col items-center text-center">
                       <span class="text-base mb-1">💎</span>
-                      <span class="text-[11px] font-bold text-gray-700 dark:text-slate-300">概念版 VIP</span>
-                      <span class="text-[10px] text-gray-400 dark:text-slate-500 scale-95">每日全自动续领</span>
+                      <span class="text-[11px] font-bold text-gray-700 dark:text-[#a1a1a6]">概念版 VIP</span>
+                      <span class="text-[10px] text-gray-400 dark:text-[#85858b] scale-95">每日全自动续领</span>
                     </div>
                   </div>
 
@@ -127,7 +127,7 @@
                 <div v-else class="space-y-4">
                   <!-- 卡片 1: 个人身份基础信息卡片 -->
                   <section 
-                    class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 flex items-center"
+                    class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 flex items-center"
                   >
                     <div class="flex items-center space-x-4 min-w-0 flex-1">
                       <!-- 头像 -->
@@ -149,7 +149,7 @@
                           </h3>
                           <!-- 等级徽章 -->
                           <span 
-                            class="px-1.5 py-0.5 text-[10px] font-black italic bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/50 rounded-[5px] leading-none shadow-2xs shrink-0"
+                            class="px-1.5 py-0.5 text-[10px] font-black italic bg-blue-50 dark:bg-[#232325] text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-white/[0.08] rounded-[5px] leading-none shadow-2xs shrink-0"
                             v-tooltip="'听歌成长等级'"
                           >
                             Lv.{{ userStore.userInfo?.level ?? 0 }}
@@ -163,7 +163,7 @@
                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-xs shrink-0"
                             :class="userStore.vipStatus?.isVip 
                               ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
-                              : 'bg-slate-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'"
+                              : 'bg-slate-100 dark:bg-[#2c2c2f] text-gray-500 dark:text-[#a1a1a6]'"
                           >
                             <AppIcon v-if="userStore.vipStatus?.isVip" name="star-solid" class="w-2.5 h-2.5" />
                             <span>{{ userStore.vipStatus?.displayName || '普通用户' }}</span>
@@ -172,7 +172,7 @@
                           <!-- VIP 有效期与剩余天数 -->
                           <span 
                             class="truncate font-medium"
-                            :class="userStore.vipStatus?.isVip ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-slate-500'"
+                            :class="userStore.vipStatus?.isVip ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-[#85858b]'"
                             v-tooltip="rawVipExpireTime ? `精准到期时间：${rawVipExpireTime}` : ''"
                           >
                             {{ formattedVipExpireText }}
@@ -180,21 +180,21 @@
                         </div>
 
                         <!-- 第三行：资产层（UID、听歌时长、乐龄） -->
-                        <div class="flex items-center space-x-2.5 text-[11px] text-gray-500 dark:text-slate-400 whitespace-nowrap overflow-hidden">
+                        <div class="flex items-center space-x-2.5 text-[11px] text-gray-500 dark:text-[#a1a1a6] whitespace-nowrap overflow-hidden">
                           <!-- UID 与一键复制 -->
                           <div class="flex items-center space-x-1 font-mono shrink-0">
                             <span>UID: {{ displayUid }}</span>
                             <button 
                               v-if="displayUid !== '-'"
                               @click="handleCopyUid(displayUid)" 
-                              class="p-0.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer" 
+                              class="p-0.5 rounded-md hover:bg-gray-100 dark:hover:bg-[#2c2c2f] text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer" 
                               v-tooltip="'复制 UID'"
                             >
                               <AppIcon name="copy" class="w-3.5 h-3.5" />
                             </button>
                           </div>
 
-                          <span v-if="userStore.userInfo?.durationStr || userStore.userInfo?.musicAge" class="w-1 h-1 rounded-full bg-gray-300 dark:bg-slate-700 shrink-0"></span>
+                          <span v-if="userStore.userInfo?.durationStr || userStore.userInfo?.musicAge" class="w-1 h-1 rounded-full bg-gray-300 dark:bg-[#2c2c2f] shrink-0"></span>
 
                           <!-- 累计听歌时长 -->
                           <span v-if="userStore.userInfo?.durationStr" class="flex items-center gap-1 shrink-0">
@@ -202,7 +202,7 @@
                             <span>累计听歌 {{ userStore.userInfo.durationStr }}</span>
                           </span>
 
-                          <span v-if="userStore.userInfo?.durationStr && userStore.userInfo?.musicAge" class="w-1 h-1 rounded-full bg-gray-300 dark:bg-slate-700 shrink-0"></span>
+                          <span v-if="userStore.userInfo?.durationStr && userStore.userInfo?.musicAge" class="w-1 h-1 rounded-full bg-gray-300 dark:bg-[#2c2c2f] shrink-0"></span>
 
                           <!-- 乐龄 -->
                           <span v-if="userStore.userInfo?.musicAge" class="flex items-center gap-1 shrink-0">
@@ -216,22 +216,22 @@
 
                   <!-- 卡片 2: 自动领取 VIP 特权 -->
                   <section 
-                    class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                    class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                   >
                     <div class="flex items-center justify-between">
                       <div>
                         <div class="flex items-center space-x-2">
                           <span class="w-1.5 h-3.5 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></span>
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">自动领取 VIP 特权</p>
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">自动领取 VIP 特权</p>
                           <span class="px-1.5 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60 rounded-[5px]">特权助手</span>
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 ml-3.5">登录后在后台自动签到「1天VIP」及按时领取「3小时特权」，内置防风控智能离散调度</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">登录后在后台自动签到「1天VIP」及按时领取「3小时特权」，内置防风控智能离散调度</p>
                       </div>
                       <button 
                         type="button"
                         @click="toggleAutoClaimVip"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="autoClaimVipEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-slate-700'"
+                        :class="autoClaimVipEnabled ? 'bg-amber-500' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                       >
                         <span 
                           class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -243,47 +243,47 @@
                     <!-- 实时状态看板 (开启时展开) -->
                     <div 
                       v-if="autoClaimVipEnabled"
-                      class="pt-3 border-t border-gray-100 dark:border-slate-800/80 grid grid-cols-3 gap-2"
+                      class="pt-3 border-t border-gray-100 dark:border-white/[0.08] grid grid-cols-3 gap-2"
                     >
                       <!-- 1. 服务运行状态 -->
                       <div 
                         class="p-2.5 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg border border-amber-200/60 dark:border-amber-900/40 flex flex-col justify-between"
                       >
                         <div class="flex items-center space-x-1.5 text-amber-700 dark:text-amber-400 font-bold text-[11px]">
-                          <span class="w-1.5 h-1.5 rounded-full" :class="userStore.isLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'"></span>
+                          <span class="w-1.5 h-1.5 rounded-full" :class="userStore.isLoggedIn ? 'bg-emerald-500' : 'bg-gray-400'"></span>
                           <span>{{ userStore.isLoggedIn ? '调度服务运行中' : '未登录账号' }}</span>
                         </div>
-                        <p class="text-[10px] text-gray-500 dark:text-slate-400 mt-1">
+                        <p class="text-[10px] text-gray-500 dark:text-[#a1a1a6] mt-1">
                           {{ userStore.isLoggedIn ? '后台心跳检测正常' : '登录后自动打卡' }}
                         </p>
                       </div>
 
                       <!-- 2. 今日 1天VIP 状态 -->
                       <div 
-                        class="p-2.5 bg-slate-50/80 dark:bg-slate-800/60 rounded-lg border border-gray-200/60 dark:border-slate-700/50 flex flex-col justify-between"
+                        class="p-2.5 bg-slate-50/80 dark:bg-[#232325]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col justify-between"
                       >
-                        <div class="flex items-center justify-between text-gray-700 dark:text-slate-200 font-bold text-[11px]">
+                        <div class="flex items-center justify-between text-gray-700 dark:text-[#ededed] font-bold text-[11px]">
                           <span>👑 1天VIP</span>
                           <span class="text-[10px]" :class="userStore.dayVipState?.claimed ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-amber-600 dark:text-amber-400'">
                             {{ userStore.dayVipState?.claimed ? '已入账' : '待领取' }}
                           </span>
                         </div>
-                        <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1">
+                        <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-1">
                           {{ userStore.dayVipState?.claimed ? '今日额度已完成' : '调度器将自动签到' }}
                         </p>
                       </div>
 
                       <!-- 3. 今日 3小时特权 进度 -->
                       <div 
-                        class="p-2.5 bg-slate-50/80 dark:bg-slate-800/60 rounded-lg border border-gray-200/60 dark:border-slate-700/50 flex flex-col justify-between"
+                        class="p-2.5 bg-slate-50/80 dark:bg-[#232325]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col justify-between"
                       >
-                        <div class="flex items-center justify-between text-gray-700 dark:text-slate-200 font-bold text-[11px]">
+                        <div class="flex items-center justify-between text-gray-700 dark:text-[#ededed] font-bold text-[11px]">
                           <span>🎁 3小时特权</span>
                           <span class="text-[10px] font-mono font-bold" :class="(userStore.vipState?.count || 0) >= 8 ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'">
                             {{ (userStore.vipState?.count || 0) >= 8 ? '已拉满' : `${userStore.vipState?.count || 0}/8 次` }}
                           </span>
                         </div>
-                        <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1 truncate">
+                        <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-1 truncate">
                           {{ autoVipNextActionHint }}
                         </p>
                       </div>
@@ -292,14 +292,14 @@
 
                   <!-- 卡片 3: 账号安全与退出登录 -->
                   <section 
-                    class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 flex items-center justify-between"
+                    class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 flex items-center justify-between"
                   >
                     <div class="space-y-0.5">
                       <div class="flex items-center space-x-1.5">
                         <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-500" />
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">账号登录状态健康</p>
+                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">账号登录状态健康</p>
                       </div>
-                      <p class="text-[11px] text-gray-400 dark:text-slate-500">退出登录将安全擦除本地 DPAPI 加密凭据与缓存，再次使用需重新鉴权</p>
+                      <p class="text-[11px] text-gray-400 dark:text-[#85858b]">退出登录将安全擦除本地 DPAPI 加密凭据与缓存，再次使用需重新鉴权</p>
                     </div>
 
                     <!-- 退出登录按钮 -->
@@ -319,12 +319,12 @@
               <div v-show="currentTab === 'general'" class="space-y-4">
                 <!-- 主题外观卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                      <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">外观主题</h3>
+                      <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">外观主题</h3>
                     </div>
                     <span v-if="isScheduleEnabled" class="text-[11px] text-blue-600 dark:text-blue-400">
                       时间调度运行中（点击卡片可锁定并退出定时）
@@ -335,59 +335,59 @@
                       @click="handleSetTheme('light')"
                       class="p-3 cursor-pointer transition-all flex flex-col items-center text-center group rounded-[14px] border select-none"
                       :class="theme === 'light' 
-                        ? 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-500 ring-1 ring-blue-500 shadow-xs' 
-                        : 'bg-slate-50 dark:bg-slate-700/40 border-gray-200/80 dark:border-slate-700/80 hover:border-gray-300 dark:hover:border-slate-600'"
+                        ? 'bg-blue-50/60 dark:bg-[#232325] border-blue-500 ring-1 ring-blue-500 shadow-xs dark:shadow-none' 
+                        : 'bg-slate-50 dark:bg-[#2c2c2f]/40 border-gray-200/80 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.16]'"
                     >
                       <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center mb-1.5 shadow-inner">
                         <AppIcon name="sun" class="w-4 h-4" />
                       </div>
-                      <span class="text-xs font-bold" :class="theme === 'light' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-200'">浅色模式</span>
+                      <span class="text-xs font-bold" :class="theme === 'light' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">浅色模式</span>
                     </div>
 
                     <div 
                       @click="handleSetTheme('dark')"
                       class="p-3 cursor-pointer transition-all flex flex-col items-center text-center group rounded-[14px] border select-none"
                       :class="theme === 'dark' 
-                        ? 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-500 ring-1 ring-blue-500 shadow-xs' 
-                        : 'bg-slate-50 dark:bg-slate-700/40 border-gray-200/80 dark:border-slate-700/80 hover:border-gray-300 dark:hover:border-slate-600'"
+                        ? 'bg-blue-50/60 dark:bg-[#232325] border-blue-500 ring-1 ring-blue-500 shadow-xs dark:shadow-none' 
+                        : 'bg-slate-50 dark:bg-[#2c2c2f]/40 border-gray-200/80 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.16]'"
                     >
-                      <div class="w-7 h-7 rounded-full bg-slate-800 text-blue-400 flex items-center justify-center mb-1.5 shadow-inner">
+                      <div class="w-7 h-7 rounded-full bg-slate-800 dark:bg-[#19191b] text-blue-400 flex items-center justify-center mb-1.5 shadow-inner dark:shadow-none dark:border dark:border-white/[0.08]">
                         <AppIcon name="moon" class="w-4 h-4" />
                       </div>
-                      <span class="text-xs font-bold" :class="theme === 'dark' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-200'">深色模式</span>
+                      <span class="text-xs font-bold" :class="theme === 'dark' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">深色模式</span>
                     </div>
 
                     <div 
                       @click="handleSetTheme('system')"
                       class="p-3 cursor-pointer transition-all flex flex-col items-center text-center group rounded-[14px] border select-none"
                       :class="theme === 'system' 
-                        ? 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-500 ring-1 ring-blue-500 shadow-xs' 
-                        : 'bg-slate-50 dark:bg-slate-700/40 border-gray-200/80 dark:border-slate-700/80 hover:border-gray-300 dark:hover:border-slate-600'"
+                        ? 'bg-blue-50/60 dark:bg-[#232325] border-blue-500 ring-1 ring-blue-500 shadow-xs dark:shadow-none' 
+                        : 'bg-slate-50 dark:bg-[#2c2c2f]/40 border-gray-200/80 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.16]'"
                     >
-                      <div class="w-7 h-7 rounded-full bg-blue-100 dark:bg-slate-700 text-blue-600 dark:text-blue-300 flex items-center justify-center mb-1.5 shadow-inner">
+                      <div class="w-7 h-7 rounded-full bg-blue-100 dark:bg-[#2c2c2f] text-blue-600 dark:text-blue-300 flex items-center justify-center mb-1.5 shadow-inner">
                         <AppIcon name="sparkles" class="w-4 h-4" />
                       </div>
-                      <span class="text-xs font-bold" :class="theme === 'system' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-200'">跟随系统</span>
+                      <span class="text-xs font-bold" :class="theme === 'system' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">跟随系统</span>
                     </div>
                   </div>
 
                   <!-- 定时自动切换外观 分割线与独立控制区 -->
-                  <div class="pt-3 border-t border-gray-100 dark:border-slate-700/60 space-y-3">
+                  <div class="pt-3 border-t border-gray-100 dark:border-white/[0.08] space-y-3">
                     <div class="flex items-center justify-between">
                       <div>
                         <div class="flex items-center space-x-2">
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">按时间自动切换外观</p>
-                          <span v-if="isScheduleEnabled" class="px-1.5 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 rounded-[5px]">
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">按时间自动切换外观</p>
+                          <span v-if="isScheduleEnabled" class="px-1.5 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-[#232325] dark:text-blue-400 border border-blue-200/60 dark:border-white/[0.08] rounded-[5px]">
                             已启用
                           </span>
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">在设定的时间段内自动切换浅色或深色主题</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">在设定的时间段内自动切换浅色或深色主题</p>
                       </div>
                       <button 
                         type="button"
                         @click="toggleThemeSchedule"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="isScheduleEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        :class="isScheduleEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                       >
                         <span 
                           class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -409,14 +409,14 @@
                         <div class="grid grid-cols-2 gap-2.5">
                           <!-- 浅色时间 -->
                           <div 
-                            class="p-2.5 bg-slate-50 dark:bg-slate-700/40 rounded-lg border border-gray-200/70 dark:border-slate-700/60 space-y-1.5"
+                            class="p-2.5 bg-slate-50 dark:bg-[#2c2c2f]/40 rounded-lg border border-gray-200/70 dark:border-white/[0.08] space-y-1.5"
                           >
                             <div class="flex items-center justify-between">
                               <div class="flex items-center space-x-1.5 text-amber-500">
                                 <AppIcon name="sun" class="w-3.5 h-3.5" />
-                                <span class="text-xs font-bold text-gray-700 dark:text-slate-200">浅色模式时间</span>
+                                <span class="text-xs font-bold text-gray-700 dark:text-[#ededed]">浅色模式时间</span>
                               </div>
-                              <span class="text-[10px] text-gray-400 dark:text-slate-500">日间生效</span>
+                              <span class="text-[10px] text-gray-400 dark:text-[#85858b]">日间生效</span>
                             </div>
                             <TimePicker 
                               v-model="tempScheduleLightTime"
@@ -426,14 +426,14 @@
 
                           <!-- 深色时间 -->
                           <div 
-                            class="p-2.5 bg-slate-50 dark:bg-slate-700/40 rounded-lg border border-gray-200/70 dark:border-slate-700/60 space-y-1.5"
+                            class="p-2.5 bg-slate-50 dark:bg-[#2c2c2f]/40 rounded-lg border border-gray-200/70 dark:border-white/[0.08] space-y-1.5"
                           >
                             <div class="flex items-center justify-between">
                               <div class="flex items-center space-x-1.5 text-blue-400">
                                 <AppIcon name="moon" class="w-3.5 h-3.5" />
-                                <span class="text-xs font-bold text-gray-700 dark:text-slate-200">深色模式时间</span>
+                                <span class="text-xs font-bold text-gray-700 dark:text-[#ededed]">深色模式时间</span>
                               </div>
-                              <span class="text-[10px] text-gray-400 dark:text-slate-500">夜间生效</span>
+                              <span class="text-[10px] text-gray-400 dark:text-[#85858b]">夜间生效</span>
                             </div>
                             <TimePicker 
                               v-model="tempScheduleDarkTime"
@@ -444,19 +444,19 @@
 
                         <!-- 快捷预设按钮组 -->
                         <div class="flex items-center justify-between text-[11px] pt-0.5">
-                          <span class="text-gray-400 dark:text-slate-500">快捷预设：</span>
+                          <span class="text-gray-400 dark:text-[#85858b]">快捷预设：</span>
                           <div class="flex items-center space-x-1.5">
                             <button
                               type="button"
                               @click="applyPreset('07:00', '19:00')"
-                              class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 transition-colors rounded-md"
+                              class="px-2 py-0.5 bg-slate-100 dark:bg-[#2c2c2f] text-gray-600 dark:text-[#a1a1a6] hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-[#2c2c2f] dark:hover:text-blue-400 transition-colors rounded-md"
                             >
                               常规 (07:00 / 19:00)
                             </button>
                             <button
                               type="button"
                               @click="applyPreset('09:00', '23:00')"
-                              class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 transition-colors rounded-md"
+                              class="px-2 py-0.5 bg-slate-100 dark:bg-[#2c2c2f] text-gray-600 dark:text-[#a1a1a6] hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-[#2c2c2f] dark:hover:text-blue-400 transition-colors rounded-md"
                             >
                               晚睡 (09:00 / 23:00)
                             </button>
@@ -465,7 +465,7 @@
 
                         <!-- 状态提示与下一次切换时间指示 -->
                         <div 
-                          class="flex items-center justify-between p-2 bg-blue-50/50 dark:bg-blue-950/20 text-[11px] text-blue-700 dark:text-blue-300 rounded-lg border border-blue-100 dark:border-blue-900/40"
+                          class="flex items-center justify-between p-2 bg-blue-50/50 dark:bg-[#232325] text-[11px] text-blue-700 dark:text-blue-300 rounded-lg border border-blue-100 dark:border-white/[0.08]"
                         >
                           <div class="flex items-center space-x-1.5">
                             <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
@@ -482,11 +482,11 @@
 
                 <!-- 关闭窗口行为卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-2"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-2"
                 >
                   <div class="flex items-center space-x-2 mb-1">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">关闭主窗口时</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">关闭主窗口时</h3>
                   </div>
                   <div class="space-y-1.5">
                     <label 
@@ -495,8 +495,8 @@
                       @click="closeBehavior = action.value"
                       class="flex items-center justify-between p-2.5 cursor-pointer transition-all select-none rounded-lg border"
                       :class="closeBehavior === action.value 
-                        ? 'bg-blue-50/50 dark:bg-blue-950/25 border-blue-200 dark:border-blue-900/50' 
-                        : 'bg-slate-50/60 dark:bg-slate-800/40 border-transparent hover:bg-slate-100 dark:hover:bg-slate-700/40'"
+                        ? 'bg-blue-50/50 dark:bg-[#232325] border-blue-200 dark:border-blue-500/70' 
+                        : 'bg-slate-50/60 dark:bg-[#232325]/40 border-transparent hover:bg-slate-100 dark:hover:bg-[#2c2c2f]/40'"
                     >
                       <div class="flex items-center space-x-3">
                         <input 
@@ -504,11 +504,11 @@
                           name="close-behavior" 
                           :value="action.value" 
                           v-model="closeBehavior" 
-                          class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600" 
+                          class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-white/[0.14]" 
                         />
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">{{ action.title }}</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500">{{ action.desc }}</p>
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">{{ action.title }}</p>
+                          <p class="text-[11px] text-gray-400 dark:text-[#85858b]">{{ action.desc }}</p>
                         </div>
                       </div>
                       <AppIcon v-if="closeBehavior === action.value" name="check" class="w-4 h-4 text-blue-600" />
@@ -518,20 +518,20 @@
 
                 <!-- 启动与运行卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4"
                 >
                   <div class="flex items-center justify-between">
                     <div>
                       <div class="flex items-center space-x-2">
                         <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">开机自动启动</p>
+                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">开机自动启动</p>
                       </div>
-                      <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 ml-3.5">登录系统时自动启动概念音乐并驻留后台</p>
+                      <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">登录系统时自动启动概念音乐并驻留后台</p>
                     </div>
                     <button 
                       @click="toggleAutoStart"
                       class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                      :class="autoStartEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                      :class="autoStartEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                     >
                       <span 
                         class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -543,38 +543,38 @@
 
                 <!-- 缓存与存储卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">存储与缓存管理</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">存储与缓存管理</h3>
                   </div>
                   <div class="space-y-2">
                     <div 
-                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg"
+                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">搜索历史记录</p>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">已保存 {{ searchHistoryCount }} 条搜索历史词</p>
+                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">搜索历史记录</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">已保存 {{ searchHistoryCount }} 条搜索历史词</p>
                       </div>
                       <button 
                         @click="handleClearSearchHistory" 
-                        class="px-3 py-1.5 text-xs font-bold text-gray-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer"
+                        class="px-3 py-1.5 text-xs font-bold text-gray-600 dark:text-[#a1a1a6] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all rounded-lg border border-gray-200 dark:border-white/[0.08] cursor-pointer"
                       >
                         清空历史
                       </button>
                     </div>
                     <div 
-                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg"
+                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">临时网络与图片缓存</p>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">当前缓存占用: {{ formattedCacheSize }}</p>
+                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">临时网络与图片缓存</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">当前缓存占用: {{ formattedCacheSize }}</p>
                       </div>
                       <button 
                         @click="handleClearAppCache" 
                         :disabled="isClearingCache"
-                        class="px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all disabled:opacity-50 flex items-center rounded-lg border border-blue-200 dark:border-blue-900/50 cursor-pointer"
+                        class="px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#2c2c2f] transition-all disabled:opacity-50 flex items-center rounded-lg border border-blue-200 dark:border-white/[0.08] cursor-pointer"
                       >
                         <AppIcon v-if="isClearingCache" name="spinner" spin class="w-3.5 h-3.5 mr-1" />
                         清理缓存
@@ -588,21 +588,21 @@
               <div v-show="currentTab === 'playback'" class="space-y-4">
                 <!-- 音量增强增益卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center justify-between">
                     <div>
                       <div class="flex items-center space-x-2">
-                        <span class="w-1.5 h-3.5 bg-purple-600 rounded-full"></span>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">音量增益增强 (Volume Boost)</p>
-                        <span class="px-1.5 py-0.5 text-[10px] font-bold bg-purple-100 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400 rounded-[5px]">WebAudio</span>
+                        <span class="w-1 h-3.5 bg-purple-600 dark:bg-blue-500 rounded-full"></span>
+                        <p class="text-xs font-semibold text-gray-800 dark:text-[#ededed]">音量增益增强 (Volume Boost)</p>
+                        <span class="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-600 dark:bg-[#232325] dark:text-blue-400 dark:border dark:border-white/[0.08] rounded-[5px]">WebAudio</span>
                       </div>
-                      <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 ml-3.5">突破系统 100% 音量上限，最高放大至 2.0 倍</p>
+                      <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3">突破系统 100% 音量上限，最高放大至 2.0 倍</p>
                     </div>
                     <button 
                       @click="toggleVolumeBoost"
                       class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                      :class="playerStore.volumeBoostEnabled ? 'bg-purple-600' : 'bg-gray-200 dark:bg-slate-700'"
+                      :class="playerStore.volumeBoostEnabled ? 'bg-purple-600 dark:bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                     >
                       <span 
                         class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -611,17 +611,17 @@
                     </button>
                   </div>
 
-                  <div v-if="playerStore.volumeBoostEnabled" class="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                    <span class="text-xs font-medium text-gray-600 dark:text-slate-300">增益倍率选择：</span>
+                  <div v-if="playerStore.volumeBoostEnabled" class="pt-3 border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-between">
+                    <span class="text-xs font-medium text-gray-600 dark:text-[#a1a1a6]">增益倍率选择：</span>
                     <div class="flex space-x-2">
                       <button
                         v-for="lvl in [1.25, 1.5, 2]"
                         :key="lvl"
                         @click="handleSetVolumeBoostLevel(lvl)"
-                        class="px-3 py-1 text-xs font-bold transition-all rounded-lg border cursor-pointer"
+                        class="px-3 py-1 text-xs font-medium transition-colors rounded-lg border cursor-pointer"
                         :class="playerStore.volumeBoostLevel === lvl 
-                          ? 'bg-purple-600 text-white border-transparent shadow-sm' 
-                          : 'bg-slate-50 dark:bg-slate-700/50 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-purple-50'"
+                          ? 'bg-purple-600 dark:bg-blue-600 text-white border-transparent shadow-sm dark:shadow-none' 
+                          : 'bg-slate-50 dark:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] border-gray-200 dark:border-white/[0.08] hover:bg-purple-50 dark:hover:bg-[#2c2c2f]'"
                       >
                         {{ Math.round(lvl * 100) }}% ({{ lvl }}x)
                       </button>
@@ -631,25 +631,25 @@
 
                 <!-- 播放控制偏好卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">播放控制偏好</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">播放控制偏好</h3>
                   </div>
                   <div class="space-y-2">
                     <div 
-                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg"
+                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">故障自动跳过</p>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">当歌曲资源失效或播放失败时，自动播放下一首</p>
+                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">故障自动跳过</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">当歌曲资源失效或播放失败时，自动播放下一首</p>
                       </div>
                       <button 
                         type="button"
                         @click="toggleAutoSkip"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="playerStore.autoSkipOnError ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        :class="playerStore.autoSkipOnError ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                       >
                         <span 
                           class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -659,17 +659,17 @@
                     </div>
 
                     <div 
-                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg"
+                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">记忆播放列表与进度</p>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">启动软件时恢复上次的播放列表、歌曲与播放进度</p>
+                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">记忆播放列表与进度</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">启动软件时恢复上次的播放列表、歌曲与播放进度</p>
                       </div>
                       <button 
                         type="button"
                         @click="toggleRememberState"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="playerStore.rememberState ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        :class="playerStore.rememberState ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                       >
                         <span 
                           class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -679,18 +679,18 @@
                     </div>
 
                     <div 
-                      class="p-2.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg"
+                      class="p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div class="flex items-center justify-between">
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">锁屏界面显示播放控件</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">在 Windows 锁屏和系统媒体浮窗中显示歌曲信息，并可切歌、暂停</p>
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">锁屏界面显示播放控件</p>
+                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">在 Windows 锁屏和系统媒体浮窗中显示歌曲信息，并可切歌、暂停</p>
                         </div>
                         <button 
                           type="button"
                           @click="toggleSystemMediaControls"
                           class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                          :class="systemMediaControlsEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                          :class="systemMediaControlsEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                         >
                           <span 
                             class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -698,7 +698,7 @@
                           />
                         </button>
                       </div>
-                      <p class="flex items-start gap-1 text-[11px] text-gray-400 dark:text-slate-500 mt-2 leading-relaxed">
+                      <p class="flex items-start gap-1 text-[11px] text-gray-400 dark:text-[#85858b] mt-2 leading-relaxed">
                         <AppIcon name="info" class="w-3.5 h-3.5 shrink-0 mt-px" />
                         <span>锁屏播放控件由 Windows 系统提供，部分系统版本（如早期的 Windows 11）可能不会在锁屏上显示。</span>
                       </p>
@@ -708,14 +708,14 @@
 
                 <!-- 播放列表与队列策略卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
-                      <span class="w-1.5 h-3.5 bg-indigo-600 rounded-full"></span>
-                      <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">播放列表与队列策略</h3>
+                      <span class="w-1 h-3.5 bg-indigo-600 dark:bg-blue-500 rounded-full"></span>
+                      <h3 class="text-xs font-semibold text-gray-800 dark:text-[#ededed]">播放列表与队列策略</h3>
                     </div>
-                    <span class="text-[11px] font-medium text-gray-400 dark:text-slate-500 tabular-nums">
+                    <span class="text-[11px] font-medium text-gray-400 dark:text-[#85858b] tabular-nums">
                       {{ playerStore.isFmModePlaylist ? `私人FM窗口：${playerStore.playlist.length} / 50 首` : `当前队列：${playerStore.playlist.length} / ${playerStore.maxPlaylistSize} 首` }}
                     </span>
                   </div>
@@ -723,12 +723,12 @@
                   <div class="space-y-2.5">
                     <!-- 播放全部按钮行为 -->
                     <div 
-                      class="p-3 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg space-y-2"
+                      class="p-3 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg space-y-2"
                     >
                       <div class="flex items-center justify-between gap-2">
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">点击「播放全部」时</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">点击「播放全部」时</p>
+                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">
                             {{ playerStore.playAllBehavior === 'prepend'
                               ? '将新歌单插入当前队列最前面并开始播放，保留队列内原有歌曲'
                               : '替换当前播放列表并开始播放（覆盖非空列表时提供 5 秒一键撤销）' }}
@@ -742,14 +742,14 @@
                           class="px-3 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer rounded-lg border"
                           :class="playerStore.playAllBehavior === 'replace'
                             ? 'bg-blue-600 text-white border-transparent shadow-sm shadow-blue-500/20'
-                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-slate-600'"
+                            : 'bg-white dark:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] border-gray-200 dark:border-white/[0.08] hover:border-blue-300 dark:hover:border-white/[0.16]'"
                         >
                           <span>替换当前播放列表</span>
                           <span
                             class="px-1.5 py-0.5 text-[9px] font-extrabold leading-none rounded-[5px]"
                             :class="playerStore.playAllBehavior === 'replace'
                               ? 'bg-white/20 text-white'
-                              : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'"
+                              : 'bg-gray-100 dark:bg-[#2c2c2f] text-gray-500 dark:text-[#a1a1a6]'"
                           >默认</span>
                         </button>
                         <button
@@ -758,7 +758,7 @@
                           class="px-3 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer rounded-lg border"
                           :class="playerStore.playAllBehavior === 'prepend'
                             ? 'bg-blue-600 text-white border-transparent shadow-sm shadow-blue-500/20'
-                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-slate-600'"
+                            : 'bg-white dark:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] border-gray-200 dark:border-white/[0.08] hover:border-blue-300 dark:hover:border-white/[0.16]'"
                         >
                           <span>合并到队首</span>
                         </button>
@@ -767,12 +767,12 @@
 
                     <!-- 播放列表容量上限 -->
                     <div 
-                      class="p-3 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg space-y-2"
+                      class="p-3 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg space-y-2"
                     >
                       <div class="flex items-center justify-between gap-2">
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">播放列表容量上限</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">控制单次播放队列最大歌曲数量，保障大歌单加载与切歌流畅度</p>
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">播放列表容量上限</p>
+                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">控制单次播放队列最大歌曲数量，保障大歌单加载与切歌流畅度</p>
                         </div>
                       </div>
                       <div class="grid grid-cols-3 gap-2 pt-0.5">
@@ -784,7 +784,7 @@
                           class="px-3 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1 tabular-nums cursor-pointer rounded-lg border"
                           :class="playerStore.maxPlaylistSize === cap
                             ? 'bg-blue-600 text-white border-transparent shadow-sm shadow-blue-500/20'
-                            : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-slate-600'"
+                            : 'bg-white dark:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] border-gray-200 dark:border-white/[0.08] hover:border-blue-300 dark:hover:border-white/[0.16]'"
                         >
                           <span>{{ cap }} 首</span>
                           <span
@@ -792,7 +792,7 @@
                             class="px-1 py-0.5 text-[9px] font-extrabold leading-none rounded-[5px]"
                             :class="playerStore.maxPlaylistSize === cap
                               ? 'bg-white/20 text-white'
-                              : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'"
+                              : 'bg-gray-100 dark:bg-[#2c2c2f] text-gray-500 dark:text-[#a1a1a6]'"
                           >默认</span>
                         </button>
                       </div>
@@ -805,20 +805,20 @@
               <div v-show="currentTab === 'lyrics'" class="space-y-4">
                 <!-- 桌面歌词主开关卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 flex items-center justify-between"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 flex items-center justify-between"
                 >
                   <div>
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                      <p class="text-xs font-bold text-gray-800 dark:text-slate-200">启用桌面歌词</p>
+                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">启用桌面歌词</p>
                     </div>
-                    <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 ml-3.5">开启后可在桌面上置顶展示实时歌词</p>
+                    <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">开启后可在桌面上置顶展示实时歌词</p>
                   </div>
                   <button 
                     type="button"
                     @click="playerStore.toggleDesktopLyric()" 
                     class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                    :class="playerStore.isDesktopLyricVisible ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                    :class="playerStore.isDesktopLyricVisible ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                   >
                     <span 
                       class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -829,22 +829,22 @@
 
                 <!-- 排版模式卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">排版显示方向</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">排版显示方向</h3>
                   </div>
                   <div 
-                    class="grid grid-cols-2 gap-2 bg-slate-50/70 dark:bg-slate-800/50 p-1.5 rounded-lg"
+                    class="grid grid-cols-2 gap-2 bg-slate-50/70 dark:bg-[#232325]/50 p-1.5 rounded-lg"
                   >
                     <button
                       type="button"
                       @click="setLyricLayout('horizontal')"
                       class="flex items-center justify-center space-x-2 py-2 px-3 text-xs font-bold transition-all rounded-md cursor-pointer"
                       :class="lyricConfig.layoutDirection !== 'vertical'
-                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
-                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'"
+                        ? 'bg-white dark:bg-[#2c2c2f] text-blue-600 dark:text-blue-400 shadow-xs'
+                        : 'text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed]'"
                     >
                       <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
                         <rect x="2" y="4" width="12" height="3" rx="1.5" />
@@ -857,8 +857,8 @@
                       @click="setLyricLayout('vertical')"
                       class="flex items-center justify-center space-x-2 py-2 px-3 text-xs font-bold transition-all rounded-md cursor-pointer"
                       :class="lyricConfig.layoutDirection === 'vertical'
-                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
-                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'"
+                        ? 'bg-white dark:bg-[#2c2c2f] text-blue-600 dark:text-blue-400 shadow-xs'
+                        : 'text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed]'"
                     >
                       <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
                         <rect x="9" y="2" width="3" height="12" rx="1.5" />
@@ -871,18 +871,18 @@
 
                 <!-- 字号调节卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">歌词字号大小</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">歌词字号大小</h3>
                   </div>
                   <div 
-                    class="space-y-3 bg-slate-50/70 dark:bg-slate-800/50 p-3.5 rounded-lg"
+                    class="space-y-3 bg-slate-50/70 dark:bg-[#232325]/50 p-3.5 rounded-lg"
                   >
                     <div>
                       <div class="flex justify-between text-xs font-bold mb-1.5">
-                        <span class="text-gray-700 dark:text-slate-300">主歌词字号</span>
+                        <span class="text-gray-700 dark:text-[#a1a1a6]">主歌词字号</span>
                         <span class="text-blue-600 font-mono">{{ lyricConfig.fontSize }} px</span>
                       </div>
                       <input 
@@ -890,12 +890,12 @@
                         min="24" 
                         max="50" 
                         v-model.number="lyricConfig.fontSize" 
-                        class="w-full accent-blue-600 cursor-pointer h-1.5 bg-gray-200 dark:bg-slate-700 rounded-lg"
+                        class="w-full accent-blue-600 cursor-pointer h-1.5 bg-gray-200 dark:bg-[#2c2c2f] rounded-lg"
                       />
                     </div>
                     <div>
                       <div class="flex justify-between text-xs font-bold mb-1.5">
-                        <span class="text-gray-700 dark:text-slate-300">副歌词字号</span>
+                        <span class="text-gray-700 dark:text-[#a1a1a6]">副歌词字号</span>
                         <span class="text-blue-600 font-mono">{{ lyricConfig.subFontSize }} px</span>
                       </div>
                       <input 
@@ -903,7 +903,7 @@
                         min="14" 
                         :max="lyricConfig.fontSize - 6" 
                         v-model.number="lyricConfig.subFontSize" 
-                        class="w-full accent-blue-600 cursor-pointer h-1.5 bg-gray-200 dark:bg-slate-700 rounded-lg"
+                        class="w-full accent-blue-600 cursor-pointer h-1.5 bg-gray-200 dark:bg-[#2c2c2f] rounded-lg"
                       />
                     </div>
                   </div>
@@ -911,11 +911,11 @@
 
                 <!-- 配色方案卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">主题配色方案</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">主题配色方案</h3>
                   </div>
                   <div class="grid grid-cols-6 gap-2">
                     <button
@@ -924,11 +924,11 @@
                       @click="lyricConfig.colorTheme = t.id"
                       class="py-2.5 flex flex-col items-center justify-center transition-all group cursor-pointer rounded-lg border"
                       :class="lyricConfig.colorTheme === t.id 
-                        ? 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-500 ring-1 ring-blue-500 shadow-xs' 
-                        : 'bg-slate-50 dark:bg-slate-800 border-gray-200/70 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-700/50'"
+                        ? 'bg-blue-50/60 dark:bg-[#232325] border-blue-500 ring-1 ring-blue-500 shadow-xs dark:shadow-none' 
+                        : 'bg-slate-50 dark:bg-[#232325] border-gray-200/70 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-[#2c2c2f]/50'"
                     >
                       <div class="w-4 h-4 rounded-full mb-1 border border-black/10 shadow-xs" :style="{ backgroundColor: t.color }"></div>
-                      <span class="text-[11px] font-bold text-gray-600 dark:text-slate-300">{{ t.label }}</span>
+                      <span class="text-[11px] font-bold text-gray-600 dark:text-[#a1a1a6]">{{ t.label }}</span>
                     </button>
 
                     <!-- 自定义调色盘按钮 -->
@@ -936,8 +936,8 @@
                       @click="selectCustomColorTheme"
                       class="py-2.5 flex flex-col items-center justify-center transition-all group relative cursor-pointer rounded-lg border"
                       :class="lyricConfig.colorTheme === 'custom' 
-                        ? 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-500 ring-1 ring-blue-500 shadow-xs' 
-                        : 'bg-slate-50 dark:bg-slate-800 border-gray-200/70 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-700/50'"
+                        ? 'bg-blue-50/60 dark:bg-[#232325] border-blue-500 ring-1 ring-blue-500 shadow-xs dark:shadow-none' 
+                        : 'bg-slate-50 dark:bg-[#232325] border-gray-200/70 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-[#2c2c2f]/50'"
                     >
                       <div class="w-4 h-4 rounded-full mb-1 border border-black/10 shadow-xs flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
                         <img 
@@ -947,17 +947,17 @@
                           alt="rainbow ring"
                         />
                       </div>
-                      <span class="text-[11px] font-bold text-gray-600 dark:text-slate-300">自定义</span>
+                      <span class="text-[11px] font-bold text-gray-600 dark:text-[#a1a1a6]">自定义</span>
                     </button>
                   </div>
 
                   <!-- 选中自定义时的无极调色盘控制器 -->
                   <div 
                     v-if="lyricConfig.colorTheme === 'custom'" 
-                    class="flex items-center justify-between p-3 bg-slate-50/90 dark:bg-slate-800/60 rounded-lg border border-gray-200/70 dark:border-slate-700/60 transition-all"
+                    class="flex items-center justify-between p-3 bg-slate-50/90 dark:bg-[#232325]/60 rounded-lg border border-gray-200/70 dark:border-white/[0.08] transition-all"
                   >
                     <div class="flex items-center space-x-3">
-                      <div class="relative flex items-center justify-center w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-slate-600 shadow-inner group">
+                      <div class="relative flex items-center justify-center w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-white/[0.14] shadow-inner group">
                         <input 
                           type="color" 
                           v-model="lyricConfig.customColor" 
@@ -971,23 +971,23 @@
                       </div>
                       <div>
                         <div class="flex items-center space-x-1.5">
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">无极调色盘</p>
-                          <span class="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-medium rounded-[5px]">拾色器</span>
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">无极调色盘</p>
+                          <span class="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-[#232325] text-blue-600 dark:text-blue-400 font-medium rounded-[5px]">拾色器</span>
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">点击色块选取任意颜色，或在右侧输入 HEX 色值</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">点击色块选取任意颜色，或在右侧输入 HEX 色值</p>
                       </div>
                     </div>
 
                     <div class="flex items-center space-x-2">
                       <div 
-                        class="flex items-center bg-white dark:bg-slate-900 px-2 py-1 text-xs font-mono font-bold text-gray-700 dark:text-slate-200 rounded-lg border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 shadow-xs"
+                        class="flex items-center bg-white dark:bg-[#19191b] px-2 py-1 text-xs font-mono font-bold text-gray-700 dark:text-[#ededed] rounded-lg border border-gray-200 dark:border-white/[0.08] focus-within:border-blue-500 shadow-xs"
                       >
                         <span class="text-gray-400 mr-1 select-none">#</span>
                         <input 
                           type="text" 
                           :value="lyricConfig.customColor ? lyricConfig.customColor.replace(/^#/, '') : '38bdf8'"
                           @input="handleCustomHexInput($event.target.value)"
-                          class="w-16 bg-transparent outline-none uppercase font-mono text-xs text-gray-800 dark:text-slate-200"
+                          class="w-16 bg-transparent outline-none uppercase font-mono text-xs text-gray-800 dark:text-[#ededed]"
                           maxlength="6"
                           placeholder="38bdf8"
                         />
@@ -998,24 +998,24 @@
 
                 <!-- 动画与显示卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">动画与显示</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">动画与显示</h3>
                   </div>
                   <div class="space-y-2">
                     <div 
-                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg"
+                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">逐字卡拉OK平滑过渡</p>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">主歌词跟随演唱节奏逐字精准染色高亮</p>
+                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">逐字卡拉OK平滑过渡</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">主歌词跟随演唱节奏逐字精准染色高亮</p>
                       </div>
                       <button 
                         @click="lyricConfig.karaokeMode = !lyricConfig.karaokeMode"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="lyricConfig.karaokeMode ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        :class="lyricConfig.karaokeMode ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                       >
                         <span 
                           class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -1025,16 +1025,16 @@
                     </div>
 
                     <div 
-                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-slate-800/50 rounded-lg"
+                      class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-slate-200">显示副歌词（翻译/下一句）</p>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">在主歌词下方展示双语翻译或下一句预告</p>
+                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">显示副歌词（翻译/下一句）</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">在主歌词下方展示双语翻译或下一句预告</p>
                       </div>
                       <button 
                         @click="lyricConfig.showSub = !lyricConfig.showSub"
                         class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                        :class="lyricConfig.showSub ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        :class="lyricConfig.showSub ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                       >
                         <span 
                           class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -1050,19 +1050,19 @@
               <div v-show="currentTab === 'shortcuts'" class="space-y-4">
                 <!-- 全局快捷键开关卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 flex items-center justify-between"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 flex items-center justify-between"
                 >
                   <div>
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                      <p class="text-xs font-bold text-gray-800 dark:text-slate-200">启用全局快捷键</p>
+                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">启用全局快捷键</p>
                     </div>
-                    <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 ml-3.5">在其他软件或桌面时也能通过热键控制播放</p>
+                    <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">在其他软件或桌面时也能通过热键控制播放</p>
                   </div>
                   <button 
                     @click="toggleGlobalShortcuts"
                     class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                    :class="globalShortcutsEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                    :class="globalShortcutsEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#2c2c2f]'"
                   >
                     <span 
                       class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -1073,27 +1073,27 @@
 
                 <!-- 全局快捷键一览卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">全局热键 (System Global)</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">全局热键 (System Global)</h3>
                   </div>
                   <div 
-                    class="bg-slate-50/70 dark:bg-slate-800/50 rounded-lg border border-gray-200/60 dark:border-slate-700/60 overflow-hidden"
+                    class="bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg border border-gray-200/60 dark:border-white/[0.08] overflow-hidden"
                   >
                     <div 
                       v-for="(item, idx) in globalShortcutList" 
                       :key="idx"
                       class="flex items-center justify-between px-3.5 py-2 text-xs"
-                      :class="idx !== 0 ? 'border-t border-gray-200/60 dark:border-slate-700/50' : ''"
+                      :class="idx !== 0 ? 'border-t border-gray-200/60 dark:border-white/[0.08]' : ''"
                     >
-                      <span class="font-medium text-gray-700 dark:text-slate-300">{{ item.name }}</span>
+                      <span class="font-medium text-gray-700 dark:text-[#a1a1a6]">{{ item.name }}</span>
                       <div class="flex space-x-1">
                         <kbd 
                           v-for="k in item.keys" 
                           :key="k" 
-                          class="px-2 py-0.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-[11px] font-mono font-bold shadow-xs text-gray-700 dark:text-slate-200 rounded-md"
+                          class="px-2 py-0.5 bg-white dark:bg-[#2c2c2f] border border-gray-200 dark:border-white/[0.14] text-[11px] font-mono font-bold shadow-xs text-gray-700 dark:text-[#ededed] rounded-md"
                         >
                           {{ k }}
                         </kbd>
@@ -1104,27 +1104,27 @@
 
                 <!-- 应用内快捷键一览卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-slate-200">软件内快捷键 (In-App)</h3>
+                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">软件内快捷键 (In-App)</h3>
                   </div>
                   <div 
-                    class="bg-slate-50/70 dark:bg-slate-800/50 rounded-lg border border-gray-200/60 dark:border-slate-700/60 overflow-hidden"
+                    class="bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg border border-gray-200/60 dark:border-white/[0.08] overflow-hidden"
                   >
                     <div 
                       v-for="(item, idx) in localShortcutList" 
                       :key="idx"
                       class="flex items-center justify-between px-3.5 py-2 text-xs"
-                      :class="idx !== 0 ? 'border-t border-gray-200/60 dark:border-slate-700/50' : ''"
+                      :class="idx !== 0 ? 'border-t border-gray-200/60 dark:border-white/[0.08]' : ''"
                     >
-                      <span class="font-medium text-gray-700 dark:text-slate-300">{{ item.name }}</span>
+                      <span class="font-medium text-gray-700 dark:text-[#a1a1a6]">{{ item.name }}</span>
                       <div class="flex space-x-1">
                         <kbd 
                           v-for="k in item.keys" 
                           :key="k" 
-                          class="px-2 py-0.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-[11px] font-mono font-bold shadow-xs text-gray-700 dark:text-slate-200 rounded-md"
+                          class="px-2 py-0.5 bg-white dark:bg-[#2c2c2f] border border-gray-200 dark:border-white/[0.14] text-[11px] font-mono font-bold shadow-xs text-gray-700 dark:text-[#ededed] rounded-md"
                         >
                           {{ k }}
                         </kbd>
@@ -1137,22 +1137,22 @@
               <!-- TAB 5: 关于与更新 -->
               <div v-show="currentTab === 'about'" class="space-y-4">
                 <!-- 软件信息 Hero 卡片 -->
-                <div class="h-28 rounded-[14px] shadow-sm relative overflow-hidden">
+                <div class="h-28 rounded-[14px] shadow-sm dark:shadow-none relative overflow-hidden">
                   <div 
                     v-squircle="'lg'"
-                    class="relative w-full h-full rounded-[14px] bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-between px-6 text-white overflow-hidden transform-gpu [transform:translateZ(0)]"
+                    class="relative w-full h-full rounded-[14px] bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:bg-none dark:bg-[#19191b] dark:border dark:border-white/[0.08] flex items-center justify-between px-6 text-white dark:text-[#ededed] overflow-hidden transform-gpu [transform:translateZ(0)]"
                   >
-                    <div class="absolute -right-8 -top-8 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute -right-8 -top-8 w-36 h-36 bg-white/10 dark:hidden rounded-full blur-2xl pointer-events-none"></div>
                     <div class="flex items-center space-x-4 relative z-10">
-                      <div class="w-14 h-14 rounded-[10px] shadow-md shadow-black/10 shrink-0 relative">
-                        <div v-squircle="'md'" class="relative w-full h-full rounded-[10px] bg-white flex items-center justify-center transform-gpu [transform:translateZ(0)]">
+                      <div class="w-14 h-14 rounded-[10px] shadow-md shadow-black/10 dark:shadow-none shrink-0 relative">
+                        <div v-squircle="'md'" class="relative w-full h-full rounded-[10px] bg-white dark:bg-[#232325] dark:border dark:border-white/[0.08] flex items-center justify-center transform-gpu [transform:translateZ(0)]">
                           <img src="/icon.ico" class="w-9 h-9" alt="概念音乐" />
                         </div>
                       </div>
                       <div>
-                        <h3 class="text-base font-black tracking-tight">概念音乐 Desktop</h3>
-                        <p class="text-xs text-white/80 font-mono mt-0.5">v{{ appVersion }}</p>
-                        <p class="text-[11px] text-white/70 mt-1">回归音乐本身，听见好时光</p>
+                        <h3 class="text-base font-semibold tracking-tight">概念音乐 Desktop</h3>
+                        <p class="text-xs text-white/80 dark:text-[#a1a1a6] font-mono mt-0.5">v{{ appVersion }}</p>
+                        <p class="text-[11px] text-white/70 dark:text-[#85858b] mt-1">回归音乐本身，听见好时光</p>
                       </div>
                     </div>
                   </div>
@@ -1160,16 +1160,16 @@
 
                 <!-- 检查更新交互卡片 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4"
                 >
                   <template v-if="updateStatus === 'idle'">
                     <div class="flex items-center justify-between">
                       <div>
                         <div class="flex items-center space-x-2">
                           <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">在线更新检查</p>
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">在线更新检查</p>
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1 ml-3.5">检查 GitHub 官方发布的最新版本与功能更新</p>
+                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">检查 GitHub 官方发布的最新版本与功能更新</p>
                       </div>
                       <button 
                         v-squircle="'md'"
@@ -1196,15 +1196,15 @@
                           <AppIcon name="check" class="w-4 h-4" />
                         </div>
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-slate-200">当前已是最新版本 (v{{ appVersion }})</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">当前已是最新版本 (v{{ appVersion }})</p>
+                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">
                             {{ updateStore.channelFallbackNotice ? '已通过高速加速通道完成检测，无需更新' : '无需更新，继续享受音乐吧' }}
                           </p>
                         </div>
                       </div>
                       <button 
                         @click="checkForUpdates" 
-                        class="px-3 py-1.5 text-xs font-bold text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer"
+                        class="px-3 py-1.5 text-xs font-bold text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#2c2c2f] transition-all rounded-lg border border-gray-200 dark:border-white/[0.08] cursor-pointer"
                       >
                         重新检查
                       </button>
@@ -1214,12 +1214,12 @@
                   <template v-else-if="updateStatus === 'available'">
                     <div class="space-y-3">
                       <div class="flex items-center space-x-2.5">
-                        <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-500 dark:bg-blue-950/60 flex items-center justify-center">
+                        <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-500 dark:bg-[#232325] flex items-center justify-center">
                           <AppIcon name="download" class="w-4 h-4" />
                         </div>
                         <div>
                           <p class="text-xs font-bold text-gray-900 dark:text-white">发现新版本 v{{ updateInfo.version }}</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">包含性能优化与全新功能升级</p>
+                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">包含性能优化与全新功能升级</p>
                         </div>
                       </div>
                       <div class="flex space-x-3">
@@ -1237,10 +1237,10 @@
                   <template v-else-if="updateStatus === 'downloading'">
                     <div class="space-y-3">
                       <div class="flex justify-between items-center text-xs font-bold">
-                        <span class="text-gray-800 dark:text-slate-200">正在下载更新安装包...</span>
+                        <span class="text-gray-800 dark:text-[#ededed]">正在下载更新安装包...</span>
                         <span class="text-blue-600 font-mono">{{ progressPercent }}% ({{ progressSpeed }})</span>
                       </div>
-                      <div class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden relative">
+                      <div class="w-full h-2 bg-gray-200 dark:bg-[#2c2c2f] rounded-full overflow-hidden relative">
                         <div class="h-full bg-blue-600 rounded-full transition-all duration-300" :style="{ width: progressPercent + '%' }"></div>
                       </div>
                       <div class="flex justify-end">
@@ -1259,7 +1259,7 @@
                         </div>
                         <div>
                           <p class="text-xs font-bold text-gray-900 dark:text-white">更新下载完成</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">重启软件即可完成自动升级安装</p>
+                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">重启软件即可完成自动升级安装</p>
                         </div>
                       </div>
                       <button 
@@ -1280,20 +1280,20 @@
                         </div>
                         <div>
                           <p class="text-xs font-bold text-red-600 dark:text-red-400">{{ isDownloadError ? '下载更新失败' : '检查更新失败' }}</p>
-                          <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">{{ errorMsg || '网络连接异常，请稍后重试' }}</p>
+                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">{{ errorMsg || '网络连接异常，请稍后重试' }}</p>
                         </div>
                       </div>
                       <div class="flex space-x-2">
                         <button 
                           @click="resetToIdle" 
-                          class="px-3 py-1.5 text-xs font-bold bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 rounded-lg cursor-pointer"
+                          class="px-3 py-1.5 text-xs font-bold bg-gray-100 dark:bg-[#2c2c2f] text-gray-700 dark:text-[#ededed] rounded-lg cursor-pointer"
                         >
                           返回
                         </button>
                         <button 
                           v-if="updateInfo.version" 
                           @click="openExternalLink(portableReleaseUrl)" 
-                          class="px-3 py-1.5 text-xs font-bold bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 hover:bg-blue-100 transition-colors rounded-lg cursor-pointer"
+                          class="px-3 py-1.5 text-xs font-bold bg-blue-50 text-blue-600 dark:bg-[#232325] dark:text-blue-400 hover:bg-blue-100 transition-colors rounded-lg cursor-pointer"
                         >
                           手动下载 Release
                         </button>
@@ -1303,7 +1303,7 @@
 
                   <template v-else-if="updateStatus === 'cancelled'">
                     <div class="flex items-center justify-between">
-                      <p class="text-xs text-gray-600 dark:text-slate-400">下载已取消</p>
+                      <p class="text-xs text-gray-600 dark:text-[#a1a1a6]">下载已取消</p>
                       <button @click="resetToIdle" class="text-xs text-blue-600 font-bold cursor-pointer">返回重试</button>
                     </div>
                   </template>
@@ -1311,21 +1311,21 @@
 
                 <!-- 更新线路与加速通道设置 -->
                 <section 
-                  class="bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs p-4 space-y-3"
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
                 >
                   <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                      <p class="text-xs font-bold text-gray-800 dark:text-slate-200">更新下载线路</p>
+                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">更新下载线路</p>
                     </div>
                     <span 
                       v-if="updateStore.channelFallbackNotice" 
-                      class="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 font-medium rounded-[5px]"
+                      class="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-[#232325] px-2 py-0.5 font-medium rounded-[5px]"
                     >
                       ⚡ {{ updateStore.channelFallbackNotice }}
                     </span>
                   </div>
-                  <p class="text-[11px] text-gray-400 dark:text-slate-500 ml-3.5">
+                  <p class="text-[11px] text-gray-400 dark:text-[#85858b] ml-3.5">
                     国内直连 GitHub 容易受阻或限速，推荐保持“自动优选”以在网络异常时自动启用加速
                   </p>
                   <div class="grid grid-cols-2 gap-2 pt-1">
@@ -1335,21 +1335,21 @@
                       @click="selectChannel(ch.id)"
                       class="p-2.5 cursor-pointer transition-all flex items-center justify-between group rounded-[10px] border select-none"
                       :class="updateStore.updateChannel === ch.id
-                        ? 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-500 ring-1 ring-blue-500 shadow-xs'
-                        : 'bg-slate-50/50 dark:bg-slate-800/40 border-gray-200/80 dark:border-slate-700/70 hover:border-gray-300 dark:hover:border-slate-600'"
+                        ? 'bg-blue-50/60 dark:bg-[#232325] border-blue-500 ring-1 ring-blue-500 shadow-xs dark:shadow-none'
+                        : 'bg-slate-50/50 dark:bg-[#232325]/40 border-gray-200/80 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.16]'"
                     >
                       <div class="min-w-0 pr-2">
                         <p 
                           class="text-xs font-bold truncate transition-colors"
-                          :class="updateStore.updateChannel === ch.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-300'"
+                          :class="updateStore.updateChannel === ch.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#a1a1a6]'"
                         >
                           {{ ch.name }}
                         </p>
-                        <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 truncate">{{ ch.desc }}</p>
+                        <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 truncate">{{ ch.desc }}</p>
                       </div>
                       <span
                         class="w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
-                        :class="updateStore.updateChannel === ch.id ? 'border-blue-600 bg-blue-600' : 'border-gray-300 dark:border-slate-600'"
+                        :class="updateStore.updateChannel === ch.id ? 'border-blue-600 bg-blue-600' : 'border-gray-300 dark:border-white/[0.14]'"
                       >
                         <span v-if="updateStore.updateChannel === ch.id" class="w-1.5 h-1.5 rounded-full bg-white"></span>
                       </span>
@@ -1361,33 +1361,33 @@
                 <section class="grid grid-cols-3 gap-2.5">
                   <div 
                     @click="openExternalLink('https://concept.cc.cd')" 
-                    class="p-3 bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
+                    class="p-3 bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
                   >
                     <div class="min-w-0 pr-1">
-                      <p class="text-xs font-bold text-gray-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">官方网站</p>
-                      <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 font-mono truncate">concept.cc.cd</p>
+                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">官方网站</p>
+                      <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 font-mono truncate">concept.cc.cd</p>
                     </div>
                     <AppIcon name="share" class="w-3.5 h-3.5 text-gray-400 group-hover:scale-110 shrink-0 transition-transform" />
                   </div>
 
                   <div 
                     @click="openExternalLink('https://github.com/liovoz/concept-music')" 
-                    class="p-3 bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
+                    class="p-3 bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
                   >
                     <div class="min-w-0 pr-1">
-                      <p class="text-xs font-bold text-gray-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">GitHub 仓库</p>
-                      <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 truncate">参与贡献与反馈</p>
+                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">GitHub 仓库</p>
+                      <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 truncate">参与贡献与反馈</p>
                     </div>
                     <AppIcon name="share" class="w-3.5 h-3.5 text-gray-400 group-hover:scale-110 shrink-0 transition-transform" />
                   </div>
 
                   <button 
                     @click="openDisclaimer" 
-                    class="p-3 bg-white dark:bg-slate-800/90 rounded-[14px] border border-gray-200/70 dark:border-slate-700/60 shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
+                    class="p-3 bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
                   >
                     <div class="min-w-0 pr-1">
-                      <p class="text-xs font-bold text-gray-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">免责声明与许可</p>
-                      <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 truncate">查看免责条款</p>
+                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">免责声明与许可</p>
+                      <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 truncate">查看免责条款</p>
                     </div>
                     <AppIcon name="chevron-right" class="w-3.5 h-3.5 text-gray-400 group-hover:translate-x-0.5 shrink-0 transition-transform" />
                   </button>

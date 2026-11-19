@@ -246,8 +246,8 @@ export function getSquircleSvgPath({
   preserveSmoothing = true,
 }) {
   // 像素对齐
-  const w = Math.max(0, Math.round(width));
-  const h = Math.max(0, Math.round(height));
+  const w = Math.max(0, Number(width) || 0);
+  const h = Math.max(0, Number(height) || 0);
   if (w === 0 || h === 0) return '';
 
   let tl = topLeftCornerRadius ?? cornerRadius;

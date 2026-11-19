@@ -13,9 +13,9 @@
       </button>
 
       <div class="flex items-end mb-10">
-        <div v-if="isLoading && page === 1" v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 dark:bg-slate-800 animate-pulse flex-shrink-0 shadow-md"></div>
+        <div v-if="isLoading && page === 1" v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 dark:bg-[#232325] animate-pulse flex-shrink-0 shadow-md"></div>
         <div v-else class="relative w-48 h-48 rounded-[18px] shadow-lg flex-shrink-0">
-          <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white dark:bg-slate-900 transform-gpu [transform:translateZ(0)]">
+          <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white dark:bg-[#19191b] transform-gpu [transform:translateZ(0)]">
             <img :src="rankInfo.cover || defaultImg" :alt="rankInfo.name || '排行榜封面'" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover" />
           </div>
         </div>

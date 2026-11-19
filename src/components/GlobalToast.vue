@@ -54,15 +54,15 @@ const toastIconColorClass = computed(() => {
 
 const toastThemeClasses = computed(() => {
   if (toastType.value === 'success') {
-    return 'bg-white/95 dark:bg-slate-900/95 border-emerald-200/90 dark:border-emerald-800/70 text-gray-800 dark:text-slate-100 shadow-[0_12px_40px_rgba(16,185,129,0.16)] dark:shadow-[0_14px_44px_rgba(0,0,0,0.6)]';
+    return 'bg-white/95 dark:bg-[#19191b]/95 border-emerald-200/90 dark:border-white/[0.08] text-gray-800 dark:text-[#ededed] shadow-[0_12px_40px_rgba(16,185,129,0.16)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.55)]';
   }
   if (toastType.value === 'warning') {
-    return 'bg-white/95 dark:bg-slate-900/95 border-amber-200/90 dark:border-amber-800/70 text-gray-800 dark:text-slate-100 shadow-[0_12px_40px_rgba(245,158,11,0.18)] dark:shadow-[0_14px_44px_rgba(0,0,0,0.6)]';
+    return 'bg-white/95 dark:bg-[#19191b]/95 border-amber-200/90 dark:border-white/[0.08] text-gray-800 dark:text-[#ededed] shadow-[0_12px_40px_rgba(245,158,11,0.18)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.55)]';
   }
   if (toastType.value === 'error') {
-    return 'bg-white/95 dark:bg-slate-900/95 border-red-200/90 dark:border-red-800/70 text-gray-800 dark:text-slate-100 shadow-[0_12px_40px_rgba(239,68,68,0.18)] dark:shadow-[0_14px_44px_rgba(0,0,0,0.6)]';
+    return 'bg-white/95 dark:bg-[#19191b]/95 border-red-200/90 dark:border-white/[0.08] text-gray-800 dark:text-[#ededed] shadow-[0_12px_40px_rgba(239,68,68,0.18)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.55)]';
   }
-  return 'bg-white/95 dark:bg-slate-900/95 border-blue-100 dark:border-slate-700/80 text-gray-700 dark:text-slate-100 shadow-[0_12px_40px_rgba(37,99,235,0.14)] dark:shadow-[0_14px_44px_rgba(0,0,0,0.6)]';
+  return 'bg-white/95 dark:bg-[#19191b]/95 border-blue-100 dark:border-white/[0.08] text-gray-700 dark:text-[#ededed] shadow-[0_12px_40px_rgba(37,99,235,0.14)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.55)]';
 });
 
 const toastActionBtnClasses = computed(() => {
@@ -75,7 +75,7 @@ const toastActionBtnClasses = computed(() => {
   if (toastType.value === 'error') {
     return 'bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/70 dark:hover:bg-red-900/80 dark:text-red-300 border border-red-200/80 dark:border-red-800/70';
   }
-  return 'bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/70 dark:hover:bg-blue-900/80 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/70';
+  return 'bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] dark:text-blue-400 border border-blue-200/80 dark:border-white/[0.08]';
 });
 </script>
 

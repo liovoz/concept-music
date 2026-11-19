@@ -2,7 +2,7 @@
 // 文件：src/layout/PlayerBar.vue
 // ====================
 <template>
-  <footer class="h-20 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-gray-100 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_-8px_28px_rgba(0,0,0,0.35)] relative min-w-0 transition-colors duration-200">
+  <footer class="h-20 w-full bg-white/95 dark:bg-[#141415]/95 backdrop-blur-xl border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-between px-4 sm:px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] dark:shadow-none relative min-w-0 transition-colors duration-200">
     
     <transition name="fade">
       <div v-if="store.isError" class="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg shadow-md text-xs font-medium flex items-center z-[60]">
@@ -20,7 +20,7 @@
       >
         <div 
           v-squircle="'md'"
-          class="relative w-full h-full rounded-[10px] bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-300 dark:text-slate-500 transform-gpu [transform:translateZ(0)]"
+          class="relative w-full h-full rounded-[10px] bg-gray-50 dark:bg-[#232325] flex items-center justify-center text-gray-300 dark:text-[#85858b] transform-gpu [transform:translateZ(0)]"
         >
           <img v-if="store.currentSong && store.currentSong.cover" :src="store.currentSong.cover" :alt="store.currentSong.name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
           <AppIcon v-else name="album" class="w-6 h-6 transition-transform duration-500 group-hover:scale-105" />
@@ -34,7 +34,7 @@
       
       <div class="ml-3 overflow-hidden flex flex-col justify-center">
         <div class="flex items-center">
-          <span ref="titleViewportRef" class="player-title-viewport text-sm font-bold text-gray-800 dark:text-slate-100" v-tooltip="store.currentSong?.name">
+          <span ref="titleViewportRef" class="player-title-viewport text-sm font-semibold text-gray-800 dark:text-[#ededed]" v-tooltip="store.currentSong?.name">
             <span ref="titleTextRef" class="player-title-track" :class="{ 'is-marquee': isTitleOverflow }">
               <span class="player-title-text">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
               <span v-if="isTitleOverflow" class="player-title-text player-title-copy" aria-hidden="true">{{ store.currentSong ? store.currentSong.name : '听见好时光' }}</span>
@@ -60,38 +60,38 @@
 
     <div class="flex flex-col items-center justify-center flex-1 max-w-2xl px-4">
       <div class="flex items-center space-x-5" :class="{ 'opacity-50 pointer-events-none': !store.currentSong }">
-        <button @click="store.togglePlayMode" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all no-drag relative" v-tooltip="playModeTip">
+        <button @click="store.togglePlayMode" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 dark:text-[#85858b] hover:text-blue-600 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors no-drag relative" v-tooltip="playModeTip">
            <AppIcon v-if="store.playMode === 'sequence'" name="mode-sequence" class="w-4 h-4" />
            <AppIcon v-else-if="store.playMode === 'loop'" name="mode-loop" class="w-4 h-4" />
            <AppIcon v-else name="mode-random" class="w-4 h-4" />
         </button>
 
-        <button @click="store.playPrev" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all no-drag" v-tooltip="'上一首'"><AppIcon name="prev" class="w-5 h-5" /></button>
+        <button @click="store.playPrev" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors no-drag" v-tooltip="'上一首'"><AppIcon name="prev" class="w-5 h-5" /></button>
         
-        <button @click="store.togglePlay" class="w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-[0_4px_12px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_16px_rgba(37,99,235,0.4)] no-drag transform active:scale-95 transition-all">
+        <button @click="store.togglePlay" class="w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white flex items-center justify-center shadow-[0_4px_12px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_16px_rgba(37,99,235,0.4)] dark:shadow-none dark:hover:shadow-none no-drag transform active:scale-95 transition-[transform,background-color]">
           <AppIcon v-if="store.isLoading" name="spinner" spin class="h-5 w-5" />
           <AppIcon v-else-if="store.isPlaying" name="pause" class="w-5 h-5" />
           <AppIcon v-else name="play" class="w-5 h-5 ml-[2px]" />
         </button>
         
-        <button @click="store.playNext(false)" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all no-drag" v-tooltip="'下一首'"><AppIcon name="next" class="w-5 h-5" /></button>
+        <button @click="store.playNext(false)" class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors no-drag" v-tooltip="'下一首'"><AppIcon name="next" class="w-5 h-5" /></button>
       </div>
       
-      <div class="w-full flex items-center space-x-3 mt-2 text-[11px] font-medium" :class="store.peakMode ? 'text-purple-400' : 'text-gray-400', { 'opacity-50 pointer-events-none': !store.currentSong }">
+      <div class="w-full flex items-center space-x-3 mt-2 text-[11px] font-medium tabular-nums" :class="store.peakMode ? 'text-purple-400 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b]', { 'opacity-50 pointer-events-none': !store.currentSong }">
         <span class="w-8 text-right">{{ formatTime(peakDisplayTime) }}</span>
         <div class="flex-1 relative flex items-center h-4 group no-drag">
           <input type="range" min="0" :max="peakMaxDuration" :value="peakDisplayTime" @input="handleDrag" @change="handlePeakDragEnd" class="w-full absolute z-10 opacity-0 cursor-pointer h-full m-0">
-          <div class="w-full h-1.5 rounded-full overflow-hidden pointer-events-none transition-all group-hover:h-2" :class="store.peakMode ? 'bg-purple-100' : 'bg-gray-200'">
-            <div class="h-full rounded-full pointer-events-none" :class="store.peakMode ? 'bg-purple-500' : 'bg-blue-600'" :style="{ width: peakProgressPercentage + '%' }"></div>
+          <div class="w-full h-1.5 rounded-full overflow-hidden pointer-events-none transition-[height] group-hover:h-2" :class="store.peakMode ? 'bg-purple-100 dark:bg-[#232325]' : 'bg-gray-200 dark:bg-[#232325]'">
+            <div class="h-full rounded-full pointer-events-none" :class="store.peakMode ? 'bg-purple-500 dark:bg-blue-500' : 'bg-blue-600 dark:bg-blue-500'" :style="{ width: peakProgressPercentage + '%' }"></div>
           </div>
         </div>
         <span class="w-8 text-left">{{ formatTime(peakMaxDuration) }}</span>
       </div>
     </div>
 
-    <div class="flex items-center justify-end w-[360px] space-x-4 text-gray-500 dark:text-slate-400 pr-2">
+    <div class="flex items-center justify-end w-[360px] space-x-4 text-gray-500 dark:text-[#a1a1a6] pr-2">
        
-       <button @click="store.toggleDesktopLyric" v-squircle="'sm'" class="no-drag cursor-pointer font-bold tracking-wide transition-all min-w-[32px] h-7 px-2 flex items-center justify-center text-[13px] rounded-md border relative flex-shrink-0" :class="store.isDesktopLyricVisible ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-400/30 dark:text-blue-300' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400'" v-tooltip="'开启/关闭桌面歌词'">
+       <button @click="store.toggleDesktopLyric" v-squircle="'sm'" class="no-drag cursor-pointer font-semibold tracking-wide transition-colors min-w-[32px] h-7 px-2 flex items-center justify-center text-[13px] rounded-md border relative flex-shrink-0" :class="store.isDesktopLyricVisible ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-500/30 dark:text-blue-400' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-white/[0.08] dark:hover:bg-[#232325] text-gray-400 hover:text-blue-600 dark:text-[#85858b] dark:hover:text-[#ededed]'" v-tooltip="'开启/关闭桌面歌词'">
          词
        </button>
 
@@ -100,18 +100,18 @@
            type="button"
            @click="qualityMenuOpen = !qualityMenuOpen"
            v-squircle="'sm'"
-           class="cursor-pointer font-bold tracking-wide uppercase transition-all h-7 px-2.5 flex items-center text-[13px] rounded-md border focus:outline-none"
-           :class="qualityMenuOpen ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-400/30 dark:text-blue-300' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-slate-700 dark:hover:bg-slate-800 text-gray-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400'"
+           class="cursor-pointer font-semibold tracking-wide uppercase transition-colors h-7 px-2.5 flex items-center text-[13px] rounded-md border focus:outline-none"
+           :class="qualityMenuOpen ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-500/30 dark:text-blue-400' : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-white/[0.08] dark:hover:bg-[#232325] text-gray-400 hover:text-blue-600 dark:text-[#85858b] dark:hover:text-[#ededed]'"
            v-tooltip="'音质选择'"
          >
            {{ qualityDisplayName }}
          </button>
          
          <div
-           class="absolute bottom-full left-1/2 transform -translate-x-1/2 pb-2.5 transition-all duration-200 origin-bottom"
+           class="absolute bottom-full left-1/2 transform -translate-x-1/2 pb-2.5 transition-[opacity,transform] duration-200 origin-bottom"
            :class="qualityMenuOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible pointer-events-none'"
          >
-           <div class="w-[148px] rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag flex flex-col gap-0.5">
+           <div class="w-[148px] rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 text-xs font-semibold text-gray-700 dark:text-[#ededed] shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.6)] backdrop-blur-xl no-drag flex flex-col gap-0.5">
              <button
                v-for="q in qualityMenuOptions"
                :key="q.key"
@@ -169,24 +169,24 @@
         v-show="store.isPlaylistVisible"
         ref="playlistPanelRef"
         v-squircle="'xl'"
-        class="absolute bottom-24 right-6 w-[420px] min-h-[390px] max-h-[68vh] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.55)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-slate-100"
+        class="absolute bottom-24 right-6 w-[420px] min-h-[390px] max-h-[68vh] bg-white/95 dark:bg-[#19191b]/95 backdrop-blur-2xl border border-gray-100 dark:border-white/[0.08] rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.65)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-[#ededed]"
         tabindex="-1"
         @keydown.escape="handlePlaylistEscape"
       >
         <!-- 私人FM电台独立播放面板 -->
         <template v-if="store.isFmModePlaylist">
-          <div class="px-5 py-3.5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-purple-50/60 dark:bg-purple-950/20 gap-2 flex-shrink-0">
+          <div class="px-5 py-3.5 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-purple-50/60 dark:bg-purple-950/25 gap-2 flex-shrink-0">
             <div class="flex items-center min-w-0 gap-2">
               <span class="text-base">📻</span>
-              <h3 class="font-bold text-gray-800 dark:text-slate-100 text-sm truncate">私人FM电台</h3>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+              <h3 class="font-semibold text-gray-800 dark:text-[#ededed] text-sm truncate">私人FM电台</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-700/50">
                 独立播放中
               </span>
             </div>
             <button
               type="button"
               @click.stop="store.isPlaylistVisible = false"
-              class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer no-drag"
+              class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-[#85858b] dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors cursor-pointer no-drag"
               v-tooltip="'收起面板'"
             >
               <AppIcon name="close" class="w-3.5 h-3.5" />
@@ -194,17 +194,17 @@
           </div>
 
           <div class="p-6 flex-1 flex flex-col justify-between overflow-y-auto custom-scrollbar gap-5">
-            <div v-if="store.currentSong" class="p-4 rounded-xl bg-purple-50/40 dark:bg-slate-800/60 border border-purple-100/70 dark:border-slate-700 flex items-center gap-3.5">
+            <div v-if="store.currentSong" class="p-4 rounded-xl bg-purple-50/40 dark:bg-[#232325] border border-purple-100/70 dark:border-white/[0.08] flex items-center gap-3.5">
               <img
                 :src="store.currentSong.cover || defaultImg"
                 :alt="store.currentSong.name"
-                class="w-14 h-14 rounded-lg object-cover shadow-sm bg-gray-100 dark:bg-slate-700 flex-shrink-0"
+                class="w-14 h-14 rounded-lg object-cover shadow-sm bg-gray-100 dark:bg-[#19191b] flex-shrink-0"
               />
               <div class="flex-1 min-w-0">
-                <div class="font-bold text-sm text-gray-900 dark:text-slate-50 truncate" v-tooltip="store.currentSong.name">
+                <div class="font-semibold text-sm text-gray-900 dark:text-[#ededed] truncate" v-tooltip="store.currentSong.name">
                   {{ store.currentSong.name }}
                 </div>
-                <div class="text-xs text-gray-500 dark:text-slate-400 truncate mt-1">
+                <div class="text-xs text-gray-500 dark:text-[#a1a1a6] truncate mt-1">
                   {{ store.currentSong.singer || '未知歌手' }}
                 </div>
               </div>
@@ -217,14 +217,14 @@
               </button>
             </div>
 
-            <div class="p-4 rounded-xl bg-gray-50/80 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-700/80 text-xs text-gray-500 dark:text-slate-400 space-y-2">
+            <div class="p-4 rounded-xl bg-gray-50/80 dark:bg-[#141415] border border-gray-100 dark:border-white/[0.08] text-xs text-gray-500 dark:text-[#a1a1a6] space-y-2">
               <div class="flex items-start gap-2">
                 <AppIcon name="info" class="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
                 <span class="leading-relaxed">
                   私人FM根据算法智能实时推荐歌曲，后续推荐随播放自动生成，不占用常规播放队列。
                 </span>
               </div>
-              <div v-if="store.playlist.length > 0" class="pt-2 border-t border-gray-100 dark:border-slate-700/60 text-[11px] text-gray-600 dark:text-slate-300 font-medium">
+              <div v-if="store.playlist.length > 0" class="pt-2 border-t border-gray-100 dark:border-white/[0.08] text-[11px] text-gray-600 dark:text-[#a1a1a6] font-medium">
                 常规播放列表（{{ store.playlist.length }}首）已安全保留，退出电台后即可随时恢复。
               </div>
             </div>
@@ -234,7 +234,7 @@
                 v-if="route.path !== '/fm'"
                 type="button"
                 @click.stop="store.isPlaylistVisible = false; router.push('/fm');"
-                class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200 dark:shadow-purple-950/40 transition-all flex items-center justify-center gap-2 cursor-pointer no-drag active:scale-[0.98]"
+                class="w-full py-2.5 px-4 rounded-xl text-xs font-medium bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200 dark:shadow-none transition-colors flex items-center justify-center gap-2 cursor-pointer no-drag active:scale-[0.98]"
               >
                 <AppIcon name="personal-fm" class="w-4 h-4" />
                 <span>前往私人FM主页</span>
@@ -244,7 +244,7 @@
                 v-if="store.hasRegularPlaylistBackup || store.playlist.length > 0"
                 type="button"
                 @click.stop="handleRestoreFromFmDrawer"
-                class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-white hover:bg-gray-50 text-gray-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border border-gray-200 dark:border-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer no-drag active:scale-[0.98]"
+                class="w-full py-2.5 px-4 rounded-xl text-xs font-medium bg-white hover:bg-gray-50 text-gray-700 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] dark:text-[#ededed] border border-gray-200 dark:border-white/[0.08] transition-colors flex items-center justify-center gap-2 cursor-pointer no-drag active:scale-[0.98]"
               >
                 <AppIcon name="playlist" class="w-4 h-4 text-purple-500" />
                 <span>恢复常规播放列表 ({{ store.playlist.length }}首)</span>
@@ -256,14 +256,14 @@
         <!-- 常规播放队列面板 -->
         <template v-else>
         <!-- 顶栏：标题 + 容量状态 + 快捷管理按钮 -->
-        <div class="px-5 py-3.5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/60 gap-2 flex-shrink-0">
+        <div class="px-5 py-3.5 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-gray-50/50 dark:bg-[#232325]/60 gap-2 flex-shrink-0">
           <div class="flex items-center min-w-0 gap-1.5">
-            <h3 class="font-bold text-gray-800 dark:text-slate-100 text-sm truncate">
+            <h3 class="font-bold text-gray-800 dark:text-[#ededed] text-sm truncate">
               当前播放队列
             </h3>
             <span
               class="text-xs font-semibold tabular-nums flex-shrink-0"
-              :class="isPlaylistNearCap ? 'text-amber-500 dark:text-amber-400' : 'text-gray-400 dark:text-slate-400'"
+              :class="isPlaylistNearCap ? 'text-amber-500 dark:text-amber-400' : 'text-gray-400 dark:text-[#a1a1a6]'"
               v-tooltip="`当前队列容量上限：${store.maxPlaylistSize} 首（可在设置中调整）`"
             >
               ({{ store.playlist.length }}/{{ store.maxPlaylistSize }})
@@ -279,7 +279,7 @@
               class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
               :class="isPlaylistSearchOpen
                 ? 'bg-blue-100/80 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400'"
+                : 'text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#2c2c2f]/70 hover:text-blue-600 dark:hover:text-blue-400'"
               v-tooltip="store.playlist.length === 0 ? '' : '搜索队列歌曲'"
             >
               <AppIcon name="search" class="w-3.5 h-3.5" />
@@ -290,7 +290,7 @@
               type="button"
               @click.stop="scrollToCurrentSong(true)"
               :disabled="currentSongIndexInQueue < 0"
-              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed text-gray-500 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400"
+              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#2c2c2f]/70 hover:text-blue-600 dark:hover:text-blue-400"
               v-tooltip="currentSongIndexInQueue < 0 ? '' : '定位到当前播放歌曲'"
             >
               <AppIcon name="locate" class="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@
               type="button"
               @click.stop="handleCleanPlayedSongs"
               :disabled="currentSongIndexInQueue <= 0"
-              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed text-gray-500 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400"
+              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#2c2c2f]/70 hover:text-blue-600 dark:hover:text-blue-400"
               v-tooltip="currentSongIndexInQueue <= 0 ? '当前歌曲前暂无已播歌曲' : `清理当前歌曲之前的 ${currentSongIndexInQueue} 首已播歌曲`"
             >
               <AppIcon name="broom" class="w-3.5 h-3.5" />
@@ -316,13 +316,13 @@
               class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
               :class="isPlaylistBatchMode
                 ? 'bg-blue-100/80 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 dark:text-slate-400 hover:bg-gray-200/60 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400'"
+                : 'text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#2c2c2f]/70 hover:text-blue-600 dark:hover:text-blue-400'"
               v-tooltip="store.playlist.length === 0 ? '' : (isPlaylistBatchMode ? '退出批量管理' : '批量选择管理')"
             >
               <AppIcon name="list-check" class="w-3.5 h-3.5" />
             </button>
 
-            <div class="w-px h-3.5 bg-gray-200 dark:bg-slate-700 mx-0.5"></div>
+            <div class="w-px h-3.5 bg-gray-200 dark:bg-[#2c2c2f] mx-0.5"></div>
 
             <!-- 清空列表 -->
             <button
@@ -332,10 +332,10 @@
               class="px-1.5 py-1 rounded-md text-xs transition-colors no-drag font-medium cursor-pointer"
               :class="[
                 !store.playlist || store.playlist.length === 0
-                  ? 'opacity-40 cursor-not-allowed text-gray-400 dark:text-slate-600'
+                  ? 'opacity-40 cursor-not-allowed text-gray-400 dark:text-[#85858b]'
                   : isClearingPlaylist
                     ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950/40 font-bold'
-                    : 'text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400'
+                    : 'text-gray-500 dark:text-[#a1a1a6] hover:text-red-500 dark:hover:text-red-400'
               ]"
               v-tooltip="!store.playlist || store.playlist.length === 0 ? '' : (isClearingPlaylist ? '再次点击立即清空（支持5秒内撤销）' : '清空播放队列')"
             >
@@ -347,27 +347,27 @@
         <!-- 搜索过滤栏 -->
         <div
           v-if="isPlaylistSearchOpen && store.playlist.length > 0"
-          class="px-4 py-2 border-b border-gray-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 flex items-center gap-2 flex-shrink-0 no-drag"
+          class="px-4 py-2 border-b border-gray-100 dark:border-white/[0.08] bg-white/80 dark:bg-[#19191b]/80 flex items-center gap-2 flex-shrink-0 no-drag"
         >
           <div class="flex-1 relative flex items-center">
-            <AppIcon name="search" class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 absolute left-2.5 pointer-events-none" />
+            <AppIcon name="search" class="w-3.5 h-3.5 text-gray-400 dark:text-[#85858b] absolute left-2.5 pointer-events-none" />
             <input
               ref="playlistSearchInputRef"
               v-model="playlistSearchKeyword"
               type="text"
               placeholder="搜索队列中的歌名 / 歌手..."
               @keydown.stop="handleSearchInputKeydown"
-              class="w-full pl-8 pr-16 py-1.5 rounded-lg text-xs bg-gray-100/80 dark:bg-slate-800/90 text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 border border-transparent focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 outline-none transition-all"
+              class="w-full pl-8 pr-16 py-1.5 rounded-lg text-xs bg-gray-100/80 dark:bg-[#232325]/90 text-gray-800 dark:text-[#ededed] placeholder-gray-400 dark:placeholder-[#85858b] border border-transparent focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-[#232325] outline-none transition-all"
             />
             <div class="absolute right-2 flex items-center space-x-1">
-              <span v-if="playlistSearchKeyword.trim()" class="text-[10px] text-gray-400 dark:text-slate-500 tabular-nums">
+              <span v-if="playlistSearchKeyword.trim()" class="text-[10px] text-gray-400 dark:text-[#85858b] tabular-nums">
                 {{ filteredPlaylist.length }}首
               </span>
               <button
                 v-if="playlistSearchKeyword"
                 type="button"
                 @click.stop="playlistSearchKeyword = ''"
-                class="p-0.5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 cursor-pointer"
+                class="p-0.5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-[#a1a1a6] cursor-pointer"
                 v-tooltip="'清空搜索词'"
               >
                 <AppIcon name="close" class="w-3 h-3" />
@@ -379,7 +379,7 @@
         <!-- 批量操作控制栏 -->
         <div
           v-if="isPlaylistBatchMode && store.playlist.length > 0"
-          class="px-4 py-2 border-b border-blue-100/80 dark:border-slate-800 bg-blue-50/60 dark:bg-slate-800/80 flex items-center justify-between text-xs flex-shrink-0 no-drag select-none"
+          class="px-4 py-2 border-b border-blue-100/80 dark:border-white/[0.08] bg-blue-50/60 dark:bg-[#232325]/80 flex items-center justify-between text-xs flex-shrink-0 no-drag select-none"
         >
           <span class="font-bold text-blue-600 dark:text-blue-400 tabular-nums">
             已选 {{ selectedPlaylistKeys.size }} 首
@@ -388,14 +388,14 @@
             <button
               type="button"
               @click.stop="toggleSelectAllFiltered"
-              class="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-slate-700/70 transition-colors cursor-pointer"
+              class="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-[#2c2c2f]/70 transition-colors cursor-pointer"
             >
               {{ isAllFilteredSelected ? '取消全选' : '全选' }}
             </button>
             <button
               type="button"
               @click.stop="invertSelectFiltered"
-              class="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-slate-700/70 transition-colors cursor-pointer"
+              class="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-600 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-[#2c2c2f]/70 transition-colors cursor-pointer"
             >
               反选
             </button>
@@ -410,7 +410,7 @@
             <button
               type="button"
               @click.stop="exitPlaylistBatchMode"
-              class="px-1.5 py-0.5 rounded text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 cursor-pointer"
+              class="px-1.5 py-0.5 rounded text-[11px] font-medium text-gray-500 dark:text-[#a1a1a6] hover:text-gray-800 dark:hover:text-[#ededed] cursor-pointer"
             >
               完成
             </button>
@@ -424,16 +424,16 @@
           @scroll.passive="handlePlaylistScroll"
         >
           <div v-if="store.playlist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-400 py-12">
-            <AppIcon name="album" class="w-12 h-12 mb-3 text-gray-200 dark:text-slate-700" />
+            <AppIcon name="album" class="w-12 h-12 mb-3 text-gray-200 dark:text-[#636369]" />
             <p class="text-xs font-medium">你还没有添加任何歌曲</p>
           </div>
-          <div v-else-if="filteredPlaylist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 py-12">
+          <div v-else-if="filteredPlaylist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-[#85858b] py-12">
             <AppIcon name="search" class="w-9 h-9 mb-2.5 opacity-40" />
             <p class="text-xs font-medium">未找到匹配「{{ playlistSearchKeyword }}」的歌曲</p>
             <button
               type="button"
               @click.stop="playlistSearchKeyword = ''"
-              class="mt-2.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              class="mt-2.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-[#232325] text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-[#2c2c2f] transition-colors cursor-pointer"
             >
               清除搜索条件
             </button>
@@ -478,7 +478,7 @@
                       class="w-4 h-4 rounded border flex items-center justify-center transition-colors"
                       :class="selectedPlaylistKeys.has(item.normKey)
                         ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'border-gray-300 dark:border-slate-600 bg-white/80 dark:bg-slate-800'"
+                        : 'border-gray-300 dark:border-white/[0.14] bg-white/80 dark:bg-[#232325]'"
                     >
                       <AppIcon v-if="selectedPlaylistKeys.has(item.normKey)" name="check" class="w-3 h-3" />
                     </span>
@@ -491,11 +491,11 @@
                     <AppIcon
                       v-if="isCurrentRowSong(item.song) && store.isPlaying"
                       name="volume-high"
-                      class="w-4 h-4 text-blue-600 dark:text-blue-400 animate-pulse"
+                      class="w-4 h-4 text-blue-600 dark:text-blue-400"
                     />
                     <span
                       v-else
-                      class="text-xs text-gray-400 dark:text-slate-400 font-medium tabular-nums text-right group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                      class="text-xs text-gray-400 dark:text-[#a1a1a6] font-medium tabular-nums text-right group-hover:text-blue-600 dark:group-hover:text-blue-400"
                     >
                       {{ item.realIndex + 1 }}
                     </span>
@@ -504,7 +504,7 @@
                   <div class="flex-1 pl-1 text-xs font-medium flex flex-col justify-center overflow-hidden min-w-0">
                     <div class="flex items-center min-w-0">
                       <span
-                        class="truncate flex-1 min-w-0 text-gray-800 dark:text-slate-100"
+                        class="truncate flex-1 min-w-0 text-gray-800 dark:text-[#ededed]"
                         :class="{ '!text-blue-600 dark:!text-blue-400 font-bold': isCurrentRowSong(item.song) }"
                         v-tooltip="item.song.name"
                       >
@@ -535,7 +535,7 @@
                     v-if="!store.isFmModePlaylist"
                     type="button"
                     @click.stop="store.insertNext(item.song)"
-                    class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag cursor-pointer"
+                    class="text-gray-400 dark:text-[#85858b] hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag cursor-pointer"
                     :class="{ 'invisible pointer-events-none': isCurrentRowSong(item.song) }"
                     v-tooltip="isCurrentRowSong(item.song) ? '' : '移至下一首播放'"
                   >
@@ -544,7 +544,7 @@
                   <button
                     type="button"
                     @click.stop="handleRowPlayClick(item.song)"
-                    class="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag cursor-pointer"
+                    class="text-gray-400 dark:text-[#85858b] hover:text-blue-600 dark:hover:text-blue-400 p-1 no-drag cursor-pointer"
                     :class="{ '!text-blue-600 dark:!text-blue-400': isCurrentRowSong(item.song) }"
                     v-tooltip="isCurrentRowSong(item.song) && store.isPlaying ? '暂停' : (isCurrentRowSong(item.song) ? '继续播放' : '播放')"
                   >
@@ -562,7 +562,7 @@
                   <button
                     type="button"
                     @click.stop="store.removeFromPlaylist(item.realIndex, item.song.hash)"
-                    class="text-gray-400 dark:text-slate-500 hover:text-red-500 p-1 no-drag cursor-pointer"
+                    class="text-gray-400 dark:text-[#85858b] hover:text-red-500 p-1 no-drag cursor-pointer"
                     v-tooltip="'从队列中移除'"
                   >
                     <AppIcon name="close" class="w-4 h-4" />
@@ -581,10 +581,10 @@
   <Teleport to="body">
     <!-- 普通窗口内歌词界面 (Normal in-window lyrics page) -->
     <transition name="lyric-fade">
-      <div v-if="store.isLyricsVisible && !store.isImmersiveLyrics" class="fixed top-0 left-0 w-full h-[calc(100vh-80px)] z-[45] flex flex-col no-drag overflow-hidden" :class="isDark ? 'text-slate-100' : 'text-gray-900'" tabindex="-1" @keydown.escape="store.toggleLyrics()">
-        <div class="absolute inset-0 -z-30" :class="isDark ? 'bg-slate-950' : 'bg-[#f8f9fa]'"></div>
-        <div class="absolute inset-0 bg-cover bg-center scale-125 transition-all duration-[2s] ease-out blur-[100px] saturate-200 -z-20" :class="isDark ? 'opacity-25' : 'opacity-40'" :style="{ backgroundImage: `url(${store.currentSong?.cover || defaultImg})` }"></div>
-        <div class="absolute inset-0 backdrop-blur-3xl -z-10" :class="isDark ? 'bg-slate-950/80' : 'bg-white/60'"></div>
+      <div v-if="store.isLyricsVisible && !store.isImmersiveLyrics" class="fixed top-0 left-0 w-full h-[calc(100vh-80px)] z-[45] flex flex-col no-drag overflow-hidden" :class="isDark ? 'text-[#ededed]' : 'text-gray-900'" tabindex="-1" @keydown.escape="store.toggleLyrics()">
+        <div class="absolute inset-0 -z-30" :class="isDark ? 'bg-[#141415]' : 'bg-[#f8f9fa]'"></div>
+        <div class="absolute inset-0 bg-cover bg-center scale-125 transition-all duration-[2s] ease-out blur-[100px] saturate-150 -z-20" :class="isDark ? 'opacity-20' : 'opacity-40'" :style="{ backgroundImage: `url(${store.currentSong?.cover || defaultImg})` }"></div>
+        <div class="absolute inset-0 backdrop-blur-3xl -z-10" :class="isDark ? 'bg-[#141415]/80' : 'bg-white/60'"></div>
         
         <div v-if="store.isCurrentSongPreview" class="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-orange-100/90 backdrop-blur-md border border-orange-200 text-orange-600 px-6 py-2 rounded-full text-xs font-bold shadow-lg flex items-center transition-all">
           <AppIcon name="warning" class="w-4 h-4 mr-2" />
@@ -593,10 +593,10 @@
 
         <div class="relative w-full h-16 flex items-center justify-between px-8 drag-region z-50">
           <div class="flex items-center space-x-2 no-drag">
-            <button @click="store.toggleLyrics" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200/50 dark:hover:bg-slate-800/80 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-100 transition-colors" v-tooltip="'收起歌词'">
+            <button @click="store.toggleLyrics" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200/50 dark:hover:bg-[#232325]/80 text-gray-500 dark:text-[#a1a1a6] hover:text-gray-800 dark:hover:text-[#ededed] transition-colors" v-tooltip="'收起歌词'">
               <AppIcon name="chevron-down" class="w-7 h-7" />
             </button>
-            <button @click="store.enterImmersiveLyrics" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200/50 dark:hover:bg-slate-800/80 text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all hover:scale-105 active:scale-95" v-tooltip="'沉浸式全屏歌词 (F11)'">
+            <button @click="store.enterImmersiveLyrics" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200/50 dark:hover:bg-[#232325]/80 text-gray-500 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 transition-all hover:scale-105 active:scale-95" v-tooltip="'沉浸式全屏歌词 (F11)'">
               <AppIcon name="fullscreen" class="w-5 h-5" />
             </button>
           </div>
@@ -617,7 +617,7 @@
             <div class="flex flex-col items-center justify-center mb-10 flex-shrink-0 w-full transition-all">
               <div class="flex items-center justify-center mb-3 w-full">
                 <h2 
-                  class="font-extrabold text-gray-900 dark:text-slate-100 tracking-tight text-center line-clamp-2 max-w-[92%] break-words cursor-default"
+                  class="font-extrabold text-gray-900 dark:text-[#ededed] tracking-tight text-center line-clamp-2 max-w-[92%] break-words cursor-default"
                   :class="(store.currentSong?.name || '').length > 20 ? 'text-2xl xl:text-3xl leading-snug' : 'text-3xl xl:text-4xl'"
                   v-tooltip="store.currentSong?.name || ''"
                 >
@@ -627,11 +627,11 @@
               <div class="flex items-center justify-center text-sm space-x-8 font-medium w-full">
                 <!-- 专辑 -->
                 <div class="max-w-[45%] flex items-center justify-center truncate">
-                  <span class="text-gray-400 dark:text-slate-500 flex-shrink-0">专辑：</span>
+                  <span class="text-gray-400 dark:text-[#85858b] flex-shrink-0">专辑：</span>
                   <span 
                     @click="goToAlbum(store.currentSong)"
                     class="truncate transition-colors" 
-                    :class="!isExternalImportSong(store.currentSong) && store.currentSong?.album_id ? 'text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer' : 'text-gray-500 dark:text-slate-400 cursor-default'"
+                    :class="!isExternalImportSong(store.currentSong) && store.currentSong?.album_id ? 'text-gray-600 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer' : 'text-gray-500 dark:text-[#a1a1a6] cursor-default'"
                     v-tooltip="isExternalImportSong(store.currentSong) ? getImportDisabledTooltip(store.currentSong) : store.currentSong?.album">
                     {{ store.currentSong?.album || '未知专辑' }}
                   </span>
@@ -639,7 +639,7 @@
                 
                 <!-- 歌手 -->
                 <div class="max-w-[45%] flex items-center justify-center truncate">
-                  <span class="text-gray-400 dark:text-slate-500 flex-shrink-0">歌手：</span>
+                  <span class="text-gray-400 dark:text-[#85858b] flex-shrink-0">歌手：</span>
                   <SingerLink 
                     v-if="store.currentSong" 
                     :singers="store.currentSong._singers || store.currentSong.artists" 
@@ -650,7 +650,7 @@
                     :disabled="isExternalImportSong(store.currentSong)"
                     :disabled-tooltip="getImportDisabledTooltip(store.currentSong)"
                   />
-                  <span v-else class="text-gray-500 dark:text-slate-400">未知歌手</span>
+                  <span v-else class="text-gray-500 dark:text-[#a1a1a6]">未知歌手</span>
                 </div>
               </div>
             </div>
@@ -669,10 +669,10 @@
                     :class="index === activeLyricIndex ? 'scale-[1.03]' : 'hover:scale-[1.01]'">
                   <!-- 激活行且有逐字数据 -->
                   <div v-if="index === activeLyricIndex && line.words && line.words.length > 0"
-                       class="leading-relaxed px-4 text-center lyric-inapp-karaoke font-bold text-xl lg:text-2xl text-gray-400/50 dark:text-slate-500/60">
+                       class="leading-relaxed px-4 text-center lyric-inapp-karaoke font-bold text-xl lg:text-2xl text-gray-400/50 dark:text-[#85858b]/60">
                     <span v-for="(w, wIdx) in line.words" :key="wIdx" class="k-inapp-char-box">
                       <span class="k-inapp-char-base">{{ w.text }}</span>
-                      <span class="k-inapp-char-fill text-gray-900 dark:text-slate-50"
+                      <span class="k-inapp-char-fill text-gray-900 dark:text-[#ededed]"
                             :style="{ width: `${getInAppCharProgress(w)}%` }">
                         {{ w.text }}
                       </span>
@@ -681,11 +681,11 @@
                   <!-- 非激活行或无逐字数据的行 -->
                   <span v-else
                         class="leading-relaxed px-4 transition-colors duration-300"
-                        :class="index === activeLyricIndex ? 'text-gray-900 dark:text-slate-50 font-bold text-xl lg:text-2xl' : 'text-gray-400 dark:text-slate-500 font-normal text-lg lg:text-xl hover:text-gray-500 dark:hover:text-slate-300'">
+                        :class="index === activeLyricIndex ? 'text-gray-900 dark:text-[#ededed] font-bold text-xl lg:text-2xl' : 'text-gray-400 dark:text-[#85858b] font-normal text-lg lg:text-xl hover:text-gray-500 dark:hover:text-[#a1a1a6]'">
                     {{ line.text }}
                   </span>
                   <span v-if="line.translation" class="px-4 mt-1 transition-colors duration-300 leading-snug"
-                        :class="index === activeLyricIndex ? 'text-gray-500 dark:text-slate-300 font-semibold text-[0.85em] lg:text-base' : 'text-gray-300/60 dark:text-slate-600 font-medium text-[0.8em] lg:text-sm'">
+                        :class="index === activeLyricIndex ? 'text-gray-500 dark:text-[#a1a1a6] font-semibold text-[0.85em] lg:text-base' : 'text-gray-300/60 dark:text-[#85858b] font-medium text-[0.8em] lg:text-sm'">
                     {{ line.translation }}
                   </span>
                 </li>
@@ -702,40 +702,38 @@
     <transition name="immersive-fade">
       <div 
         v-if="store.isLyricsVisible && store.isImmersiveLyrics" 
-        class="fixed inset-0 w-screen h-screen z-[100] flex flex-col no-drag overflow-hidden select-none bg-slate-950 text-slate-100"
+        class="fixed inset-0 w-screen h-screen z-[100] flex flex-col no-drag overflow-hidden select-none bg-[#0f0f10] text-[#ededed]"
         :class="{ 'cursor-none': isIdle }"
         @mousemove="handleImmersiveMouseMove"
         @click="handleImmersiveMouseMove"
         tabindex="-1"
       >
-        <!-- ✨ 沉浸式多引擎动态流光背景系统 (Multi-Engine Dynamic Background System) ✨ -->
-        <!-- 引擎 1：🌌 梦幻星空 (Cosmic Starry Universe) -->
-        <div v-if="store.immersiveBgMode === 'starry'" class="absolute inset-0 -z-30 overflow-hidden pointer-events-none bg-[#030712]">
+        <!-- 沉浸式多引擎动态背景系统 -->
+        <!-- 引擎 1：星空模式 -->
+        <div v-if="store.immersiveBgMode === 'starry'" class="absolute inset-0 -z-30 overflow-hidden pointer-events-none bg-[#0b0b0c]">
           <div 
-            class="absolute -inset-[20%] bg-cover bg-center blur-[150px] saturate-150 opacity-20 scale-110"
+            class="absolute -inset-[20%] bg-cover bg-center blur-[150px] saturate-125 opacity-15 scale-110"
             :style="{ backgroundImage: `url(${store.currentSong?.cover || defaultImg})` }"
           ></div>
-          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/50 via-slate-950/90 to-black"></div>
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-800/30 via-[#0f0f10]/90 to-[#080809]"></div>
           <div class="absolute inset-0 starry-dust-layer"></div>
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full bg-indigo-500/10 blur-[160px] animate-spin-extremely-slow pointer-events-none"></div>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full bg-white/[0.02] blur-[160px] animate-spin-extremely-slow pointer-events-none"></div>
         </div>
 
-        <!-- 引擎 2：🖤 纯黑极简 (Pure OLED Minimalist) -->
-        <div v-else-if="store.immersiveBgMode === 'pure'" class="absolute inset-0 -z-30 overflow-hidden pointer-events-none bg-black">
+        <!-- 引擎 2：纯黑极简 -->
+        <div v-else-if="store.immersiveBgMode === 'pure'" class="absolute inset-0 -z-30 overflow-hidden pointer-events-none bg-[#0a0a0b]">
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_40%,_rgba(0,0,0,0.85)_100%)]"></div>
         </div>
 
-        <!-- 引擎 3：🌈 灵动流光 (Fluid Mesh Gradient - Apple Music Style，默认) -->
-        <div v-else class="absolute inset-0 -z-30 overflow-hidden pointer-events-none bg-slate-950">
+        <!-- 引擎 3：封面流体氛围（中性暗调微光，去紫蓝光斑） -->
+        <div v-else class="absolute inset-0 -z-30 overflow-hidden pointer-events-none bg-[#111113]">
           <div 
-            class="absolute -inset-[25%] bg-cover bg-center blur-[120px] saturate-200 opacity-60 scale-125 transition-all duration-[3s] ease-out animate-ambient-drift"
+            class="absolute -inset-[25%] bg-cover bg-center blur-[130px] saturate-125 opacity-45 scale-125 transition-all duration-[3s] ease-out animate-ambient-drift"
             :style="{ backgroundImage: `url(${store.currentSong?.cover || defaultImg})` }"
           ></div>
-          <div class="absolute -top-[10%] -left-[10%] w-[65vw] h-[65vw] max-w-[800px] max-h-[800px] rounded-full bg-blue-600/30 blur-[130px] animate-fluid-blob-1 pointer-events-none mix-blend-screen"></div>
-          <div class="absolute -bottom-[15%] -right-[10%] w-[70vw] h-[70vw] max-w-[850px] max-h-[850px] rounded-full bg-indigo-600/30 blur-[140px] animate-fluid-blob-2 pointer-events-none mix-blend-screen"></div>
-          <div class="absolute top-[30%] -right-[15%] w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] rounded-full bg-purple-600/25 blur-[120px] animate-fluid-blob-3 pointer-events-none mix-blend-screen"></div>
-          <div class="absolute -bottom-[10%] left-[20%] w-[50vw] h-[50vw] max-w-[650px] max-h-[650px] rounded-full bg-cyan-600/20 blur-[130px] animate-fluid-blob-4 pointer-events-none mix-blend-screen"></div>
-          <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-3xl"></div>
+          <div class="absolute -top-[10%] -left-[10%] w-[60vw] h-[60vw] max-w-[760px] max-h-[760px] rounded-full bg-white/[0.03] blur-[140px] animate-fluid-blob-1 pointer-events-none"></div>
+          <div class="absolute -bottom-[15%] -right-[10%] w-[65vw] h-[65vw] max-w-[820px] max-h-[820px] rounded-full bg-neutral-400/[0.04] blur-[150px] animate-fluid-blob-2 pointer-events-none"></div>
+          <div class="absolute inset-0 bg-[#111113]/65 backdrop-blur-3xl"></div>
         </div>
 
         <!-- 试听提示条 -->
@@ -754,35 +752,35 @@
           <!-- 左侧：视觉模式切换 -->
           <div class="flex items-center">
             <!-- 模式切换胶囊 Pills -->
-            <div class="flex items-center bg-black/40 backdrop-blur-xl border border-white/10 rounded-full p-1 shadow-inner">
+            <div class="flex items-center bg-[#19191b]/80 backdrop-blur-xl border border-white/[0.08] rounded-full p-1">
               <button 
                 @click="store.setImmersiveLyricMode('vinyl')"
-                class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5"
-                :class="store.immersiveLyricMode === 'vinyl' ? 'bg-blue-600 text-white shadow-[0_2px_10px_rgba(37,99,235,0.4)]' : 'text-slate-400 hover:text-slate-200'"
+                class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center space-x-1.5"
+                :class="store.immersiveLyricMode === 'vinyl' ? 'bg-blue-600 text-white' : 'text-[#a1a1a6] hover:text-[#ededed]'"
               >
                 <AppIcon name="disc" class="w-3.5 h-3.5" />
                 <span>经典黑胶</span>
               </button>
               <button 
                 @click="store.setImmersiveLyricMode('fluid')"
-                class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5"
-                :class="store.immersiveLyricMode === 'fluid' ? 'bg-blue-600 text-white shadow-[0_2px_10px_rgba(37,99,235,0.4)]' : 'text-slate-400 hover:text-slate-200'"
+                class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center space-x-1.5"
+                :class="store.immersiveLyricMode === 'fluid' ? 'bg-blue-600 text-white' : 'text-[#a1a1a6] hover:text-[#ededed]'"
               >
                 <AppIcon name="sparkles" class="w-3.5 h-3.5" />
                 <span>动感流体</span>
               </button>
               <button 
                 @click="store.setImmersiveLyricMode('poster')"
-                class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5"
-                :class="store.immersiveLyricMode === 'poster' ? 'bg-blue-600 text-white shadow-[0_2px_10px_rgba(37,99,235,0.4)]' : 'text-slate-400 hover:text-slate-200'"
+                class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center space-x-1.5"
+                :class="store.immersiveLyricMode === 'poster' ? 'bg-blue-600 text-white' : 'text-[#a1a1a6] hover:text-[#ededed]'"
               >
                 <AppIcon name="image" class="w-3.5 h-3.5" />
                 <span>纯享海报</span>
               </button>
               <button 
                 @click="store.setImmersiveLyricMode('cinematic')"
-                class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5"
-                :class="store.immersiveLyricMode === 'cinematic' ? 'bg-blue-600 text-white shadow-[0_2px_10px_rgba(37,99,235,0.4)]' : 'text-slate-400 hover:text-slate-200'"
+                class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center space-x-1.5"
+                :class="store.immersiveLyricMode === 'cinematic' ? 'bg-blue-600 text-white' : 'text-[#a1a1a6] hover:text-[#ededed]'"
               >
                 <AppIcon name="film" class="w-3.5 h-3.5" />
                 <span>映画光影</span>
@@ -796,7 +794,7 @@
             <div class="relative">
               <button 
                 @click.stop="toggleBgMenu"
-                class="h-9 px-3 flex items-center space-x-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white backdrop-blur-md text-xs font-bold transition-all shadow-md active:scale-95"
+                class="h-9 px-3 flex items-center space-x-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[#a1a1a6] hover:text-[#ededed] backdrop-blur-md text-xs font-medium transition-colors active:scale-95"
                 v-tooltip="'背景风格 (当前: ' + currentBgLabel + ')'"
               >
                 <AppIcon name="palette" class="w-4 h-4" />
@@ -806,14 +804,14 @@
               <!-- 沉浸式背景选择浮层 -->
               <div 
                 v-if="isBgMenuOpen" 
-                class="absolute right-0 top-11 w-36 py-1.5 rounded-2xl bg-slate-900/90 backdrop-blur-3xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.2)] z-50 flex flex-col space-y-0.5 text-xs select-none"
+                class="absolute right-0 top-11 w-36 py-1.5 rounded-2xl bg-[#19191b]/95 backdrop-blur-3xl border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.65)] z-50 flex flex-col space-y-0.5 text-xs select-none"
               >
                 <button 
                   v-for="item in bgOptions" 
                   :key="item.value"
                   @click.stop="selectBgMode(item.value)"
                   class="px-3.5 py-2 flex items-center justify-between text-left transition-colors font-medium rounded-xl mx-1"
-                  :class="store.immersiveBgMode === item.value ? 'bg-blue-600/30 text-blue-400 font-bold' : 'text-slate-300 hover:bg-white/10 hover:text-white'"
+                  :class="store.immersiveBgMode === item.value ? 'bg-blue-600/20 text-blue-400 font-semibold' : 'text-[#a1a1a6] hover:bg-white/[0.08] hover:text-[#ededed]'"
                 >
                   <span>{{ item.icon }} {{ item.label }}</span>
                   <span v-if="store.immersiveBgMode === item.value" class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
@@ -823,7 +821,7 @@
 
             <button 
               @click="cycleFontSize"
-              class="h-9 px-3 flex items-center space-x-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white backdrop-blur-md text-xs font-bold transition-all shadow-md active:scale-95"
+              class="h-9 px-3 flex items-center space-x-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[#a1a1a6] hover:text-[#ededed] backdrop-blur-md text-xs font-medium transition-colors active:scale-95"
               v-tooltip="'调节歌词字号 (当前: ' + fontSizeLabel + ')'"
             >
               <AppIcon name="font-size" class="w-4 h-4" />
@@ -832,14 +830,14 @@
 
             <button 
               @click="store.toggleImmersiveTranslation()"
-              class="w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md transition-all shadow-md active:scale-95 text-xs font-black"
-              :class="store.immersiveShowTranslation ? 'bg-blue-600 text-white shadow-[0_2px_10px_rgba(37,99,235,0.4)]' : 'bg-white/10 text-slate-400 hover:text-white hover:bg-white/20'"
+              class="w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md transition-colors active:scale-95 text-xs font-semibold"
+              :class="store.immersiveShowTranslation ? 'bg-blue-600 text-white' : 'bg-white/10 text-[#a1a1a6] hover:text-[#ededed] hover:bg-white/20'"
               v-tooltip="store.immersiveShowTranslation ? '隐藏翻译歌词' : '显示翻译歌词'"
             >
               译
             </button>
 
-            <button @click.stop="store.exitImmersiveLyrics()" class="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white backdrop-blur-md transition-all active:scale-95 shadow-md ml-1" v-tooltip="'退出全屏 (ESC)'">
+            <button @click.stop="store.exitImmersiveLyrics()" class="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-[#a1a1a6] hover:text-[#ededed] backdrop-blur-md transition-colors active:scale-95 ml-1" v-tooltip="'退出全屏 (ESC)'">
               <AppIcon name="close" class="w-4 h-4" />
             </button>
           </div>
@@ -870,17 +868,17 @@
                 >
                   {{ store.currentSong?.name || '概念音乐' }}
                 </h3>
-                <div class="flex items-center space-x-3 mt-2 text-sm text-slate-400 font-medium max-w-full truncate">
+                <div class="flex items-center space-x-3 mt-2 text-sm text-[#a1a1a6] font-medium max-w-full truncate">
                   <span class="truncate max-w-[160px]" v-tooltip="store.currentSong?.singer || '听见好时光'">{{ store.currentSong?.singer || '听见好时光' }}</span>
-                  <span v-if="store.currentSong?.album" class="text-slate-600 flex-shrink-0">•</span>
-                  <span v-if="store.currentSong?.album" class="truncate max-w-[160px] text-slate-400/80" v-tooltip="store.currentSong.album">{{ store.currentSong.album }}</span>
+                  <span v-if="store.currentSong?.album" class="text-[#636369] flex-shrink-0">•</span>
+                  <span v-if="store.currentSong?.album" class="truncate max-w-[160px] text-[#a1a1a6]/80" v-tooltip="store.currentSong.album">{{ store.currentSong.album }}</span>
                 </div>
               </div>
             </div>
 
             <!-- 右侧：大字号流畅逐字歌词 -->
             <div class="w-7/12 h-[75vh] flex flex-col relative mask-gradient">
-              <div v-if="parsedLyrics.length === 0" class="flex-1 flex items-center justify-center text-slate-400 text-xl font-medium tracking-widest">
+              <div v-if="parsedLyrics.length === 0" class="flex-1 flex items-center justify-center text-[#a1a1a6] text-xl font-medium tracking-widest">
                 当前歌曲暂无歌词，请欣赏纯音乐
               </div>
               <ul v-else ref="immersiveLyricsContainer" class="flex-1 overflow-y-auto custom-scrollbar-hidden w-full scroll-smooth px-6 py-10">
@@ -897,7 +895,7 @@
                   ]"
                 >
                   <!-- 逐字精准高亮 -->
-                  <div v-if="index === activeLyricIndex && line.words && line.words.length > 0" class="leading-relaxed px-4 text-center lyric-inapp-karaoke font-black text-slate-500/50">
+                  <div v-if="index === activeLyricIndex && line.words && line.words.length > 0" class="leading-relaxed px-4 text-center lyric-inapp-karaoke font-black text-[#85858b]/50">
                     <span v-for="(w, wIdx) in line.words" :key="wIdx" class="k-inapp-char-box">
                       <span class="k-inapp-char-base">{{ w.text }}</span>
                       <span class="k-inapp-char-fill text-white drop-shadow-[0_0_16px_rgba(255,255,255,0.7)]" :style="{ width: `${getInAppCharProgress(w)}%` }">
@@ -906,12 +904,12 @@
                     </span>
                   </div>
                   <!-- 普通非逐字歌词 -->
-                  <span v-else class="leading-relaxed px-4 transition-colors duration-300 font-extrabold" :class="index === activeLyricIndex ? 'text-white drop-shadow-[0_0_16px_rgba(255,255,255,0.6)]' : 'text-slate-400 group-hover:text-slate-200'">
+                  <span v-else class="leading-relaxed px-4 transition-colors duration-300 font-extrabold" :class="index === activeLyricIndex ? 'text-white drop-shadow-[0_0_16px_rgba(255,255,255,0.6)]' : 'text-[#a1a1a6] group-hover:text-[#ededed]'">
                     {{ line.text }}
                   </span>
 
                   <!-- 翻译歌词 -->
-                  <span v-if="store.immersiveShowTranslation && line.translation" class="px-4 mt-2 transition-colors duration-300 leading-snug" :class="index === activeLyricIndex ? 'text-slate-300 font-semibold text-[0.65em]' : 'text-slate-500/70 font-medium text-[0.6em]'">
+                  <span v-if="store.immersiveShowTranslation && line.translation" class="px-4 mt-2 transition-colors duration-300 leading-snug" :class="index === activeLyricIndex ? 'text-[#a1a1a6] font-semibold text-[0.65em]' : 'text-[#85858b]/70 font-medium text-[0.6em]'">
                     {{ line.translation }}
                   </span>
                 </li>
@@ -926,20 +924,20 @@
             <!-- 悬浮左上角艺术徽章 -->
             <div v-squircle="'lg'" class="absolute top-0 left-0 flex items-center space-x-4 bg-white/10 backdrop-blur-xl border border-white/10 p-3.5 shadow-2xl z-20 max-w-sm rounded-[14px] transform-gpu [transform:translateZ(0)]">
               <div class="w-14 h-14 rounded-[10px] shadow-lg flex-shrink-0 relative">
-                <div v-squircle="'md'" class="relative w-full h-full rounded-[10px] bg-slate-900 transform-gpu [transform:translateZ(0)]">
+                <div v-squircle="'md'" class="relative w-full h-full rounded-[10px] bg-[#19191b] transform-gpu [transform:translateZ(0)]">
                   <img :src="store.currentSong?.cover || defaultImg" :alt="store.currentSong?.name" class="w-full h-full object-cover" />
                   <div v-if="store.isPlaying" class="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
                 </div>
               </div>
               <div class="flex-1 min-w-0 pr-2">
                 <h4 class="text-base font-extrabold text-white truncate">{{ store.currentSong?.name || '概念音乐' }}</h4>
-                <p class="text-xs text-slate-400 font-medium truncate mt-0.5">{{ store.currentSong?.singer || '听见好时光' }}</p>
+                <p class="text-xs text-[#a1a1a6] font-medium truncate mt-0.5">{{ store.currentSong?.singer || '听见好时光' }}</p>
               </div>
             </div>
 
             <!-- 巨幕流动居中大词 -->
             <div class="w-full h-[76vh] flex flex-col relative mask-gradient">
-              <div v-if="parsedLyrics.length === 0" class="flex-1 flex items-center justify-center text-slate-400 text-2xl font-medium tracking-widest">
+              <div v-if="parsedLyrics.length === 0" class="flex-1 flex items-center justify-center text-[#a1a1a6] text-2xl font-medium tracking-widest">
                 当前歌曲暂无歌词，请欣赏纯音乐
               </div>
               <ul v-else ref="immersiveLyricsContainer" class="flex-1 overflow-y-auto custom-scrollbar-hidden w-full scroll-smooth px-8 py-12">
@@ -955,7 +953,7 @@
                     getFluidFontSizeClass(index === activeLyricIndex)
                   ]"
                 >
-                  <div v-if="index === activeLyricIndex && line.words && line.words.length > 0" class="leading-tight px-6 text-center lyric-inapp-karaoke font-black text-slate-600/60">
+                  <div v-if="index === activeLyricIndex && line.words && line.words.length > 0" class="leading-tight px-6 text-center lyric-inapp-karaoke font-black text-[#636369]/60">
                     <span v-for="(w, wIdx) in line.words" :key="wIdx" class="k-inapp-char-box">
                       <span class="k-inapp-char-base">{{ w.text }}</span>
                       <span class="k-inapp-char-fill text-white drop-shadow-[0_0_24px_rgba(255,255,255,0.85)]" :style="{ width: `${getInAppCharProgress(w)}%` }">
@@ -963,11 +961,11 @@
                       </span>
                     </span>
                   </div>
-                  <span v-else class="leading-tight px-6 transition-all duration-300 font-black" :class="index === activeLyricIndex ? 'text-white drop-shadow-[0_0_24px_rgba(255,255,255,0.85)]' : 'text-slate-400'">
+                  <span v-else class="leading-tight px-6 transition-all duration-300 font-black" :class="index === activeLyricIndex ? 'text-white drop-shadow-[0_0_24px_rgba(255,255,255,0.85)]' : 'text-[#a1a1a6]'">
                     {{ line.text }}
                   </span>
 
-                  <span v-if="store.immersiveShowTranslation && line.translation" class="px-6 mt-3 transition-colors duration-300 leading-normal" :class="index === activeLyricIndex ? 'text-slate-300 font-bold text-[0.55em] drop-shadow-md' : 'text-slate-500 font-medium text-[0.5em]'">
+                  <span v-if="store.immersiveShowTranslation && line.translation" class="px-6 mt-3 transition-colors duration-300 leading-normal" :class="index === activeLyricIndex ? 'text-[#a1a1a6] font-bold text-[0.55em] drop-shadow-md' : 'text-[#85858b] font-medium text-[0.5em]'">
                     {{ line.translation }}
                   </span>
                 </li>
@@ -983,7 +981,7 @@
             <div class="w-5/12 flex flex-col items-center justify-center relative select-none">
               <div class="relative group">
                 <div class="w-[340px] h-[340px] xl:w-[420px] xl:h-[420px] 2xl:w-[460px] 2xl:h-[460px] rounded-[24px] shadow-[0_30px_70px_rgba(0,0,0,0.7)] relative">
-                  <div v-squircle="'2xl'" class="relative w-full h-full rounded-[24px] border border-white/20 bg-slate-900 transform-gpu [transform:translateZ(0)]">
+                  <div v-squircle="'2xl'" class="relative w-full h-full rounded-[24px] border border-white/20 bg-[#19191b] transform-gpu [transform:translateZ(0)]">
                     <img 
                       :src="store.currentSong?.cover || defaultImg" 
                       :alt="store.currentSong?.name" 
@@ -994,7 +992,7 @@
                     <div class="absolute bottom-6 left-6 right-6">
                       <span v-if="store.currentQuality" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-600/90 text-white tracking-widest shadow-md inline-block mb-1.5">{{ qualityDisplayName }}</span>
                       <h3 class="text-2xl font-black text-white truncate drop-shadow-lg">{{ store.currentSong?.name }}</h3>
-                      <p class="text-sm font-semibold text-slate-300 truncate mt-0.5 drop-shadow-md">{{ store.currentSong?.singer }}</p>
+                      <p class="text-sm font-semibold text-[#a1a1a6] truncate mt-0.5 drop-shadow-md">{{ store.currentSong?.singer }}</p>
                     </div>
                   </div>
                 </div>
@@ -1005,7 +1003,7 @@
 
             <!-- 右侧：画廊级大字歌词 -->
             <div class="w-7/12 h-[75vh] flex flex-col relative mask-gradient">
-              <div v-if="parsedLyrics.length === 0" class="flex-1 flex items-center justify-center text-slate-400 text-xl font-medium tracking-widest">
+              <div v-if="parsedLyrics.length === 0" class="flex-1 flex items-center justify-center text-[#a1a1a6] text-xl font-medium tracking-widest">
                 当前歌曲暂无歌词，请欣赏纯音乐
               </div>
               <ul v-else ref="immersiveLyricsContainer" class="flex-1 overflow-y-auto custom-scrollbar-hidden w-full scroll-smooth px-6 py-10">
@@ -1021,7 +1019,7 @@
                     getImmersiveFontSizeClass(index === activeLyricIndex)
                   ]"
                 >
-                  <div v-if="index === activeLyricIndex && line.words && line.words.length > 0" class="leading-relaxed px-4 text-center lyric-inapp-karaoke font-black text-slate-500/50">
+                  <div v-if="index === activeLyricIndex && line.words && line.words.length > 0" class="leading-relaxed px-4 text-center lyric-inapp-karaoke font-black text-[#85858b]/50">
                     <span v-for="(w, wIdx) in line.words" :key="wIdx" class="k-inapp-char-box">
                       <span class="k-inapp-char-base">{{ w.text }}</span>
                       <span class="k-inapp-char-fill text-white drop-shadow-[0_0_16px_rgba(255,255,255,0.7)]" :style="{ width: `${getInAppCharProgress(w)}%` }">
@@ -1029,11 +1027,11 @@
                       </span>
                     </span>
                   </div>
-                  <span v-else class="leading-relaxed px-4 transition-colors duration-300 font-extrabold" :class="index === activeLyricIndex ? 'text-white drop-shadow-[0_0_16px_rgba(255,255,255,0.6)]' : 'text-slate-400 group-hover:text-slate-200'">
+                  <span v-else class="leading-relaxed px-4 transition-colors duration-300 font-extrabold" :class="index === activeLyricIndex ? 'text-white drop-shadow-[0_0_16px_rgba(255,255,255,0.6)]' : 'text-[#a1a1a6] group-hover:text-[#ededed]'">
                     {{ line.text }}
                   </span>
 
-                  <span v-if="store.immersiveShowTranslation && line.translation" class="px-4 mt-2 transition-colors duration-300 leading-snug" :class="index === activeLyricIndex ? 'text-slate-300 font-semibold text-[0.65em]' : 'text-slate-500/70 font-medium text-[0.6em]'">
+                  <span v-if="store.immersiveShowTranslation && line.translation" class="px-4 mt-2 transition-colors duration-300 leading-snug" :class="index === activeLyricIndex ? 'text-[#a1a1a6] font-semibold text-[0.65em]' : 'text-[#85858b]/70 font-medium text-[0.6em]'">
                     {{ line.translation }}
                   </span>
                 </li>
@@ -1048,20 +1046,20 @@
             <!-- 悬浮左上角极简微型艺术徽章 (Minimalist Art Float) -->
             <div v-squircle="'lg'" class="absolute top-0 left-0 flex items-center space-x-3.5 bg-white/10 backdrop-blur-xl border border-white/10 p-2.5 shadow-2xl z-20 max-w-sm transition-colors hover:bg-white/15 rounded-[14px] transform-gpu [transform:translateZ(0)]">
               <div class="w-12 h-12 rounded-[10px] shadow-md flex-shrink-0 relative">
-                <div v-squircle="'md'" class="relative w-full h-full rounded-[10px] bg-slate-900 border border-white/15 transform-gpu [transform:translateZ(0)]">
+                <div v-squircle="'md'" class="relative w-full h-full rounded-[10px] bg-[#19191b] border border-white/15 transform-gpu [transform:translateZ(0)]">
                   <img :src="store.currentSong?.cover || defaultImg" :alt="store.currentSong?.name" class="w-full h-full object-cover" />
                   <div v-if="store.isPlaying" class="absolute inset-0 bg-blue-500/20 animate-pulse"></div>
                 </div>
               </div>
               <div class="flex-1 min-w-0 pr-2">
                 <h4 class="text-sm font-extrabold text-white truncate drop-shadow-sm">{{ store.currentSong?.name || '概念音乐' }}</h4>
-                <p class="text-xs text-slate-400 font-medium truncate mt-0.5">{{ store.currentSong?.singer || '听见好时光' }}</p>
+                <p class="text-xs text-[#a1a1a6] font-medium truncate mt-0.5">{{ store.currentSong?.singer || '听见好时光' }}</p>
               </div>
             </div>
 
             <!-- 纯粹双句错落画卷视窗 (Dual-Sentence Kinetic Stage) -->
             <div class="w-full max-w-[1600px] h-[80vh] flex flex-col justify-center items-center relative px-4 sm:px-8 lg:px-12 cinematic-stage-container">
-              <div v-if="parsedLyrics.length === 0" class="flex-1 flex items-center justify-center text-slate-400 text-2xl font-medium tracking-widest">
+              <div v-if="parsedLyrics.length === 0" class="flex-1 flex items-center justify-center text-[#a1a1a6] text-2xl font-medium tracking-widest">
                 当前歌曲暂无歌词，请欣赏纯音乐
               </div>
 

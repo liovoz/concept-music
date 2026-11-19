@@ -34,10 +34,10 @@
         </div>
       </div>
 
-      <div class="flex items-center space-x-8 border-b border-gray-100 dark:border-slate-700 mb-6">
-        <button @click="activeTab = 'songs'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'songs' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">热门单曲</button>
-        <button @click="activeTab = 'albums'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'albums' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">全部专辑</button>
-        <button @click="activeTab = 'desc'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'desc' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-800 dark:hover:text-slate-200'">歌手详情</button>
+      <div class="flex items-center space-x-8 border-b border-gray-100 dark:border-white/[0.08] mb-6">
+        <button @click="activeTab = 'songs'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'songs' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">热门单曲</button>
+        <button @click="activeTab = 'albums'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'albums' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">全部专辑</button>
+        <button @click="activeTab = 'desc'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'desc' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">歌手详情</button>
       </div>
 
       <div v-if="isError" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100">
@@ -52,9 +52,9 @@
             <AppIcon name="play" class="w-4 h-4 mr-1" />
             {{ songSort === 'hot' ? '播放全部热门单曲' : '播放全部最新单曲' }}
           </button>
-          <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 transition-colors">
-            <button @click="songSort = 'hot'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="songSort === 'hot' ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'">最热</button>
-            <button @click="songSort = 'latest'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="songSort === 'latest' ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'">最新</button>
+          <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
+            <button @click="songSort = 'hot'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="songSort === 'hot' ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">最热</button>
+            <button @click="songSort = 'latest'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="songSort === 'latest' ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">最新</button>
           </div>
         </div>
 
@@ -70,7 +70,7 @@
             <div class="w-10 text-center flex-shrink-0">#</div><div class="flex-1 pl-2 min-w-0">音乐标题</div><div class="w-[28%] hidden md:block pr-4 min-w-0">专辑</div><div class="w-16 text-right pr-4 flex-shrink-0">时长</div>
           </div>
           <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
-            <div class="w-10 text-center text-sm text-gray-400 dark:text-slate-500 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
+            <div class="w-10 text-center text-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
@@ -108,7 +108,7 @@
           <div v-for="album in albums" :key="album.albumid" @click="goToAlbum(album.albumid)" class="flex flex-col group cursor-pointer no-drag">
             <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-shadow duration-300">
               <!-- 1. 独立图片容器（专属 v-squircle 裁切） -->
-              <div v-squircle="'xl'" class="absolute inset-0 w-full h-full bg-gray-100 dark:bg-slate-800 overflow-hidden pointer-events-none">
+              <div v-squircle="'xl'" class="absolute inset-0 w-full h-full bg-gray-100 dark:bg-[#232325] overflow-hidden pointer-events-none">
                 <img :src="album.cover" :alt="album.albumname" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               </div>
               <div class="absolute -right-4 top-1/2 transform -translate-y-1/2 w-[80%] h-[80%] bg-black rounded-full shadow-[0_0_10px_rgba(0,0,0,0.4)] -z-10 group-hover:translate-x-2 transition-transform duration-500"></div>
@@ -121,8 +121,8 @@
               </div>
             </div>
             <div class="mt-3 flex flex-col px-1 min-w-0">
-              <h4 class="text-sm font-bold text-gray-800 dark:text-slate-100 leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="album.albumname">{{ album.albumname }}</h4>
-              <p class="text-xs text-gray-400 dark:text-slate-400 mt-1.5 font-medium truncate font-mono">{{ album.publishtime ? album.publishtime.split(' ')[0] : '' }}</p>
+              <h4 class="text-sm font-bold text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="album.albumname">{{ album.albumname }}</h4>
+              <p class="text-xs text-gray-400 dark:text-[#a1a1a6] mt-1.5 font-medium truncate font-mono">{{ album.publishtime ? album.publishtime.split(' ')[0] : '' }}</p>
             </div>
           </div>
         </div>

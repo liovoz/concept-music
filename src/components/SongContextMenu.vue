@@ -3,7 +3,7 @@
     <div
       v-if="visible"
       ref="menuRef"
-      class="song-context-menu fixed z-[100001] w-56 overflow-visible rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
+      class="song-context-menu fixed z-[100001] w-56 overflow-visible rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 text-xs font-bold text-gray-700 dark:text-[#ededed] shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
       :style="{ left: position.x + 'px', top: position.y + 'px' }"
       @contextmenu.prevent
     >
@@ -20,7 +20,7 @@
         <span>添加到播放列表</span>
       </button>
 
-      <div class="my-1 h-px bg-gray-100 dark:bg-slate-700"></div>
+      <div class="my-1 h-px bg-gray-100 dark:bg-[#2c2c2f]"></div>
 
       <template v-if="!isExternalImportContext">
         <button class="menu-item" :class="{ liked: isLiked }" @click="toggleLike">
@@ -44,7 +44,7 @@
             :class="[submenuPlacement === 'left' ? 'right-full mr-1' : 'left-full ml-1', submenuVerticalPlacement === 'bottom' ? 'bottom-0' : 'top-0']"
           >
             <div
-              class="w-full h-full flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar rounded-xl border border-gray-100 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-1.5 text-xs font-bold text-gray-700 dark:text-slate-100 backdrop-blur-xl"
+              class="w-full h-full flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 text-xs font-bold text-gray-700 dark:text-[#ededed] backdrop-blur-xl"
             >
             <button
               class="menu-item text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 dark:text-blue-400 dark:hover:bg-blue-900/30"
@@ -53,7 +53,7 @@
               <AppIcon name="plus" class="menu-icon" />
               <span>新建歌单</span>
             </button>
-            <div v-if="userPlaylists.length > 0" class="my-1 h-px bg-gray-100 dark:bg-slate-700"></div>
+            <div v-if="userPlaylists.length > 0" class="my-1 h-px bg-gray-100 dark:bg-[#2c2c2f]"></div>
             <button
               v-for="p in userPlaylists"
               :key="p.listid"
@@ -84,7 +84,7 @@
             <AppIcon name="artists" class="menu-icon" />
             <span>查看歌手</span>
           </div>
-          <button v-for="artist in songArtists" :key="artist.id || artist.name" class="menu-item artist-subitem text-gray-700 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400" @click="goArtist(artist)" v-tooltip="artist.name">
+          <button v-for="artist in songArtists" :key="artist.id || artist.name" class="menu-item artist-subitem text-gray-700 dark:text-[#ededed] hover:text-blue-600 dark:hover:text-blue-400" @click="goArtist(artist)" v-tooltip="artist.name">
             <span class="truncate">{{ artist.name }}</span>
           </button>
         </template>
@@ -100,7 +100,7 @@
       </button>
 
       <template v-if="source === 'playlist'">
-        <div class="my-1 h-px bg-gray-100 dark:bg-slate-700"></div>
+        <div class="my-1 h-px bg-gray-100 dark:bg-[#2c2c2f]"></div>
         <button class="menu-item danger" @click="removeFromPlaylist">
           <AppIcon name="trash" class="menu-icon" />
           <span>从播放列表移除</span>
@@ -108,7 +108,7 @@
       </template>
 
       <template v-else-if="source === 'user-playlist'">
-        <div class="my-1 h-px bg-gray-100 dark:bg-slate-700"></div>
+        <div class="my-1 h-px bg-gray-100 dark:bg-[#2c2c2f]"></div>
         <button class="menu-item danger" @click="removeFromUserPlaylist">
           <AppIcon name="trash" class="menu-icon" />
           <span>从歌单中删除</span>
@@ -118,24 +118,24 @@
 
     <!-- 快速新建歌单并添加弹窗 -->
     <div v-if="showQuickCreate" class="fixed inset-0 z-[100003] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-drag" @click.self="showQuickCreate = false">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-gray-100 dark:border-slate-800 w-full max-w-sm p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+      <div class="bg-white dark:bg-[#19191b] rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-gray-100 dark:border-white/[0.08] w-full max-w-sm p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center space-x-2">
             <div class="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <AppIcon name="plus" class="w-3.5 h-3.5" />
             </div>
-            <h3 class="text-sm font-bold text-gray-800 dark:text-slate-100">新建歌单并添加歌曲</h3>
+            <h3 class="text-sm font-bold text-gray-800 dark:text-[#ededed]">新建歌单并添加歌曲</h3>
           </div>
-          <button @click="showQuickCreate = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          <button @click="showQuickCreate = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-[#ededed] p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors">
             <AppIcon name="close" class="w-3.5 h-3.5" />
           </button>
         </div>
         <div class="mb-5">
           <div class="flex items-center justify-between mb-1.5">
-            <label class="block text-xs font-bold text-gray-600 dark:text-slate-300">歌单标题</label>
+            <label class="block text-xs font-bold text-gray-600 dark:text-[#a1a1a6]">歌单标题</label>
             <span
               class="text-[11px] font-semibold tabular-nums"
-              :class="quickPlaylistName.length >= 40 ? 'text-amber-500 font-bold' : 'text-gray-400 dark:text-slate-500'"
+              :class="quickPlaylistName.length >= 40 ? 'text-amber-500 font-bold' : 'text-gray-400 dark:text-[#85858b]'"
             >
               {{ quickPlaylistName.length }}/40
             </span>
@@ -147,23 +147,23 @@
               maxlength="40"
               placeholder="输入新歌单标题..."
               @keyup.enter="handleQuickCreateAndAdd"
-              class="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all"
+              class="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#232325] text-xs text-gray-800 dark:text-[#ededed] placeholder:text-gray-400 dark:placeholder:text-[#85858b] focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all"
               autofocus
             />
             <button
               v-if="quickPlaylistName"
               type="button"
               @click="quickPlaylistName = ''"
-              class="absolute right-2.5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 rounded-full transition-colors cursor-pointer"
+              class="absolute right-2.5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-[#a1a1a6] rounded-full transition-colors cursor-pointer"
               v-tooltip="'清空标题'"
             >
               <AppIcon name="close" class="w-3.5 h-3.5" />
             </button>
           </div>
-          <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1 pl-0.5">歌单名称最多支持 40 个字符</p>
+          <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-1 pl-0.5">歌单名称最多支持 40 个字符</p>
         </div>
         <div class="flex items-center justify-end space-x-2.5">
-          <button @click="showQuickCreate = false" class="px-3.5 py-1.5 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+          <button @click="showQuickCreate = false" class="px-3.5 py-1.5 text-xs font-bold text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
             取消
           </button>
           <button

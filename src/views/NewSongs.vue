@@ -1,6 +1,6 @@
 <template>
-  <div class="h-full overflow-y-auto custom-scrollbar flex flex-col relative" id="newsongs-scroll-container">
-    <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-emerald-50/60 to-white -z-10 pointer-events-none"></div>
+  <div class="h-full overflow-y-auto custom-scrollbar flex flex-col relative dark:bg-[#141415]" id="newsongs-scroll-container">
+    <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-emerald-50/60 to-white dark:bg-none -z-10 pointer-events-none"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
 
@@ -18,11 +18,11 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-4 mb-6">
-        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 transition-colors">
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
           <button v-for="cat in CATEGORIES" :key="cat.key" @click="switchCategory(cat.key)"
             v-squircle="{ radius: 6, smoothing: 0.6 }"
             class="px-4 py-1.5 text-xs font-bold transition-colors no-drag"
-            :class="activeCategory === cat.key ? 'bg-white text-emerald-600 shadow-sm dark:!bg-slate-800 dark:text-emerald-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'">
+            :class="activeCategory === cat.key ? 'bg-white text-emerald-600 shadow-sm dark:!bg-[#232325] dark:text-emerald-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">
             {{ cat.label }}
           </button>
         </div>

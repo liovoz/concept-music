@@ -13,9 +13,9 @@
       </button>
 
       <div class="flex items-end mb-10 gap-6">
-        <div v-if="isLoading && page === 1" v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 dark:bg-slate-800 animate-pulse flex-shrink-0 shadow-md"></div>
+        <div v-if="isLoading && page === 1" v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 dark:bg-[#232325] animate-pulse flex-shrink-0 shadow-md"></div>
         <div v-else class="relative w-48 h-48 rounded-[18px] shadow-lg flex-shrink-0 group">
-          <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white dark:bg-slate-900 transform-gpu [transform:translateZ(0)]">
+          <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white dark:bg-[#19191b] transform-gpu [transform:translateZ(0)]">
             <img :key="playlistCover" :src="playlistCover" :alt="playlistInfo.name || '歌单封面'" @error="handleCoverError" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
             <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
           </div>
@@ -26,7 +26,7 @@
           <div v-else class="text-xs font-bold text-blue-600 tracking-widest uppercase mb-2">Playlist</div>
 
           <div v-if="isLoading && page === 1" class="w-3/4 h-10 bg-gray-200 rounded animate-pulse mb-4"></div>
-          <h2 v-else class="text-4xl font-extrabold text-gray-900 dark:text-slate-50 tracking-tight line-clamp-2 break-all mb-3" v-tooltip="playlistInfo.name">{{ playlistInfo.name || '未知歌单' }}</h2>
+          <h2 v-else class="text-4xl font-extrabold text-gray-900 dark:text-[#ededed] tracking-tight line-clamp-2 break-all mb-3" v-tooltip="playlistInfo.name">{{ playlistInfo.name || '未知歌单' }}</h2>
 
           <div v-if="isLoading && page === 1" class="w-1/2 h-4 bg-gray-200 rounded animate-pulse mb-6"></div>
           <p v-else class="text-sm text-gray-500 line-clamp-2 mb-6 leading-relaxed pr-10 cursor-default whitespace-pre-wrap" v-tooltip="playlistInfo.intro">{{ playlistInfo.intro || '该歌单暂无简介...' }}</p>
@@ -88,7 +88,7 @@
         
         <div class="space-y-1 w-full">
           <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song, index)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
-            <div class="w-10 text-center text-sm text-gray-400 dark:text-slate-500 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
+            <div class="w-10 text-center text-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
@@ -150,28 +150,28 @@
     <Teleport to="body">
       <div v-if="showDeletePlaylistModal" class="fixed inset-0 z-[100002] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-drag" @click.self="showDeletePlaylistModal = false">
         <div class="w-full max-w-sm rounded-2xl shadow-2xl dark:shadow-[0_24px_64px_rgba(0,0,0,0.6)] relative">
-          <div v-squircle="'2xl'" class="w-full bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+          <div v-squircle="'2xl'" class="w-full bg-white dark:bg-[#19191b] rounded-2xl border border-gray-100 dark:border-white/[0.08] p-6 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
           <div class="flex items-center space-x-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/60 text-red-500 dark:text-red-400 flex items-center justify-center flex-shrink-0">
               <AppIcon name="trash" class="w-5 h-5" />
             </div>
             <div>
-              <h3 class="text-base font-bold text-gray-800 dark:text-slate-100">删除自建歌单</h3>
-              <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">此操作将永久删除该歌单</p>
+              <h3 class="text-base font-bold text-gray-800 dark:text-[#ededed]">删除自建歌单</h3>
+              <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-0.5">此操作将永久删除该歌单</p>
             </div>
           </div>
 
-          <div class="text-xs text-gray-600 dark:text-slate-300 leading-relaxed bg-gray-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-gray-100 dark:border-slate-700/60 mb-5 break-all overflow-hidden">
+          <div class="text-xs text-gray-600 dark:text-[#a1a1a6] leading-relaxed bg-gray-50 dark:bg-[#232325]/60 p-3.5 rounded-xl border border-gray-100 dark:border-white/[0.08] mb-5 break-all overflow-hidden">
             <p>
-              确定要删除歌单「<span class="font-bold text-gray-900 dark:text-slate-50">{{ playlistInfo.name }}</span>」吗？
+              确定要删除歌单「<span class="font-bold text-gray-900 dark:text-[#ededed]">{{ playlistInfo.name }}</span>」吗？
             </p>
-            <p class="mt-1 text-[11px] text-gray-400 dark:text-slate-400">
+            <p class="mt-1 text-[11px] text-gray-400 dark:text-[#a1a1a6]">
               删除后将从云端彻底删除，无法恢复该歌单。
             </p>
           </div>
 
           <div class="flex items-center justify-end space-x-3">
-            <button @click="showDeletePlaylistModal = false" v-squircle="'md'" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+            <button @click="showDeletePlaylistModal = false" v-squircle="'md'" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
               取消
             </button>
             <button

@@ -6,12 +6,12 @@
     <router-view></router-view>
   </div>
 
-  <div v-else class="flex h-screen w-full flex-col bg-white dark:bg-slate-950 overflow-hidden text-gray-800 dark:text-slate-100 font-sans relative transition-colors duration-200">
+  <div v-else class="flex h-screen w-full flex-col bg-white dark:bg-[#141415] overflow-hidden text-gray-800 dark:text-[#ededed] font-sans relative transition-colors duration-200">
     <Header />
 
     <div class="flex flex-1 overflow-hidden relative">
       <Sidebar />
-      <main class="flex-1 bg-white dark:bg-slate-950 relative min-w-0 overflow-hidden transition-colors duration-200">
+      <main class="flex-1 bg-white dark:bg-[#141415] relative min-w-0 overflow-hidden transition-colors duration-200">
         <router-view v-slot="{ Component }">
           <keep-alive :include="['PersonalFM', 'PlaylistCategory']">
             <component :is="Component" :key="getRouteComponentKey(Component)" />
@@ -39,10 +39,10 @@
       >
         <div
           v-squircle="'md'"
-          class="relative px-3 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-gray-100 dark:border-slate-700 rounded-xl overflow-hidden"
+          class="relative px-3 py-1.5 bg-white/95 dark:bg-[#19191b]/95 backdrop-blur-2xl border border-gray-100 dark:border-white/[0.08] rounded-xl overflow-hidden"
         >
           <div
-            class="text-xs text-gray-700 dark:text-slate-200 leading-normal whitespace-normal break-words font-medium overflow-y-auto overflow-x-hidden overscroll-contain custom-scrollbar"
+            class="text-xs text-gray-700 dark:text-[#ededed] leading-normal whitespace-normal break-words font-medium overflow-y-auto overflow-x-hidden overscroll-contain custom-scrollbar"
             :style="{ maxHeight: `${(tooltipState.maxHeight || 320) - 16}px` }"
           >
             {{ tooltipState.text }}

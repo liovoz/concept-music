@@ -1,14 +1,14 @@
 <template>
   <div ref="scrollContainerRef" class="h-full overflow-y-auto custom-scrollbar flex flex-col relative" id="netease-import-scroll-container">
-    <div class="absolute top-0 left-0 w-full h-72 bg-gradient-to-b from-gray-50 to-white dark:from-slate-900 dark:to-slate-950 -z-10"></div>
+    <div class="absolute top-0 left-0 w-full h-72 bg-gradient-to-b from-gray-50 to-white dark:from-[#19191b] dark:to-[#141415] -z-10"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
       <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-8 w-full">
         <div class="flex-1 min-w-0">
-          <h2 class="text-3xl font-extrabold text-gray-900 dark:text-slate-50 tracking-tight truncate">
+          <h2 class="text-3xl font-extrabold text-gray-900 dark:text-[#ededed] tracking-tight truncate">
             网易歌单 <span class="text-lg text-red-500 font-bold ml-2">Netease Playlists</span>
           </h2>
-          <p class="text-xs text-gray-500 dark:text-slate-300 mt-2 font-medium">导入与管理网易云歌单，快速播放收藏的音乐记忆</p>
+          <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-2 font-medium">导入与管理网易云歌单，快速播放收藏的音乐记忆</p>
         </div>
 
         <div class="w-full max-w-xl flex items-center gap-3 xl:flex-shrink-0">
@@ -16,13 +16,13 @@
             <input
               v-model="inputValue"
               @keydown.enter="submitImport"
-              class="w-full h-11 rounded-full border border-gray-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 px-5 pr-11 text-sm font-medium text-gray-800 dark:text-slate-100 outline-none shadow-sm transition-all focus:border-red-300 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-500/10 no-drag"
+              class="w-full h-11 rounded-full border border-gray-200 dark:border-white/[0.08] bg-white/90 dark:bg-[#19191b]/90 px-5 pr-11 text-sm font-medium text-gray-800 dark:text-[#ededed] outline-none shadow-sm transition-all focus:border-red-300 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-500/10 no-drag"
               placeholder="网易云歌单链接或 ID"
             />
             <button
               v-if="inputValue"
               @click="inputValue = ''"
-              class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 no-drag"
+              class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-[#232325] no-drag"
               v-tooltip="'清空'"
             >
               <AppIcon name="close" class="w-3.5 h-3.5" />
@@ -42,7 +42,7 @@
       <div class="flex-1 min-h-0 flex flex-col lg:flex-row lg:items-start gap-6">
         <aside v-if="savedPlaylists.length > 0" class="min-w-0 lg:sticky lg:top-6 lg:w-[280px] lg:flex-shrink-0 lg:self-start lg:flex lg:min-h-0 lg:flex-col">
         <div class="flex flex-shrink-0 items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-gray-800 dark:text-slate-100">已保存歌单</h3>
+          <h3 class="text-sm font-bold text-gray-800 dark:text-[#ededed]">已保存歌单</h3>
           <span class="text-xs font-medium text-gray-400">{{ savedPlaylists.length }} 个</span>
         </div>
         <div ref="savedPlaylistListRef" :style="savedPlaylistListStyle" class="custom-scrollbar flex gap-3 overflow-x-auto overflow-y-hidden pb-2 pr-1 lg:block lg:min-h-0 lg:flex-1 lg:max-h-[var(--saved-playlist-list-max-height)] lg:space-y-2 lg:overflow-x-hidden lg:overflow-y-auto lg:pb-3">
@@ -53,17 +53,17 @@
             @click="openSavedPlaylist(playlist)"
             v-squircle="'lg'"
             class="group flex w-72 flex-shrink-0 items-center min-w-0 rounded-[14px] border p-2.5 text-left transition-all no-drag lg:w-full"
-            :class="currentId === playlist.id ? 'border-red-200 bg-red-50/80 dark:border-red-500/30 dark:bg-red-500/10' : 'border-gray-100 bg-white/80 hover:border-red-100 hover:bg-red-50/60 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-red-500/20 dark:hover:bg-red-500/10'"
+            :class="currentId === playlist.id ? 'border-red-200 bg-red-50/80 dark:border-red-500/30 dark:bg-red-500/10' : 'border-gray-100 bg-white/80 hover:border-red-100 hover:bg-red-50/60 dark:border-white/[0.08] dark:bg-[#19191b]/70 dark:hover:border-red-500/20 dark:hover:bg-red-500/10'"
           >
-            <img :src="playlist.cover || defaultImg" :alt="playlist.name" class="w-11 h-11 rounded-[8px] object-cover flex-shrink-0 bg-gray-100 dark:bg-slate-800" @error="e => e.target.src = defaultImg" />
+            <img :src="playlist.cover || defaultImg" :alt="playlist.name" class="w-11 h-11 rounded-[8px] object-cover flex-shrink-0 bg-gray-100 dark:bg-[#232325]" @error="e => e.target.src = defaultImg" />
             <div class="min-w-0 flex-1 ml-3">
-              <div class="text-sm font-bold truncate" :class="currentId === playlist.id ? 'text-red-600 dark:text-red-300' : 'text-gray-800 dark:text-slate-100'" v-tooltip="playlist.name">{{ playlist.name }}</div>
+              <div class="text-sm font-bold truncate" :class="currentId === playlist.id ? 'text-red-600 dark:text-red-300' : 'text-gray-800 dark:text-[#ededed]'" v-tooltip="playlist.name">{{ playlist.name }}</div>
               <div class="text-xs text-gray-400 truncate mt-0.5">{{ formatSavedPlaylistMeta(playlist) }}</div>
               <div class="text-[11px] text-gray-300 mt-0.5">{{ formatSavedTime(playlist.importedAt) }}</div>
             </div>
             <span
               @click.stop="deleteSavedPlaylist(playlist.id)"
-              class="w-7 h-7 ml-2 rounded-full flex items-center justify-center flex-shrink-0 text-gray-300 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-colors"
+              class="w-7 h-7 ml-2 rounded-full flex items-center justify-center flex-shrink-0 text-gray-300 hover:text-red-500 hover:bg-white dark:hover:bg-[#232325] transition-colors"
               v-tooltip="'移除保存'"
             >
               <AppIcon name="close" class="w-3.5 h-3.5" />
@@ -76,16 +76,16 @@
 
       <div v-if="isPlaylistLoading && page === 1" class="space-y-4 w-full">
         <div class="flex items-end gap-6 mb-10">
-          <div v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 dark:bg-slate-800 animate-pulse flex-shrink-0 shadow-md"></div>
+          <div v-squircle="'xl'" class="w-48 h-48 rounded-[18px] bg-gray-200 dark:bg-[#232325] animate-pulse flex-shrink-0 shadow-md"></div>
           <div class="flex-1 space-y-4">
-            <div class="w-28 h-5 bg-gray-200 dark:bg-slate-800 rounded animate-pulse"></div>
-            <div class="w-2/3 h-10 bg-gray-200 dark:bg-slate-800 rounded animate-pulse"></div>
-            <div class="w-1/2 h-4 bg-gray-200 dark:bg-slate-800 rounded animate-pulse"></div>
+            <div class="w-28 h-5 bg-gray-200 dark:bg-[#232325] rounded animate-pulse"></div>
+            <div class="w-2/3 h-10 bg-gray-200 dark:bg-[#232325] rounded animate-pulse"></div>
+            <div class="w-1/2 h-4 bg-gray-200 dark:bg-[#232325] rounded animate-pulse"></div>
           </div>
         </div>
-        <div v-for="i in 8" :key="i" class="flex items-center px-4 py-3 bg-gray-50/60 dark:bg-slate-900/60 rounded-xl">
-          <div class="w-8 h-4 bg-gray-200 dark:bg-slate-800 rounded animate-pulse"></div>
-          <div class="flex-1 ml-4 h-4 bg-gray-200 dark:bg-slate-800 rounded animate-pulse max-w-md"></div>
+        <div v-for="i in 8" :key="i" class="flex items-center px-4 py-3 bg-gray-50/60 dark:bg-[#19191b]/60 rounded-xl">
+          <div class="w-8 h-4 bg-gray-200 dark:bg-[#232325] rounded animate-pulse"></div>
+          <div class="flex-1 ml-4 h-4 bg-gray-200 dark:bg-[#232325] rounded animate-pulse max-w-md"></div>
         </div>
       </div>
 
@@ -96,18 +96,18 @@
       </div>
 
       <div v-else-if="!playlistInfo.id" class="w-full flex-1 flex items-center justify-center py-20">
-        <div class="w-full max-w-[520px] rounded-2xl border border-gray-100 bg-white/80 px-8 py-9 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+        <div class="w-full max-w-[520px] rounded-2xl border border-gray-100 bg-white/80 px-8 py-9 text-center shadow-sm dark:border-white/[0.08] dark:bg-[#19191b]/70">
           <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-500 shadow-inner dark:bg-red-500/10 dark:text-red-300">
             <AppIcon name="netease-cloud" class="h-8 w-8" />
           </div>
-          <h3 class="text-lg font-extrabold text-gray-900 dark:text-slate-50">还没有导入网易歌单</h3>
-          <p class="mx-auto mt-2 max-w-sm text-sm font-medium leading-6 text-gray-500 dark:text-slate-400">
+          <h3 class="text-lg font-extrabold text-gray-900 dark:text-[#ededed]">还没有导入网易歌单</h3>
+          <p class="mx-auto mt-2 max-w-sm text-sm font-medium leading-6 text-gray-500 dark:text-[#a1a1a6]">
             粘贴网易云歌单链接或纯数字 ID，即可在这里查看歌单详情并播放歌曲。
           </p>
-          <div class="mt-6 flex flex-col items-center justify-center gap-2 text-xs font-bold text-gray-400 dark:text-slate-500 sm:flex-row">
-            <span class="rounded-full bg-gray-50 px-3 py-1.5 dark:bg-slate-800">支持 playlist 链接</span>
-            <span class="hidden h-1 w-1 rounded-full bg-gray-300 dark:bg-slate-700 sm:block"></span>
-            <span class="rounded-full bg-gray-50 px-3 py-1.5 dark:bg-slate-800">也支持纯数字 ID</span>
+          <div class="mt-6 flex flex-col items-center justify-center gap-2 text-xs font-bold text-gray-400 dark:text-[#85858b] sm:flex-row">
+            <span class="rounded-full bg-gray-50 px-3 py-1.5 dark:bg-[#232325]">支持 playlist 链接</span>
+            <span class="hidden h-1 w-1 rounded-full bg-gray-300 dark:bg-[#2c2c2f] sm:block"></span>
+            <span class="rounded-full bg-gray-50 px-3 py-1.5 dark:bg-[#232325]">也支持纯数字 ID</span>
           </div>
         </div>
       </div>
@@ -115,7 +115,7 @@
       <template v-else>
         <div class="flex items-end mb-10 gap-6">
           <div class="relative w-48 h-48 rounded-[18px] shadow-lg flex-shrink-0 group">
-            <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white dark:bg-slate-900 transform-gpu [transform:translateZ(0)]">
+            <div v-squircle="'xl'" class="relative w-full h-full rounded-[18px] bg-white dark:bg-[#19191b] transform-gpu [transform:translateZ(0)]">
               <img :src="playlistInfo.cover" :alt="playlistInfo.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" @error="e => e.target.src = defaultImg" />
               <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
@@ -123,8 +123,8 @@
 
           <div class="flex flex-col justify-end flex-1 min-w-0">
             <div class="text-xs font-bold text-red-500 tracking-widest uppercase mb-2">Imported Playlist</div>
-            <h3 class="text-4xl font-extrabold text-gray-900 dark:text-slate-50 tracking-tight line-clamp-2 mb-3" v-tooltip="playlistInfo.name">{{ playlistInfo.name }}</h3>
-            <p class="text-sm text-gray-500 dark:text-slate-400 line-clamp-2 mb-6 leading-relaxed pr-10 cursor-default whitespace-pre-wrap" v-tooltip="playlistInfo.intro">{{ playlistInfo.intro }}</p>
+            <h3 class="text-4xl font-extrabold text-gray-900 dark:text-[#ededed] tracking-tight line-clamp-2 mb-3" v-tooltip="playlistInfo.name">{{ playlistInfo.name }}</h3>
+            <p class="text-sm text-gray-500 dark:text-[#a1a1a6] line-clamp-2 mb-6 leading-relaxed pr-10 cursor-default whitespace-pre-wrap" v-tooltip="playlistInfo.intro">{{ playlistInfo.intro }}</p>
 
             <div class="flex items-center space-x-3">
               <button @click="playAll" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 dark:shadow-none transition-all transform active:scale-95 flex items-center no-drag" :class="{ 'opacity-50 pointer-events-none': songs.length === 0 }">
@@ -146,12 +146,12 @@
         </div>
 
         <div v-if="songs.length === 0" class="w-full flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
-          <AppIcon name="music" class="w-20 h-20 mb-4 text-gray-200 dark:text-slate-800" />
+          <AppIcon name="music" class="w-20 h-20 mb-4 text-gray-200 dark:text-[#636369]" />
           <p class="text-sm font-medium tracking-widest">暂无歌曲</p>
         </div>
 
         <div v-else class="w-full flex-1 flex flex-col min-w-0">
-          <div class="flex items-center px-4 py-2 text-xs text-gray-400 border-b border-gray-100 dark:border-slate-800 mb-2 min-w-0">
+          <div class="flex items-center px-4 py-2 text-xs text-gray-400 border-b border-gray-100 dark:border-white/[0.08] mb-2 min-w-0">
             <div class="w-10 text-center flex-shrink-0">#</div>
             <div class="flex-1 pl-2 min-w-0">音乐标题</div>
             <div class="w-1/4 hidden sm:block pr-4 min-w-0">歌手</div>
@@ -166,15 +166,15 @@
                 <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
               </div>
 
-              <div class="flex-1 pl-2 text-sm text-gray-800 dark:text-slate-100 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
-                <img :src="song._cover" :alt="song._title" class="w-9 h-9 rounded-[8px] shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100 dark:bg-slate-800" @error="e => e.target.src = defaultImg" />
+              <div class="flex-1 pl-2 text-sm text-gray-800 dark:text-[#ededed] font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
+                <img :src="song._cover" :alt="song._title" class="w-9 h-9 rounded-[8px] shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100 dark:bg-[#232325]" @error="e => e.target.src = defaultImg" />
                 <span class="truncate min-w-0">{{ song._title }}</span>
                 <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
                 <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
               </div>
 
-              <div class="w-1/4 hidden sm:block text-xs text-gray-500 dark:text-slate-400 truncate pr-4 min-w-0" v-tooltip="song._singer">{{ song._singer }}</div>
-              <div class="w-1/4 hidden md:block text-xs text-gray-500 dark:text-slate-400 truncate pr-4 min-w-0" v-tooltip="song._album">{{ song._album }}</div>
+              <div class="w-1/4 hidden sm:block text-xs text-gray-500 dark:text-[#a1a1a6] truncate pr-4 min-w-0" v-tooltip="song._singer">{{ song._singer }}</div>
+              <div class="w-1/4 hidden md:block text-xs text-gray-500 dark:text-[#a1a1a6] truncate pr-4 min-w-0" v-tooltip="song._album">{{ song._album }}</div>
               <div class="w-12 sm:w-16 text-xs text-gray-400 text-right pr-4 font-mono flex-shrink-0">{{ song._duration }}</div>
             </div>
           </div>
@@ -188,10 +188,10 @@
               <span>部分歌曲加载失败</span>
               <button @click="loadMore" class="px-3 py-1 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-full font-bold transition-all active:scale-95 no-drag">重试加载</button>
             </div>
-            <div v-else-if="!hasMore && songs.length > 0" class="text-gray-300 dark:text-slate-700 flex items-center space-x-2">
-              <span class="w-8 h-px bg-gray-200 dark:bg-slate-800"></span>
+            <div v-else-if="!hasMore && songs.length > 0" class="text-gray-300 dark:text-[#636369] flex items-center space-x-2">
+              <span class="w-8 h-px bg-gray-200 dark:bg-[#232325]"></span>
               <span>已经到底啦</span>
-              <span class="w-8 h-px bg-gray-200 dark:bg-slate-800"></span>
+              <span class="w-8 h-px bg-gray-200 dark:bg-[#232325]"></span>
             </div>
           </div>
         </div>
@@ -211,36 +211,36 @@
           aria-modal="true"
           aria-labelledby="netease-notice-title"
         >
-          <div v-squircle="'xl'" class="w-full max-w-[520px] overflow-hidden rounded-[18px] border border-gray-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
-            <div class="flex items-center gap-3 border-b border-gray-100 bg-red-50/70 px-6 py-5 dark:border-slate-800 dark:bg-red-500/10">
+          <div v-squircle="'xl'" class="w-full max-w-[520px] overflow-hidden rounded-[18px] border border-gray-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:border-white/[0.08] dark:bg-[#19191b] dark:shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
+            <div class="flex items-center gap-3 border-b border-gray-100 bg-red-50/70 px-6 py-5 dark:border-white/[0.08] dark:bg-red-500/10">
               <div v-squircle="'md'" class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-red-500 text-white shadow-sm">
                 <AppIcon name="netease-cloud" class="h-5 w-5" />
               </div>
               <div class="min-w-0">
-                <h3 id="netease-notice-title" class="text-lg font-extrabold text-gray-900 dark:text-slate-50">网易歌单使用须知</h3>
-                <p class="mt-1 text-xs font-medium text-gray-500 dark:text-slate-400">导入前了解这些限制，后面使用会更顺手。</p>
+                <h3 id="netease-notice-title" class="text-lg font-extrabold text-gray-900 dark:text-[#ededed]">网易歌单使用须知</h3>
+                <p class="mt-1 text-xs font-medium text-gray-500 dark:text-[#a1a1a6]">导入前了解这些限制，后面使用会更顺手。</p>
               </div>
             </div>
 
             <div class="max-h-[58vh] overflow-y-auto px-6 py-5 custom-scrollbar">
-              <ul class="space-y-3 text-sm font-medium leading-relaxed text-gray-600 dark:text-slate-300">
+              <ul class="space-y-3 text-sm font-medium leading-relaxed text-gray-600 dark:text-[#a1a1a6]">
                 <li v-for="(notice, index) in neteaseNoticeItems" :key="notice" class="flex gap-3">
                   <span class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-red-50 text-[11px] font-black text-red-500 dark:bg-red-500/10 dark:text-red-300">{{ index + 1 }}</span>
                   <span>{{ notice }}</span>
                 </li>
               </ul>
 
-              <p class="mt-5 rounded-xl bg-gray-50 px-4 py-3 text-xs font-bold text-gray-500 dark:bg-slate-800/80 dark:text-slate-400">
+              <p class="mt-5 rounded-xl bg-gray-50 px-4 py-3 text-xs font-bold text-gray-500 dark:bg-[#232325]/80 dark:text-[#a1a1a6]">
                 继续使用即表示你了解以上限制。
               </p>
             </div>
 
-            <div class="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/70 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/80 sm:flex-row sm:items-center sm:justify-between">
-              <label class="flex cursor-pointer select-none items-center gap-2 text-xs font-bold text-gray-500 dark:text-slate-400">
+            <div class="flex flex-col gap-3 border-t border-gray-100 bg-gray-50/70 px-6 py-4 dark:border-white/[0.08] dark:bg-[#19191b]/80 sm:flex-row sm:items-center sm:justify-between">
+              <label class="flex cursor-pointer select-none items-center gap-2 text-xs font-bold text-gray-500 dark:text-[#a1a1a6]">
                 <input
                   v-model="dontShowNeteaseNotice"
                   type="checkbox"
-                  class="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-200 dark:border-slate-600 dark:bg-slate-800"
+                  class="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-200 dark:border-white/[0.14] dark:bg-[#232325]"
                 />
                 不再提示
               </label>

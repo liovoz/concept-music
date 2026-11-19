@@ -58,23 +58,26 @@ function normalizeOptions(val) {
 }
 
 function getElementLayoutSize(el, entry) {
-  // 1. 优先从 ResizeObserverEntry 获取原生 borderBoxSize（严格不受祖先 CSS Transform 缩放影响）
+  // 1. 优先从 ResizeObserverEntry 获取原生 borderBoxSize（保留亚像素精度，避免 Windows 125%/150% DPI 下 Math.round 截断导致底边/右边粗细不均）
   if (entry && entry.borderBoxSize && entry.borderBoxSize.length > 0) {
-    const inlineSize = Math.round(entry.borderBoxSize[0].inlineSize);
-    const blockSize = Math.round(entry.borderBoxSize[0].blockSize);
+    const inlineSize = Math.round(entry.borderBoxSize[0].inlineSize * 100) / 100;
+    const blockSize = Math.round(entry.borderBoxSize[0].blockSize * 100) / 100;
     if (inlineSize > 0 && blockSize > 0) {
       return { width: inlineSize, height: blockSize };
     }
   }
-  // 2. 采用 offsetWidth / offsetHeight（元素本地布局像素尺寸，免疫任何 scale 动画干扰）
+  // 2. 优先读取 getBoundingClientRect 精确亚像素尺寸（仅在无 transform 缩放时或兜底）
+  const rect = el.getBoundingClientRect();
+  if (rect.width > 0 && rect.height > 0) {
+    return {
+      width: Math.round(rect.width * 100) / 100,
+      height: Math.round(rect.height * 100) / 100
+    };
+  }
+  // 3. 兜底回退 offsetWidth / offsetHeight
   const w = el.offsetWidth;
   const h = el.offsetHeight;
-  if (w > 0 && h > 0) {
-    return { width: w, height: h };
-  }
-  // 3. 最终兜底回退
-  const rect = el.getBoundingClientRect();
-  return { width: Math.round(rect.width), height: Math.round(rect.height) };
+  return { width: w, height: h };
 }
 
 /**
@@ -133,14 +136,20 @@ function sniffAndNeutralizeBorder(el, opts) {
 
   const bStyle = cs.borderTopStyle;
   const bColor = cs.borderTopColor;
+  const hasAllFourBorders = topW > 0 && rightW > 0 && bottomW > 0 && leftW > 0;
 
   const isVisibleColor = bColor && bColor !== 'transparent' && bColor !== 'rgba(0, 0, 0, 0)';
-  const hasValidBorder = maxW > 0 && bStyle !== 'none' && isVisibleColor;
+  const hasValidBorder = hasAllFourBorders && bStyle !== 'none' && isVisibleColor;
 
   if (hasValidBorder) {
-    // 抑制 CSS transition-all 对 border-color 的补间拦截，防止产生 150ms 渐变消隐滞留
+    // 抑制 CSS transition-all / border-color 对边框的补间拦截，防止产生渐变滞留
     if (cs.transitionProperty && (cs.transitionProperty.includes('all') || cs.transitionProperty.includes('border-color'))) {
-      el.style.transitionProperty = cs.transitionProperty.replace(/border-color/g, 'none').replace(/\ball\b/g, 'background-color, color, box-shadow, transform, opacity');
+      const props = cs.transitionProperty
+        .split(',')
+        .map((p) => p.trim())
+        .filter((p) => p && p !== 'border-color' && p !== 'border')
+        .flatMap((p) => (p === 'all' ? ['background-color', 'color', 'box-shadow', 'transform', 'opacity'] : [p]));
+      el.style.transitionProperty = props.length > 0 ? [...new Set(props)].join(', ') : 'none';
       el.__squircleTransitionOverridden = true;
     }
 
@@ -242,6 +251,7 @@ function updateElementSquircle(el, opts, entry) {
       svg.style.setProperty('border', 'none', 'important');
       const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       pathEl.setAttribute('fill', 'none');
+      pathEl.setAttribute('shape-rendering', 'geometricPrecision');
       pathEl.style.transition = 'stroke 0.15s cubic-bezier(0.4, 0, 0.2, 1), stroke-width 0.15s cubic-bezier(0.4, 0, 0.2, 1)';
       svg.appendChild(pathEl);
       el.appendChild(svg);
@@ -255,19 +265,38 @@ function updateElementSquircle(el, opts, entry) {
     svg.style.left = `-${leftW || 0}px`;
     svg.style.width = `${width}px`;
     svg.style.height = `${height}px`;
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.style.overflow = 'visible';
 
     const strokeEl = svg.querySelector('path');
     if (strokeEl) {
-      // 外路径同形双倍自裁切描边架构：
-      // 直接复用与宿主 clip-path 完全相同的 outerPath，stroke 设为 2 倍 borderWidth。
-      // 外侧一半（borderWidth）被宿主的 clip-path 硬件级微米级精度彻底裁除，
-      // 留存在容器内侧的一半即为数学上 100% 绝对同心平行、贴合边缘的等宽内描边！
-      // 彻底消除由于内缩算法非同心导致的四角空隙与深浅模式切换时的线条伪影。
-      strokeEl.setAttribute('d', outerPath);
+      // 同心内缩 0.5 * borderWidth 矢量描边：
+      // 避免 stroke-width=2*borderWidth 在 clip-path 边界被硬裁切导致上下粗细不均或圆角锯齿，
+      // 让完整的 borderWidth 描边完全位于 clip-path 内侧，四边与超椭圆圆角抗锯齿完全均匀。
+      const halfB = borderWidth / 2;
+      const innerW = Math.max(0, width - borderWidth);
+      const innerH = Math.max(0, height - borderWidth);
+      const adjR = (r) => (r !== undefined ? Math.max(0, r - halfB) : undefined);
+      const strokePath = getSquircleSvgPath({
+        width: innerW,
+        height: innerH,
+        cornerRadius: Math.max(0, safeOpts.radius - halfB),
+        topLeftCornerRadius: adjR(safeOpts.topLeft),
+        topRightCornerRadius: adjR(safeOpts.topRight),
+        bottomLeftCornerRadius: adjR(safeOpts.bottomLeft),
+        bottomRightCornerRadius: adjR(safeOpts.bottomRight),
+        cornerSmoothing: safeOpts.smoothing,
+        preserveSmoothing: safeOpts.preserveSmoothing,
+      });
+
+      strokeEl.setAttribute('d', strokePath || outerPath);
       strokeEl.setAttribute('stroke', borderColor);
-      strokeEl.setAttribute('stroke-width', String(borderWidth * 2));
-      strokeEl.removeAttribute('transform');
+      strokeEl.setAttribute('stroke-width', String(borderWidth));
+      if (strokePath) {
+        strokeEl.setAttribute('transform', `translate(${halfB}, ${halfB})`);
+      } else {
+        strokeEl.removeAttribute('transform');
+      }
     }
   } else {
     // 若无边框或已被清空，移除残留的矢量边框层
@@ -362,6 +391,16 @@ export const squircleDirective = {
     });
     el.__squircleMutationObserver = mo;
 
+    // 3. 监听 focusin / focusout，确保 focus-within:border-* 等伪类聚焦/失焦时同步重嗅探边框颜色
+    const onFocusChange = () => {
+      el.__squircleBorderInfo = null;
+      el.__squircleCacheKey = null;
+      update();
+    };
+    el.addEventListener('focusin', onFocusChange);
+    el.addEventListener('focusout', onFocusChange);
+    el.__squircleFocusHandler = onFocusChange;
+
     // 初始立即执行一次
     update();
   },
@@ -389,6 +428,11 @@ export const squircleDirective = {
     if (el.__squircleMutationObserver) {
       el.__squircleMutationObserver.disconnect();
       delete el.__squircleMutationObserver;
+    }
+    if (el.__squircleFocusHandler) {
+      el.removeEventListener('focusin', el.__squircleFocusHandler);
+      el.removeEventListener('focusout', el.__squircleFocusHandler);
+      delete el.__squircleFocusHandler;
     }
 
     if (el.__squircleBorderOverridden) {

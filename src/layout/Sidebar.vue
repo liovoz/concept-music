@@ -2,38 +2,38 @@
 // 文件：src/layout/Sidebar.vue
 // ====================
 <template>
-  <aside class="w-56 bg-gray-50 dark:bg-slate-900/95 border-r border-gray-100 dark:border-slate-800 flex flex-col pt-4 pb-5 z-20 h-full relative transition-colors duration-200">
+  <aside class="w-56 bg-gray-50 dark:bg-[#0f0f10] border-r border-gray-100 dark:border-white/[0.08] flex flex-col pt-4 pb-5 z-20 h-full relative transition-colors duration-200">
     
     <div class="px-4 mb-2 overflow-visible">
       <div 
         @click="handleUserCardClick"
         v-squircle="'lg'"
-        class="relative flex items-center p-2.5 rounded-xl transition-all duration-200 no-drag group cursor-pointer active:scale-[0.98]"
+        class="relative flex items-center p-2.5 rounded-xl transition-colors duration-150 no-drag group cursor-pointer active:scale-[0.98]"
         :class="userStore.isLoggedIn 
-          ? 'bg-white dark:bg-slate-800 shadow-xs border border-gray-200 dark:border-slate-700 hover:border-blue-400/60 dark:hover:border-blue-500/50 hover:shadow-md' 
-          : 'hover:bg-gray-200 dark:hover:bg-slate-800 border border-transparent'"
+          ? 'bg-white dark:bg-[#19191b] shadow-xs dark:shadow-none border border-gray-200 dark:border-white/[0.08] hover:border-blue-400/60 dark:hover:border-white/[0.16] hover:shadow-md dark:hover:bg-[#232325]' 
+          : 'hover:bg-gray-200 dark:hover:bg-[#19191b] border border-transparent'"
         v-tooltip="userStore.isLoggedIn ? '点击查看账号与资产详情' : '点击登录酷狗账号'"
       >
         <!-- 头像 -->
-        <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-slate-700 border border-gray-200/80 dark:border-slate-600 shadow-2xs">
+        <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-[#232325] border border-gray-200/80 dark:border-white/[0.08] shadow-2xs dark:shadow-none">
           <img v-if="userStore.isLoggedIn && userStore.userInfo" :src="userStore.userInfo.avatar" :alt="userStore.userInfo.nickname || '用户头像'" class="w-full h-full object-cover" />
-          <AppIcon v-else name="artists" class="w-full h-full text-gray-400 p-1.5" />
+          <AppIcon v-else name="artists" class="w-full h-full text-gray-400 dark:text-[#85858b] p-1.5" />
         </div>
         
         <!-- 用户身份与特权信息 -->
         <div class="ml-3 flex-1 min-w-0 pr-1">
-          <div v-if="userStore.isLoggedIn" class="text-sm font-extrabold text-gray-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+          <div v-if="userStore.isLoggedIn" class="text-sm font-semibold text-gray-800 dark:text-[#ededed] truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
             {{ userStore.userInfo.nickname }}
           </div>
-          <div v-else class="text-sm font-bold text-gray-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+          <div v-else class="text-sm font-medium text-gray-600 dark:text-[#a1a1a6] group-hover:text-blue-600 dark:group-hover:text-[#ededed] transition-colors truncate">
             点击登录
           </div>
           
-          <div v-if="userStore.isLoggedIn" class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center">
+          <div v-if="userStore.isLoggedIn" class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 flex items-center">
             <span 
               v-squircle="'xs'"
-              class="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider mr-1 shadow-2xs leading-none"
-              :class="userStore.userInfo.vip > 0 ? 'bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400' : 'bg-gray-100 text-gray-400 dark:bg-slate-700 dark:text-slate-400 opacity-70'"
+              class="px-1.5 py-0.5 rounded text-[8px] font-semibold mr-1 shadow-2xs dark:shadow-none leading-none"
+              :class="userStore.userInfo.vip > 0 ? 'bg-orange-100 text-orange-600 dark:bg-amber-500/15 dark:text-amber-400' : 'bg-gray-100 text-gray-400 dark:bg-[#232325] dark:text-[#85858b]'"
             >
               VIP
             </span>
@@ -48,12 +48,12 @@
       <div 
         v-if="userStore.dayVipState.claimed" 
         v-squircle="'sm'" 
-        class="w-full py-1.5 px-2 rounded-lg bg-emerald-500/[0.07] dark:bg-emerald-500/15 border border-emerald-500/20 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10.5px] font-bold flex items-center justify-center gap-1.5 transition-all select-none"
+        class="w-full py-1.5 px-2 rounded-lg bg-emerald-500/[0.07] dark:bg-[#19191b] border border-emerald-500/20 dark:border-white/[0.08] text-emerald-700 dark:text-[#4cc38a] text-[10.5px] font-medium flex items-center justify-center gap-1.5 transition-colors select-none"
       >
-        <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-600 dark:text-[#4cc38a] shrink-0" />
         <span>今日 1天VIP 已入账</span>
         <div class="cursor-help pointer-events-auto flex items-center opacity-60 hover:opacity-100 transition-opacity ml-0.5" v-tooltip="'每日 0 点刷新领取次数'">
-          <AppIcon name="info" class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+          <AppIcon name="info" class="w-3 h-3 text-emerald-600 dark:text-[#4cc38a]" />
         </div>
       </div>
       <!-- 1天VIP特权：可领取状态 -->
@@ -73,21 +73,21 @@
       <div 
         v-if="userStore.vipState.count >= 8" 
         v-squircle="'sm'" 
-        class="w-full py-1.5 px-2 rounded-lg bg-emerald-500/[0.07] dark:bg-emerald-500/15 border border-emerald-500/20 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10.5px] font-bold flex items-center justify-center gap-1.5 transition-all select-none"
+        class="w-full py-1.5 px-2 rounded-lg bg-emerald-500/[0.07] dark:bg-[#19191b] border border-emerald-500/20 dark:border-white/[0.08] text-emerald-700 dark:text-[#4cc38a] text-[10.5px] font-medium flex items-center justify-center gap-1.5 transition-colors select-none"
       >
-        <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-600 dark:text-[#4cc38a] shrink-0" />
         <span>今日 3小时特权 已拉满</span>
       </div>
       <!-- 3小时VIP特权：冷却计时状态 -->
       <div 
         v-else-if="cooldownRemaining > 0 && !userStore.isVipProcessing" 
         v-squircle="'sm'" 
-        class="w-full py-1.5 px-2 rounded-lg bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 text-[10.5px] font-medium flex items-center justify-center gap-1.5 transition-all select-none"
+        class="w-full py-1.5 px-2 rounded-lg bg-slate-100/70 dark:bg-[#19191b] border border-slate-200/80 dark:border-white/[0.08] text-slate-500 dark:text-[#a1a1a6] text-[10.5px] font-medium flex items-center justify-center gap-1.5 transition-colors select-none"
       >
         <AppIcon name="clock" class="w-3 h-3 text-amber-500/90 dark:text-amber-400 shrink-0" />
-        <span class="font-mono font-bold text-slate-700 dark:text-slate-200 px-1 py-0.5 rounded bg-slate-200/50 dark:bg-slate-700/50 text-[10px] leading-none">{{ formattedCooldown }}</span>
+        <span class="font-mono tabular-nums font-medium text-slate-700 dark:text-[#ededed] px-1 py-0.5 rounded bg-slate-200/50 dark:bg-[#232325] text-[10px] leading-none">{{ formattedCooldown }}</span>
         <span>后可领</span>
-        <span class="text-[9.5px] text-slate-400 dark:text-slate-500 font-semibold">({{ userStore.vipState.count }}/8)</span>
+        <span class="text-[9.5px] text-slate-400 dark:text-[#85858b] font-medium tabular-nums">({{ userStore.vipState.count }}/8)</span>
       </div>
       <!-- 3小时VIP特权：可领取状态 -->
       <button 
@@ -105,56 +105,56 @@
 
     <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
       <nav class="flex flex-col space-y-1 px-3">
-        <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">在线音乐</div>
-        <div @click="$router.push('/')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="home" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />首页</div>
-        <div @click="$router.push('/rank')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="rank" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />排行榜</div>
-        <div @click="$router.push('/new-songs')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/new-songs' ? 'font-medium bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="new-songs" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/new-songs' ? 'text-emerald-600' : 'text-gray-400 group-hover:text-gray-500'" />新歌速递</div>
-        <div @click="$router.push('/fm')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/fm' ? 'font-medium bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="personal-fm" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/fm' ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-500'" />私人FM</div>
-        <div @click="$router.push('/artists')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/artists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="artists" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/artists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />歌手</div>
-        <div @click="$router.push('/playlist-category')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/playlist-category' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="playlist-category" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/playlist-category' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />歌单广场</div>
-        <div class="px-3 pt-4 pb-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">我的音乐</div>
-        <div @click="$router.push('/history')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/history' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="history" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/history' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />听歌足迹</div>
-        <div @click="goToLikedMusic" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="isLikedMusicActive ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="heart" class="w-4 h-4 mr-3 transition-colors" :class="isLikedMusicActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />我喜欢的音乐</div>
-        <div @click="$router.push('/my-playlists')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/my-playlists' ? 'font-medium bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'"><AppIcon name="my-playlists" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/my-playlists' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'" />私人歌单</div>
+        <div class="px-3 py-2 text-xs text-gray-400 dark:text-[#85858b] rounded cursor-default font-medium">在线音乐</div>
+        <div @click="$router.push('/')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/' ? 'font-medium bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="home" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />首页</div>
+        <div @click="$router.push('/rank')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-medium bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="rank" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />排行榜</div>
+        <div @click="$router.push('/new-songs')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/new-songs' ? 'font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="new-songs" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/new-songs' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />新歌速递</div>
+        <div @click="$router.push('/fm')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/fm' ? 'font-medium bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="personal-fm" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/fm' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />私人FM</div>
+        <div @click="$router.push('/artists')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/artists' ? 'font-medium bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="artists" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/artists' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />歌手</div>
+        <div @click="$router.push('/playlist-category')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/playlist-category' ? 'font-medium bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="playlist-category" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/playlist-category' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />歌单广场</div>
+        <div class="px-3 pt-4 pb-2 text-xs text-gray-400 dark:text-[#85858b] rounded cursor-default font-medium">我的音乐</div>
+        <div @click="$router.push('/history')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/history' ? 'font-medium bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="history" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/history' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />听歌足迹</div>
+        <div @click="goToLikedMusic" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="isLikedMusicActive ? 'font-medium bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="heart" class="w-4 h-4 mr-3 transition-colors" :class="isLikedMusicActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />我喜欢的音乐</div>
+        <div @click="$router.push('/my-playlists')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/my-playlists' ? 'font-medium bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="my-playlists" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/my-playlists' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />私人歌单</div>
         <div
           @click="$router.push('/import/netease')"
           v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group"
-          :class="$route.path.startsWith('/import/netease') ? 'font-medium bg-red-100 text-red-600' : 'text-gray-600 hover:bg-gray-200'"
+          :class="$route.path.startsWith('/import/netease') ? 'font-medium bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"
         >
           <AppIcon
             name="netease-cloud"
             class="w-4 h-4 mr-3 flex-shrink-0 transition-colors"
-            :class="$route.path.startsWith('/import/netease') ? 'text-red-600' : 'text-gray-400 group-hover:text-gray-500'"
+            :class="$route.path.startsWith('/import/netease') ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'"
           />
           网易歌单
         </div>
         <div
           @click="$router.push('/import/qq')"
           v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center transition-colors group"
-          :class="$route.path.startsWith('/import/qq') ? 'font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800'"
+          :class="$route.path.startsWith('/import/qq') ? 'font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400' : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b]'"
         >
           <AppIcon
             name="qq-music"
             class="w-4 h-4 mr-3 flex-shrink-0 transition-colors"
-            :class="$route.path.startsWith('/import/qq') ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-slate-400'"
+            :class="$route.path.startsWith('/import/qq') ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'"
           />
           企鹅歌单
         </div>
       </nav>
     </div>
 
-    <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 dark:border-slate-800 pt-3">
-      <div class="px-3 py-2 text-xs text-gray-400 rounded cursor-default uppercase font-semibold">系统</div>
-      <div @click="openSettings('account')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center justify-between transition-colors text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-800 group relative">
+    <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 dark:border-white/[0.08] pt-3">
+      <div class="px-3 py-2 text-xs text-gray-400 dark:text-[#85858b] rounded cursor-default font-medium">系统</div>
+      <div @click="openSettings('account')" v-squircle="'md'" class="px-3 py-2 text-sm rounded-lg cursor-pointer no-drag flex items-center justify-between transition-colors text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#19191b] group relative">
         <div class="flex items-center">
-          <AppIcon name="settings" class="w-4 h-4 mr-3 text-gray-400 dark:text-slate-400 group-hover:text-blue-500 transition-colors" />
+          <AppIcon name="settings" class="w-4 h-4 mr-3 text-gray-400 dark:text-[#85858b] group-hover:text-blue-500 dark:group-hover:text-[#ededed] transition-colors" />
           <span>设置</span>
         </div>
         <span
           v-if="updateStore.hasBadge"
-          class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200/60 dark:border-red-800/40 text-[10px] font-bold text-red-500"
+          class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-[#232325] border border-red-200/60 dark:border-white/[0.08] text-[10px] font-medium text-red-500 dark:text-[#e5484d]"
         >
-          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-[#e5484d]"></span>
           <span>新版</span>
         </span>
       </div>
@@ -164,18 +164,18 @@
 
     <Teleport to="body">
       <transition name="fade-scale">
-        <div v-if="userStore.showVipUpgradeModal" ref="vipUpgradeModalRef" tabindex="-1" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm no-drag outline-none" @click.self="userStore.closeVipUpgradeModal()" @keydown.escape="userStore.closeVipUpgradeModal()">
-          <div v-squircle="'2xl'" class="bg-white w-[340px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
-            <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-4">
-              <AppIcon name="star-solid" class="w-6 h-6 text-orange-500" />
+        <div v-if="userStore.showVipUpgradeModal" ref="vipUpgradeModalRef" tabindex="-1" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm no-drag outline-none" @click.self="userStore.closeVipUpgradeModal()" @keydown.escape="userStore.closeVipUpgradeModal()">
+          <div v-squircle="'2xl'" class="bg-white dark:bg-[#19191b] dark:border dark:border-white/[0.08] w-[340px] rounded-2xl shadow-2xl p-6 relative flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-orange-50 dark:bg-[#232325] rounded-full flex items-center justify-center mb-4">
+              <AppIcon name="star-solid" class="w-6 h-6 text-orange-500 dark:text-blue-400" />
             </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2">开通 VIP</h3>
-            <p class="text-sm text-gray-500 mb-5">当前歌曲为 VIP 专享，开通 VIP 即可畅听完整版及无损音质。</p>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-[#ededed] mb-2">开通 VIP</h3>
+            <p class="text-sm text-gray-500 dark:text-[#a1a1a6] mb-5">当前歌曲为 VIP 专享，开通 VIP 即可畅听完整版及无损音质。</p>
             <div class="flex space-x-3 w-full">
-              <button @click="handleVipUpgradeClaim" v-squircle="'md'" class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-sm font-bold shadow-md transition-all">
+              <button @click="handleVipUpgradeClaim" v-squircle="'md'" class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-sm font-bold shadow-md dark:shadow-none transition-all">
                 🎁 去领取免费 VIP
               </button>
-              <button @click="userStore.closeVipUpgradeModal()" v-squircle="'md'" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-bold transition-all">
+              <button @click="userStore.closeVipUpgradeModal()" v-squircle="'md'" class="w-full py-2 bg-gray-100 hover:bg-gray-200 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] text-gray-600 dark:text-[#ededed] rounded-xl text-sm font-medium transition-colors">
                 稍后再说
               </button>
             </div>

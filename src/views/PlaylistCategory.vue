@@ -1,30 +1,30 @@
 <template>
-  <div class="h-full flex flex-col relative overflow-hidden bg-white dark:!bg-slate-950 text-gray-800 dark:text-slate-100 min-w-0 transition-colors">
-    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50/80 to-white dark:from-blue-950/20 dark:via-slate-950 dark:to-slate-950 -z-10 pointer-events-none"></div>
+  <div class="h-full flex flex-col relative overflow-hidden bg-white dark:!bg-[#141415] text-gray-800 dark:text-[#ededed] min-w-0 transition-colors">
+    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50/80 to-white dark:bg-none -z-10 pointer-events-none"></div>
 
     <div id="playlist-category-scroll" class="p-8 z-10 flex-1 flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar min-w-0 box-border scroll-smooth">
 
       <div class="flex items-end justify-between mb-6 w-full gap-4">
         <div class="flex-1 min-w-0">
-          <h2 class="text-3xl font-extrabold text-gray-900 dark:text-slate-50 tracking-tight truncate">
+          <h2 class="text-3xl font-extrabold text-gray-900 dark:text-[#ededed] tracking-tight truncate">
             歌单广场 <span class="text-lg text-blue-500 font-bold ml-2">Explore</span>
           </h2>
-          <p class="text-xs text-gray-500 dark:text-slate-400 mt-2 font-medium">按分类发现更多精选歌单</p>
+          <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-2 font-medium">按分类发现更多精选歌单</p>
         </div>
       </div>
 
       <div v-if="isTagsLoading" class="mb-6 space-y-3">
-        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="inline-flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 rounded-lg border border-gray-200/60 dark:!border-slate-800">
-          <div v-for="i in 7" :key="'cat-'+i" v-squircle="{ radius: 6, smoothing: 0.6 }" class="h-7 w-14 bg-gray-200/60 dark:bg-slate-800 rounded-md animate-pulse"></div>
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="inline-flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 rounded-lg border border-gray-200/60 dark:!border-white/[0.08]">
+          <div v-for="i in 7" :key="'cat-'+i" v-squircle="{ radius: 6, smoothing: 0.6 }" class="h-7 w-14 bg-gray-200/60 dark:bg-[#232325] rounded-md animate-pulse"></div>
         </div>
-        <div v-squircle="'lg'" class="p-3 bg-gray-50/70 dark:bg-slate-900/50 rounded-[14px] border border-gray-100/80 dark:border-slate-800/80 flex flex-wrap gap-1.5">
-          <div v-for="i in 12" :key="'tag-'+i" v-squircle="{ radius: 6, smoothing: 0.6 }" class="h-6 w-14 bg-gray-200/50 dark:bg-slate-800/80 rounded-md animate-pulse"></div>
+        <div v-squircle="'lg'" class="p-3 bg-gray-50/70 dark:bg-[#19191b]/50 rounded-[14px] border border-gray-100/80 dark:border-white/[0.08] flex flex-wrap gap-1.5">
+          <div v-for="i in 12" :key="'tag-'+i" v-squircle="{ radius: 6, smoothing: 0.6 }" class="h-6 w-14 bg-gray-200/50 dark:bg-[#232325]/80 rounded-md animate-pulse"></div>
         </div>
       </div>
 
       <div v-else class="mb-6">
         <div class="overflow-x-auto pb-1 scrollbar-hide">
-          <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="inline-flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 min-w-max transition-colors">
+          <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="inline-flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] min-w-max transition-colors">
             <button
               v-for="category in categories"
               :key="category.id"
@@ -32,15 +32,15 @@
               v-squircle="{ radius: 6, smoothing: 0.6 }"
               class="px-4 py-1.5 text-xs font-bold transition-colors whitespace-nowrap no-drag"
               :class="activeCategory.id === category.id
-                ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40'
-                : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'"
+                ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
+                : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'"
             >
               {{ category.name }}
             </button>
           </div>
         </div>
 
-        <div v-if="activeCategory.tags && activeCategory.tags.length > 0" v-squircle="'lg'" class="mt-3 p-3 bg-gray-50/70 dark:bg-slate-900/50 border border-gray-100/80 dark:border-slate-800/80 flex flex-wrap gap-1.5">
+        <div v-if="activeCategory.tags && activeCategory.tags.length > 0" v-squircle="'lg'" class="mt-3 p-3 bg-gray-50/70 dark:bg-[#19191b]/50 border border-gray-100/80 dark:border-white/[0.08] flex flex-wrap gap-1.5">
           <button
             v-for="tag in activeCategory.tags"
             :key="tag.tagId"
@@ -48,8 +48,8 @@
             v-squircle="{ radius: 6, smoothing: 0.6 }"
             class="px-3 py-1.5 text-xs font-semibold transition-colors no-drag whitespace-nowrap"
             :class="activeTag?.tagId === tag.tagId
-              ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40'
-              : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-800/60'"
+              ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
+              : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed] hover:bg-white/60 dark:hover:bg-[#232325]/60'"
           >
             {{ tag.name }}
           </button>
@@ -57,34 +57,34 @@
       </div>
 
       <div class="flex items-center justify-between mb-5">
-        <h3 class="text-xl font-bold text-gray-800 dark:text-slate-100 flex items-center">
+        <h3 class="text-xl font-bold text-gray-800 dark:text-[#ededed] flex items-center">
           <span class="text-2xl mr-2">{{ activeTag?.name || activeCategory?.name || '全部' }}</span>
         </h3>
-        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 transition-colors">
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
           <button
             @click="sortMode = 1"
             v-squircle="{ radius: 6, smoothing: 0.6 }"
             class="px-3.5 py-1.5 text-xs font-bold transition-colors no-drag"
             :class="sortMode === 1
-              ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40'
-              : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'"
+              ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
+              : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'"
           >热门</button>
           <button
             @click="sortMode = 2"
             v-squircle="{ radius: 6, smoothing: 0.6 }"
             class="px-3.5 py-1.5 text-xs font-bold transition-colors no-drag"
             :class="sortMode === 2
-              ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40'
-              : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'"
+              ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
+              : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'"
           >最新</button>
         </div>
       </div>
 
       <div v-if="isPlaylistsLoading && playlists.length === 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4 lg:gap-5">
         <div v-for="i in 15" :key="i" class="flex flex-col space-y-3">
-          <div v-squircle="'xl'" class="w-full aspect-square bg-gray-100 dark:bg-slate-850 rounded-[18px] animate-pulse shadow-sm border border-gray-50 dark:border-slate-800"></div>
-          <div class="w-3/4 h-4 bg-gray-100 dark:bg-slate-800 rounded animate-pulse"></div>
-          <div class="w-1/2 h-3 bg-gray-50 dark:bg-slate-800/80 rounded animate-pulse"></div>
+          <div v-squircle="'xl'" class="w-full aspect-square bg-gray-100 dark:bg-[#232325] rounded-[18px] animate-pulse shadow-sm border border-gray-50 dark:border-white/[0.08]"></div>
+          <div class="w-3/4 h-4 bg-gray-100 dark:bg-[#232325] rounded animate-pulse"></div>
+          <div class="w-1/2 h-3 bg-gray-50 dark:bg-[#232325]/80 rounded animate-pulse"></div>
         </div>
       </div>
 
@@ -98,7 +98,7 @@
           <div v-for="playlist in playlists" :key="playlist.global_collection_id || playlist.specialid" @click="goToPlaylist(playlist.global_collection_id || playlist.specialid)" class="flex flex-col group cursor-pointer no-drag">
             <div class="relative w-full aspect-square rounded-[18px] shadow-sm group-hover:shadow-xl transition-shadow duration-300">
               <!-- 1. 独立图片容器（专属 v-squircle 裁切） -->
-              <div v-squircle="'xl'" class="absolute inset-0 w-full h-full bg-gray-100 dark:bg-slate-850 overflow-hidden pointer-events-none">
+              <div v-squircle="'xl'" class="absolute inset-0 w-full h-full bg-gray-100 dark:bg-[#232325] overflow-hidden pointer-events-none">
                 <img :src="formatImg(playlist.imgurl || playlist.flexible_cover || playlist.pic)" :alt="playlist.specialname" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               </div>
 
@@ -116,8 +116,8 @@
               </div>
             </div>
             <div class="mt-3 flex flex-col px-1 min-w-0">
-              <h4 class="text-sm font-bold text-gray-800 dark:text-slate-200 leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>
-              <p class="text-xs text-gray-400 dark:text-slate-500 mt-1.5 font-medium truncate" v-tooltip="'By ' + (playlist.nickname || '未知用户')">By {{ playlist.nickname || '未知用户' }}</p>
+              <h4 class="text-sm font-bold text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>
+              <p class="text-xs text-gray-400 dark:text-[#85858b] mt-1.5 font-medium truncate" v-tooltip="'By ' + (playlist.nickname || '未知用户')">By {{ playlist.nickname || '未知用户' }}</p>
             </div>
           </div>
         </div>
@@ -128,14 +128,14 @@
         </div>
 
         <div v-else-if="!hasMore" class="w-full flex flex-col items-center justify-center mt-2 mb-8">
-          <div v-squircle="'2xl'" class="group px-10 py-6 bg-gray-50/50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60 dark:hover:bg-slate-800/60 dark:hover:border-slate-700/80">
-            <div class="w-10 h-10 bg-white dark:!bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 border border-transparent dark:border-slate-700/60 transition-transform">
-              <AppIcon name="music" class="w-5 h-5 text-gray-300 dark:text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+          <div v-squircle="'2xl'" class="group px-10 py-6 bg-gray-50/50 dark:bg-[#19191b]/60 border border-gray-100 dark:border-white/[0.08] rounded-3xl flex flex-col items-center transition-all hover:bg-gray-100/60 dark:hover:bg-[#232325]/60 dark:hover:border-white/[0.16]">
+            <div class="w-10 h-10 bg-white dark:!bg-[#232325] rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 border border-transparent dark:border-white/[0.08] transition-transform">
+              <AppIcon name="music" class="w-5 h-5 text-gray-300 dark:text-[#a1a1a6] group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
             </div>
             <div class="flex items-center space-x-3">
-              <span class="w-8 h-px bg-gray-200 dark:bg-slate-700"></span>
-              <span class="text-[11px] font-bold tracking-[0.2em] text-gray-400 dark:text-slate-400 uppercase">已经到底了 · 换个分类看看</span>
-              <span class="w-8 h-px bg-gray-200 dark:bg-slate-700"></span>
+              <span class="w-8 h-px bg-gray-200 dark:bg-[#2c2c2f]"></span>
+              <span class="text-[11px] font-bold tracking-[0.2em] text-gray-400 dark:text-[#a1a1a6] uppercase">已经到底了 · 换个分类看看</span>
+              <span class="w-8 h-px bg-gray-200 dark:bg-[#2c2c2f]"></span>
             </div>
           </div>
         </div>
@@ -143,8 +143,8 @@
         <div ref="loadMoreTrigger" class="h-1"></div>
       </div>
 
-      <div v-else class="flex-1 flex flex-col items-center justify-center py-20 text-gray-400 dark:text-slate-500">
-        <AppIcon name="music" class="w-16 h-16 mb-4 text-gray-200 dark:text-slate-800" />
+      <div v-else class="flex-1 flex flex-col items-center justify-center py-20 text-gray-400 dark:text-[#85858b]">
+        <AppIcon name="music" class="w-16 h-16 mb-4 text-gray-200 dark:text-[#636369]" />
         <p class="text-sm font-bold">暂无歌单</p>
         <p class="text-xs mt-1">换个分类试试</p>
       </div>

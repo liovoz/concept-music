@@ -10,26 +10,26 @@
         @click.self="closeModal"
       >
         <div class="w-[400px] rounded-[18px] shadow-2xl relative">
-          <div v-squircle="'xl'" class="w-full bg-white dark:bg-slate-900 rounded-[18px] p-7 flex flex-col items-center border border-gray-100 dark:border-slate-800">
+          <div v-squircle="'xl'" class="w-full bg-white dark:bg-[#19191b] rounded-[18px] p-7 flex flex-col items-center border border-gray-100 dark:border-white/[0.08]">
           <!-- 关闭按钮 -->
           <button
             @click="closeModal"
-            class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full p-1.5 no-drag"
+            class="absolute top-5 right-5 text-gray-400 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] transition-colors bg-gray-100 dark:bg-[#232325] hover:bg-gray-200 dark:hover:bg-[#2c2c2f] rounded-full p-1.5 no-drag"
           >
             <AppIcon name="close" class="w-4 h-4" />
           </button>
 
-          <h3 class="text-xl font-bold text-gray-800 mb-1">登录概念音乐</h3>
-          <p class="text-xs text-gray-400 mb-5">畅享高品质音乐与多端权益同步</p>
+          <h3 class="text-xl leading-7 font-bold text-gray-800 dark:text-[#ededed] mb-1">登录概念音乐</h3>
+          <p class="text-xs leading-4 text-gray-400 dark:text-[#85858b] mb-5">畅享高品质音乐与多端权益同步</p>
 
           <!-- 登录模式切换 Tab -->
-          <div v-squircle="'lg'" class="flex p-1 bg-gray-100 rounded-[14px] mb-6 w-full text-xs font-semibold text-gray-500 select-none">
+          <div v-squircle="'lg'" class="flex h-10 p-1 bg-gray-100 dark:bg-[#232325] rounded-[14px] mb-6 w-full text-xs font-semibold text-gray-500 dark:text-[#a1a1a6] select-none">
             <button
               type="button"
               @click="switchTab('phone')"
               :class="[
-                'flex-1 py-2 rounded-[10px] transition-all flex items-center justify-center gap-1.5',
-                loginType === 'phone' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'hover:text-gray-800'
+                'flex-1 py-2 rounded-[10px] transition-colors flex items-center justify-center gap-1.5',
+                loginType === 'phone' ? 'bg-white dark:bg-[#19191b] text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'hover:text-gray-800 dark:hover:text-[#ededed]'
               ]"
             >
               <AppIcon name="phone" class="w-3.5 h-3.5" />
@@ -39,8 +39,8 @@
               type="button"
               @click="switchTab('qr')"
               :class="[
-                'flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5',
-                loginType === 'qr' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'hover:text-gray-800'
+                'flex-1 py-2 rounded-[10px] transition-colors flex items-center justify-center gap-1.5',
+                loginType === 'qr' ? 'bg-white dark:bg-[#19191b] text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'hover:text-gray-800 dark:hover:text-[#ededed]'
               ]"
             >
               <AppIcon name="qrcode" class="w-3.5 h-3.5" />
@@ -52,63 +52,72 @@
           <div v-if="loginType === 'phone'" class="w-full flex flex-col items-center">
             <!-- 场景 A：常规手机号验证码表单 -->
             <form v-if="!multiUserList.length" @submit.prevent="handlePhoneLogin" class="w-full flex flex-col">
-              <!-- 手机号输入框 -->
-              <div class="w-full mb-3">
-                <label class="block text-[11px] font-bold text-gray-500 dark:text-slate-400 mb-1.5 px-0.5">手机号码</label>
+              <!-- 手机号输入框（双层同心 Apple HIG 超椭圆边框壳，44px 固定 4px 栅格高度以对齐多档 DPI 物理像素） -->
+              <div class="w-full mb-4">
+                <label class="block text-xs leading-4 font-bold text-gray-500 dark:text-[#a1a1a6] mb-2 px-0.5">手机号码</label>
                 <div
                   v-squircle="'md'"
-                  class="flex items-center w-full bg-gray-50 dark:bg-slate-800/80 rounded-[10px] border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:bg-white dark:focus-within:!bg-slate-800 transition-all px-3 py-2.5"
+                  class="group h-11 p-[1px] rounded-[10px] bg-gray-200 dark:bg-white/[0.08] focus-within:bg-blue-500 dark:focus-within:bg-blue-500 transition-colors"
                 >
-                  <span class="text-xs font-bold text-gray-500 dark:text-slate-400 pr-2.5 border-r border-gray-200 dark:border-slate-700 select-none">+86</span>
-                  <input
-                    ref="phoneInputRef"
-                    v-model="phone"
-                    type="tel"
-                    maxlength="11"
-                    placeholder="请输入11位大陆手机号码"
-                    class="w-full pl-2.5 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none"
-                    @input="handlePhoneInput"
-                    @keydown.enter.prevent="focusCodeInput"
-                  />
-                  <button
-                    v-if="phone"
-                    type="button"
-                    @click="clearPhone"
-                    class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-0.5 transition-colors"
+                  <div
+                    v-squircle="9"
+                    class="flex items-center w-full h-full bg-gray-50 dark:bg-[#232325] group-focus-within:bg-white dark:group-focus-within:bg-[#19191b] rounded-[9px] transition-colors px-3"
                   >
-                    <AppIcon name="close" class="w-3.5 h-3.5" />
-                  </button>
+                    <span class="text-xs font-bold text-gray-500 dark:text-[#a1a1a6] pr-2.5 border-r border-gray-200 dark:border-white/[0.08] select-none">+86</span>
+                    <input
+                      ref="phoneInputRef"
+                      v-model="phone"
+                      type="tel"
+                      maxlength="11"
+                      placeholder="请输入11位大陆手机号码"
+                      class="w-full h-full pl-2.5 bg-transparent text-sm text-gray-800 dark:text-[#ededed] placeholder-gray-400 dark:placeholder-[#85858b] focus:outline-none"
+                      @input="handlePhoneInput"
+                      @keydown.enter.prevent="focusCodeInput"
+                    />
+                    <button
+                      v-if="phone"
+                      type="button"
+                      @click="clearPhone"
+                      class="text-gray-400 hover:text-gray-600 dark:hover:text-[#ededed] p-0.5 transition-colors"
+                    >
+                      <AppIcon name="close" class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <!-- 验证码输入框 -->
+              <!-- 验证码输入框（双层同心 Apple HIG 超椭圆边框壳，44px 固定 4px 栅格高度以对齐多档 DPI 物理像素） -->
               <div class="w-full mb-2">
-                <label class="block text-[11px] font-bold text-gray-500 dark:text-slate-400 mb-1.5 px-0.5">短信验证码</label>
+                <label class="block text-xs leading-4 font-bold text-gray-500 dark:text-[#a1a1a6] mb-2 px-0.5">短信验证码</label>
                 <div
                   v-squircle="'md'"
-                  class="flex items-center w-full bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:bg-white dark:focus-within:!bg-slate-800 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-500/20 transition-all px-3 py-1.5"
+                  class="group h-11 p-[1px] rounded-[10px] bg-gray-200 dark:bg-white/[0.08] focus-within:bg-blue-500 dark:focus-within:bg-blue-500 transition-colors"
                 >
-                  <input
-                    ref="codeInputRef"
-                    v-model="code"
-                    type="text"
-                    maxlength="6"
-                    placeholder="请输入6位验证码"
-                    class="w-full pl-1 bg-transparent text-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none"
-                    @keydown.enter.prevent="handlePhoneLogin"
-                  />
-                  <button
-                    type="button"
-                    :disabled="!canSendCode"
-                    @click="handleSendCode"
-                    v-squircle="'sm'"
-                    class="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-xl transition-all select-none"
-                    :class="
-                      canSendCode
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 shadow-sm'
-                        : 'bg-gray-200 text-gray-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
-                    "
+                  <div
+                    v-squircle="9"
+                    class="flex items-center w-full h-full bg-gray-50 dark:bg-[#232325] group-focus-within:bg-white dark:group-focus-within:bg-[#19191b] rounded-[9px] transition-colors px-3"
                   >
+                    <input
+                      ref="codeInputRef"
+                      v-model="code"
+                      type="text"
+                      maxlength="6"
+                      placeholder="请输入6位验证码"
+                      class="w-full h-full pl-1 bg-transparent text-sm text-gray-800 dark:text-[#ededed] placeholder-gray-400 dark:placeholder-[#85858b] focus:outline-none"
+                      @keydown.enter.prevent="handlePhoneLogin"
+                    />
+                    <button
+                      type="button"
+                      :disabled="!canSendCode"
+                      @click="handleSendCode"
+                      v-squircle="'sm'"
+                      class="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-xl transition-all select-none"
+                      :class="
+                        canSendCode
+                          ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 shadow-sm'
+                          : 'bg-gray-200 text-gray-400 dark:bg-[#2c2c2f] dark:text-[#85858b] cursor-not-allowed'
+                      "
+                    >
                     <span v-if="isSendingCode" class="flex items-center gap-1">
                       <AppIcon name="spinner" spin class="w-3 h-3" />
                       <span>发送中</span>
@@ -116,6 +125,7 @@
                     <span v-else-if="countdown > 0">{{ countdown }}s后获取</span>
                     <span v-else>获取验证码</span>
                   </button>
+                  </div>
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 <template>
   <div ref="scrollContainer" class="h-full overflow-y-auto custom-scrollbar flex flex-col relative" id="artist-list-scroll-container">
-    <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-blue-50/80 to-white dark:from-blue-950/20 dark:via-slate-950 dark:to-slate-950 -z-10 pointer-events-none"></div>
+    <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-blue-50/80 to-white dark:bg-none -z-10 pointer-events-none"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
 
@@ -14,11 +14,11 @@
       </div>
 
       <div class="flex items-center flex-wrap gap-4 mb-8">
-        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 transition-colors">
-          <button v-for="opt in typeOptions" :key="opt.key" @click="currentType = opt.key" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="currentType === opt.key ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'">{{ opt.label }}</button>
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
+          <button v-for="opt in typeOptions" :key="opt.key" @click="currentType = opt.key" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="currentType === opt.key ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">{{ opt.label }}</button>
         </div>
-        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-slate-900/80 p-1 border border-gray-200/60 dark:!border-slate-800 transition-colors">
-          <button v-for="opt in sexOptions" :key="opt.key" @click="currentSex = opt.key" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="currentSex === opt.key ? 'bg-white text-blue-600 shadow-sm dark:!bg-slate-800 dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'">{{ opt.label }}</button>
+        <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
+          <button v-for="opt in sexOptions" :key="opt.key" @click="currentSex = opt.key" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="currentSex === opt.key ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">{{ opt.label }}</button>
         </div>
       </div>
 

@@ -3,34 +3,30 @@
     <transition name="modal-fade">
       <div
         v-if="updateStore.canShowFloatCard"
-        class="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 backdrop-blur-md no-drag p-4 outline-none"
+        class="fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 backdrop-blur-md no-drag p-4 outline-none"
         @click.self="handleBackdropClick"
       >
-        <div class="w-[520px] max-w-[94vw] rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.8)] relative">
+        <div class="w-[520px] max-w-[94vw] rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.75)] relative">
           <div
             v-squircle="'2xl'"
-            class="relative w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/60 dark:border-slate-800/80 rounded-3xl flex flex-col overflow-hidden transform transition-all text-slate-800 dark:text-slate-100 select-none"
+            class="relative w-full bg-white/95 dark:bg-[#19191b]/95 backdrop-blur-2xl border border-white/60 dark:border-white/[0.08] rounded-3xl flex flex-col overflow-hidden transform transition-colors text-slate-800 dark:text-[#ededed] select-none"
           >
-          <!-- 顶部装饰性极光光晕背景 -->
-          <div class="absolute -top-16 -left-16 w-48 h-48 bg-blue-500/15 dark:bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute -top-10 -right-10 w-44 h-44 bg-indigo-500/15 dark:bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
-
-          <!-- 头部：图标 + 标题 + 版本药丸 + 关闭按钮 -->
-          <div class="relative px-6 pt-6 pb-4 border-b border-slate-100/80 dark:border-slate-800/80 bg-gradient-to-b from-blue-50/50 via-indigo-50/15 to-transparent dark:from-blue-950/25 dark:via-slate-900/50 dark:to-transparent">
+          <!-- 头部：图标 + 标题 + 版本标签 + 关闭按钮 -->
+          <div class="relative px-6 pt-6 pb-4 border-b border-slate-100/80 dark:border-white/[0.08] bg-gradient-to-b from-blue-50/50 via-indigo-50/15 to-transparent dark:bg-none">
             <!-- 关闭按钮 (非强制更新时展示) -->
             <button
               v-if="!updateStore.isForced && !updateStore.isBlacklisted"
               @click="updateStore.dismissCard('close')"
-              class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-all duration-150 active:scale-90 border border-slate-200/50 dark:border-slate-700/50"
+              class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100/80 dark:bg-[#232325] hover:bg-slate-200/80 dark:hover:bg-[#2c2c2f] text-slate-400 dark:text-[#85858b] hover:text-slate-700 dark:hover:text-[#ededed] flex items-center justify-center transition-colors duration-150 active:scale-95 border border-slate-200/50 dark:border-white/[0.08]"
               v-tooltip="'关闭 (Esc)'"
             >
               <AppIcon name="close" class="w-3.5 h-3.5" />
             </button>
 
             <div class="flex items-start space-x-3.5">
-              <!-- 图标徽章：高质感 3D 渐变 -->
+              <!-- 图标徽章 -->
               <div
-                class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0"
+                class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg dark:shadow-none shrink-0"
                 :class="headerIconStyle.wrap"
               >
                 <AppIcon :name="headerIconStyle.icon" class="w-6 h-6 text-white" />
@@ -39,32 +35,32 @@
               <!-- 标题与版本信息 -->
               <div class="space-y-1 pr-8">
                 <div class="flex items-center space-x-2">
-                  <h3 class="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                  <h3 class="text-lg font-semibold text-slate-900 dark:text-[#ededed] tracking-tight">
                     {{ cardTitle }}
                   </h3>
                   <span
                     v-if="updateStore.isBlacklisted"
-                    class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-300/60 dark:border-rose-700/60 shadow-xs flex items-center gap-1"
+                    class="px-2.5 py-0.5 rounded-full text-xs font-medium font-mono bg-rose-500/15 text-rose-600 dark:text-[#e5484d] border border-rose-300/60 dark:border-[#e5484d]/30 flex items-center gap-1.5"
                   >
-                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 dark:bg-[#e5484d]"></span>
                     版本已熔断
                   </span>
                   <span
                     v-else-if="updateStore.isForced"
-                    class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60 shadow-xs flex items-center gap-1"
+                    class="px-2.5 py-0.5 rounded-full text-xs font-medium font-mono bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-300/60 dark:border-amber-500/30 flex items-center gap-1.5"
                   >
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                     强制安全更新
                   </span>
                   <span
                     v-else-if="updateStore.updateInfo?.version"
-                    class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-gradient-to-r from-blue-500/10 to-indigo-500/10 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-700/50 shadow-xs flex items-center gap-1"
+                    class="px-2.5 py-0.5 rounded-full text-xs font-medium font-mono bg-blue-500/10 dark:bg-[#232325] text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-white/[0.08] flex items-center gap-1.5"
                   >
-                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                     v{{ updateStore.updateInfo.version }}
                   </span>
                 </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                <p class="text-xs text-slate-500 dark:text-[#a1a1a6] leading-normal">
                   {{ headerSubtitle }}
                 </p>
               </div>
@@ -112,21 +108,21 @@
           <div v-if="updateStore.status === 'available'" class="flex flex-col">
             <div class="px-6 py-4 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-[11px] font-extrabold tracking-wider text-slate-400 dark:text-slate-400 uppercase flex items-center gap-1.5">
-                  <AppIcon name="sparkles" class="w-3.5 h-3.5 text-blue-500" />
-                  <span>新版特性 / CHANGELOG</span>
+                <span class="text-xs font-medium text-slate-400 dark:text-[#85858b] flex items-center gap-1.5">
+                  <AppIcon name="info" class="w-3.5 h-3.5 text-blue-500" />
+                  <span>新版特性</span>
                 </span>
-                <span v-if="updateStore.updateInfo?.releaseDate" class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+                <span v-if="updateStore.updateInfo?.releaseDate" class="text-[11px] text-slate-400 dark:text-[#85858b] font-mono tabular-nums">
                   {{ formatDate(updateStore.updateInfo.releaseDate) }}
                 </span>
               </div>
 
               <!-- 结构化更新日志：优雅文档排版流 (方案 4) -->
-              <div class="bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl p-4 max-h-72 overflow-y-auto custom-scrollbar">
+              <div class="bg-slate-50/70 dark:bg-[#232325]/40 border border-slate-200/80 dark:border-white/[0.08] rounded-2xl p-4 max-h-72 overflow-y-auto custom-scrollbar">
                 <!-- 导语描述 -->
                 <div 
                   v-if="parsedNotesData.lead" 
-                  class="pb-3 mb-3.5 border-b border-dashed border-slate-200/90 dark:border-slate-700/80 text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal select-text"
+                  class="pb-3 mb-3.5 border-b border-dashed border-slate-200/90 dark:border-white/[0.08] text-xs text-slate-500 dark:text-[#a1a1a6] leading-relaxed font-normal select-text"
                   v-html="formatInline(parsedNotesData.lead)"
                 ></div>
 
@@ -139,7 +135,7 @@
                   >
                     <!-- 章节标题 -->
                     <div v-if="section.title" class="flex items-center gap-2 pt-1 pb-0.5">
-                      <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                      <h4 class="text-xs font-black text-slate-800 dark:text-[#ededed] tracking-tight flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
                         <span>{{ section.title }}</span>
                       </h4>
@@ -149,47 +145,47 @@
                     <ul class="space-y-2 pl-0.5">
                       <template v-for="(item, iIdx) in section.items" :key="iIdx">
                         <!-- 小节标题（例如：### 1. 企鹅歌单跨平台无缝导入） -->
-                        <li v-if="item.type === 'subtitle'" class="pt-1.5 pb-0.5 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <li v-if="item.type === 'subtitle'" class="pt-1.5 pb-0.5 text-xs font-bold text-slate-700 dark:text-[#ededed] flex items-center gap-1.5">
                           <span class="text-blue-500 font-mono text-[11px] font-bold">#</span>
                           <span>{{ item.text }}</span>
                         </li>
 
                         <!-- 列表项：纯粹雅致的无序/有序排版 -->
-                        <li v-else-if="item.type === 'bullet'" class="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed select-text">
+                        <li v-else-if="item.type === 'bullet'" class="flex items-start gap-2.5 text-xs text-slate-600 dark:text-[#a1a1a6] leading-relaxed select-text">
                           <span v-if="item.num" class="text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400 select-none shrink-0 mt-0.5">{{ item.num }}.</span>
-                          <span v-else class="text-slate-400 dark:text-slate-500 font-bold select-none shrink-0 mt-0.5">–</span>
+                          <span v-else class="text-slate-400 dark:text-[#85858b] font-bold select-none shrink-0 mt-0.5">–</span>
                           <div class="flex-1" v-html="formatInline(item.text)"></div>
                         </li>
 
                         <!-- 普通段落 -->
-                        <li v-else class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-3.5 list-none select-text" v-html="formatInline(item.text)"></li>
+                        <li v-else class="text-xs text-slate-500 dark:text-[#a1a1a6] leading-relaxed pl-3.5 list-none select-text" v-html="formatInline(item.text)"></li>
                       </template>
                     </ul>
                   </div>
                 </div>
 
-                <p v-else class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed p-2">
+                <p v-else class="text-xs text-slate-500 dark:text-[#a1a1a6] leading-relaxed p-2">
                   概念音乐发布了全新版本，带来多项性能优化、国内镜像加速通道及体验修复，推荐更新以获取最佳视听体验。
                 </p>
               </div>
             </div>
 
             <!-- 底部操作栏 -->
-            <div class="px-6 py-4 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+            <div class="px-6 py-4 bg-slate-50/70 dark:bg-[#232325]/50 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-between">
               <!-- 左侧辅助快捷链接 -->
               <div class="flex items-center space-x-2.5">
                 <button
                   v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                   @click="updateStore.dismissCard('ignore')"
-                  class="text-xs text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 transition-colors font-medium"
+                  class="text-xs text-slate-400 hover:text-rose-500 dark:text-[#85858b] dark:hover:text-rose-400 transition-colors font-medium"
                   v-tooltip="'跳过此版本 (不再提示)'"
                 >
                   跳过此版本
                 </button>
-                <span v-if="!updateStore.isForced && !updateStore.isBlacklisted" class="text-slate-200 dark:text-slate-700 select-none">|</span>
+                <span v-if="!updateStore.isForced && !updateStore.isBlacklisted" class="text-slate-200 dark:text-[#636369] select-none">|</span>
                 <button
                   @click="openDetails"
-                  class="text-xs text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1.5"
+                  class="text-xs text-slate-400 hover:text-blue-600 dark:text-[#85858b] dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1.5"
                   v-tooltip="'切换更新镜像加速通道'"
                 >
                   <AppIcon name="settings" class="w-3.5 h-3.5" />
@@ -205,7 +201,7 @@
                   v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                   @click="updateStore.dismissCard('snooze')"
                   v-squircle="'md'"
-                  class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all"
+                  class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-[#a1a1a6] hover:bg-slate-200/70 dark:hover:bg-[#2c2c2f] hover:text-slate-900 dark:hover:text-white active:scale-95 transition-all"
                   v-tooltip="'稍后提醒 (24小时内不再提示)'"
                 >
                   稍后提醒
@@ -216,7 +212,7 @@
                   v-else
                   @click="updateStore.quitApp()"
                   v-squircle="'md'"
-                  class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
+                  class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-[#a1a1a6] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200 dark:border-white/[0.08]"
                 >
                   退出软件
                 </button>
@@ -245,7 +241,7 @@
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
                   </span>
-                  <span class="font-bold text-slate-800 dark:text-slate-100 text-sm">
+                  <span class="font-bold text-slate-800 dark:text-[#ededed] text-sm">
                     正在极速下载安装包...
                   </span>
                 </div>
@@ -255,16 +251,16 @@
               </div>
 
               <!-- 炫彩渐变微光进度条 -->
-              <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-200/60 dark:border-slate-700/60 shadow-inner">
+              <div class="w-full h-3 bg-slate-100 dark:bg-[#232325] rounded-full overflow-hidden p-0.5 border border-slate-200/60 dark:border-white/[0.08] shadow-inner">
                 <div
-                  class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 rounded-full transition-all duration-300 relative overflow-hidden shadow-xs"
+                  class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 dark:bg-none dark:bg-blue-500 rounded-full transition-all duration-300 relative overflow-hidden shadow-xs dark:shadow-none"
                   :style="{ width: updateStore.progressPercent + '%' }"
                 >
                   <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent w-full h-full animate-[shimmer_1.8s_infinite]"></div>
                 </div>
               </div>
 
-              <div class="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 pt-1">
+              <div class="flex items-center justify-between text-xs text-slate-400 dark:text-[#85858b] pt-1">
                 <span class="flex items-center gap-1.5">
                   <AppIcon name="music" class="w-3.5 h-3.5 text-blue-500" />
                   <span>{{ (updateStore.isForced || updateStore.isBlacklisted) ? '正在下载最新版本，下载完成后自动提示安装' : '下载过程不影响歌曲播放，您可以继续听歌' }}</span>
@@ -279,8 +275,8 @@
               </div>
             </div>
 
-            <div class="px-6 py-3.5 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-              <span class="text-slate-400 dark:text-slate-500 text-xs flex items-center gap-1.5">
+            <div class="px-6 py-3.5 bg-slate-50/70 dark:bg-[#232325]/50 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-between text-xs">
+              <span class="text-slate-400 dark:text-[#85858b] text-xs flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                 <span>下载完成后将自动提示安装</span>
               </span>
@@ -288,7 +284,7 @@
                 v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
                 v-squircle="'md'"
-                class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-700 active:scale-95 transition-all border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-1.5 shadow-2xs"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-[#a1a1a6] bg-white/80 dark:bg-[#232325] hover:bg-slate-200/70 dark:hover:bg-[#2c2c2f] active:scale-95 transition-all border border-slate-200/50 dark:border-white/[0.08] flex items-center gap-1.5 shadow-2xs"
                 v-tooltip="'收起窗口，下载将在后台继续进行'"
               >
                 <AppIcon name="minimize-tray" class="w-3.5 h-3.5 text-slate-400" />
@@ -298,7 +294,7 @@
                 v-else
                 @click="updateStore.quitApp()"
                 v-squircle="'md'"
-                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200/60 dark:border-slate-700/60"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-[#a1a1a6] hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200/60 dark:border-white/[0.08]"
               >
                 <span>退出软件</span>
               </button>
@@ -315,18 +311,18 @@
                 <h4 class="text-base font-black text-slate-900 dark:text-white">
                   新版本安装包已下载就绪
                 </h4>
-                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                <p class="text-xs text-slate-500 dark:text-[#a1a1a6] max-w-sm mx-auto leading-relaxed">
                   新版本安装文件已在本地准备就绪！您可以现在立即重启体验新特性，或在下次退出软件时自动应用。
                 </p>
               </div>
             </div>
 
-            <div class="px-6 py-4 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-2.5">
+            <div class="px-6 py-4 bg-slate-50/70 dark:bg-[#232325]/50 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-end space-x-2.5">
               <button
                 v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
                 v-squircle="'md'"
-                class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700 active:scale-95 transition-all"
+                class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-[#a1a1a6] hover:bg-slate-200/70 dark:hover:bg-[#2c2c2f] active:scale-95 transition-all"
               >
                 稍后重启
               </button>
@@ -334,7 +330,7 @@
                 v-else
                 @click="updateStore.quitApp()"
                 v-squircle="'md'"
-                class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
+                class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-[#a1a1a6] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all border border-slate-200 dark:border-white/[0.08]"
               >
                 退出软件
               </button>
@@ -363,7 +359,7 @@
               </div>
             </div>
 
-            <div class="px-6 py-4 bg-slate-50/70 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-2.5">
+            <div class="px-6 py-4 bg-slate-50/70 dark:bg-[#232325]/50 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-end space-x-2.5">
               <button
                 @click="openDetails"
                 v-squircle="'md'"
@@ -375,7 +371,7 @@
                 v-if="!updateStore.isForced && !updateStore.isBlacklisted"
                 @click="updateStore.dismissCard('close')"
                 v-squircle="'md'"
-                class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors"
+                class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-[#a1a1a6] hover:bg-slate-200/80 dark:hover:bg-[#232325] transition-colors"
               >
                 关闭
               </button>
@@ -383,7 +379,7 @@
                 v-else
                 @click="updateStore.quitApp()"
                 v-squircle="'md'"
-                class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors border border-slate-200 dark:border-slate-700"
+                class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 dark:text-[#a1a1a6] hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors border border-slate-200 dark:border-white/[0.08]"
               >
                 退出软件
               </button>
@@ -394,22 +390,22 @@
           <transition name="modal-fade">
             <div
               v-if="showChannelMenu"
-              class="absolute inset-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl flex flex-col justify-between p-6 rounded-3xl animate-in fade-in zoom-in-95 duration-200"
+              class="absolute inset-0 z-50 bg-white/95 dark:bg-[#19191b]/95 backdrop-blur-2xl flex flex-col justify-between p-6 rounded-3xl animate-in fade-in zoom-in-95 duration-200"
             >
               <div>
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3.5">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/[0.08] mb-3.5">
                   <div class="flex items-center space-x-2.5">
                     <div v-squircle="'sm'" class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                       <AppIcon name="settings" class="w-4 h-4" />
                     </div>
                     <div>
                       <h4 class="text-sm font-black text-slate-900 dark:text-white">选择下载与更新线路</h4>
-                      <p class="text-[11px] text-slate-400 dark:text-slate-500">如遇下载缓慢或连接阻断，推荐切换至国内专线镜像</p>
+                      <p class="text-[11px] text-slate-400 dark:text-[#85858b]">如遇下载缓慢或连接阻断，推荐切换至国内专线镜像</p>
                     </div>
                   </div>
                   <button
                     @click="showChannelMenu = false"
-                    class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-400 flex items-center justify-center transition-colors"
+                    class="w-7 h-7 rounded-full bg-slate-100 dark:bg-[#232325] hover:bg-slate-200 text-slate-400 flex items-center justify-center transition-colors"
                   >
                     <AppIcon name="close" class="w-3.5 h-3.5" />
                   </button>
@@ -424,14 +420,14 @@
                     class="w-full text-left px-3.5 py-2.5 rounded-2xl border transition-all flex items-center justify-between group"
                     :class="selectedChannel === ch.id
                       ? 'bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-300 shadow-xs'
-                      : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300'"
+                      : 'bg-slate-50/70 dark:bg-[#232325]/40 border-slate-200/60 dark:border-white/[0.08] hover:bg-slate-100/80 dark:hover:bg-[#232325]/80 text-slate-700 dark:text-[#a1a1a6]'"
                   >
                     <div class="space-y-0.5">
                       <div class="text-xs font-bold flex items-center gap-1.5">
                         <span>{{ ch.name }}</span>
                         <span v-if="ch.id === 'auto'" class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold">推荐</span>
                       </div>
-                      <div class="text-[11px] text-slate-400 dark:text-slate-500">{{ ch.desc }}</div>
+                      <div class="text-[11px] text-slate-400 dark:text-[#85858b]">{{ ch.desc }}</div>
                     </div>
                     <div v-if="selectedChannel === ch.id" class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                       <AppIcon name="check" class="w-3 h-3" />
@@ -440,8 +436,8 @@
                 </div>
               </div>
 
-              <div class="pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span class="text-xs text-slate-400 dark:text-slate-500">当前已选：<strong class="text-blue-600 dark:text-blue-400">{{ drawerSelectedName }}</strong></span>
+              <div class="pt-3.5 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-between">
+                <span class="text-xs text-slate-400 dark:text-[#85858b]">当前已选：<strong class="text-blue-600 dark:text-blue-400">{{ drawerSelectedName }}</strong></span>
                 <button
                   @click="handleConfirmChannel"
                   v-squircle="'md'"
@@ -573,7 +569,7 @@ const headerIconStyle = computed(() => {
   }
   if (updateStore.status === 'downloading') {
     return {
-      wrap: 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/30',
+      wrap: 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/30 dark:bg-none dark:bg-blue-600 dark:shadow-none',
       icon: 'download'
     };
   }
