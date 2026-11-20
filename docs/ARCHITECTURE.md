@@ -75,6 +75,7 @@ concept-music/
 │  ├─ components/                      # 基础交互组件与全局模态框
 │  │  ├─ common/AppIcon.vue            # 全局统一内联 SVG 图标渲染组件
 │  │  ├─ common/TimePicker.vue         # 时间选择器组件
+│  │  ├─ AddToPlaylistPopover.vue      # 通用跨页面添加到歌单浮层 (我喜欢/默认收藏/全部自建歌单与快捷新建)
 │  │  ├─ BackToTop.vue                 # 快速回到顶部悬浮按钮
 │  │  ├─ DisclaimerModal.vue           # 首次启动免责声明弹窗
 │  │  ├─ GlobalDialog.vue              # 通用确认/提示模态对话框
@@ -95,12 +96,16 @@ concept-music/
 │  ├─ router/index.js                  # Vue Router 路由配置 (Hash 模式，含 DesktopLyric 独立视图)
 │  ├─ store/                           # Pinia 状态管理核心
 │  │  ├─ playerStore.js                # 播放内核：WebAudio链路、分片防抖存储、虚拟索引、看门狗、FM电台解耦
+│  │  ├─ fmStore.js                    # 私人FM独立电台流状态仓：强登录门禁、三模式队列切片、多路调度、反馈闭环
 │  │  ├─ userStore.js                  # 账户资产、Cookie 鉴权、自建歌单增删、VIP 自动打卡助手
 │  │  └─ updateStore.js                # 版本检测感知、多节点分流 (GitHub/ghfast/ghproxy)、强制熔断
 │  ├─ utils/                           # 前端工具库
+│  │  ├─ addToPlaylist.js              # 全局歌单选择弹窗唤起总线
 │  │  ├─ appState.js                   # 全局前后台状态与事件总线
 │  │  ├─ artistNavigation.js           # 歌手跨平台跳转调度
-│  │  ├─ fmRecommendation.js           # 私人 FM 推荐引擎与协同推荐
+│  │  ├─ fmMemoryStore.js              # 私人 FM 按账号隔离 IndexedDB 分层持久化引擎 (5 表/TTL/游标)
+│  │  ├─ fmRecallProviders.js          # 私人 FM 多路后端召回适配器与通道健康熔断
+│  │  ├─ fmRecommendation.js           # 私人 FM 推荐引擎：四级作品指纹、多因子动态评分与分槽编排
 │  │  ├─ mediaSessionBridge.js         # Windows SMTC 系统媒体控制与锁屏桥接
 │  │  ├─ neteasePlaylistStorage.js     # 网易歌单持久化缓存
 │  │  ├─ neteaseSongHelper.js          # 网易歌曲数据清洗与适配
@@ -327,6 +332,10 @@ flowchart TB
 | [`server/util/lx-source-runner.js`](file:///d:/DevelopProject/concept-music/server/util/lx-source-runner.js) | 音源引擎 | Node.js VM 沙箱上下文构建、音源脚本编译缓存池与请求封装 |
 | [`server/module/source_resolve.js`](file:///d:/DevelopProject/concept-music/server/module/source_resolve.js) | 音源调度 | 负责根据歌曲特征调用 Netease/QQ 脚本并执行多音质链路探测 |
 | [`src/store/playerStore.js`](file:///d:/DevelopProject/concept-music/src/store/playerStore.js) | 状态仓 | 播放器内核：WebAudio 增益、多音质降级、海量队列索引、分片防抖存储、6s看门狗自愈、FM解耦 |
+| [`src/store/fmStore.js`](file:///d:/DevelopProject/concept-music/src/store/fmStore.js) | 状态仓 | 私人 FM 独立流状态域：强制登录隔离、三模式子队列切片、种子轮换、30s速听与队列手术 |
+| [`src/utils/fmMemoryStore.js`](file:///d:/DevelopProject/concept-music/src/utils/fmMemoryStore.js) | 持久化 | IndexedDB 按账号隔离 5 表记忆引擎（3000 首近期排重、黑名单、歌手屏蔽、坏源、指标） |
+| [`src/utils/fmRecallProviders.js`](file:///d:/DevelopProject/concept-music/src/utils/fmRecallProviders.js) | 召回层 | 多路推荐接口并发调度、游标翻页、单通道熔断与推荐理由装配 |
+| [`src/utils/fmRecommendation.js`](file:///d:/DevelopProject/concept-music/src/utils/fmRecommendation.js) | 推荐算法 | 四级作品指纹归一（含 Live/伴奏清洗）、动态 VIP 评分与分槽节奏编排 |
 | [`src/store/userStore.js`](file:///d:/DevelopProject/concept-music/src/store/userStore.js) | 状态仓 | 用户资产、登录与 Token 定期刷新、自建歌单增删、VIP 自动打卡调度与冷却监控 |
 | [`src/store/updateStore.js`](file:///d:/DevelopProject/concept-music/src/store/updateStore.js) | 状态仓 | 版本在线感知、更新线路自适应测速 (GitHub/ghfast/ghproxy)、弹窗免打扰与高危熔断响应 |
 | [`src/utils/squircle.js`](file:///d:/DevelopProject/concept-music/src/utils/squircle.js) | 渲染引擎 | Apple HIG 连续曲率超椭圆路径计算、贝塞尔曲线参数平滑与 SVG 剪裁缓存池 |

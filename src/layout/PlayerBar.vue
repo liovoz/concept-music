@@ -50,10 +50,18 @@
         </div>
       </div>
 
-      <div class="ml-4 flex-shrink-0" v-if="store.currentSong && !isExternalImportSong(store.currentSong)">
+      <div class="ml-4 flex items-center space-x-1 flex-shrink-0" v-if="store.currentSong && !isExternalImportSong(store.currentSong)">
          <button @click="userStore.toggleLikeSong(store.currentSong)" class="no-drag p-1.5 rounded-full transition-all focus:outline-none transform active:scale-90" v-tooltip="isCurrentLiked ? '取消喜欢' : '添加喜欢'">
             <AppIcon v-if="isCurrentLiked" name="heart-solid" class="w-5 h-5 text-red-500 drop-shadow-sm" />
             <AppIcon v-else name="heart" class="w-5 h-5 text-gray-400 hover:text-red-400" />
+         </button>
+         <button
+           v-if="store.isFmModePlaylist"
+           @click="openAddToPlaylistModal(store.currentSong, { source: 'playerbar' })"
+           class="no-drag p-1.5 rounded-full text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all focus:outline-none transform active:scale-90"
+           v-tooltip="'添加到歌单'"
+         >
+           <AppIcon name="add-playlist" class="w-5 h-5" />
          </button>
       </div>
     </div>
@@ -1256,6 +1264,16 @@
                 <AppIcon v-if="isCurrentLiked" name="heart-solid" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
                 <AppIcon v-else name="heart" class="w-4 h-4 sm:w-5 sm:h-5 text-white/70 hover:text-red-400 transition-colors" />
               </button>
+
+              <!-- FM 模式下沉浸式控制岛：快捷添加到歌单 -->
+              <button
+                v-if="store.isFmModePlaylist && store.currentSong && !isExternalImportSong(store.currentSong)"
+                @click.stop="openAddToPlaylistModal(store.currentSong, { source: 'immersive' })"
+                class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 hover:text-purple-300 transition-all active:scale-90 no-drag"
+                v-tooltip="'添加到歌单'"
+              >
+                <AppIcon name="add-playlist" class="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
             </div>
 
           </div>
@@ -1274,6 +1292,7 @@ import { useUserStore } from '../store/userStore';
 import request from '../utils/request';
 import { normalizeSongKey } from '../utils/songHelper';
 import { openSongContextMenu } from '../utils/songContextMenu';
+import { openAddToPlaylistModal } from '../utils/addToPlaylist';
 import SingerLink from '../components/SingerLink.vue';
 import VinylTurntable from '../components/VinylTurntable.vue';
 import { useTheme } from '../composables/useTheme';

@@ -832,6 +832,9 @@ export const usePlayerStore = defineStore('player', {
         }
       } else {
         if (isErrorEnd) {
+          if (this.isFmModePlaylist && this.currentSong) {
+            try { fmController?.onTrackError?.(this.currentSong); } catch (e) {}
+          }
           if (this.autoSkipOnError) {
             this.consecutiveErrorCount = (this.consecutiveErrorCount || 0) + 1;
             const maxErrors = this.isFmModePlaylist ? 5 : Math.min(Math.max(3, this.playlist.length), 5);
@@ -895,7 +898,7 @@ export const usePlayerStore = defineStore('player', {
               this.peakStartOffset = 0;
               this.peakDuration = 30;
               this.currentTime = 0;
-              this.playNext(true);
+              this.playNext(true, null, { triggerSource: 'peak_auto_next' });
               return;
             }
           }
@@ -3172,6 +3175,10 @@ export const usePlayerStore = defineStore('player', {
           if (thisPlayVersion === playVersion) this.clearError();
         }, 5000);
 
+        if (this.isFmModePlaylist && songInfo) {
+          try { fmController?.onTrackError?.(songInfo); } catch (e) {}
+        }
+
         const canSkipNext = (this.playlist && this.playlist.length > 1) || Boolean(this.isFmModePlaylist && fmController);
         if (this.autoSkipOnError && autoPlay && canSkipNext) {
           this.consecutiveErrorCount = (this.consecutiveErrorCount || 0) + 1;
@@ -3377,6 +3384,24 @@ export const usePlayerStore = defineStore('player', {
       urlCache.clear();
       resetPreloadAudio();
       this.hasDfid = false;
+
+      if (this.isFmModePlaylist) {
+        try { fmController?.onLogout?.(); } catch (e) {}
+        if (regularPlaylistSavedState || this.playlist.length > 0) {
+          this.restoreRegularPlaylistFromFm({ autoPlay: false, silent: true, navigateBack: false });
+        } else {
+          abortActivePlayback(this, { resetPreload: true });
+          this.isFmModePlaylist = false;
+          this._syncFmBackupFlags();
+          this.currentSong = null;
+          this.currentTime = 0;
+          this.duration = 0;
+          this.clearError();
+          this.syncTrayState();
+        }
+        this.showToast('账号已退出，已停止私人FM');
+        return;
+      }
       
       if (!this.currentSong) return;
 
@@ -3640,7 +3665,7 @@ export const usePlayerStore = defineStore('player', {
       this.playSong(this.playlist[prevIndex], null, 0, true, { silentQueueToast: true });
     },
 
-    playNext(isAuto = false, baseSong = null) {
+    playNext(isAuto = false, baseSong = null, options = {}) {
       if (!isAuto) this.consecutiveErrorCount = 0;
       if (this.isFmModePlaylist) {
         if (this.playMode === 'loop' && !baseSong && this.currentSong) {
@@ -3657,7 +3682,7 @@ export const usePlayerStore = defineStore('player', {
           return;
         }
         if (fmController?.playNext) {
-          fmController.playNext({ isAuto, baseSong });
+          fmController.playNext({ isAuto, baseSong, triggerSource: options?.triggerSource || '' });
           return;
         }
       }

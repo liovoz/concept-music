@@ -363,7 +363,8 @@ const removeSongFromList = async (song, index) => {
   const res = await userStore.removeSongFromCustomPlaylist({
     listid,
     fileid,
-    hash
+    hash,
+    song
   });
 
   if (res.success) {
@@ -723,6 +724,9 @@ const fetchDetail = async () => {
       songs.value = normalized;
       updateCustomPlaylistCoverFromSongs();
       if (rawSongs.length < 30) hasMore.value = false;
+      if (isCreatedByMe.value && !isFavoriteList.value) {
+        userStore.seedPlaylistTrackKeys(resolvedListId.value, songs.value, { complete: !hasMore.value });
+      }
 
       // 写入 SWR 缓存（上限 50 个歌单防内存占用）
       if (playlistDetailCache.size > 50) {
@@ -771,6 +775,9 @@ const loadMore = async () => {
       
       songs.value.push(...normalized);
       if (newRawSongs.length < 30) hasMore.value = false;
+      if (isCreatedByMe.value && !isFavoriteList.value) {
+        userStore.seedPlaylistTrackKeys(resolvedListId.value, songs.value, { complete: !hasMore.value });
+      }
 
       const cached = playlistDetailCache.get(id);
       if (cached) {

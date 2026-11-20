@@ -14,7 +14,7 @@
         ]"
       >
         <AppIcon :name="toastIconName" class="w-4 h-4 mr-2 flex-shrink-0" :class="toastIconColorClass" />
-        <span class="line-clamp-2 break-words">{{ store.toastMessage }}</span>
+        <span class="min-w-0 line-clamp-2 break-words">{{ store.toastMessage }}</span>
         <button
           v-if="hasAction"
           type="button"

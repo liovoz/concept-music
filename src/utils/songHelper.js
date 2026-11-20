@@ -384,6 +384,10 @@ export const buildPlayPayload = (song, fallbackCover = 'https://images.unsplash.
       if (Number.isFinite(parsed) && parsed > 0) durationSec = parsed;
     }
   }
+  const rawCover = song._cover || song.cover || song.pic || song.Image || '';
+  const resolvedCover = typeof rawCover === 'string' && rawCover.trim()
+    ? rawCover.replace(/\{size\}/g, '400')
+    : fallbackCover;
   return {
     fileid: song._fileid || song.fileid || song.FileID || song.file_id || song.id || '',
     hash: normalizedHash,
@@ -393,7 +397,7 @@ export const buildPlayPayload = (song, fallbackCover = 'https://images.unsplash.
     _singers: artists,
     artists,
     album: song._album || song.album,
-    cover: song._cover || fallbackCover,
+    cover: resolvedCover,
     album_id: song._album_id || song.album_id,
     album_audio_id: song._album_audio_id || song.album_audio_id,
     duration: durationSec > 0 ? durationSec : 0,

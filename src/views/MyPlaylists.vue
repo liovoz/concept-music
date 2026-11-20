@@ -153,38 +153,14 @@
           </div>
 
           <div class="space-y-4">
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-bold text-gray-600 dark:text-[#a1a1a6]">歌单标题</label>
-                <span
-                  class="text-[11px] font-semibold tabular-nums"
-                  :class="newPlaylistName.length >= 40 ? 'text-amber-500 font-bold' : 'text-gray-400 dark:text-[#85858b]'"
-                >
-                  {{ newPlaylistName.length }}/40
-                </span>
-              </div>
-              <div class="relative flex items-center">
-                <input
-                  ref="createInputRef"
-                  v-model="newPlaylistName"
-                  type="text"
-                  maxlength="40"
-                  placeholder="请输入歌单标题..."
-                  @keyup.enter="handleCreatePlaylist"
-                  class="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#232325]/80 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none text-sm text-gray-800 dark:text-[#ededed] transition-all placeholder:text-gray-400 dark:placeholder:text-[#85858b]"
-                />
-                <button
-                  v-if="newPlaylistName"
-                  type="button"
-                  @click="newPlaylistName = ''; createInputRef?.focus();"
-                  class="absolute right-2.5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-[#a1a1a6] rounded-full transition-colors cursor-pointer"
-                  v-tooltip="'清空标题'"
-                >
-                  <AppIcon name="close" class="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 pl-0.5">歌单名称最多支持 40 个字符</p>
-            </div>
+            <PlaylistNameInput
+              ref="createInputRef"
+              v-model="newPlaylistName"
+              label="歌单标题"
+              placeholder="请输入歌单标题..."
+              accent="blue"
+              @submit="handleCreatePlaylist"
+            />
 
             <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#232325]/60 border border-gray-100 dark:border-white/[0.08]">
               <div class="flex flex-col">
@@ -204,7 +180,7 @@
             </button>
             <button
               @click="handleCreatePlaylist"
-              :disabled="isCreating || !newPlaylistName.trim()"
+              :disabled="isCreating || !newNameValidation.isValid"
               class="px-5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
             >
               <AppIcon v-if="isCreating" name="spinner" spin class="w-3.5 h-3.5 mr-1.5" />
@@ -263,12 +239,16 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../store/userStore';
+import { usePlayerStore } from '../store/playerStore';
 import { isDefaultPlaylistName } from '../utils/songHelper';
+import { validatePlaylistName } from '../utils/playlistHelper';
 import request from '../utils/request';
 import BackToTop from '../components/BackToTop.vue'; // ✨ 引入组件
+import PlaylistNameInput from '../components/common/PlaylistNameInput.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
+const playerStore = usePlayerStore();
 
 const isLoading = ref(true);
 const isError = ref(false);
@@ -281,6 +261,7 @@ const newPlaylistName = ref('');
 const newPlaylistIsPrivate = ref(false);
 const isCreating = ref(false);
 const createInputRef = ref(null);
+const newNameValidation = computed(() => validatePlaylistName(newPlaylistName.value));
 
 const showDeleteModal = ref(false);
 const playlistToDelete = ref(null);
@@ -304,12 +285,14 @@ const closeCreateModal = () => {
 };
 
 const handleCreatePlaylist = async () => {
-  const name = newPlaylistName.value.trim();
-  if (!name || isCreating.value) return;
-  if (name.length > 40) {
-    playerStore.showToast('歌单名称最多支持 40 个字符');
+  const validation = newNameValidation.value;
+  if (!validation.isValid) {
+    if (validation.error) playerStore.showToast(validation.error, { type: 'warning' });
     return;
   }
+  if (isCreating.value) return;
+
+  const name = validation.trimmed;
   isCreating.value = true;
   try {
     const res = await userStore.createCustomPlaylist({

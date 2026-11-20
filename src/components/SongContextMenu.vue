@@ -57,12 +57,17 @@
             <button
               v-for="p in userPlaylists"
               :key="p.listid"
-              class="menu-item min-w-0"
+              class="menu-item min-w-0 justify-between"
+              :class="{ 'opacity-65 cursor-default text-emerald-600 dark:text-emerald-400': isSongInPlaylist(p) }"
+              :disabled="isSongInPlaylist(p)"
               @click="addToPlaylist(p)"
-              v-tooltip="p.name"
+              v-tooltip="isSongInPlaylist(p) ? `${p.name}（已在歌单中）` : p.name"
             >
-              <AppIcon name="music" class="menu-icon text-gray-400" />
-              <span class="truncate flex-1 min-w-0">{{ p.name }}</span>
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <AppIcon :name="isSongInPlaylist(p) ? 'check' : 'music'" class="menu-icon" :class="isSongInPlaylist(p) ? 'text-emerald-500' : 'text-gray-400'" />
+                <span class="truncate flex-1 min-w-0">{{ p.name }}</span>
+              </div>
+              <span v-if="isSongInPlaylist(p)" class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 shrink-0">已加入</span>
             </button>
             <div v-if="userStore.isFetchingPlaylists && userPlaylists.length === 0" class="px-3 py-2 text-gray-400 text-[11px] text-center font-normal flex items-center justify-center space-x-1.5">
               <AppIcon name="spinner" spin class="w-3.5 h-3.5 text-blue-500" />
@@ -130,37 +135,19 @@
             <AppIcon name="close" class="w-3.5 h-3.5" />
           </button>
         </div>
-        <div class="mb-5">
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="block text-xs font-bold text-gray-600 dark:text-[#a1a1a6]">歌单标题</label>
-            <span
-              class="text-[11px] font-semibold tabular-nums"
-              :class="quickPlaylistName.length >= 40 ? 'text-amber-500 font-bold' : 'text-gray-400 dark:text-[#85858b]'"
-            >
-              {{ quickPlaylistName.length }}/40
-            </span>
-          </div>
-          <div class="relative flex items-center">
-            <input
-              v-model="quickPlaylistName"
-              type="text"
-              maxlength="40"
-              placeholder="输入新歌单标题..."
-              @keyup.enter="handleQuickCreateAndAdd"
-              class="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#232325] text-xs text-gray-800 dark:text-[#ededed] placeholder:text-gray-400 dark:placeholder:text-[#85858b] focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 outline-none transition-all"
-              autofocus
-            />
-            <button
-              v-if="quickPlaylistName"
-              type="button"
-              @click="quickPlaylistName = ''"
-              class="absolute right-2.5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-[#a1a1a6] rounded-full transition-colors cursor-pointer"
-              v-tooltip="'清空标题'"
-            >
-              <AppIcon name="close" class="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-1 pl-0.5">歌单名称最多支持 40 个字符</p>
+        <div class="mb-5 space-y-3">
+          <PlaylistNameInput
+            ref="quickCreateInputRef"
+            v-model="quickPlaylistName"
+            label="歌单标题"
+            placeholder="输入新歌单标题..."
+            accent="blue"
+            @submit="handleQuickCreateAndAdd"
+          />
+          <label class="inline-flex items-center gap-2 text-xs text-gray-500 dark:text-[#a1a1a6] cursor-pointer select-none pl-0.5">
+            <input type="checkbox" v-model="quickPlaylistPrivate" class="rounded border-gray-300 text-blue-600 focus:ring-0" />
+            <span>设为私密歌单</span>
+          </label>
         </div>
         <div class="flex items-center justify-end space-x-2.5">
           <button @click="showQuickCreate = false" class="px-3.5 py-1.5 text-xs font-bold text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
@@ -168,8 +155,8 @@
           </button>
           <button
             @click="handleQuickCreateAndAdd"
-            :disabled="isQuickCreating || !quickPlaylistName.trim()"
-            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
+            :disabled="isQuickCreating || !quickNameValidation.isValid"
+            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
           >
             <AppIcon v-if="isQuickCreating" name="spinner" spin class="w-3 h-3 mr-1" />
             <span>{{ isQuickCreating ? '创建中...' : '创建并添加' }}</span>
@@ -186,7 +173,9 @@ import { useRouter } from 'vue-router';
 import { usePlayerStore } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
 import { getSongArtists, isFavoritePlaylistName } from '../utils/songHelper';
+import { formatPlaylistNameForToast, validatePlaylistName } from '../utils/playlistHelper';
 import { goToArtist as navigateArtist } from '../utils/artistNavigation';
+import PlaylistNameInput from './common/PlaylistNameInput.vue';
 
 const router = useRouter();
 const playerStore = usePlayerStore();
@@ -204,7 +193,16 @@ const submenuVerticalPlacement = ref('top');
 
 const showQuickCreate = ref(false);
 const quickPlaylistName = ref('');
+const quickPlaylistPrivate = ref(false);
 const isQuickCreating = ref(false);
+const quickCreateInputRef = ref(null);
+
+const quickNameValidation = computed(() => validatePlaylistName(quickPlaylistName.value));
+
+const isSongInPlaylist = (playlist) => {
+  if (!playlist?.listid || !song.value) return false;
+  return userStore.isSongInPlaylist(playlist.listid, song.value);
+};
 
 const isLiked = computed(() => {
   const hash = song.value?.hash?.toUpperCase();
@@ -285,10 +283,17 @@ const placeWithinViewport = async () => {
   checkSubmenuPosition();
 };
 
-const ensurePlaylists = () => {
+const ensurePlaylists = async () => {
   checkSubmenuPosition();
-  if (userStore.isLoggedIn && (!userStore.userCreatedPlaylists || userStore.userCreatedPlaylists.length === 0)) {
-    userStore.fetchLikedPlaylistMeta();
+  if (!userStore.isLoggedIn) return;
+  if (!userStore.userCreatedPlaylists || userStore.userCreatedPlaylists.length === 0) {
+    await userStore.fetchLikedPlaylistMeta();
+  }
+  if (visible.value && userPlaylists.value.length > 0) {
+    userStore.prefetchPlaylistsTrackKeys(userPlaylists.value, {
+      concurrency: 3,
+      shouldContinue: () => visible.value
+    });
   }
 };
 
@@ -319,42 +324,65 @@ const playNext = () => runAndClose(() => playerStore.insertNext(song.value));
 const append = () => runAndClose(() => playerStore.appendToPlaylist(song.value));
 const toggleLike = () => runAndClose(() => userStore.toggleLikeSong(song.value));
 
-const addToPlaylist = (targetPlaylist) => runAndClose(async () => {
-  await userStore.addSongToCustomPlaylist({
-    listid: targetPlaylist.listid,
-    song: song.value,
-    playlistName: targetPlaylist.name
+const addToPlaylist = (targetPlaylist) => {
+  if (!targetPlaylist) return;
+  if (isSongInPlaylist(targetPlaylist)) {
+    const shortName = formatPlaylistNameForToast(targetPlaylist.name);
+    playerStore.showToast(shortName ? `该歌曲已在「${shortName}」中，无需重复添加` : '该歌曲已在歌单中，无需重复添加', { type: 'info' });
+    close();
+    return;
+  }
+  const currentSong = song.value;
+  runAndClose(async () => {
+    await userStore.addSongToCustomPlaylist({
+      listid: targetPlaylist.listid,
+      song: currentSong,
+      playlistName: targetPlaylist.name
+    });
   });
-});
+};
 
-const openQuickCreate = () => {
+const openQuickCreate = async () => {
   if (!userStore.isLoggedIn) {
     runAndClose(() => userStore.openLoginModal());
     return;
   }
   quickPlaylistName.value = '';
+  quickPlaylistPrivate.value = false;
   showQuickCreate.value = true;
+  await nextTick();
+  quickCreateInputRef.value?.focus();
 };
 
 const handleQuickCreateAndAdd = async () => {
-  const name = quickPlaylistName.value.trim();
-  if (!name || isQuickCreating.value) return;
-  if (name.length > 40) {
-    playerStore.showToast('歌单名称最多支持 40 个字符');
+  const validation = quickNameValidation.value;
+  if (!validation.isValid) {
+    if (validation.error) playerStore.showToast(validation.error, { type: 'warning' });
     return;
   }
+  if (isQuickCreating.value) return;
+
+  const name = validation.trimmed;
   isQuickCreating.value = true;
   try {
-    const res = await userStore.createCustomPlaylist({ name, isPrivate: false });
+    const res = await userStore.createCustomPlaylist({
+      name,
+      isPrivate: quickPlaylistPrivate.value,
+      silentToast: true
+    });
     if (res.success) {
       const target = userStore.userCreatedPlaylists.find(p => p.name === name);
-      const listid = target?.listid || res.data?.info?.listid || res.data?.listid;
+      const listid = res.listid || res.data?.info?.listid || res.data?.listid || target?.listid;
       if (listid && song.value) {
+        const shortName = formatPlaylistNameForToast(name);
         await userStore.addSongToCustomPlaylist({
           listid,
           song: song.value,
-          playlistName: name
+          playlistName: name,
+          toastMessage: shortName ? `已创建「${shortName}」并加入歌曲` : '已创建歌单并加入歌曲'
         });
+      } else {
+        playerStore.showToast('🎉 新建歌单成功', { type: 'success' });
       }
       showQuickCreate.value = false;
       close();

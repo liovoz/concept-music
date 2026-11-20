@@ -26,6 +26,7 @@
     <GlobalToast />
     <GlobalDialog />
     <SongContextMenu />
+    <AddToPlaylistPopover />
     <DisclaimerModal ref="disclaimerModalRef" @accepted="onDisclaimerAccepted" />
     <SettingsModal ref="settingsModalRef" />
     <UpdateNotificationCard />
@@ -85,17 +86,20 @@ watch(() => route.path, () => {
 });
 import GlobalDialog from './components/GlobalDialog.vue';
 import SongContextMenu from './components/SongContextMenu.vue';
+import AddToPlaylistPopover from './components/AddToPlaylistPopover.vue';
 import SettingsModal from './components/SettingsModal.vue';
 import DisclaimerModal from './components/DisclaimerModal.vue';
 import UpdateNotificationCard from './components/UpdateNotificationCard.vue';
 import { useUserStore } from './store/userStore';
 import { usePlayerStore } from './store/playerStore';
+import { useFmStore } from './store/fmStore';
 import { useUpdateStore } from './store/updateStore';
 import { hideTooltip, tooltipState } from './utils/tooltip';
 import { initMediaSessionBridge, disposeMediaSessionBridge } from './utils/mediaSessionBridge';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
+const fmStore = useFmStore();
 const updateStore = useUpdateStore();
 const settingsModalRef = ref(null);
 const disclaimerModalRef = ref(null);
@@ -135,6 +139,26 @@ const handleTrayAction = (action) => {
 
 const isStandaloneWindow = () => checkIsStandaloneMode();
 
+const handleFmPositiveAssetEvent = (event) => {
+  const song = event?.detail?.song;
+  if (song && userStore.isLoggedIn) {
+    fmStore.onSongSavedToPlaylist(song);
+  }
+};
+
+watch(
+  () => [userStore.isLoggedIn, userStore.userInfo?.userid],
+  ([loggedIn]) => {
+    if (isStandaloneWindow()) return;
+    if (loggedIn) {
+      fmStore.ensureAccountContext();
+    } else {
+      fmStore.resetOnLogout();
+    }
+  },
+  { immediate: false }
+);
+
 onMounted(() => { 
   const isStandalone = isStandaloneWindow();
   if (disclaimerAccepted && !isStandalone) userStore.verifySession(); 
@@ -147,11 +171,18 @@ onMounted(() => {
     updateStore.initUpdater();
     // 锁屏 / 系统媒体控件（SMTC）桥接，仅主窗口初始化，避免桌面歌词窗口产生第二个会话
     initMediaSessionBridge(playerStore);
+    if (userStore.isLoggedIn) {
+      fmStore.ensureAccountContext();
+    }
+    window.addEventListener('song-context-menu:song-added', handleFmPositiveAssetEvent);
+    window.addEventListener('user:song-liked', handleFmPositiveAssetEvent);
   }
 });
 
 onUnmounted(() => {
   disposeMediaSessionBridge();
+  window.removeEventListener('song-context-menu:song-added', handleFmPositiveAssetEvent);
+  window.removeEventListener('user:song-liked', handleFmPositiveAssetEvent);
   if (window.trayAPI) {
     try { window.trayAPI.onTrayAction(() => {}); } catch(e) {}
   }

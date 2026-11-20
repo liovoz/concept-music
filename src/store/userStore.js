@@ -5,6 +5,13 @@ import { defineStore } from 'pinia';
 import request from '../utils/request';
 import { usePlayerStore } from './playerStore';
 import { isDefaultPlaylistName, isFavoritePlaylistName, getFirstSongCover } from '../utils/songHelper';
+import {
+  PLAYLIST_NAME_MAX_LENGTH,
+  extractSongTrackFingerprints,
+  formatPlaylistNameForToast,
+  isUnsupportedCloudPlaylistSong,
+  resolveCloudSongHash
+} from '../utils/playlistHelper';
 
 const VIP_DETAIL_PROBE_ENABLED = false;
 const VIP_DETAIL_PROBE_REDACT_KEYS = /token|cookie|authorization|password|secret|dfid|mid/i;
@@ -13,6 +20,38 @@ const AUTH_TOKEN_REFRESH_INTERVAL = 5 * 60 * 1000;
 let authTokenRefreshPromise = null;
 let autoVipTimer = null;
 let autoVipNextHourlyTime = 0;
+
+const PLAYLIST_TRACK_CACHE_TTL = 3 * 60 * 1000;
+const PLAYLIST_TRACK_FETCH_PAGE_SIZE = 1000;
+const PLAYLIST_TRACK_MAX_PAGES = 5;
+const playlistTrackFetchPromises = new Map();
+
+const extractRawPlaylistSongs = (res) => {
+  if (!res || typeof res !== 'object') return [];
+  if (Array.isArray(res?.data?.songs)) return res.data.songs;
+  if (Array.isArray(res?.data?.info)) return res.data.info;
+  if (Array.isArray(res?.songs)) return res.songs;
+
+  let validArr = [];
+  const isRealSong = (item) => item && typeof item === 'object' && (item.hash || item.filehash || item.FileHash);
+  const seen = new WeakSet();
+  const traverse = (data, depth) => {
+    if (depth > 6 || !data || typeof data !== 'object' || validArr.length > 0) return;
+    if (seen.has(data)) return;
+    seen.add(data);
+    if (Array.isArray(data)) {
+      if (data.length > 0 && isRealSong(data[0])) {
+        validArr = data;
+        return;
+      }
+      data.forEach((item) => traverse(item, depth + 1));
+      return;
+    }
+    Object.values(data).forEach((val) => traverse(val, depth + 1));
+  };
+  traverse(res, 0);
+  return validArr;
+};
 
 const sanitizeVipProbePayload = (value, seen = new WeakSet()) => {
   if (value === null || typeof value !== 'object') return value;
@@ -284,6 +323,8 @@ export const useUserStore = defineStore('user', {
     userCreatedPlaylists: [],
     isFetchingPlaylists: false,
     playlistMap: {},      
+    playlistTrackKeysMap: {},
+    playlistTrackCheckingIds: {},
     collectedMap: safeParseJson('kg_desktop_collected_map', {}),
     customPlaylistCovers: safeParseJson('kg_desktop_playlist_covers', {}),
     
@@ -1147,6 +1188,9 @@ export const useUserStore = defineStore('user', {
             if (song.cover) this.likedPlaylistCover = song.cover.replace(/\{size\}/g, '400');
             playerStore.showToast('已添加到我喜欢的音乐');
             this.fetchLikedPlaylistMeta();
+            window.dispatchEvent(new CustomEvent('user:song-liked', {
+              detail: { song }
+            }));
           } else {
             throw new Error('添加喜欢失败');
           }
@@ -1156,6 +1200,200 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    resolvePlaylistEntry(playlistOrId) {
+      if (!playlistOrId) return null;
+      if (typeof playlistOrId === 'object') {
+        const lid = String(playlistOrId.listid || '');
+        const gid = String(playlistOrId.gid || playlistOrId.global_collection_id || '');
+        const matched = this.userCreatedPlaylists.find(
+          (p) => (lid && String(p.listid) === lid) || (gid && String(p.gid) === gid)
+        );
+        return matched || {
+          listid: lid || gid,
+          gid: gid || lid,
+          name: playlistOrId.name || '',
+          count: playlistOrId.count || 0
+        };
+      }
+      const key = String(playlistOrId);
+      const matched = this.userCreatedPlaylists.find(
+        (p) => String(p.listid) === key || String(p.gid) === key
+      );
+      if (matched) return matched;
+      const mappedListId = this.playlistMap[key];
+      return {
+        listid: mappedListId ? String(mappedListId) : key,
+        gid: key,
+        name: '',
+        count: undefined
+      };
+    },
+
+    seedPlaylistTrackKeys(playlistOrId, songs = [], options = {}) {
+      const entry = this.resolvePlaylistEntry(playlistOrId);
+      const pid = String(entry?.listid || playlistOrId || '');
+      if (!pid) return;
+      const keys = new Set();
+      (Array.isArray(songs) ? songs : []).forEach((s) => {
+        extractSongTrackFingerprints(s).forEach((fp) => keys.add(fp));
+      });
+      this.playlistTrackKeysMap = {
+        ...this.playlistTrackKeysMap,
+        [pid]: {
+          keys,
+          fetchedAt: Date.now(),
+          complete: options.complete !== false
+        }
+      };
+    },
+
+    isPlaylistTrackCacheValid(playlistOrId) {
+      const entry = this.resolvePlaylistEntry(playlistOrId);
+      const pid = String(entry?.listid || playlistOrId || '');
+      if (!pid) return false;
+      const cached = this.playlistTrackKeysMap[pid];
+      if (!cached || !cached.fetchedAt) return false;
+      return Date.now() - cached.fetchedAt < PLAYLIST_TRACK_CACHE_TTL;
+    },
+
+    isSongInPlaylist(playlistOrId, song) {
+      if (!playlistOrId || !song) return false;
+      const entry = this.resolvePlaylistEntry(playlistOrId);
+      const pid = String(entry?.listid || playlistOrId || '');
+      if (!pid) return false;
+
+      const fingerprints = extractSongTrackFingerprints(song);
+      if (fingerprints.length === 0) return false;
+
+      if (pid === String(this.likedListId)) {
+        const likedSet = new Set((this.likedHashes || []).map((h) => `HASH:${String(h).toUpperCase()}`));
+        if (fingerprints.some((fp) => likedSet.has(fp))) return true;
+      }
+
+      const cached = this.playlistTrackKeysMap[pid];
+      if (!cached || !(cached.keys instanceof Set)) return false;
+      return fingerprints.some((fp) => cached.keys.has(fp));
+    },
+
+    async ensurePlaylistTrackKeys(playlistOrId, options = {}) {
+      if (!this.isLoggedIn || !playlistOrId) return null;
+      const entry = this.resolvePlaylistEntry(playlistOrId);
+      const pid = String(entry?.listid || playlistOrId || '');
+      const gid = String(entry?.gid || '');
+      if (!pid) return null;
+
+      if (!options.force && this.isPlaylistTrackCacheValid(pid)) {
+        return this.playlistTrackKeysMap[pid];
+      }
+
+      if (Number(entry?.count) === 0 && !options.force) {
+        const emptyEntry = {
+          keys: new Set(),
+          fetchedAt: Date.now(),
+          complete: true
+        };
+        this.playlistTrackKeysMap = {
+          ...this.playlistTrackKeysMap,
+          [pid]: emptyEntry
+        };
+        return emptyEntry;
+      }
+
+      if (playlistTrackFetchPromises.has(pid)) {
+        return playlistTrackFetchPromises.get(pid);
+      }
+
+      const task = (async () => {
+        this.playlistTrackCheckingIds = { ...this.playlistTrackCheckingIds, [pid]: true };
+        try {
+          const collectedSongs = [];
+          let useNewEndpoint = !gid || gid === pid;
+          let complete = true;
+
+          for (let page = 1; page <= PLAYLIST_TRACK_MAX_PAGES; page++) {
+            let pageSongs = [];
+            if (!useNewEndpoint) {
+              const res = await request.get('/playlist/track/all', {
+                params: { id: gid, page, pagesize: PLAYLIST_TRACK_FETCH_PAGE_SIZE, timestamp: Date.now() },
+                silent: true
+              });
+              pageSongs = extractRawPlaylistSongs(res);
+              if (page === 1 && pageSongs.length === 0 && pid) {
+                useNewEndpoint = true;
+              }
+            }
+
+            if (useNewEndpoint && pageSongs.length === 0) {
+              const resNew = await request.get('/playlist/track/all/new', {
+                params: { listid: pid, page, pagesize: PLAYLIST_TRACK_FETCH_PAGE_SIZE, timestamp: Date.now() },
+                silent: true
+              });
+              pageSongs = extractRawPlaylistSongs(resNew);
+            }
+
+            collectedSongs.push(...pageSongs);
+            if (pageSongs.length < PLAYLIST_TRACK_FETCH_PAGE_SIZE) {
+              break;
+            }
+            if (page === PLAYLIST_TRACK_MAX_PAGES) {
+              complete = false;
+            }
+          }
+
+          const keys = new Set();
+          collectedSongs.forEach((s) => {
+            extractSongTrackFingerprints(s).forEach((fp) => keys.add(fp));
+          });
+
+          const nextCache = {
+            keys,
+            fetchedAt: Date.now(),
+            complete
+          };
+          this.playlistTrackKeysMap = {
+            ...this.playlistTrackKeysMap,
+            [pid]: nextCache
+          };
+
+          if (complete) {
+            const found = this.userCreatedPlaylists.find((p) => String(p.listid) === pid);
+            if (found && Number(found.count || 0) !== collectedSongs.length) {
+              found.count = collectedSongs.length;
+            }
+          }
+
+          return nextCache;
+        } catch (e) {
+          return null;
+        } finally {
+          const nextChecking = { ...this.playlistTrackCheckingIds };
+          delete nextChecking[pid];
+          this.playlistTrackCheckingIds = nextChecking;
+          playlistTrackFetchPromises.delete(pid);
+        }
+      })();
+
+      playlistTrackFetchPromises.set(pid, task);
+      return task;
+    },
+
+    async prefetchPlaylistsTrackKeys(playlists = [], options = {}) {
+      if (!this.isLoggedIn || !Array.isArray(playlists) || playlists.length === 0) return;
+      const concurrency = Math.max(1, Number(options.concurrency) || 3);
+      const shouldContinue = typeof options.shouldContinue === 'function' ? options.shouldContinue : () => true;
+      const queue = playlists.filter((p) => p && p.listid && !this.isPlaylistTrackCacheValid(p));
+      if (queue.length === 0) return;
+
+      let cursor = 0;
+      const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+        while (cursor < queue.length && shouldContinue()) {
+          const target = queue[cursor++];
+          await this.ensurePlaylistTrackKeys(target);
+        }
+      });
+      await Promise.allSettled(workers);
+    },
+
     async createCustomPlaylist(options = {}) {
       if (!this.isLoggedIn) {
         this.openLoginModal();
@@ -1163,7 +1401,9 @@ export const useUserStore = defineStore('user', {
       }
       const title = (options.name || '').trim();
       if (!title) return { success: false, msg: '歌单名称不能为空' };
-      if (title.length > 40) return { success: false, msg: '歌单名称不能超过 40 个字符' };
+      if (title.length > PLAYLIST_NAME_MAX_LENGTH) {
+        return { success: false, msg: `歌单名称不能超过 ${PLAYLIST_NAME_MAX_LENGTH} 个字符` };
+      }
 
       const playerStore = usePlayerStore();
       try {
@@ -1178,10 +1418,13 @@ export const useUserStore = defineStore('user', {
           }
         });
 
-        if (res && (res.status === 1 || res.error_code === 0 || res.data)) {
-          playerStore.showToast('🎉 新建歌单成功');
+        if (res && (res.status === 1 || res.error_code === 0)) {
+          if (!options.silentToast) {
+            playerStore.showToast('🎉 新建歌单成功', { type: 'success' });
+          }
 
-          const newListId = String(res?.data?.info?.listid || res?.data?.listid || Date.now());
+          const rawListId = res?.data?.info?.listid || res?.data?.listid || '';
+          const newListId = String(rawListId || Date.now());
           const newGid = String(res?.data?.info?.global_collection_id || res?.data?.global_collection_id || newListId);
           const optimisticEntry = {
             listid: newListId,
@@ -1192,24 +1435,36 @@ export const useUserStore = defineStore('user', {
             isDefault: false,
             isPrivate: isPri === 1
           };
-          if (!this.userCreatedPlaylists.some(p => p.name === title || (p.listid && p.listid === newListId))) {
+          if (!this.userCreatedPlaylists.some(p => (p.listid && String(p.listid) === newListId))) {
             this.userCreatedPlaylists.unshift(optimisticEntry);
           }
           if (!this.createdListIds.includes(newGid)) {
             this.createdListIds.unshift(newGid);
           }
           this.playlistMap[newGid] = newListId;
+          this.playlistTrackKeysMap = {
+            ...this.playlistTrackKeysMap,
+            [newListId]: { keys: new Set(), fetchedAt: Date.now(), complete: true }
+          };
 
           await this.fetchLikedPlaylistMeta();
-          return { success: true, data: res.data };
+          if (rawListId && !this.userCreatedPlaylists.some(p => String(p.listid) === newListId)) {
+            this.userCreatedPlaylists.unshift(optimisticEntry);
+            if (!this.createdListIds.includes(newGid)) {
+              this.createdListIds.unshift(newGid);
+            }
+            this.playlistMap[newGid] = newListId;
+          }
+
+          return { success: true, listid: newListId, gid: newGid, data: res.data };
         } else {
           const errMsg = res?.error_msg || res?.message || '新建歌单失败';
-          playerStore.showToast(errMsg);
+          playerStore.showToast(errMsg, { type: 'error' });
           return { success: false, msg: errMsg };
         }
       } catch (e) {
         const errMsg = e.message || '网络异常，新建歌单失败';
-        playerStore.showToast(errMsg);
+        playerStore.showToast(errMsg, { type: 'error' });
         return { success: false, msg: errMsg };
       }
     },
@@ -1257,12 +1512,16 @@ export const useUserStore = defineStore('user', {
           if (gid) idsToNuke.push(gid);
           if (listid) idsToNuke.push(listid);
 
+          const nextTrackMap = { ...this.playlistTrackKeysMap };
           idsToNuke.forEach(id => {
             if (!this.deletedPlaylistIds.includes(id)) {
               this.deletedPlaylistIds.push(id);
             }
             delete this.customPlaylistCovers[id];
+            delete nextTrackMap[id];
           });
+          this.playlistTrackKeysMap = nextTrackMap;
+
           localStorage.setItem('kg_desktop_deleted_playlists', JSON.stringify(this.deletedPlaylistIds));
           try {
             localStorage.setItem('kg_desktop_playlist_covers', JSON.stringify(this.customPlaylistCovers));
@@ -1297,56 +1556,96 @@ export const useUserStore = defineStore('user', {
         this.openLoginModal();
         return { success: false, msg: '请先登录' };
       }
-      const { listid, song, playlistName = '' } = target;
+      const { listid, song, playlistName = '', silentToast = false, toastMessage = '' } = target;
       if (!listid || !song) return { success: false, msg: '缺少参数' };
 
       const playerStore = usePlayerStore();
-      const hash = (song.hash || song._hash || '').toUpperCase();
-      if (!hash) return { success: false, msg: '歌曲标识不存在' };
+      if (isUnsupportedCloudPlaylistSong(song)) {
+        const msg = '外部导入歌曲暂不支持添加到云端歌单';
+        if (!silentToast) playerStore.showToast(msg, { type: 'warning' });
+        return { success: false, msg };
+      }
+
+      const hash = resolveCloudSongHash(song);
+      if (!hash) {
+        const msg = '歌曲标识不存在，暂无法添加到云端歌单';
+        if (!silentToast) playerStore.showToast(msg, { type: 'warning' });
+        return { success: false, msg };
+      }
+
+      const entry = this.resolvePlaylistEntry(listid);
+      const targetPid = String(entry?.listid || listid);
+      const displayPlaylistName = formatPlaylistNameForToast(playlistName || entry?.name || '');
 
       try {
+        await this.ensurePlaylistTrackKeys(entry || targetPid);
+        if (this.isSongInPlaylist(targetPid, song)) {
+          const dupMsg = displayPlaylistName
+            ? `该歌曲已在「${displayPlaylistName}」中，无需重复添加`
+            : '该歌曲已在歌单中，无需重复添加';
+          if (!silentToast) playerStore.showToast(dupMsg, { type: 'info' });
+          return { success: false, alreadyExists: true, msg: dupMsg };
+        }
+
         const name = (song.name || song._title || '未知歌曲').replace(/\|/g, '').replace(/,/g, '');
         const albumId = song.album_id || song._album_id || 0;
-        const mixId = song.album_audio_id || song._album_audio_id || 0;
+        const mixId = song.album_audio_id || song._album_audio_id || song.mixsongid || song.MixSongID || 0;
         const dataStr = `${name}|${hash}|${albumId}|${mixId}`;
 
         const res = await request.get('/playlist/tracks/add', {
-          params: { listid, data: dataStr, timestamp: Date.now() }
+          params: { listid: targetPid, data: dataStr, timestamp: Date.now() }
         });
 
         if (res && (res.status === 1 || res.error_code === 0)) {
-          const toastMsg = playlistName ? `已添加到「${playlistName}」` : '已添加到歌单';
-          playerStore.showToast(toastMsg);
-
-          const songCover = (song._cover || song.cover || song.pic || '').replace(/\{size\}/g, '400');
-          if (songCover) {
-            this.setCustomPlaylistCover(listid, songCover);
-            const found = this.userCreatedPlaylists.find(p => String(p.listid) === String(listid) || String(p.gid) === String(listid));
-            if (found) {
-              if (found.gid) this.setCustomPlaylistCover(found.gid, songCover);
-              found.cover = songCover;
-              found.count = (found.count || 0) + 1;
+          const existingCache = this.playlistTrackKeysMap[targetPid];
+          const nextKeys = existingCache?.keys instanceof Set ? new Set(existingCache.keys) : new Set();
+          extractSongTrackFingerprints(song).forEach((fp) => nextKeys.add(fp));
+          this.playlistTrackKeysMap = {
+            ...this.playlistTrackKeysMap,
+            [targetPid]: {
+              keys: nextKeys,
+              fetchedAt: existingCache?.fetchedAt || Date.now(),
+              complete: existingCache?.complete ?? true
             }
+          };
+
+          const found = this.userCreatedPlaylists.find(
+            p => String(p.listid) === targetPid || String(p.gid) === String(listid)
+          );
+          if (found) {
+            found.count = (found.count || 0) + 1;
           }
 
-          if (String(listid) === String(this.likedListId)) {
+          const songCover = (song._cover || song.cover || song.pic || '').replace(/\{size\}/g, '400');
+          if (songCover && found && !found.cover) {
+            this.setCustomPlaylistCover(targetPid, songCover);
+            if (found.gid) this.setCustomPlaylistCover(found.gid, songCover);
+            found.cover = songCover;
+          }
+
+          if (targetPid === String(this.likedListId)) {
             if (!this.likedHashes.includes(hash)) this.likedHashes.push(hash);
             this.fetchLikedPlaylistMeta();
           }
 
+          if (!silentToast) {
+            const finalToast = toastMessage || (displayPlaylistName ? `已添加到「${displayPlaylistName}」` : '已添加到歌单');
+            playerStore.showToast(finalToast, { type: 'success' });
+          }
+
           window.dispatchEvent(new CustomEvent('song-context-menu:song-added', {
-            detail: { listid, song }
+            detail: { listid: targetPid, song }
           }));
 
           return { success: true };
         } else {
           const errMsg = res?.error_msg || res?.message || '添加歌曲失败';
-          playerStore.showToast(errMsg);
+          if (!silentToast) playerStore.showToast(errMsg, { type: 'error' });
           return { success: false, msg: errMsg };
         }
       } catch (e) {
         const errMsg = e.message || '网络异常，添加歌曲失败';
-        playerStore.showToast(errMsg);
+        if (!silentToast) playerStore.showToast(errMsg, { type: 'error' });
         return { success: false, msg: errMsg };
       }
     },
@@ -1356,18 +1655,48 @@ export const useUserStore = defineStore('user', {
         this.openLoginModal();
         return { success: false, msg: '请先登录' };
       }
-      const { listid, fileid, hash = '' } = target;
+      const { listid, fileid, hash = '', song = null } = target;
       if (!listid || !fileid) return { success: false, msg: '缺少歌曲唯一标识' };
 
       const playerStore = usePlayerStore();
+      const entry = this.resolvePlaylistEntry(listid);
+      const targetPid = String(entry?.listid || listid);
+
       try {
         const res = await request.get('/playlist/tracks/del', {
-          params: { listid, fileids: fileid, timestamp: Date.now() }
+          params: { listid: targetPid, fileids: fileid, timestamp: Date.now() }
         });
 
         if (res && (res.status === 1 || res.error_code === 0)) {
           playerStore.showToast('已从歌单中移除');
-          if (String(listid) === String(this.likedListId) && hash) {
+
+          const found = this.userCreatedPlaylists.find(
+            p => String(p.listid) === targetPid || String(p.gid) === String(listid)
+          );
+          if (found) {
+            found.count = Math.max(0, (found.count || 0) - 1);
+          }
+
+          const cached = this.playlistTrackKeysMap[targetPid];
+          if (cached?.keys instanceof Set) {
+            const toRemove = song
+              ? extractSongTrackFingerprints(song)
+              : (hash ? [`HASH:${String(hash).toUpperCase()}`] : []);
+            if (toRemove.length > 0) {
+              const nextKeys = new Set(cached.keys);
+              toRemove.forEach((fp) => nextKeys.delete(fp));
+              this.playlistTrackKeysMap = {
+                ...this.playlistTrackKeysMap,
+                [targetPid]: { ...cached, keys: nextKeys }
+              };
+            } else {
+              const nextMap = { ...this.playlistTrackKeysMap };
+              delete nextMap[targetPid];
+              this.playlistTrackKeysMap = nextMap;
+            }
+          }
+
+          if (targetPid === String(this.likedListId) && hash) {
             const normalizedHash = hash.toUpperCase();
             this.likedHashes = this.likedHashes.filter(h => h !== normalizedHash);
             delete this.likedFilesMap[normalizedHash];
@@ -1591,6 +1920,9 @@ export const useUserStore = defineStore('user', {
       this.createdListIds = [];
       this.userCreatedPlaylists = [];
       this.playlistMap = {};
+      this.playlistTrackKeysMap = {};
+      this.playlistTrackCheckingIds = {};
+      playlistTrackFetchPromises.clear();
       this.collectedMap = {};
       this.deletedPlaylistIds = [];
 
