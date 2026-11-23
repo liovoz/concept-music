@@ -3,7 +3,7 @@
     <div
       v-if="visible"
       ref="menuRef"
-      class="song-context-menu fixed z-[100001] w-56 overflow-visible rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 text-xs font-bold text-gray-700 dark:text-[#ededed] shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
+      class="song-context-menu fixed z-[100001] w-56 overflow-visible rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 type-body-sm text-gray-700 dark:text-[#ededed] shadow-[0_16px_45px_rgba(15,23,42,0.16)] dark:shadow-[0_18px_54px_rgba(0,0,0,0.55)] backdrop-blur-xl no-drag"
       :style="{ left: position.x + 'px', top: position.y + 'px' }"
       @contextmenu.prevent
     >
@@ -44,7 +44,7 @@
             :class="[submenuPlacement === 'left' ? 'right-full mr-1' : 'left-full ml-1', submenuVerticalPlacement === 'bottom' ? 'bottom-0' : 'top-0']"
           >
             <div
-              class="w-full h-full flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 text-xs font-bold text-gray-700 dark:text-[#ededed] backdrop-blur-xl"
+              class="w-full h-full flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 type-body-sm text-gray-700 dark:text-[#ededed] backdrop-blur-xl"
             >
             <button
               class="menu-item text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 dark:text-blue-400 dark:hover:bg-blue-900/30"
@@ -67,13 +67,13 @@
                 <AppIcon :name="isSongInPlaylist(p) ? 'check' : 'music'" class="menu-icon" :class="isSongInPlaylist(p) ? 'text-emerald-500' : 'text-gray-400'" />
                 <span class="truncate flex-1 min-w-0">{{ p.name }}</span>
               </div>
-              <span v-if="isSongInPlaylist(p)" class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 shrink-0">已加入</span>
+              <span v-if="isSongInPlaylist(p)" class="type-meta-micro text-emerald-600 dark:text-emerald-400 shrink-0">已加入</span>
             </button>
-            <div v-if="userStore.isFetchingPlaylists && userPlaylists.length === 0" class="px-3 py-2 text-gray-400 text-[11px] text-center font-normal flex items-center justify-center space-x-1.5">
+            <div v-if="userStore.isFetchingPlaylists && userPlaylists.length === 0" class="px-3 py-2 text-gray-400 type-meta-base text-center flex items-center justify-center space-x-1.5">
               <AppIcon name="spinner" spin class="w-3.5 h-3.5 text-blue-500" />
               <span>正在同步歌单...</span>
             </div>
-            <div v-else-if="userPlaylists.length === 0" class="px-3 py-2 text-gray-400 text-[11px] text-center font-normal">
+            <div v-else-if="userPlaylists.length === 0" class="px-3 py-2 text-gray-400 type-meta-base text-center">
               暂无可选歌单
             </div>
             </div>
@@ -129,7 +129,7 @@
             <div class="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <AppIcon name="plus" class="w-3.5 h-3.5" />
             </div>
-            <h3 class="text-sm font-bold text-gray-800 dark:text-[#ededed]">新建歌单并添加歌曲</h3>
+            <h3 class="type-body-md text-gray-800 dark:text-[#ededed]">新建歌单并添加歌曲</h3>
           </div>
           <button @click="showQuickCreate = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-[#ededed] p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors">
             <AppIcon name="close" class="w-3.5 h-3.5" />
@@ -144,19 +144,19 @@
             accent="blue"
             @submit="handleQuickCreateAndAdd"
           />
-          <label class="inline-flex items-center gap-2 text-xs text-gray-500 dark:text-[#a1a1a6] cursor-pointer select-none pl-0.5">
+          <label class="inline-flex items-center gap-2 type-meta-base text-gray-500 dark:text-[#a1a1a6] cursor-pointer select-none pl-0.5">
             <input type="checkbox" v-model="quickPlaylistPrivate" class="rounded border-gray-300 text-blue-600 focus:ring-0" />
             <span>设为私密歌单</span>
           </label>
         </div>
         <div class="flex items-center justify-end space-x-2.5">
-          <button @click="showQuickCreate = false" class="px-3.5 py-1.5 text-xs font-bold text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
+          <button @click="showQuickCreate = false" class="px-3.5 py-1.5 type-meta-base font-medium text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
             取消
           </button>
           <button
             @click="handleQuickCreateAndAdd"
             :disabled="isQuickCreating || !quickNameValidation.isValid"
-            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
+            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none text-white type-meta-base font-medium rounded-lg shadow-sm transition-all flex items-center"
           >
             <AppIcon v-if="isQuickCreating" name="spinner" spin class="w-3 h-3 mr-1" />
             <span>{{ isQuickCreating ? '创建中...' : '创建并添加' }}</span>
@@ -519,7 +519,7 @@ onUnmounted(() => {
   padding-left: 3rem;
   padding-top: 0.45rem;
   padding-bottom: 0.45rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-medium);
 }
 
 .menu-item.danger:hover {

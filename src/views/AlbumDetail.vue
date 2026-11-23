@@ -6,7 +6,7 @@
     <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-gray-100 to-white -z-10"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
-      <button @click="$router.back()" class="mb-6 flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors no-drag w-fit">
+      <button @click="$router.back()" class="mb-6 flex items-center type-body-sm text-gray-600 dark:text-[#b4b4ba] hover:text-blue-600 transition-colors no-drag w-fit">
         <AppIcon name="chevron-left" class="w-4 h-4 mr-1" />
         返回
       </button>
@@ -23,27 +23,27 @@
 
         <div class="flex flex-col justify-end flex-1 min-w-0">
           <div v-if="isLoading && page === 1" class="w-24 h-6 bg-gray-200 rounded animate-pulse mb-3"></div>
-          <div v-else class="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2 flex items-center">
-            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded mr-2 border border-gray-200 shadow-sm">专辑</span> ALBUM
+          <div v-else class="type-meta-micro text-gray-500 mb-2 flex items-center">
+            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded mr-2 border border-gray-200 shadow-sm">专辑</span> Album
           </div>
 
           <div v-if="isLoading && page === 1" class="w-3/4 h-10 bg-gray-200 rounded animate-pulse mb-4"></div>
-          <h2 v-else class="text-4xl font-extrabold text-gray-900 tracking-tight line-clamp-2 mb-3">{{ albumInfo.name || '未知专辑' }}</h2>
+          <h2 v-else class="type-heading-xl text-gray-900 line-clamp-2 mb-3">{{ albumInfo.name || '未知专辑' }}</h2>
 
           <div v-if="isLoading && page === 1" class="w-1/2 h-4 bg-gray-200 rounded animate-pulse mb-6"></div>
-          <div v-else class="flex items-center text-sm mb-6 space-x-4">
+          <div v-else class="flex items-center type-body-base mb-6 space-x-4">
             <span 
               @click="goToArtist(albumInfo.singer_id)"
-              class="font-bold text-gray-700 transition-colors"
+              class="font-medium text-gray-700 transition-colors"
               :class="albumInfo.singer_id ? 'hover:text-blue-600 cursor-pointer' : ''"
             >
               {{ albumInfo.singer || '未知歌手' }}
             </span>
-            <span v-if="albumInfo.publish_date" class="text-gray-400 font-mono">{{ albumInfo.publish_date.split(' ')[0] }} 发行</span>
+            <span v-if="albumInfo.publish_date" class="type-numeric-sm text-gray-400">{{ albumInfo.publish_date.split(' ')[0] }} 发行</span>
           </div>
 
           <div class="flex items-center space-x-3">
-            <button @click="playAll" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag" :class="{'opacity-50 pointer-events-none': (isLoading && page === 1) || songs.length === 0}">
+            <button @click="playAll" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full type-body-md shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag" :class="{'opacity-50 pointer-events-none': (isLoading && page === 1) || songs.length === 0}">
               <AppIcon name="play" class="w-5 h-5 mr-1" />
               播放全部
             </button>
@@ -52,9 +52,9 @@
       </div>
 
       <div v-if="albumInfo.intro && !isLoading" class="mb-8 p-5 bg-gray-50/50 rounded-[18px] border border-gray-100 group relative">
-        <h4 class="text-xs font-bold text-gray-800 mb-2">专辑简介</h4>
-        <p class="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap transition-all duration-300" :class="isIntroExpanded ? '' : 'line-clamp-3'">{{ albumInfo.intro }}</p>
-        <button v-if="albumInfo.intro.length > 120" @click="isIntroExpanded = !isIntroExpanded" class="mt-2 text-blue-500 hover:text-blue-600 text-xs font-bold focus:outline-none no-drag transition-colors">
+        <h4 class="type-meta-base font-medium text-gray-800 mb-2">专辑简介</h4>
+        <p class="type-body-base text-gray-500 whitespace-pre-wrap transition-all duration-300" :class="isIntroExpanded ? '' : 'line-clamp-3'">{{ albumInfo.intro }}</p>
+        <button v-if="albumInfo.intro.length > 120" @click="isIntroExpanded = !isIntroExpanded" class="mt-2 text-blue-500 hover:text-blue-600 type-meta-base font-medium focus:outline-none no-drag transition-colors">
           {{ isIntroExpanded ? '收起简介' : '展开全部' }}
         </button>
       </div>
@@ -67,17 +67,17 @@
 
       <div v-else-if="isError && page === 1" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-[24px] border border-red-100">
         <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
-        <p class="text-base font-bold text-red-600 mb-2">获取专辑信息失败</p>
-        <button @click="fetchDetail" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
+        <p class="type-heading-md text-red-600 mb-2">获取专辑信息失败</p>
+        <button @click="fetchDetail" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-body-md shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="songs.length === 0" class="w-full flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
         <AppIcon name="rank" class="w-20 h-20 mb-4 text-gray-200" />
-        <p class="text-sm font-medium tracking-widest text-gray-400">该专辑暂无歌曲内容</p>
+        <p class="type-body-base text-gray-400">该专辑暂无歌曲内容</p>
       </div>
 
       <div v-else class="w-full flex-1 flex flex-col min-w-0">
-        <div class="flex items-center px-4 py-2 text-xs text-gray-400 border-b border-gray-100 mb-2 min-w-0">
+        <div class="flex items-center px-4 py-2 type-meta-base text-gray-400 border-b border-gray-100 mb-2 min-w-0">
           <div class="w-10 text-center flex-shrink-0">#</div>
           <div class="flex-1 pl-2 min-w-0">音乐标题</div>
           <div class="w-1/3 hidden sm:block pr-4 min-w-0">歌手</div>
@@ -86,26 +86,26 @@
         
         <div class="space-y-1 w-full">
           <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
-            <div class="w-10 text-center text-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
+            <div class="w-10 text-center type-numeric-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
             
-            <div class="flex-1 pl-2 text-sm text-gray-800 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
+            <div class="flex-1 pl-2 type-body-md text-gray-800 flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
               <span class="truncate min-w-0">{{ song._title }}</span>
-              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 rounded-[5px] song-badge">付费</span>
+              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 rounded-[5px] song-badge">VIP</span>
             </div>
             
-            <div class="w-1/3 hidden sm:block text-xs truncate pr-4 min-w-0">
+            <div class="w-1/3 hidden sm:block type-body-sm truncate pr-4 min-w-0">
               <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" />
             </div>
             
-            <div class="w-16 text-xs text-gray-400 text-right pr-4 font-mono flex-shrink-0">{{ song._duration }}</div>
+            <div class="w-16 type-numeric-sm text-gray-400 text-right pr-4 flex-shrink-0">{{ song._duration }}</div>
           </div>
         </div>
 
-        <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 text-xs font-medium">
+        <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 type-meta-base font-medium">
           <div v-if="isLoadingMore" class="flex items-center text-blue-500">
             <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
             正在获取更多歌曲...

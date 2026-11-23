@@ -25,69 +25,69 @@
                   <line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
               </div>
-              <h3 class="text-lg font-extrabold text-gray-900 dark:text-white tracking-wide">免责声明</h3>
+              <h3 class="type-heading-lg text-gray-900 dark:text-white">免责声明</h3>
             </div>
 
             <!-- 2. 中间滚动条款区：引入底部渐隐蒙层（Alpha Mask），文字滑入底栏时柔和羽化淡出，彻底杜绝半截字硬切 -->
             <div 
               ref="scrollBodyRef"
-              class="flex-1 min-h-0 px-7 pt-3 pb-8 text-[13px] text-gray-700 dark:text-[#a1a1a6] leading-relaxed overflow-y-auto custom-scrollbar text-left space-y-4 select-text [mask-image:linear-gradient(to_bottom,black_calc(100%-36px),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-36px),transparent_100%)]"
+              class="flex-1 min-h-0 px-7 pt-3 pb-8 type-body-base text-gray-700 dark:text-[#a1a1a6] overflow-y-auto custom-scrollbar text-left space-y-4 select-text [mask-image:linear-gradient(to_bottom,black_calc(100%-36px),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-36px),transparent_100%)]"
               @scroll="handleScroll"
             >
-              <div class="space-y-2">
-                <p class="font-bold text-gray-900 dark:text-white">感谢您使用「概念音乐」（Concept Music）。</p>
+              <div class="space-y-2 max-w-[65ch]">
+                <p class="font-medium text-gray-900 dark:text-white">感谢您使用「概念音乐」（Concept Music）。</p>
                 <p>本软件是一款轻量级第三方桌面音乐播放器，专为个人学习交流、前端工程化技术研究与桌面高品质视听体验而开发。</p>
-                <p class="font-bold text-gray-900 dark:text-white pt-1">
+                <p class="font-medium text-gray-900 dark:text-white pt-1">
                   请您仔细阅读以下条款，使用本软件即表示您已充分理解并同意以下全部内容：
                 </p>
               </div>
 
               <!-- 条款 1 -->
-              <div class="space-y-1">
-                <p class="font-extrabold text-gray-900 dark:text-white text-[13.5px]">1. 软件性质与非官方声明</p>
+              <div class="space-y-1 max-w-[65ch]">
+                <p class="font-medium text-gray-900 dark:text-white type-body-md">1. 软件性质与非官方声明</p>
                 <p class="text-gray-600 dark:text-[#a1a1a6] leading-relaxed">
                   本软件为开源个人技术研究项目，并非任何音乐平台的官方产品。本软件与广州酷狗计算机科技有限公司、腾讯音乐娱乐集团（TME）、网易云音乐等机构无任何关联、合作或商业从属关系。本项目严禁用于任何商业营利或非法用途。
                 </p>
               </div>
 
               <!-- 条款 2 -->
-              <div class="space-y-1">
-                <p class="font-extrabold text-gray-900 dark:text-white text-[13.5px]">2. 登录方式与凭据安全</p>
+              <div class="space-y-1 max-w-[65ch]">
+                <p class="font-medium text-gray-900 dark:text-white type-body-md">2. 登录方式与凭据安全</p>
                 <p class="text-gray-600 dark:text-[#a1a1a6] leading-relaxed">
-                  <span class="font-bold text-red-500 dark:text-red-400">本软件仅支持手机验证码登录及「酷狗概念版」官方 APP 扫码登录</span>（暂不支持酷狗普通版或其他第三方平台扫码）。未注册概念版的手机号码验证后将自动初始化概念版账号。
+                  <span class="font-medium text-red-500 dark:text-red-400">本软件仅支持手机验证码登录及「酷狗概念版」官方 APP 扫码登录</span>（暂不支持酷狗普通版或其他第三方平台扫码）。未注册概念版的手机号码验证后将自动初始化概念版账号。
                 </p>
                 <p class="text-gray-600 dark:text-[#a1a1a6] leading-relaxed pt-1">
-                  <span class="font-bold text-gray-900 dark:text-white">安全与隐私保障：</span>用户的登录凭据（Cookie / Token 等）均通过系统底层硬件加密（Electron safeStorage）存储在用户本地设备中，绝不会向任何第三方云端服务器传输或共享您的敏感隐私数据。
+                  <span class="font-medium text-gray-900 dark:text-white">安全与隐私保障：</span>用户的登录凭据（Cookie / Token 等）均通过系统底层硬件加密（Electron safeStorage）存储在用户本地设备中，绝不会向任何第三方云端服务器传输或共享您的敏感隐私数据。
                 </p>
               </div>
 
               <!-- 条款 3 -->
-              <div class="space-y-1">
-                <p class="font-extrabold text-gray-900 dark:text-white text-[13.5px]">3. 数据来源与版权归属</p>
+              <div class="space-y-1 max-w-[65ch]">
+                <p class="font-medium text-gray-900 dark:text-white type-body-md">3. 数据来源与版权归属</p>
                 <p class="text-gray-600 dark:text-[#a1a1a6] leading-relaxed">
                   本软件所呈现的歌曲信息、歌词、封面、歌单及流媒体资源，均动态调用第三方公开网络接口或通过独立音源脚本进行本地解析渲染。本软件自身不托管、不存储、不修改亦不分发任何音视频资源。所有音乐作品的著作权、商标权及其他知识产权均归原始权利人（对应音乐平台或版权方）所有，请在版权许可范围内合理使用。
                 </p>
               </div>
 
               <!-- 条款 4 -->
-              <div class="space-y-1">
-                <p class="font-extrabold text-gray-900 dark:text-white text-[13.5px]">4. VIP 音质与特权助手声明</p>
+              <div class="space-y-1 max-w-[65ch]">
+                <p class="font-medium text-gray-900 dark:text-white type-body-md">4. VIP 音质与特权助手声明</p>
                 <p class="text-gray-600 dark:text-[#a1a1a6] leading-relaxed">
                   本软件集成的会员音质探测及「VIP 特权打卡助手」（如自动领取概念版畅听特权等功能）均依赖于平台现存的公开活动规则及接口逻辑。相关接口可能因官方业务调整随时失效、限制或关闭。因使用自动化或第三方接口可能引发的账号风控、权益变动或限制，由使用者自行承担，开发者不对相关接口的长期有效性做任何担保。
                 </p>
               </div>
 
               <!-- 条款 5 -->
-              <div class="space-y-1">
-                <p class="font-extrabold text-gray-900 dark:text-white text-[13.5px]">5. 跨平台歌单与扩展音源说明</p>
+              <div class="space-y-1 max-w-[65ch]">
+                <p class="font-medium text-gray-900 dark:text-white type-body-md">5. 跨平台歌单与扩展音源说明</p>
                 <p class="text-gray-600 dark:text-[#a1a1a6] leading-relaxed">
                   软件提供的网易云音乐、企鹅音乐（QQ 音乐）等跨平台歌单解析与外部音源脚本支持，仅为本地数据格式规整与试听辅助工具。因第三方平台反爬策略调整或网络中断导致的功能不可用，开发者不承担连带责任。
                 </p>
               </div>
 
               <!-- 条款 6 -->
-              <div class="space-y-1">
-                <p class="font-extrabold text-gray-900 dark:text-white text-[13.5px]">6. 用户守则与责任限制</p>
+              <div class="space-y-1 max-w-[65ch]">
+                <p class="font-medium text-gray-900 dark:text-white type-body-md">6. 用户守则与责任限制</p>
                 <p class="text-gray-600 dark:text-[#a1a1a6] leading-relaxed">
                   用户应严格遵守相关法律法规及各音乐平台的用户协议，不得利用本软件从事侵犯他人著作权、规避技术保护措施等违规违法行为。因非合理使用本软件而产生的一切纠纷、法律责任或直接/间接损失，均由使用者本人独立承担，开发者及贡献者概不负责。
                 </p>
@@ -95,8 +95,8 @@
 
               <!-- 滚动到底部结束指示 -->
               <div 
-                class="flex items-center justify-center pt-5 pb-3 text-[11.5px] gap-2 select-none transition-colors duration-200"
-                :class="hasScrolledToBottom ? 'text-emerald-500 font-bold' : 'text-gray-400 dark:text-[#85858b]'"
+                class="flex items-center justify-center pt-5 pb-3 type-meta-base gap-2 select-none transition-colors duration-200"
+                :class="hasScrolledToBottom ? 'text-emerald-500 font-medium' : 'text-gray-400 dark:text-[#85858b]'"
               >
                 <span class="w-8 h-px bg-gray-200 dark:bg-[#232325]"></span>
                 <span>{{ hasScrolledToBottom ? '已阅读至条款末尾 ✓' : '请继续向下滑动至底部' }}</span>
@@ -109,7 +109,7 @@
               <!-- 左侧次级操作按钮：次级浅灰微底实体胶囊，平衡左右视觉重心；悬浮平滑展开淡粉底红字 -->
               <button
                 @click="handleReject"
-                class="px-5 py-2.5 rounded-full text-[13px] font-bold text-gray-500 dark:text-[#a1a1a6] bg-gray-100/80 hover:bg-red-50 hover:text-red-500 dark:bg-[#232325]/80 dark:hover:bg-red-950/40 dark:hover:text-red-400 border border-gray-200/50 dark:border-white/[0.08] transition-all duration-200 no-drag focus:outline-none cursor-pointer flex items-center justify-center active:scale-95"
+                class="px-5 py-2.5 rounded-full type-body-sm font-medium text-gray-500 dark:text-[#a1a1a6] bg-gray-100/80 hover:bg-red-50 hover:text-red-500 dark:bg-[#232325]/80 dark:hover:bg-red-950/40 dark:hover:text-red-400 border border-gray-200/50 dark:border-white/[0.08] transition-all duration-200 no-drag focus:outline-none cursor-pointer flex items-center justify-center active:scale-95"
               >
                 拒绝并退出
               </button>
@@ -118,7 +118,7 @@
               <button
                 :disabled="!isAgreedAvailable"
                 @click="handleAgree"
-                class="px-6 py-2.5 min-w-[190px] rounded-full text-[13px] font-bold border transition-[background-color,color,box-shadow,transform] duration-200 flex items-center justify-center no-drag focus:outline-none"
+                class="px-6 py-2.5 min-w-[190px] rounded-full type-body-sm font-medium border transition-[background-color,color,box-shadow,transform] duration-200 flex items-center justify-center no-drag focus:outline-none"
                 :class="buttonClass"
               >
                 <template v-if="countdown > 0">

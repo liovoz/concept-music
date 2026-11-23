@@ -886,8 +886,8 @@ watch(config, (v) => {
 }
 
 .tb-label {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
   cursor: default;
@@ -935,6 +935,7 @@ watch(config, (v) => {
 }
 
 .lyric-line {
+  font-family: var(--font-family-lyric);
   text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -948,9 +949,9 @@ watch(config, (v) => {
 }
 
 .lyric-main {
-  font-weight: 700;
+  font-weight: var(--lyric-desktop-main-weight);
   -webkit-line-clamp: 2;
-  letter-spacing: 0;
+  letter-spacing: var(--letter-spacing-normal);
 }
 
 .lyric-karaoke {
@@ -987,7 +988,7 @@ watch(config, (v) => {
 }
 
 .lyric-sub {
-  font-weight: 600;
+  font-weight: var(--lyric-desktop-sub-weight);
   -webkit-line-clamp: 2;
 }
 
@@ -1110,12 +1111,12 @@ watch(config, (v) => {
 }
 
 .layout-vertical .lyric-main {
-  font-weight: 700;
+  font-weight: var(--lyric-desktop-main-weight);
   margin: 0;
 }
 
 .layout-vertical .lyric-sub {
-  font-weight: 600;
+  font-weight: var(--lyric-desktop-sub-weight);
   margin: 0;
   opacity: 0.85;
 }
@@ -1180,8 +1181,8 @@ watch(config, (v) => {
 }
 
 .st-label {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
   cursor: default;
@@ -1208,9 +1209,10 @@ watch(config, (v) => {
 }
 
 .st-value {
-  font-size: 12px;
-  font-family: monospace;
-  font-weight: 600;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-medium);
   color: rgba(255, 255, 255, 0.85);
   min-width: 20px;
   text-align: right;
@@ -1251,8 +1253,8 @@ watch(config, (v) => {
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
@@ -1370,8 +1372,8 @@ watch(config, (v) => {
   border: none;
   background: #fff;
   color: #0f172a;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: background 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.1s ease;
   white-space: nowrap;
@@ -1422,10 +1424,10 @@ watch(config, (v) => {
 }
 
 .island-title {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
   color: #ffffff;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--letter-spacing-normal);
   cursor: default;
 }
 
@@ -1445,8 +1447,8 @@ watch(config, (v) => {
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.55);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
@@ -1486,16 +1488,17 @@ watch(config, (v) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-medium);
   color: rgba(255, 255, 255, 0.7);
   cursor: default;
 }
 
 .island-val {
-  font-family: monospace;
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
   color: #60a5fa;
-  font-weight: 700;
+  font-weight: var(--font-weight-semibold);
 }
 
 .island-range {
@@ -1506,8 +1509,8 @@ watch(config, (v) => {
 }
 
 .island-card-label {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-medium);
   color: rgba(255, 255, 255, 0.55);
   cursor: default;
 }
@@ -1547,8 +1550,8 @@ watch(config, (v) => {
 }
 
 .island-toggle-label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   color: rgba(255, 255, 255, 0.75);
   cursor: default;
 }
@@ -1560,8 +1563,8 @@ watch(config, (v) => {
   border: none;
   background: #ffffff;
   color: #0f172a;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all 0.15s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -1586,8 +1589,8 @@ watch(config, (v) => {
   padding: 8px 20px;
   background: rgba(255, 255, 255, 0.95);
   color: rgba(0, 0, 0, 0.75);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-medium);
   border-radius: 9999px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
@@ -1631,9 +1634,9 @@ watch(config, (v) => {
   border-radius: 9px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   color: #f8fafc;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-open);
   white-space: nowrap;
   pointer-events: none;
   -webkit-app-region: no-drag;

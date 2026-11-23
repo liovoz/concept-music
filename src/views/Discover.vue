@@ -9,19 +9,19 @@
       
       <div class="flex items-end justify-between mb-8 w-full gap-4">
         <div class="flex-1 min-w-0">
-          <h2 class="text-3xl font-semibold text-gray-900 dark:text-[#ededed] tracking-tight truncate">
-            首页 <span class="text-lg text-blue-500 font-medium ml-2">Home</span>
+          <h2 class="type-heading-xl text-gray-900 dark:text-[#ededed] truncate">
+            首页 <span class="type-heading-sub text-blue-600/80 dark:text-blue-400/90 ml-2">Home</span>
           </h2>
-          <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-2 font-normal">听见好时光，发现未知的旋律</p>
+          <p class="type-meta-base text-gray-600 dark:text-[#b4b4ba] mt-2">听见好时光，发现未知的旋律</p>
         </div>
       </div>
 
       <div class="w-full flex flex-col min-w-0 mb-14">
         <div class="flex items-center justify-between mb-5">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-[#ededed] flex items-center">
+          <h3 class="type-heading-lg text-gray-800 dark:text-[#ededed] flex items-center">
             <span class="text-2xl mr-2">🎧</span> 每日推荐
           </h3>
-          <button v-if="userStore.isLoggedIn && dailySongs.length > 0" @click="playAllDaily" class="px-4 py-1.5 bg-gray-50 dark:bg-[#19191b] hover:bg-blue-50 dark:hover:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-[#ededed] border border-gray-100 dark:border-white/[0.08] rounded-full text-xs font-medium transition-colors no-drag flex items-center">
+          <button v-if="userStore.isLoggedIn && dailySongs.length > 0" @click="playAllDaily" class="px-4 py-1.5 bg-gray-50 dark:bg-[#19191b] hover:bg-blue-50 dark:hover:bg-[#232325] text-gray-700 dark:text-[#b4b4ba] hover:text-blue-600 dark:hover:text-[#ededed] border border-gray-200/80 dark:border-white/[0.08] rounded-full type-body-sm font-medium transition-colors no-drag flex items-center">
             <AppIcon name="play" class="w-4 h-4 mr-1" />
             播放全部
           </button>
@@ -31,9 +31,9 @@
           <div class="w-14 h-14 bg-white dark:!bg-[#232325] rounded-full flex items-center justify-center mb-4 shadow-sm dark:shadow-none border border-transparent dark:border-white/[0.08] transition-colors">
             <AppIcon name="lock" class="w-6 h-6 text-blue-500 dark:text-blue-400" />
           </div>
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-[#ededed] mb-2">解锁您的专属音乐口味</h4>
-          <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mb-6">登录后，我们将每天为您量身定制符合您品味的私藏好歌</p>
-          <button @click="userStore.openLoginModal()" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-full text-sm font-medium shadow-md shadow-blue-200 dark:shadow-none transition-colors active:scale-[0.98] no-drag">
+          <h4 class="type-heading-lg text-gray-800 dark:text-[#ededed] mb-2">解锁您的专属音乐口味</h4>
+          <p class="type-meta-base text-gray-500 dark:text-[#a1a1a6] mb-6">登录后，我们将每天为您量身定制符合您品味的私藏好歌</p>
+          <button @click="userStore.openLoginModal()" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-full type-body-md shadow-md shadow-blue-200 dark:shadow-none transition-colors active:scale-[0.98] no-drag">
             立即安全登录
           </button>
         </div>
@@ -49,14 +49,14 @@
         </div>
 
         <div v-else-if="dailyError" v-squircle="'xl'" class="w-full py-10 flex flex-col items-center justify-center text-red-500 bg-red-50/50 rounded-[18px] border border-red-100">
-          <p class="text-sm font-bold text-red-600 mb-2">获取每日推荐失败，请检查网络</p>
-          <button @click="fetchDailyRecommend" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold shadow-md transition-all active:scale-95 no-drag">重试加载</button>
+          <p class="type-body-md text-red-600 mb-2">获取每日推荐失败，请检查网络</p>
+          <button @click="fetchDailyRecommend" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-meta-base font-medium shadow-md transition-all active:scale-95 no-drag">重试加载</button>
         </div>
 
         <div v-else-if="dailySongs.length > 0" class="w-full flex flex-col">
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 lg:gap-4">
             <div v-for="song in dailySongs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="group flex items-center p-2.5 rounded-[14px] bg-white dark:bg-[#19191b] border border-gray-100 dark:border-white/[0.08] shadow-sm dark:shadow-none hover:shadow-md hover:border-blue-100 dark:hover:border-white/[0.16] dark:hover:bg-[#232325] transition-colors cursor-pointer no-drag min-w-0">
-              <div v-squircle="'sm'" class="relative w-[50px] h-[50px] rounded-[8px] flex-shrink-0 bg-gray-100 dark:bg-[#232325] mr-3 transform-gpu [transform:translateZ(0)]">
+              <div v-squircle="'sm'" class="relative w-[54px] h-[54px] rounded-[8px] flex-shrink-0 bg-gray-100 dark:bg-[#232325] mr-3 transform-gpu [transform:translateZ(0)]">
                 <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
                 
                 <div @click.stop="handlePlay(song)" class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
@@ -65,12 +65,12 @@
               </div>
               
               <div class="flex-1 min-w-0 flex flex-col justify-center">
-                <div class="flex items-center w-full">
-                  <span class="text-sm font-medium text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate" v-tooltip="song._title">{{ song._title }}</span>
-                  <span v-if="song._is_paid" class="ml-1.5 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-px rounded-[5px] text-[8px] font-bold tracking-widest uppercase transform scale-90 origin-left">付费</span>
-                  <span v-else-if="song._is_vip" class="ml-1.5 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-px rounded-[5px] text-[8px] font-bold tracking-widest uppercase transform scale-90 origin-left">VIP</span>
+                <div class="flex items-center w-full min-w-0">
+                  <span class="type-body-md text-gray-900 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate min-w-0" v-tooltip="song._title">{{ song._title }}</span>
+                  <span v-if="song._is_paid" class="ml-1.5 flex-shrink-0 bg-orange-50 text-orange-600 border border-orange-200 rounded-[5px] song-badge">付费</span>
+                  <span v-else-if="song._is_vip" class="ml-1.5 flex-shrink-0 bg-blue-50 text-blue-600 border border-blue-200 rounded-[5px] song-badge">VIP</span>
                 </div>
-                <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" size="small" />
+                <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" size="small" class="mt-0.5" />
               </div>
             </div>
           </div>
@@ -79,7 +79,7 @@
 
       <div class="w-full mb-4">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-[#ededed] flex items-center">
+          <h3 class="type-heading-lg text-gray-800 dark:text-[#ededed] flex items-center">
             <span class="text-2xl mr-2">💿</span> 为您精选歌单
           </h3>
         </div>
@@ -93,8 +93,8 @@
         </div>
 
         <div v-else-if="playlistsError" v-squircle="'xl'" class="flex-1 flex flex-col items-center justify-center py-10 text-red-500 bg-red-50/50 rounded-[18px] border border-red-100">
-          <p class="text-sm font-bold text-red-600 mb-2">获取精选歌单失败</p>
-          <button @click="fetchPlaylists" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
+          <p class="type-body-md text-red-600 mb-2">获取精选歌单失败</p>
+          <button @click="fetchPlaylists" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-meta-base font-medium shadow-md transition-all active:scale-95 no-drag">重新加载</button>
         </div>
 
         <div v-else-if="playlists.length > 0">
@@ -116,12 +116,12 @@
                 <!-- 3. 右上角角标（独立浮层） -->
                 <div class="absolute top-2 right-2 bg-black/45 text-white px-2 py-0.5 rounded-full flex items-center shadow-sm pointer-events-none select-none z-20">
                   <AppIcon name="play" class="w-3 h-3 mr-1 flex-shrink-0" />
-                  <span class="text-[10px] font-bold tracking-wider leading-none">{{ formatPlayCount(playlist.play_count) }}</span>
+                  <span class="type-meta-micro">{{ formatPlayCount(playlist.play_count) }}</span>
                 </div>
               </div>
               <div class="mt-3 flex flex-col px-1 min-w-0">
-                <h4 class="text-sm font-medium text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>
-                <p class="text-xs text-gray-400 dark:text-[#85858b] mt-1.5 font-normal truncate" v-tooltip="'By ' + (playlist.nickname || '未知用户')">By {{ playlist.nickname || '未知用户' }}</p>
+                <h4 class="type-body-md text-gray-900 dark:text-[#ededed] leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>
+                <p class="type-meta-base text-gray-500 dark:text-[#98989f] mt-1.5 truncate" v-tooltip="'By ' + (playlist.nickname || '未知用户')">By {{ playlist.nickname || '未知用户' }}</p>
               </div>
             </div>
           </div>
@@ -133,7 +133,7 @@
               </div>
               <div class="flex items-center space-x-3">
                 <span class="w-8 h-px bg-gray-200 dark:bg-white/[0.08]"></span>
-                <span class="text-[11px] font-medium tracking-[0.12em] text-gray-400 dark:text-[#85858b]">已经到底了 · 听点别的吧</span>
+                <span class="type-meta-base text-gray-500 dark:text-[#98989f]">已经到底了 · 听点别的吧</span>
                 <span class="w-8 h-px bg-gray-200 dark:bg-white/[0.08]"></span>
               </div>
             </div>
@@ -142,7 +142,7 @@
 
         <div v-else class="flex flex-col items-center justify-center py-10 text-gray-400">
           <AppIcon name="music" class="w-12 h-12 mb-3 text-gray-200" />
-          <p class="text-sm font-bold">暂无精选歌单</p>
+          <p class="type-body-md">暂无精选歌单</p>
         </div>
       </div>
     </div>

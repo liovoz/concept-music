@@ -19,17 +19,17 @@
             <AppIcon name="close" class="w-4 h-4" />
           </button>
 
-          <h3 class="text-xl leading-7 font-bold text-gray-800 dark:text-[#ededed] mb-1">登录概念音乐</h3>
-          <p class="text-xs leading-4 text-gray-400 dark:text-[#85858b] mb-5">畅享高品质音乐与多端权益同步</p>
+          <h3 class="type-heading-lg text-gray-800 dark:text-[#ededed] mb-1">登录概念音乐</h3>
+          <p class="type-meta-base text-gray-400 dark:text-[#85858b] mb-5">畅享高品质音乐与多端权益同步</p>
 
           <!-- 登录模式切换 Tab -->
-          <div v-squircle="'lg'" class="flex h-10 p-1 bg-gray-100 dark:bg-[#232325] rounded-[14px] mb-6 w-full text-xs font-semibold text-gray-500 dark:text-[#a1a1a6] select-none">
+          <div v-squircle="'lg'" class="flex h-10 p-1 bg-gray-100 dark:bg-[#232325] rounded-[14px] mb-6 w-full type-meta-base font-medium text-gray-500 dark:text-[#a1a1a6] select-none">
             <button
               type="button"
               @click="switchTab('phone')"
               :class="[
                 'flex-1 py-2 rounded-[10px] transition-colors flex items-center justify-center gap-1.5',
-                loginType === 'phone' ? 'bg-white dark:bg-[#19191b] text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'hover:text-gray-800 dark:hover:text-[#ededed]'
+                loginType === 'phone' ? 'bg-white dark:bg-[#19191b] text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-medium' : 'hover:text-gray-800 dark:hover:text-[#ededed]'
               ]"
             >
               <AppIcon name="phone" class="w-3.5 h-3.5" />
@@ -40,7 +40,7 @@
               @click="switchTab('qr')"
               :class="[
                 'flex-1 py-2 rounded-[10px] transition-colors flex items-center justify-center gap-1.5',
-                loginType === 'qr' ? 'bg-white dark:bg-[#19191b] text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-bold' : 'hover:text-gray-800 dark:hover:text-[#ededed]'
+                loginType === 'qr' ? 'bg-white dark:bg-[#19191b] text-blue-600 dark:text-blue-400 shadow-sm dark:shadow-none font-medium' : 'hover:text-gray-800 dark:hover:text-[#ededed]'
               ]"
             >
               <AppIcon name="qrcode" class="w-3.5 h-3.5" />
@@ -54,7 +54,7 @@
             <form v-if="!multiUserList.length" @submit.prevent="handlePhoneLogin" class="w-full flex flex-col">
               <!-- 手机号输入框（双层同心 Apple HIG 超椭圆边框壳，44px 固定 4px 栅格高度以对齐多档 DPI 物理像素） -->
               <div class="w-full mb-4">
-                <label class="block text-xs leading-4 font-bold text-gray-500 dark:text-[#a1a1a6] mb-2 px-0.5">手机号码</label>
+                <label class="block type-meta-base font-medium text-gray-500 dark:text-[#a1a1a6] mb-2 px-0.5">手机号码</label>
                 <div
                   v-squircle="'md'"
                   class="group h-11 p-[1px] rounded-[10px] bg-gray-200 dark:bg-white/[0.08] focus-within:bg-blue-500 dark:focus-within:bg-blue-500 transition-colors"
@@ -63,14 +63,14 @@
                     v-squircle="9"
                     class="flex items-center w-full h-full bg-gray-50 dark:bg-[#232325] group-focus-within:bg-white dark:group-focus-within:bg-[#19191b] rounded-[9px] transition-colors px-3"
                   >
-                    <span class="text-xs font-bold text-gray-500 dark:text-[#a1a1a6] pr-2.5 border-r border-gray-200 dark:border-white/[0.08] select-none">+86</span>
+                    <span class="type-numeric-sm font-medium text-gray-500 dark:text-[#a1a1a6] pr-2.5 border-r border-gray-200 dark:border-white/[0.08] select-none">+86</span>
                     <input
                       ref="phoneInputRef"
                       v-model="phone"
                       type="tel"
                       maxlength="11"
                       placeholder="请输入11位大陆手机号码"
-                      class="w-full h-full pl-2.5 bg-transparent text-sm text-gray-800 dark:text-[#ededed] placeholder-gray-400 dark:placeholder-[#85858b] focus:outline-none"
+                      class="w-full h-full pl-2.5 bg-transparent type-body-base text-gray-800 dark:text-[#ededed] placeholder-gray-500 dark:placeholder-[#8e8e95] focus:outline-none"
                       @input="handlePhoneInput"
                       @keydown.enter.prevent="focusCodeInput"
                     />
@@ -88,7 +88,7 @@
 
               <!-- 验证码输入框（双层同心 Apple HIG 超椭圆边框壳，44px 固定 4px 栅格高度以对齐多档 DPI 物理像素） -->
               <div class="w-full mb-2">
-                <label class="block text-xs leading-4 font-bold text-gray-500 dark:text-[#a1a1a6] mb-2 px-0.5">短信验证码</label>
+                <label class="block type-meta-base font-medium text-gray-500 dark:text-[#a1a1a6] mb-2 px-0.5">短信验证码</label>
                 <div
                   v-squircle="'md'"
                   class="group h-11 p-[1px] rounded-[10px] bg-gray-200 dark:bg-white/[0.08] focus-within:bg-blue-500 dark:focus-within:bg-blue-500 transition-colors"
@@ -103,7 +103,7 @@
                       type="text"
                       maxlength="6"
                       placeholder="请输入6位验证码"
-                      class="w-full h-full pl-1 bg-transparent text-sm text-gray-800 dark:text-[#ededed] placeholder-gray-400 dark:placeholder-[#85858b] focus:outline-none"
+                      class="w-full h-full pl-1 bg-transparent type-body-base text-gray-800 dark:text-[#ededed] placeholder-gray-400 dark:placeholder-[#85858b] focus:outline-none"
                       @keydown.enter.prevent="handlePhoneLogin"
                     />
                     <button
@@ -111,7 +111,7 @@
                       :disabled="!canSendCode"
                       @click="handleSendCode"
                       v-squircle="'sm'"
-                      class="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-xl transition-all select-none"
+                      class="flex-shrink-0 px-3 py-1.5 type-meta-base font-medium rounded-xl transition-all select-none tabular-nums"
                       :class="
                         canSendCode
                           ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 shadow-sm'
@@ -132,7 +132,7 @@
               <!-- 错误回显与未注册智能提示条 -->
               <div
                 v-if="phoneError"
-                class="w-full mb-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs flex flex-col gap-1.5 transition-all"
+                class="w-full mb-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 type-meta-base flex flex-col gap-1.5 transition-all"
               >
                 <div class="flex items-start gap-2">
                   <AppIcon name="warning" class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
@@ -143,11 +143,11 @@
                   v-if="isUnregistered || sendFailedCount >= 2"
                   class="flex items-center justify-between pt-2 border-t border-amber-200/60 dark:border-amber-800/40 mt-0.5"
                 >
-                  <span class="text-[11px] text-amber-700 dark:text-amber-400 font-medium">推荐免风控通道：</span>
+                  <span class="type-meta-base text-amber-700 dark:text-amber-400 font-medium">推荐免风控通道：</span>
                   <button
                     type="button"
                     @click="switchTab('qr')"
-                    class="text-blue-600 dark:text-blue-400 font-bold hover:underline text-xs flex items-center gap-0.5"
+                    class="text-blue-600 dark:text-blue-400 font-medium hover:underline type-meta-base flex items-center gap-0.5"
                   >
                     <span>切换至扫码登录</span>
                     <span>&rarr;</span>
@@ -156,7 +156,7 @@
               </div>
 
               <!-- 协议与未注册自动初始化提示 -->
-              <p class="text-[11px] text-gray-400 text-center leading-relaxed mt-2 mb-4 px-1 select-none">
+              <p class="type-meta-base text-gray-400 text-center leading-relaxed mt-2 mb-4 px-1 select-none">
                 未注册手机号验证后将自动初始化概念版账号<br />
                 登录即代表同意用户协议与隐私政策
               </p>
@@ -166,7 +166,7 @@
                 type="submit"
                 :disabled="!canSubmit"
                 v-squircle="'lg'"
-                class="w-full py-3 rounded-2xl font-bold text-sm text-white shadow-lg transition-all flex items-center justify-center gap-2 select-none"
+                class="w-full py-3 rounded-2xl type-body-md text-white shadow-lg transition-all flex items-center justify-center gap-2 select-none"
                 :class="
                   canSubmit
                     ? 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98] shadow-blue-500/25 cursor-pointer'
@@ -180,7 +180,7 @@
 
             <!-- 场景 B：该手机号存在多账号时的选择列表 -->
             <div v-else class="w-full flex flex-col items-center">
-              <p class="text-xs text-gray-600 mb-3 text-center">
+              <p class="type-meta-base text-gray-600 mb-3 text-center">
                 检测到该手机号绑定了多个账号，请选择要登录的身份：
               </p>
               <div class="w-full max-h-48 overflow-y-auto space-y-2 mb-4 pr-1">
@@ -196,8 +196,8 @@
                     alt="用户头像"
                   />
                   <div class="flex-1 min-w-0">
-                    <div class="text-xs font-bold text-gray-800 truncate">{{ u.nickname || u.username || '酷狗用户' }}</div>
-                    <div class="text-[10px] text-gray-400">UID: {{ u.userid || u.uid || '-' }}</div>
+                    <div class="type-meta-base font-medium text-gray-800 truncate">{{ u.nickname || u.username || '酷狗用户' }}</div>
+                    <div class="type-meta-micro text-gray-500">UID: {{ u.userid || u.uid || '-' }}</div>
                   </div>
                   <AppIcon name="check" class="w-4 h-4 text-blue-600 opacity-60" />
                 </div>
@@ -205,7 +205,7 @@
               <button
                 type="button"
                 @click="multiUserList = []"
-                class="text-xs text-gray-500 hover:text-gray-800 py-1"
+                class="type-meta-base text-gray-500 hover:text-gray-800 py-1"
               >
                 返回重新输入
               </button>
@@ -220,7 +220,7 @@
             >
               <div v-if="isLoading" class="flex flex-col items-center justify-center w-full h-full text-blue-500">
                 <AppIcon name="spinner" spin class="h-8 w-8 mb-3" />
-                <span class="text-xs font-medium">安全环境初始化...</span>
+                <span class="type-meta-base font-medium">安全环境初始化...</span>
               </div>
 
               <div
@@ -229,7 +229,7 @@
                 @click="initLoginFlow"
               >
                 <AppIcon name="warning" class="w-8 h-8 mb-2" />
-                <span class="text-xs font-medium text-center">获取失败<br />点击重试</span>
+                <span class="type-meta-base font-medium text-center">获取失败<br />点击重试</span>
               </div>
 
               <img
@@ -244,8 +244,8 @@
                 class="absolute inset-0 bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center text-green-600 z-10"
               >
                 <AppIcon name="check" class="w-10 h-10 mb-2" />
-                <span class="text-sm font-bold">扫描成功</span>
-                <span class="text-[10px] text-gray-600 mt-1">请在手机端点击确认登录</span>
+                <span class="type-body-md">扫描成功</span>
+                <span class="type-meta-base text-gray-600 mt-1">请在手机端点击确认登录</span>
               </div>
 
               <div
@@ -253,8 +253,8 @@
                 class="absolute inset-0 bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center text-blue-600 z-10"
               >
                 <AppIcon name="spinner" spin class="h-10 w-10 mb-2" />
-                <span class="text-sm font-bold">登录中...</span>
-                <span class="text-[10px] text-gray-600 mt-1">正在同步用户信息</span>
+                <span class="type-body-md">登录中...</span>
+                <span class="type-meta-base text-gray-600 mt-1">正在同步用户信息</span>
               </div>
 
               <div
@@ -263,13 +263,13 @@
                 class="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white cursor-pointer hover:bg-black/70 transition-colors z-10"
               >
                 <AppIcon name="refresh" class="w-8 h-8 mb-2 opacity-80" />
-                <span class="text-sm font-bold">二维码已失效</span>
-                <span class="text-[10px] text-gray-300 mt-1">点击刷新重新获取</span>
+                <span class="type-body-md">二维码已失效</span>
+                <span class="type-meta-base text-gray-300 mt-1">点击刷新重新获取</span>
               </div>
             </div>
 
-            <p class="mt-5 text-xs text-gray-500 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-              请打开 <span class="text-blue-600 font-bold tracking-wide">酷狗概念版 APP</span> 扫一扫
+            <p class="mt-5 type-meta-base text-gray-500 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
+              请打开 <span class="text-blue-600 font-medium">酷狗概念版 APP</span> 扫一扫
             </p>
           </div>
           </div>

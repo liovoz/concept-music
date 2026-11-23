@@ -3,12 +3,12 @@
     <div class="flex items-center justify-between gap-2" :class="compact ? 'mb-1.5' : 'mb-1.5'">
       <label
         :for="inputId"
-        class="block text-xs font-bold text-gray-600 dark:text-[#a1a1a6] select-none"
+        class="block type-meta-base font-medium text-gray-600 dark:text-[#a1a1a6] select-none"
       >
         {{ label }}
       </label>
       <span
-        class="text-[11px] font-semibold tabular-nums transition-colors select-none"
+        class="type-numeric-sm font-medium transition-colors select-none"
         :class="counterColorClass"
       >
         {{ validation.trimmedLength }}/{{ maxLength }}
@@ -48,21 +48,21 @@
     <div class="mt-1.5 min-h-[16px] flex items-center justify-between gap-2 pl-0.5">
       <p
         v-if="validation.error"
-        class="text-[11px] font-medium text-red-500 dark:text-red-400 flex items-center gap-1 leading-tight"
+        class="type-meta-base font-medium text-red-500 dark:text-red-400 flex items-center gap-1"
       >
         <AppIcon name="warning" class="w-3 h-3 shrink-0" />
         <span>{{ validation.error }}</span>
       </p>
       <p
         v-else-if="validation.isAtLimit"
-        class="text-[11px] font-medium text-amber-500 dark:text-amber-400 flex items-center gap-1 leading-tight"
+        class="type-meta-base font-medium text-amber-500 dark:text-amber-400 flex items-center gap-1"
       >
         <AppIcon name="info" class="w-3 h-3 shrink-0" />
         <span>已达到 {{ maxLength }} 字上限</span>
       </p>
       <p
         v-else
-        class="text-[11px] text-gray-400 dark:text-[#85858b] leading-tight"
+        class="type-meta-base text-gray-400 dark:text-[#85858b]"
       >
         歌单名称最多支持 {{ maxLength }} 个字符{{ validation.hasEdgeSpaces ? '（首尾空格将自动去除）' : '' }}
       </p>
@@ -110,10 +110,10 @@ const validation = computed(() => validatePlaylistName(props.modelValue, props.m
 
 const counterColorClass = computed(() => {
   if (validation.value.isOverLimit || validation.value.isWhitespaceOnly) {
-    return 'text-red-500 dark:text-red-400 font-bold';
+    return 'text-red-500 dark:text-red-400 font-medium';
   }
   if (validation.value.trimmedLength >= props.maxLength) {
-    return 'text-amber-500 dark:text-amber-400 font-bold';
+    return 'text-amber-500 dark:text-amber-400 font-medium';
   }
   if (validation.value.trimmedLength >= Math.floor(props.maxLength * 0.85)) {
     return 'text-amber-500/90 dark:text-amber-400/90';

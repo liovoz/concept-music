@@ -2,16 +2,202 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hybrid 西文/数字内嵌字体子集 (< 170 KB): latin/latin-ext 走 Inter Variable，CJK 无缝回退系统原生字体 */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  size-adjust: 95%;
+  line-gap-override: 0%;
+  src: url('@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  size-adjust: 95%;
+  line-gap-override: 0%;
+  src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  size-adjust: 93%;
+  line-gap-override: 0%;
+  src: url('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
 /* ✨ 核心升级：Design Tokens 统一主题配置管理 */
 :root {
   --brand-primary: #2563eb; /* 品牌主色调 (对应之前的 blue-600) */
   --brand-hover: #1d4ed8;   /* 品牌悬停色 (对应之前的 blue-700) */
   --brand-light: #eff6ff;   /* 品牌极浅底色 (对应之前的 blue-50) */
   --brand-border: #bfdbfe;  /* 品牌柔和边框 (对应之前的 blue-200) */
+
+  /* Typography L1: Primitive Tokens (Hybrid: Inter Variable 西文/数字 + Noto Sans SC Variable 可变中文字重) */
+  --font-family-sans: 'Inter Variable', 'Noto Sans SC Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei', 'Microsoft YaHei UI', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif;
+  --font-family-mono: 'JetBrains Mono Variable', 'Cascadia Mono', 'SF Mono', Consolas, ui-monospace, monospace;
+  --font-family-lyric: var(--font-family-sans);
+
+  --font-weight-regular: 430;
+  --font-weight-medium: 500;
+  --font-weight-subtitle: 520;
+  --font-weight-semibold: 600;
+
+  /* 舒适桌面默认字阶 (standard 100%) */
+  --font-size-2xs: 0.75rem;    /* 12px - 微徽标硬下限 */
+  --font-size-xs: 0.8125rem;   /* 13px - 歌手/副标题/辅助信息 */
+  --font-size-sm: 0.875rem;    /* 14px - 列表次要列/输入框/设置项 */
+  --font-size-base: 0.9375rem; /* 15px - 核心正文/歌名/侧栏导航 */
+  --font-size-md: 1.0625rem;   /* 17px - 区块/弹窗标题 */
+  --font-size-lg: 1.25rem;     /* 20px - 分区大标题 */
+  --font-size-xl: 1.625rem;    /* 26px - 页面主标题 */
+  --font-size-2xl: 2.125rem;   /* 34px - 详情页封面展示标题 */
+
+  --line-height-tight: 1.15;
+  --line-height-snug: 1.35;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+
+  --letter-spacing-display: -0.02em;
+  --letter-spacing-heading: -0.01em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-open: 0.01em;
+
+  /* Typography L2: Semantic Tokens */
+  --type-display-lg-size: var(--font-size-2xl);
+  --type-display-lg-leading: 2.5rem;    /* 40px */
+  --type-display-lg-weight: var(--font-weight-semibold);
+  --type-display-lg-tracking: var(--letter-spacing-display);
+
+  --type-heading-xl-size: var(--font-size-xl);
+  --type-heading-xl-leading: 2.125rem;  /* 34px */
+  --type-heading-xl-weight: var(--font-weight-semibold);
+  --type-heading-xl-tracking: -0.015em;
+
+  --type-heading-lg-size: var(--font-size-lg);
+  --type-heading-lg-leading: 1.75rem;   /* 28px */
+  --type-heading-lg-weight: var(--font-weight-semibold);
+  --type-heading-lg-tracking: var(--letter-spacing-heading);
+
+  --type-heading-md-size: var(--font-size-md);
+  --type-heading-md-leading: 1.5rem;    /* 24px */
+  --type-heading-md-weight: var(--font-weight-semibold);
+  --type-heading-md-tracking: var(--letter-spacing-normal);
+
+  --type-heading-sub-size: 1.125rem;    /* 18px */
+  --type-heading-sub-leading: 1.5rem;   /* 24px */
+
+  --type-body-md-leading: 1.3125rem;    /* 21px */
+  --type-body-base-leading: 1.375rem;   /* 22px */
+  --type-body-sm-leading: 1.25rem;      /* 20px */
+  --type-meta-base-leading: 1.0625rem;  /* 17px */
+  --type-meta-micro-leading: 0.875rem;  /* 14px */
+  --type-numeric-lg-leading: 2rem;      /* 32px */
+  --type-numeric-sm-leading: 1.0625rem; /* 17px */
+
+  /* Typography L3: Component Tokens */
+  --badge-font-size: 0.6875rem;         /* 11px */
+  --badge-height: 1.0625rem;            /* 17px */
+  --lyric-immersive-weight: var(--font-weight-semibold);
+  --lyric-desktop-main-weight: var(--font-weight-semibold);
+  --lyric-desktop-sub-weight: var(--font-weight-medium);
+}
+
+/* 紧凑字阶模式 (Settings -> 界面字体大小: compact) */
+html[data-font-scale="compact"] {
+  --font-size-2xs: 0.6875rem;  /* 11px */
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.8125rem;   /* 13px */
+  --font-size-base: 0.875rem;  /* 14px */
+  --font-size-md: 1rem;        /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.5rem;      /* 24px */
+  --font-size-2xl: 2rem;       /* 32px */
+  --type-display-lg-leading: 2.25rem;
+  --type-heading-xl-leading: 2rem;
+  --type-heading-lg-leading: 1.5rem;
+  --type-heading-md-leading: 1.5rem;
+  --type-body-md-leading: 1.25rem;
+  --type-body-base-leading: 1.25rem;
+  --type-body-sm-leading: 1.25rem;
+  --type-meta-base-leading: 1rem;
+  --type-meta-micro-leading: 0.8125rem;
+  --type-numeric-sm-leading: 1rem;
+  --badge-font-size: 0.6875rem; /* 11px */
+  --badge-height: 1rem;         /* 16px */
+  --type-heading-sub-size: 1rem;
+  --type-heading-sub-leading: 1.375rem;
+}
+
+/* 护眼大号模式 (Settings -> 界面字体大小: large) */
+html[data-font-scale="large"] {
+  --font-size-2xs: 0.8125rem;  /* 13px */
+  --font-size-xs: 0.875rem;    /* 14px */
+  --font-size-sm: 0.9375rem;   /* 15px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-md: 1.125rem;    /* 18px */
+  --font-size-lg: 1.375rem;    /* 22px */
+  --font-size-xl: 1.75rem;     /* 28px */
+  --font-size-2xl: 2.25rem;    /* 36px */
+  --type-display-lg-leading: 2.75rem;
+  --type-heading-xl-leading: 2.25rem;
+  --type-heading-lg-leading: 1.875rem;
+  --type-heading-md-leading: 1.625rem;
+  --type-body-md-leading: 1.4375rem;
+  --type-body-base-leading: 1.5rem;
+  --type-body-sm-leading: 1.375rem;
+  --type-meta-base-leading: 1.1875rem;
+  --type-meta-micro-leading: 1rem;
+  --type-numeric-lg-leading: 2.25rem;
+  --type-numeric-sm-leading: 1.1875rem;
+  --badge-font-size: 0.75rem;   /* 12px */
+  --badge-height: 1.1875rem;    /* 19px */
+  --type-heading-sub-size: 1.25rem;
+  --type-heading-sub-leading: 1.75rem;
+}
+
+/* 系统原生字体预设 (Settings -> 界面字体风格: system) */
+html[data-font-preset="system"] {
+  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei', 'Microsoft YaHei UI', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif;
+  --font-family-mono: 'Cascadia Mono', 'SF Mono', Consolas, ui-monospace, monospace;
+  --font-weight-regular: 400;
+}
+
+/* 极窄窗口断点仅在 <= 1120px 触发，确保 1200x830 默认窗口保持标准大标题层级 */
+@media (max-width: 1120px) {
+  :root {
+    --type-display-lg-size: 1.875rem;  /* 30px */
+    --type-display-lg-leading: 2.25rem;
+    --type-heading-xl-size: 1.5rem;    /* 24px */
+    --type-heading-xl-leading: 2rem;
+    --type-heading-lg-size: 1.125rem;  /* 18px */
+    --type-heading-lg-leading: 1.5rem;
+  }
+}
+
+/* Wide 宽屏桌面 (>= 1600px) */
+@media (min-width: 1600px) {
+  :root {
+    --type-display-lg-size: 2.375rem;  /* 38px */
+    --type-display-lg-leading: 2.75rem;
+    --type-heading-xl-size: 1.75rem;   /* 28px */
+    --type-heading-xl-leading: 2.25rem;
+  }
 }
 
 :root.dark {
   color-scheme: dark;
+  --font-weight-regular: 400;
   --brand-primary: #3b82f6;
   --brand-hover: #2563eb;
   --brand-light: rgba(59, 130, 246, 0.14);
@@ -25,8 +211,8 @@
   --hairline-subtle: rgba(237, 237, 237, 0.08);
   --hairline-strong: rgba(237, 237, 237, 0.14);
   --text-primary: #ededed;
-  --text-secondary: #a1a1a6;
-  --text-muted: #85858b;
+  --text-secondary: #b4b4ba;
+  --text-muted: #98989f;
 }
 
 html, body, #app {
@@ -36,6 +222,122 @@ html, body, #app {
   overflow: hidden; 
   background-color: #ffffff;
   color: #333333;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 仅在深色主题、高分屏及透明歌词窗启用 antialiased，Windows 100% 浅色屏保留系统 ClearType */
+.dark,
+html.desktop-lyric-window {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+  html, body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .type-display-lg {
+    font-size: var(--type-display-lg-size);
+    line-height: var(--type-display-lg-leading);
+    font-weight: var(--type-display-lg-weight);
+    letter-spacing: var(--type-display-lg-tracking);
+  }
+  .type-heading-xl {
+    font-size: var(--type-heading-xl-size);
+    line-height: var(--type-heading-xl-leading);
+    font-weight: var(--type-heading-xl-weight);
+    letter-spacing: var(--type-heading-xl-tracking);
+  }
+  .type-heading-lg {
+    font-size: var(--type-heading-lg-size);
+    line-height: var(--type-heading-lg-leading);
+    font-weight: var(--type-heading-lg-weight);
+    letter-spacing: var(--type-heading-lg-tracking);
+  }
+  .type-heading-md {
+    font-size: var(--type-heading-md-size);
+    line-height: var(--type-heading-md-leading);
+    font-weight: var(--type-heading-md-weight);
+    letter-spacing: var(--type-heading-md-tracking);
+  }
+  .type-heading-sub {
+    font-size: var(--type-heading-sub-size);
+    line-height: var(--type-heading-sub-leading);
+    font-weight: var(--font-weight-subtitle);
+    letter-spacing: -0.015em;
+  }
+  .type-body-md {
+    font-size: var(--font-size-base);
+    line-height: var(--type-body-md-leading);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-normal);
+    font-variant-numeric: tabular-nums;
+  }
+  .type-body-base {
+    font-size: var(--font-size-base);
+    line-height: var(--type-body-base-leading);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: var(--letter-spacing-normal);
+  }
+  .type-body-sm {
+    font-size: var(--font-size-sm);
+    line-height: var(--type-body-sm-leading);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: var(--letter-spacing-normal);
+    font-variant-numeric: tabular-nums;
+  }
+  .type-meta-base {
+    font-size: var(--font-size-xs);
+    line-height: var(--type-meta-base-leading);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: var(--letter-spacing-normal);
+    font-variant-numeric: tabular-nums;
+  }
+  .type-meta-micro {
+    font-size: var(--font-size-2xs);
+    line-height: var(--type-meta-micro-leading);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-open);
+    font-variant-numeric: tabular-nums;
+  }
+  .type-numeric-lg {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xl);
+    line-height: var(--type-numeric-lg-leading);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-heading);
+    font-variant-numeric: tabular-nums;
+  }
+  .type-numeric-sm {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xs);
+    line-height: var(--type-numeric-sm-leading);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: var(--letter-spacing-normal);
+    font-variant-numeric: tabular-nums;
+  }
+  .song-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--badge-height);
+    padding: 0 0.3125rem;
+    font-size: var(--badge-font-size);
+    line-height: 1;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-open);
+    font-variant-numeric: tabular-nums;
+    vertical-align: middle;
+    box-sizing: border-box;
+    white-space: nowrap;
+  }
 }
 
 html.desktop-lyric-window,
@@ -121,11 +423,12 @@ html.tray-menu-window.dark #app {
 .dark .hover\:text-gray-800:hover,
 .dark .hover\:text-gray-700:hover { color: #ededed; }
 .dark .text-gray-600,
-.dark .text-gray-500 { color: #a1a1a6; }
-.dark .text-gray-400 { color: #85858b; }
-.dark .text-gray-300 { color: #636369; }
+.dark .text-gray-500 { color: #b4b4ba; }
+.dark .text-gray-400 { color: #98989f; }
+.dark .text-gray-300 { color: #717178; }
 .dark .text-gray-200 { color: #48484d; }
-.dark .placeholder-gray-400::placeholder { color: #6e6e73; }
+.dark .placeholder-gray-400::placeholder,
+.dark .placeholder-gray-500::placeholder { color: #8e8e95; }
 .dark input:not([type="checkbox"]):not([type="radio"]),
 .dark textarea {
   color-scheme: dark;

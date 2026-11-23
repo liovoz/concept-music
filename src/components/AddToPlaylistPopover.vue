@@ -23,8 +23,8 @@
                 @error="e => e.target.src = defaultImg"
               />
               <div class="min-w-0">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-[#ededed] truncate">添加到歌单</h3>
-                <p class="text-[11px] text-gray-400 dark:text-[#85858b] truncate mt-0.5">
+                <h3 class="type-body-md text-gray-900 dark:text-[#ededed] truncate">添加到歌单</h3>
+                <p class="type-meta-base text-gray-400 dark:text-[#85858b] truncate mt-0.5">
                   {{ songTitle }} · {{ songArtist }}
                 </p>
               </div>
@@ -46,7 +46,7 @@
                 v-model="keyword"
                 type="text"
                 placeholder="筛选歌单名称..."
-                class="w-full h-9 pl-8 pr-3 rounded-xl bg-gray-100/80 dark:bg-[#19191b] border border-gray-200/70 dark:border-white/[0.08] text-xs text-gray-800 dark:text-[#ededed] placeholder:text-gray-400 dark:placeholder:text-[#85858b] focus:outline-none focus:border-purple-400 dark:focus:border-blue-500/60 transition-colors"
+                class="w-full h-9 pl-8 pr-3 rounded-xl bg-gray-100/80 dark:bg-[#19191b] border border-gray-200/70 dark:border-white/[0.08] type-meta-base text-gray-800 dark:text-[#ededed] placeholder:text-gray-500 dark:placeholder:text-[#8e8e95] focus:outline-none focus:border-purple-400 dark:focus:border-blue-500/60 transition-colors"
               />
             </div>
 
@@ -54,7 +54,7 @@
             <div v-if="!showCreateForm">
               <button
                 @click="openCreateForm"
-                class="w-full h-9 px-3 rounded-xl border border-dashed border-purple-200 dark:border-white/[0.12] bg-purple-50/50 dark:bg-[#19191b] hover:bg-purple-50 dark:hover:bg-[#232325] text-purple-600 dark:text-purple-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+                class="w-full h-9 px-3 rounded-xl border border-dashed border-purple-200 dark:border-white/[0.12] bg-purple-50/50 dark:bg-[#19191b] hover:bg-purple-50 dark:hover:bg-[#232325] text-purple-600 dark:text-purple-300 type-meta-base font-medium flex items-center justify-center gap-1.5 transition-colors"
               >
                 <AppIcon name="plus" class="w-3.5 h-3.5" />
                 <span>新建歌单并加入此歌曲</span>
@@ -71,7 +71,7 @@
                 @submit="handleCreateAndAdd"
               />
               <div class="flex items-center justify-between pt-0.5">
-                <label class="inline-flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-[#a1a1a6] cursor-pointer select-none">
+                <label class="inline-flex items-center gap-1.5 type-meta-base text-gray-500 dark:text-[#a1a1a6] cursor-pointer select-none">
                   <input type="checkbox" v-model="newPlaylistPrivate" class="rounded border-gray-300 text-purple-600 focus:ring-0" />
                   <span>设为私密歌单</span>
                 </label>
@@ -79,7 +79,7 @@
                   <button
                     type="button"
                     @click="cancelCreateForm"
-                    class="px-2.5 py-1 rounded-lg text-[11px] text-gray-500 hover:text-gray-700 dark:text-[#a1a1a6] dark:hover:text-[#ededed]"
+                    class="px-2.5 py-1 rounded-lg type-meta-base text-gray-500 hover:text-gray-700 dark:text-[#a1a1a6] dark:hover:text-[#ededed]"
                   >
                     取消
                   </button>
@@ -87,7 +87,7 @@
                     type="button"
                     @click="handleCreateAndAdd"
                     :disabled="!newNameValidation.isValid || isCreating"
-                    class="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:pointer-events-none text-white text-[11px] font-medium flex items-center gap-1 transition-colors"
+                    class="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:pointer-events-none text-white type-meta-base font-medium flex items-center gap-1 transition-colors"
                   >
                     <AppIcon v-if="isCreating" name="spinner" spin class="w-3 h-3" />
                     <span>创建并加入</span>
@@ -114,31 +114,31 @@
                   <AppIcon :name="isSongAlreadyLiked ? 'heart-solid' : 'heart'" class="w-4 h-4 text-red-500" />
                 </div>
                 <div class="min-w-0">
-                  <div class="text-xs font-semibold text-gray-900 dark:text-[#ededed] flex items-center gap-1.5">
+                  <div class="type-body-sm font-medium text-gray-900 dark:text-[#ededed] flex items-center gap-1.5">
                     <span class="truncate">我喜欢的音乐</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-50 text-red-500 dark:bg-red-500/15 dark:text-red-300">红心</span>
+                    <span class="px-1.5 py-0.5 rounded type-meta-micro bg-red-50 text-red-500 dark:bg-red-500/15 dark:text-red-300 shrink-0">红心</span>
                   </div>
-                  <div class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">
+                  <div class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">
                     {{ isSongAlreadyLiked ? '该歌曲已在我喜欢的音乐中' : '点亮红心并同步云端喜欢列表' }}
                   </div>
                 </div>
               </div>
               <div class="shrink-0 ml-2">
                 <AppIcon v-if="pendingId === '__liked__'" name="spinner" spin class="w-4 h-4 text-purple-500" />
-                <span v-else-if="isSongAlreadyLiked" class="inline-flex items-center gap-1 text-[11px] font-medium text-red-500 dark:text-red-300">
+                <span v-else-if="isSongAlreadyLiked" class="inline-flex items-center gap-1 type-meta-base font-medium text-red-500 dark:text-red-300">
                   <AppIcon name="check" class="w-3.5 h-3.5" />
                   <span>已喜欢</span>
                 </span>
-                <span v-else class="text-[11px] font-medium text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity">添加</span>
+                <span v-else class="type-meta-base font-medium text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity">添加</span>
               </div>
             </button>
 
             <div v-if="showLikedEntry && filteredPlaylists.length > 0" class="my-1.5 mx-2 h-px bg-gray-100 dark:bg-white/[0.06]"></div>
 
             <!-- 2. 同步中占位 -->
-            <div v-if="userStore.isFetchingPlaylists && filteredPlaylists.length === 0" class="py-10 flex flex-col items-center justify-center text-gray-400 dark:text-[#85858b] gap-2">
+            <div v-if="userStore.isFetchingPlaylists && filteredPlaylists.length === 0" class="py-10 flex flex-col items-center justify-center text-gray-500 dark:text-[#98989f] gap-2">
               <AppIcon name="spinner" spin class="w-5 h-5 text-purple-500" />
-              <span class="text-xs">正在同步账号歌单...</span>
+              <span class="type-meta-base">正在同步账号歌单...</span>
             </div>
 
             <!-- 3. 全部可写入歌单（默认收藏 + 全部自建歌单） -->
@@ -158,31 +158,31 @@
                   <AppIcon v-else name="my-playlists" class="w-4 h-4 text-gray-400 dark:text-[#85858b]" />
                 </div>
                 <div class="min-w-0">
-                  <div class="text-xs font-semibold text-gray-800 dark:text-[#ededed] flex items-center gap-1.5 min-w-0">
+                  <div class="type-body-sm font-medium text-gray-800 dark:text-[#ededed] flex items-center gap-1.5 min-w-0">
                     <span class="truncate">{{ p.name }}</span>
                     <AppIcon v-if="p.isPrivate" name="lock" class="w-3 h-3 text-gray-400 shrink-0" />
                   </div>
-                  <div class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5 tabular-nums">
+                  <div class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5 tabular-nums">
                     {{ p.count || 0 }} 首歌曲
                   </div>
                 </div>
               </div>
               <div class="shrink-0 ml-2">
                 <AppIcon v-if="pendingId === String(p.listid)" name="spinner" spin class="w-4 h-4 text-purple-500" />
-                <span v-else-if="isPlaylistAdded(p)" class="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span v-else-if="isPlaylistAdded(p)" class="inline-flex items-center gap-1 type-meta-base font-medium text-emerald-600 dark:text-emerald-400">
                   <AppIcon name="check" class="w-3.5 h-3.5" />
                   <span>已加入</span>
                 </span>
-                <span v-else-if="isPlaylistChecking(p)" class="text-[11px] text-gray-400 dark:text-[#85858b]">
+                <span v-else-if="isPlaylistChecking(p)" class="type-meta-base text-gray-400 dark:text-[#85858b]">
                   检测中...
                 </span>
-                <span v-else class="text-[11px] font-medium text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity">加入</span>
+                <span v-else class="type-meta-base font-medium text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity">加入</span>
               </div>
             </button>
 
             <div
               v-if="!userStore.isFetchingPlaylists && !showLikedEntry && filteredPlaylists.length === 0"
-              class="py-10 text-center text-xs text-gray-400 dark:text-[#85858b]"
+              class="py-10 text-center type-meta-base text-gray-500 dark:text-[#98989f]"
             >
               未找到匹配的歌单，可点击上方新建歌单
             </div>

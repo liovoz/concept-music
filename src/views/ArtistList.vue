@@ -6,19 +6,19 @@
 
       <div class="flex items-end justify-between mb-6 w-full gap-4">
         <div class="flex-1 min-w-0">
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight truncate">
-            歌手 <span class="text-lg text-blue-500 font-bold ml-2">Artists</span>
+          <h2 class="type-heading-xl text-gray-900 truncate">
+            歌手 <span class="type-heading-sub text-blue-600/80 dark:text-blue-400/90 ml-2">Artists</span>
           </h2>
-          <p class="text-xs text-gray-500 mt-2 font-medium">浏览你喜爱的歌手</p>
+          <p class="type-meta-base text-gray-500 mt-2">浏览你喜爱的歌手</p>
         </div>
       </div>
 
       <div class="flex items-center flex-wrap gap-4 mb-8">
         <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
-          <button v-for="opt in typeOptions" :key="opt.key" @click="currentType = opt.key" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="currentType === opt.key ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">{{ opt.label }}</button>
+          <button v-for="opt in typeOptions" :key="opt.key" @click="currentType = opt.key" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 type-body-sm transition-colors no-drag whitespace-nowrap" :class="currentType === opt.key ? 'font-semibold bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'font-medium text-gray-600 hover:text-gray-900 dark:text-[#b4b4ba] dark:hover:text-[#ededed]'">{{ opt.label }}</button>
         </div>
         <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
-          <button v-for="opt in sexOptions" :key="opt.key" @click="currentSex = opt.key" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="currentSex === opt.key ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">{{ opt.label }}</button>
+          <button v-for="opt in sexOptions" :key="opt.key" @click="currentSex = opt.key" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 type-body-sm transition-colors no-drag whitespace-nowrap" :class="currentSex === opt.key ? 'font-semibold bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'font-medium text-gray-600 hover:text-gray-900 dark:text-[#b4b4ba] dark:hover:text-[#ededed]'">{{ opt.label }}</button>
         </div>
       </div>
 
@@ -32,13 +32,13 @@
 
       <div v-else-if="isError && displayedArtists.length === 0" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100">
         <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
-        <p class="text-base font-bold text-red-600 mb-2">获取歌手列表失败</p>
-        <button @click="fetchArtists" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
+        <p class="type-heading-md text-red-600 mb-2">获取歌手列表失败</p>
+        <button @click="fetchArtists" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-body-md shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="allArtists.length === 0 && !isLoading" class="flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
         <AppIcon name="artists" class="w-16 h-16 mb-4 text-gray-200" />
-        <p class="text-sm font-medium tracking-widest text-gray-400">该分类暂无歌手数据</p>
+        <p class="type-body-base text-gray-400">该分类暂无歌手数据</p>
       </div>
 
       <template v-else>
@@ -48,12 +48,12 @@
               <img :src="artist.avatar || defaultImg" :alt="artist.name" loading="lazy" @error="e => e.target.src = defaultImg" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
-            <h4 class="text-sm font-bold text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors text-center max-w-full" v-tooltip="artist.name">{{ artist.name }}</h4>
-            <p v-if="artist.fans_count" class="text-xs text-gray-400 mt-1 font-medium">{{ formatCount(artist.fans_count) }} 粉丝</p>
+            <h4 class="type-body-md text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors text-center max-w-full" v-tooltip="artist.name">{{ artist.name }}</h4>
+            <p v-if="artist.fans_count" class="type-meta-base text-gray-400 mt-1">{{ formatCount(artist.fans_count) }} 粉丝</p>
           </div>
         </div>
 
-        <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-6 text-xs font-medium">
+        <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-6 type-meta-base font-medium">
           <div v-if="isLoadingMore" class="flex items-center text-blue-500">
             <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
             正在加载更多歌手...

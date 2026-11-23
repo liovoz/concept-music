@@ -7,7 +7,7 @@
     <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-gray-100 to-white -z-10"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
-      <button @click="$router.back()" class="mb-6 flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors no-drag w-fit">
+      <button @click="$router.back()" class="mb-6 flex items-center type-body-sm text-gray-600 dark:text-[#b4b4ba] hover:text-blue-600 transition-colors no-drag w-fit">
         <AppIcon name="chevron-left" class="w-4 h-4 mr-1" />
         返回上一页
       </button>
@@ -23,21 +23,21 @@
 
         <div class="flex flex-col justify-end flex-1 min-w-0">
           <div v-if="isLoading && page === 1" class="w-24 h-6 bg-gray-200 rounded animate-pulse mb-3"></div>
-          <div v-else class="text-xs font-bold text-blue-600 tracking-widest uppercase mb-2">Playlist</div>
+          <div v-else class="type-meta-micro text-blue-600 mb-2">Playlist</div>
 
           <div v-if="isLoading && page === 1" class="w-3/4 h-10 bg-gray-200 rounded animate-pulse mb-4"></div>
-          <h2 v-else class="text-4xl font-extrabold text-gray-900 dark:text-[#ededed] tracking-tight line-clamp-2 break-all mb-3" v-tooltip="playlistInfo.name">{{ playlistInfo.name || '未知歌单' }}</h2>
+          <h2 v-else class="type-heading-xl text-gray-900 dark:text-[#ededed] line-clamp-2 break-all mb-3" v-tooltip="playlistInfo.name">{{ playlistInfo.name || '未知歌单' }}</h2>
 
           <div v-if="isLoading && page === 1" class="w-1/2 h-4 bg-gray-200 rounded animate-pulse mb-6"></div>
-          <p v-else class="text-sm text-gray-500 line-clamp-2 mb-6 leading-relaxed pr-10 cursor-default whitespace-pre-wrap" v-tooltip="playlistInfo.intro">{{ playlistInfo.intro || '该歌单暂无简介...' }}</p>
+          <p v-else class="type-body-base text-gray-500 line-clamp-2 mb-6 pr-10 cursor-default whitespace-pre-wrap" v-tooltip="playlistInfo.intro">{{ playlistInfo.intro || '该歌单暂无简介...' }}</p>
 
           <div class="flex items-center space-x-3">
-            <button @click="playAll" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag" :class="{'opacity-50 pointer-events-none': (isLoading && page === 1) || songs.length === 0}">
+            <button @click="playAll" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full type-body-md shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag" :class="{'opacity-50 pointer-events-none': (isLoading && page === 1) || songs.length === 0}">
               <AppIcon name="play" class="w-5 h-5 mr-1" />
               播放全部
             </button>
             
-            <button v-if="!isCreatedByMe && !isSystemPlaylist" @click="toggleCollect" :disabled="isCollectLoading" class="px-6 py-2.5 rounded-full text-sm font-bold transition-all transform active:scale-95 flex items-center no-drag" 
+            <button v-if="!isCreatedByMe && !isSystemPlaylist" @click="toggleCollect" :disabled="isCollectLoading" class="px-6 py-2.5 rounded-full type-body-md transition-all transform active:scale-95 flex items-center no-drag" 
                 :class="[
                     isCollected ? 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-red-500' : 'bg-blue-50 text-blue-600 hover:bg-blue-100 shadow-sm border border-blue-100',
                     {'opacity-50 pointer-events-none': isCollectLoading || (isLoading && page === 1)}
@@ -50,7 +50,7 @@
             <button
               v-else-if="isCreatedByMe && !isSystemPlaylist"
               @click="openDeletePlaylistModal"
-              class="px-6 py-2.5 rounded-full text-sm font-bold transition-all transform active:scale-95 flex items-center no-drag bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200"
+              class="px-6 py-2.5 rounded-full type-body-md transition-all transform active:scale-95 flex items-center no-drag bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200"
             >
               <AppIcon name="trash" class="w-4 h-4 mr-1.5" />
               删除歌单
@@ -68,17 +68,17 @@
 
       <div v-else-if="isError && page === 1" v-squircle="'2xl'" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-[24px] border border-red-100">
          <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
-        <p class="text-base font-bold text-red-600 mb-2">获取歌曲列表失败</p>
-        <button @click="fetchDetail" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
+        <p class="type-heading-md text-red-600 mb-2">获取歌曲列表失败</p>
+        <button @click="fetchDetail" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-body-md shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="songs.length === 0" class="w-full flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
         <AppIcon name="rank" class="w-20 h-20 mb-4 text-gray-200" />
-        <p class="text-sm font-medium tracking-widest text-gray-400">该歌单暂无歌曲内容</p>
+        <p class="type-body-base text-gray-400">该歌单暂无歌曲内容</p>
       </div>
 
       <div v-else class="w-full flex-1 flex flex-col min-w-0">
-        <div class="flex items-center px-4 py-2 text-xs text-gray-400 border-b border-gray-100 mb-2 min-w-0">
+        <div class="flex items-center px-4 py-2 type-meta-base text-gray-400 border-b border-gray-100 mb-2 min-w-0">
           <div class="w-10 text-center flex-shrink-0">#</div>
           <div class="flex-1 pl-2 min-w-0">音乐标题</div>
           <div class="w-1/4 hidden sm:block pr-4 min-w-0">歌手</div>
@@ -88,23 +88,23 @@
         
         <div class="space-y-1 w-full">
           <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song, index)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
-            <div class="w-10 text-center text-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
+            <div class="w-10 text-center type-numeric-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
             
-            <div class="flex-1 pl-2 text-sm text-gray-800 font-medium flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
+            <div class="flex-1 pl-2 type-body-md text-gray-800 flex items-center pr-4 overflow-hidden min-w-0" v-tooltip="song._title">
               <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-9 h-9 rounded-[8px] shadow-sm mr-3 object-cover flex-shrink-0 bg-gray-100" @error="e => e.target.src = defaultImg" />
               <span class="truncate min-w-0">{{ song._title }}</span>
-              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 rounded-[5px] song-badge">付费</span>
+              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 rounded-[5px] song-badge">VIP</span>
             </div>
             
-            <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">
+            <div class="w-1/4 hidden sm:block type-body-sm truncate pr-4 min-w-0">
               <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" />
             </div>
 
-            <div class="w-1/4 hidden md:block text-xs text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
+            <div class="w-1/4 hidden md:block type-body-sm text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
               <span
                 @click.stop="goToAlbum(song._album_id || song.album_id)"
                 class="transition-colors"
@@ -114,7 +114,7 @@
               </span>
             </div>
             
-            <div class="w-12 sm:w-16 text-xs text-gray-400 text-right pr-4 font-mono flex-shrink-0 flex items-center justify-end">
+            <div class="w-16 sm:w-[72px] whitespace-nowrap type-numeric-sm text-gray-400 text-right pr-4 flex-shrink-0 flex items-center justify-end">
               <span :class="{'group-hover:hidden': isCreatedByMe}">{{ song._duration }}</span>
               <button
                 v-if="isCreatedByMe"
@@ -129,7 +129,7 @@
           </div>
         </div>
 
-        <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 text-xs font-medium">
+        <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 type-meta-base font-medium">
           <div v-if="isLoadingMore" class="flex items-center text-blue-500">
             <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
             正在获取更多歌曲...
@@ -156,29 +156,29 @@
               <AppIcon name="trash" class="w-5 h-5" />
             </div>
             <div>
-              <h3 class="text-base font-bold text-gray-800 dark:text-[#ededed]">删除自建歌单</h3>
-              <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-0.5">此操作将永久删除该歌单</p>
+              <h3 class="type-heading-md text-gray-800 dark:text-[#ededed]">删除自建歌单</h3>
+              <p class="type-meta-base text-gray-500 dark:text-[#a1a1a6] mt-0.5">此操作将永久删除该歌单</p>
             </div>
           </div>
 
-          <div class="text-xs text-gray-600 dark:text-[#a1a1a6] leading-relaxed bg-gray-50 dark:bg-[#232325]/60 p-3.5 rounded-xl border border-gray-100 dark:border-white/[0.08] mb-5 break-all overflow-hidden">
+          <div class="type-meta-base text-gray-600 dark:text-[#a1a1a6] leading-relaxed bg-gray-50 dark:bg-[#232325]/60 p-3.5 rounded-xl border border-gray-100 dark:border-white/[0.08] mb-5 break-all overflow-hidden">
             <p>
-              确定要删除歌单「<span class="font-bold text-gray-900 dark:text-[#ededed]">{{ playlistInfo.name }}</span>」吗？
+              确定要删除歌单「<span class="font-medium text-gray-900 dark:text-[#ededed]">{{ playlistInfo.name }}</span>」吗？
             </p>
-            <p class="mt-1 text-[11px] text-gray-400 dark:text-[#a1a1a6]">
+            <p class="mt-1 type-meta-base text-gray-400 dark:text-[#a1a1a6]">
               删除后将从云端彻底删除，无法恢复该歌单。
             </p>
           </div>
 
           <div class="flex items-center justify-end space-x-3">
-            <button @click="showDeletePlaylistModal = false" v-squircle="'md'" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
+            <button @click="showDeletePlaylistModal = false" v-squircle="'md'" class="px-4 py-2 type-meta-base font-medium text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
               取消
             </button>
             <button
               @click="handleDeleteCurrentPlaylist"
               :disabled="isDeletePlaylistLoading"
               v-squircle="'md'"
-              class="px-5 py-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
+              class="px-5 py-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white type-meta-base font-medium rounded-lg shadow-sm transition-all flex items-center"
             >
               <AppIcon v-if="isDeletePlaylistLoading" name="spinner" spin class="w-3.5 h-3.5 mr-1.5" />
               <span>{{ isDeletePlaylistLoading ? '正在删除...' : '确认删除' }}</span>

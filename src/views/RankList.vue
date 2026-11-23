@@ -10,10 +10,10 @@
       
       <div class="flex items-end justify-between mb-8 w-full gap-4">
         <div class="flex-1 min-w-0">
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight truncate">
-            排行榜 <span class="text-lg text-blue-500 font-bold ml-2">Top Charts</span>
+          <h2 class="type-heading-xl text-gray-900 truncate">
+            排行榜 <span class="type-heading-sub text-blue-600/80 dark:text-blue-400/90 ml-2">Top Charts</span>
           </h2>
-          <p class="text-xs text-gray-500 mt-2 font-medium">汇聚最新、最热、最具权威的音乐榜单</p>
+          <p class="type-meta-base text-gray-500 mt-2">汇聚最新、最热、最具权威的音乐榜单</p>
         </div>
       </div>
 
@@ -31,14 +31,14 @@
 
       <div v-else-if="isError" v-squircle="'2xl'" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-[24px] border border-red-100 mt-4">
         <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
-        <p class="text-base font-bold text-red-600 mb-2">获取排行榜失败</p>
-        <p class="text-xs text-red-400 max-w-lg text-center">{{ errorMessage }}</p>
-        <button @click="fetchRankData" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
+        <p class="type-heading-md text-red-600 mb-2">获取排行榜失败</p>
+        <p class="type-meta-base text-red-400 max-w-lg text-center">{{ errorMessage }}</p>
+        <button @click="fetchRankData" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-body-md shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="ranks.length === 0" class="flex-1 flex flex-col items-center justify-center py-32 text-gray-400 mt-4">
         <AppIcon name="rank" class="w-20 h-20 mb-4 text-gray-200" />
-        <p class="text-sm font-medium tracking-widest">暂无排行榜数据</p>
+        <p class="type-body-base">暂无排行榜数据</p>
       </div>
 
       <div v-else class="w-full flex-1 flex flex-col min-w-0 pb-10">
@@ -54,7 +54,7 @@
               <img :src="rank._cover" :alt="rank._name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" @error="e => e.target.src = defaultImg" />
               <div class="absolute bottom-1.5 right-1.5 bg-black/55 text-white px-2 py-0.5 rounded-full flex items-center shadow-sm pointer-events-none select-none">
                 <AppIcon name="play" class="w-2.5 h-2.5 mr-1 flex-shrink-0" />
-                <span class="text-[9px] font-bold tracking-wider leading-none">{{ formatPlayCount(rank._playCount) }}</span>
+                <span class="type-meta-micro">{{ formatPlayCount(rank._playCount) }}</span>
               </div>
               <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
                 <div class="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center shadow-lg border border-white/40 transform scale-75 group-hover:scale-100 transition-transform duration-300">
@@ -64,20 +64,20 @@
             </div>
             
             <div class="flex-1 min-w-0 ml-5 flex flex-col justify-center h-full">
-              <h3 class="text-base font-extrabold text-gray-800 dark:text-[#ededed] tracking-tight mb-2 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="rank._name">
+              <h3 class="type-heading-md font-medium text-gray-800 dark:text-[#ededed] mb-2 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="rank._name">
                 {{ rank._name }}
               </h3>
               
               <div v-if="rank._topSongs.length > 0" class="flex flex-col space-y-1.5">
-                <div v-for="(song, idx) in rank._topSongs" :key="idx" class="flex items-center text-xs w-full">
-                  <span class="text-gray-400 dark:text-[#85858b] font-bold mr-2 w-2 text-right flex-shrink-0">{{ idx + 1 }}</span>
+                <div v-for="(song, idx) in rank._topSongs" :key="idx" class="flex items-center type-meta-base w-full">
+                  <span class="type-numeric-sm font-medium text-gray-400 dark:text-[#85858b] mr-2 w-4 text-right flex-shrink-0">{{ idx + 1 }}</span>
                   <div class="truncate flex-1 min-w-0" v-tooltip="song.name + ' - ' + song.singer">
                     <span class="text-gray-700 dark:text-[#ededed] font-medium">{{ song.name }}</span>
                     <span class="text-gray-400 dark:text-[#a1a1a6] ml-1.5">- {{ song.singer }}</span>
                   </div>
                 </div>
               </div>
-              <div v-else class="text-xs text-gray-400 dark:text-[#85858b] font-medium flex items-center h-full">点击查看完整榜单内容</div>
+              <div v-else class="type-meta-base text-gray-500 dark:text-[#98989f] font-medium flex items-center h-full">点击查看完整榜单内容</div>
             </div>
 
           </div>

@@ -18,8 +18,8 @@
                 <AppIcon name="settings" class="w-4 h-4" />
               </div>
               <div>
-                <h2 class="text-sm font-semibold text-gray-900 dark:text-[#ededed]">偏好设置</h2>
-                <p class="text-[10px] text-gray-400 dark:text-[#85858b]">Settings & Preferences</p>
+                <h2 class="type-heading-md text-gray-900 dark:text-[#ededed]">偏好设置</h2>
+                <p class="type-meta-micro text-gray-400 dark:text-[#85858b]">Settings & Preferences</p>
               </div>
             </div>
 
@@ -45,7 +45,7 @@
                 <button
                   v-squircle="'md'"
                   @click="currentTab = tab.id"
-                  class="w-full flex items-center px-3.5 py-2.5 text-xs font-medium transition-colors text-left group relative cursor-pointer rounded-[10px]"
+                  class="w-full flex items-center px-3.5 py-2.5 type-body-sm font-medium transition-colors text-left group relative cursor-pointer rounded-[10px]"
                   :class="currentTab === tab.id 
                     ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 dark:bg-[#232325] dark:text-[#ededed] dark:shadow-none' 
                     : 'text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#19191b] hover:text-gray-900 dark:hover:text-[#ededed]'"
@@ -85,8 +85,8 @@
 
                   <!-- 文案引导 -->
                   <div class="space-y-1.5 max-w-sm">
-                    <h3 class="text-sm font-semibold text-gray-900 dark:text-[#ededed]">登录酷狗音乐账号</h3>
-                    <p class="text-xs text-gray-500 dark:text-[#a1a1a6] leading-relaxed">
+                    <h3 class="type-heading-md text-gray-900 dark:text-[#ededed]">登录酷狗音乐账号</h3>
+                    <p class="type-meta-base text-gray-500 dark:text-[#a1a1a6] leading-relaxed">
                       登录后即可同步云端歌单、查看听歌时长与等级进阶、享有概念版 VIP 专属权益与自动续领。
                     </p>
                   </div>
@@ -95,18 +95,18 @@
                   <div class="grid grid-cols-3 gap-2 w-full max-w-md pt-1">
                     <div class="px-2.5 py-2 bg-slate-50 dark:bg-[#19191b]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col items-center text-center">
                       <span class="text-base mb-1">☁️</span>
-                      <span class="text-[11px] font-bold text-gray-700 dark:text-[#a1a1a6]">云端歌单同步</span>
-                      <span class="text-[10px] text-gray-400 dark:text-[#85858b] scale-95">自建与收藏云同步</span>
+                      <span class="type-meta-base font-medium text-gray-700 dark:text-[#a1a1a6]">云端歌单同步</span>
+                      <span class="type-meta-micro text-gray-400 dark:text-[#85858b] mt-0.5">自建与收藏云同步</span>
                     </div>
                     <div class="px-2.5 py-2 bg-slate-50 dark:bg-[#19191b]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col items-center text-center">
                       <span class="text-base mb-1">📊</span>
-                      <span class="text-[11px] font-bold text-gray-700 dark:text-[#a1a1a6]">听歌等级成长</span>
-                      <span class="text-[10px] text-gray-400 dark:text-[#85858b] scale-95">记录累计听歌数据</span>
+                      <span class="type-meta-base font-medium text-gray-700 dark:text-[#a1a1a6]">听歌等级成长</span>
+                      <span class="type-meta-micro text-gray-400 dark:text-[#85858b] mt-0.5">记录累计听歌数据</span>
                     </div>
                     <div class="px-2.5 py-2 bg-slate-50 dark:bg-[#19191b]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col items-center text-center">
                       <span class="text-base mb-1">💎</span>
-                      <span class="text-[11px] font-bold text-gray-700 dark:text-[#a1a1a6]">概念版 VIP</span>
-                      <span class="text-[10px] text-gray-400 dark:text-[#85858b] scale-95">每日全自动续领</span>
+                      <span class="type-meta-base font-medium text-gray-700 dark:text-[#a1a1a6]">概念版 VIP</span>
+                      <span class="type-meta-micro text-gray-400 dark:text-[#85858b] mt-0.5">每日全自动续领</span>
                     </div>
                   </div>
 
@@ -115,7 +115,7 @@
                     <button 
                       v-squircle="'md'"
                       @click="handleAccountLoginClick" 
-                      class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer rounded-[10px]"
+                      class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white type-body-sm font-medium transition-all flex items-center gap-2 cursor-pointer rounded-[10px]"
                     >
                       <AppIcon name="phone" class="w-4 h-4" />
                       <span>立即登录账号</span>
@@ -144,12 +144,12 @@
                       <div class="space-y-1.5 min-w-0 flex-1">
                         <!-- 第一行：身份层（昵称与成长等级） -->
                         <div class="flex items-center space-x-2">
-                          <h3 class="text-sm font-extrabold text-gray-900 dark:text-white truncate">
+                          <h3 class="type-heading-md text-gray-900 dark:text-white truncate">
                             {{ userStore.userInfo?.nickname || '酷狗用户' }}
                           </h3>
                           <!-- 等级徽章 -->
                           <span 
-                            class="px-1.5 py-0.5 text-[10px] font-black italic bg-blue-50 dark:bg-[#232325] text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-white/[0.08] rounded-[5px] leading-none shadow-2xs shrink-0"
+                            class="px-1.5 py-0.5 type-meta-micro bg-blue-50 dark:bg-[#232325] text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-white/[0.08] rounded-[5px] shadow-2xs shrink-0"
                             v-tooltip="'听歌成长等级'"
                           >
                             Lv.{{ userStore.userInfo?.level ?? 0 }}
@@ -157,10 +157,10 @@
                         </div>
 
                         <!-- 第二行：特权层（VIP 状态与到期时间） -->
-                        <div class="flex items-center space-x-2 text-[11px] whitespace-nowrap">
+                        <div class="flex items-center space-x-2 type-meta-base whitespace-nowrap">
                           <!-- VIP 状态徽章 -->
                           <span 
-                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-xs shrink-0"
+                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full type-meta-micro shadow-xs shrink-0"
                             :class="userStore.vipStatus?.isVip 
                               ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' 
                               : 'bg-slate-100 dark:bg-[#2c2c2f] text-gray-500 dark:text-[#a1a1a6]'"
@@ -180,9 +180,9 @@
                         </div>
 
                         <!-- 第三行：资产层（UID、听歌时长、乐龄） -->
-                        <div class="flex items-center space-x-2.5 text-[11px] text-gray-500 dark:text-[#a1a1a6] whitespace-nowrap overflow-hidden">
+                        <div class="flex items-center space-x-2.5 type-meta-base text-gray-500 dark:text-[#a1a1a6] whitespace-nowrap overflow-hidden">
                           <!-- UID 与一键复制 -->
-                          <div class="flex items-center space-x-1 font-mono shrink-0">
+                          <div class="flex items-center space-x-1 font-mono tabular-nums shrink-0">
                             <span>UID: {{ displayUid }}</span>
                             <button 
                               v-if="displayUid !== '-'"
@@ -222,10 +222,10 @@
                       <div>
                         <div class="flex items-center space-x-2">
                           <span class="w-1.5 h-3.5 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></span>
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">自动领取 VIP 特权</p>
-                          <span class="px-1.5 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60 rounded-[5px]">特权助手</span>
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">自动领取 VIP 特权</p>
+                          <span class="px-1.5 py-0.5 type-meta-micro bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60 rounded-[5px]">特权助手</span>
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">登录后在后台自动签到「1天VIP」及按时领取「3小时特权」，内置防风控智能离散调度</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">登录后在后台自动签到「1天VIP」及按时领取「3小时特权」，内置防风控智能离散调度</p>
                       </div>
                       <button 
                         type="button"
@@ -249,11 +249,11 @@
                       <div 
                         class="p-2.5 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg border border-amber-200/60 dark:border-amber-900/40 flex flex-col justify-between"
                       >
-                        <div class="flex items-center space-x-1.5 text-amber-700 dark:text-amber-400 font-bold text-[11px]">
+                        <div class="flex items-center space-x-1.5 text-amber-700 dark:text-amber-400 type-meta-base font-medium">
                           <span class="w-1.5 h-1.5 rounded-full" :class="userStore.isLoggedIn ? 'bg-emerald-500' : 'bg-gray-400'"></span>
                           <span>{{ userStore.isLoggedIn ? '调度服务运行中' : '未登录账号' }}</span>
                         </div>
-                        <p class="text-[10px] text-gray-500 dark:text-[#a1a1a6] mt-1">
+                        <p class="type-meta-micro text-gray-500 dark:text-[#a1a1a6] mt-1">
                           {{ userStore.isLoggedIn ? '后台心跳检测正常' : '登录后自动打卡' }}
                         </p>
                       </div>
@@ -262,13 +262,13 @@
                       <div 
                         class="p-2.5 bg-slate-50/80 dark:bg-[#232325]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col justify-between"
                       >
-                        <div class="flex items-center justify-between text-gray-700 dark:text-[#ededed] font-bold text-[11px]">
+                        <div class="flex items-center justify-between text-gray-700 dark:text-[#ededed] type-meta-base font-medium">
                           <span>👑 1天VIP</span>
-                          <span class="text-[10px]" :class="userStore.dayVipState?.claimed ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-amber-600 dark:text-amber-400'">
+                          <span class="type-meta-micro" :class="userStore.dayVipState?.claimed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'">
                             {{ userStore.dayVipState?.claimed ? '已入账' : '待领取' }}
                           </span>
                         </div>
-                        <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-1">
+                        <p class="type-meta-micro text-gray-400 dark:text-[#85858b] mt-1">
                           {{ userStore.dayVipState?.claimed ? '今日额度已完成' : '调度器将自动签到' }}
                         </p>
                       </div>
@@ -277,13 +277,13 @@
                       <div 
                         class="p-2.5 bg-slate-50/80 dark:bg-[#232325]/60 rounded-lg border border-gray-200/60 dark:border-white/[0.08] flex flex-col justify-between"
                       >
-                        <div class="flex items-center justify-between text-gray-700 dark:text-[#ededed] font-bold text-[11px]">
+                        <div class="flex items-center justify-between text-gray-700 dark:text-[#ededed] type-meta-base font-medium">
                           <span>🎁 3小时特权</span>
-                          <span class="text-[10px] font-mono font-bold" :class="(userStore.vipState?.count || 0) >= 8 ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'">
+                          <span class="type-meta-micro font-mono tabular-nums" :class="(userStore.vipState?.count || 0) >= 8 ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'">
                             {{ (userStore.vipState?.count || 0) >= 8 ? '已拉满' : `${userStore.vipState?.count || 0}/8 次` }}
                           </span>
                         </div>
-                        <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-1 truncate">
+                        <p class="type-meta-micro text-gray-400 dark:text-[#85858b] mt-1 truncate">
                           {{ autoVipNextActionHint }}
                         </p>
                       </div>
@@ -297,15 +297,15 @@
                     <div class="space-y-0.5">
                       <div class="flex items-center space-x-1.5">
                         <AppIcon name="check" class="w-3.5 h-3.5 text-emerald-500" />
-                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">账号登录状态健康</p>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">账号登录状态健康</p>
                       </div>
-                      <p class="text-[11px] text-gray-400 dark:text-[#85858b]">退出登录将安全擦除本地 DPAPI 加密凭据与缓存，再次使用需重新鉴权</p>
+                      <p class="type-meta-base text-gray-400 dark:text-[#85858b]">退出登录将安全擦除本地 DPAPI 加密凭据与缓存，再次使用需重新鉴权</p>
                     </div>
 
                     <!-- 退出登录按钮 -->
                     <button 
                       @click="handleAccountLogout" 
-                      class="px-3.5 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs rounded-lg border border-red-200/80 dark:border-red-900/60 active:scale-95 cursor-pointer"
+                      class="px-3.5 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 type-meta-base font-medium transition-all flex items-center space-x-1.5 shadow-xs rounded-lg border border-red-200/80 dark:border-red-900/60 active:scale-95 cursor-pointer"
                     >
                       <AppIcon name="logout" class="w-3.5 h-3.5" />
                       <span>退出登录</span>
@@ -324,9 +324,9 @@
                   <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                      <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">外观主题</h3>
+                      <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">外观主题</h3>
                     </div>
-                    <span v-if="isScheduleEnabled" class="text-[11px] text-blue-600 dark:text-blue-400">
+                    <span v-if="isScheduleEnabled" class="type-meta-base text-blue-600 dark:text-blue-400">
                       时间调度运行中（点击卡片可锁定并退出定时）
                     </span>
                   </div>
@@ -341,7 +341,7 @@
                       <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center mb-1.5 shadow-inner">
                         <AppIcon name="sun" class="w-4 h-4" />
                       </div>
-                      <span class="text-xs font-bold" :class="theme === 'light' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">浅色模式</span>
+                      <span class="type-meta-base font-medium" :class="theme === 'light' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">浅色模式</span>
                     </div>
 
                     <div 
@@ -354,7 +354,7 @@
                       <div class="w-7 h-7 rounded-full bg-slate-800 dark:bg-[#19191b] text-blue-400 flex items-center justify-center mb-1.5 shadow-inner dark:shadow-none dark:border dark:border-white/[0.08]">
                         <AppIcon name="moon" class="w-4 h-4" />
                       </div>
-                      <span class="text-xs font-bold" :class="theme === 'dark' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">深色模式</span>
+                      <span class="type-meta-base font-medium" :class="theme === 'dark' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">深色模式</span>
                     </div>
 
                     <div 
@@ -367,7 +367,7 @@
                       <div class="w-7 h-7 rounded-full bg-blue-100 dark:bg-[#2c2c2f] text-blue-600 dark:text-blue-300 flex items-center justify-center mb-1.5 shadow-inner">
                         <AppIcon name="sparkles" class="w-4 h-4" />
                       </div>
-                      <span class="text-xs font-bold" :class="theme === 'system' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">跟随系统</span>
+                      <span class="type-meta-base font-medium" :class="theme === 'system' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#ededed]'">跟随系统</span>
                     </div>
                   </div>
 
@@ -376,12 +376,12 @@
                     <div class="flex items-center justify-between">
                       <div>
                         <div class="flex items-center space-x-2">
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">按时间自动切换外观</p>
-                          <span v-if="isScheduleEnabled" class="px-1.5 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-[#232325] dark:text-blue-400 border border-blue-200/60 dark:border-white/[0.08] rounded-[5px]">
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">按时间自动切换外观</p>
+                          <span v-if="isScheduleEnabled" class="px-1.5 py-0.5 type-meta-micro bg-blue-50 text-blue-600 dark:bg-[#232325] dark:text-blue-400 border border-blue-200/60 dark:border-white/[0.08] rounded-[5px]">
                             已启用
                           </span>
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">在设定的时间段内自动切换浅色或深色主题</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">在设定的时间段内自动切换浅色或深色主题</p>
                       </div>
                       <button 
                         type="button"
@@ -414,9 +414,9 @@
                             <div class="flex items-center justify-between">
                               <div class="flex items-center space-x-1.5 text-amber-500">
                                 <AppIcon name="sun" class="w-3.5 h-3.5" />
-                                <span class="text-xs font-bold text-gray-700 dark:text-[#ededed]">浅色模式时间</span>
+                                <span class="type-meta-base font-medium text-gray-700 dark:text-[#ededed]">浅色模式时间</span>
                               </div>
-                              <span class="text-[10px] text-gray-400 dark:text-[#85858b]">日间生效</span>
+                              <span class="type-meta-micro text-gray-400 dark:text-[#85858b]">日间生效</span>
                             </div>
                             <TimePicker 
                               v-model="tempScheduleLightTime"
@@ -431,9 +431,9 @@
                             <div class="flex items-center justify-between">
                               <div class="flex items-center space-x-1.5 text-blue-400">
                                 <AppIcon name="moon" class="w-3.5 h-3.5" />
-                                <span class="text-xs font-bold text-gray-700 dark:text-[#ededed]">深色模式时间</span>
+                                <span class="type-meta-base font-medium text-gray-700 dark:text-[#ededed]">深色模式时间</span>
                               </div>
-                              <span class="text-[10px] text-gray-400 dark:text-[#85858b]">夜间生效</span>
+                              <span class="type-meta-micro text-gray-400 dark:text-[#85858b]">夜间生效</span>
                             </div>
                             <TimePicker 
                               v-model="tempScheduleDarkTime"
@@ -443,20 +443,20 @@
                         </div>
 
                         <!-- 快捷预设按钮组 -->
-                        <div class="flex items-center justify-between text-[11px] pt-0.5">
+                        <div class="flex items-center justify-between type-meta-base pt-0.5">
                           <span class="text-gray-400 dark:text-[#85858b]">快捷预设：</span>
                           <div class="flex items-center space-x-1.5">
                             <button
                               type="button"
                               @click="applyPreset('07:00', '19:00')"
-                              class="px-2 py-0.5 bg-slate-100 dark:bg-[#2c2c2f] text-gray-600 dark:text-[#a1a1a6] hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-[#2c2c2f] dark:hover:text-blue-400 transition-colors rounded-md"
+                              class="px-2 py-0.5 bg-slate-100 dark:bg-[#2c2c2f] text-gray-600 dark:text-[#a1a1a6] hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-[#2c2c2f] dark:hover:text-blue-400 transition-colors rounded-md tabular-nums"
                             >
                               常规 (07:00 / 19:00)
                             </button>
                             <button
                               type="button"
                               @click="applyPreset('09:00', '23:00')"
-                              class="px-2 py-0.5 bg-slate-100 dark:bg-[#2c2c2f] text-gray-600 dark:text-[#a1a1a6] hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-[#2c2c2f] dark:hover:text-blue-400 transition-colors rounded-md"
+                              class="px-2 py-0.5 bg-slate-100 dark:bg-[#2c2c2f] text-gray-600 dark:text-[#a1a1a6] hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-[#2c2c2f] dark:hover:text-blue-400 transition-colors rounded-md tabular-nums"
                             >
                               晚睡 (09:00 / 23:00)
                             </button>
@@ -465,18 +465,73 @@
 
                         <!-- 状态提示与下一次切换时间指示 -->
                         <div 
-                          class="flex items-center justify-between p-2 bg-blue-50/50 dark:bg-[#232325] text-[11px] text-blue-700 dark:text-blue-300 rounded-lg border border-blue-100 dark:border-white/[0.08]"
+                          class="flex items-center justify-between p-2 bg-blue-50/50 dark:bg-[#232325] type-meta-base text-blue-700 dark:text-blue-300 rounded-lg border border-blue-100 dark:border-white/[0.08]"
                         >
                           <div class="flex items-center space-x-1.5">
                             <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                             <span>时间调度运行中</span>
                           </div>
-                          <span v-if="nextSwitchInfo" class="font-mono font-medium">
+                          <span v-if="nextSwitchInfo" class="type-numeric-sm font-medium">
                             预计 {{ nextSwitchInfo.targetTime }} 切换为{{ nextSwitchInfo.targetTheme === 'dark' ? '深色' : '浅色' }}
                           </span>
                         </div>
                       </div>
                     </transition>
+                  </div>
+                </section>
+
+                <!-- 字体与阅读偏好卡片 -->
+                <section 
+                  class="bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs p-4 space-y-3"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                      <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
+                      <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">字体与阅读偏好</h3>
+                    </div>
+                    <span class="type-meta-base text-gray-500 dark:text-[#a1a1a6]">实时调节字体风格与阅读字阶</span>
+                  </div>
+                  <div class="space-y-1.5">
+                    <div class="type-meta-base font-medium text-gray-600 dark:text-[#b4b4ba]">界面字体风格</div>
+                    <div class="grid grid-cols-2 gap-2.5">
+                      <button
+                        v-for="preset in fontPresetOptions"
+                        :key="preset.value"
+                        type="button"
+                        @click="handleSetFontPreset(preset.value)"
+                        class="p-3 cursor-pointer transition-all flex flex-col items-start text-left rounded-[12px] border select-none"
+                        :class="fontPreset === preset.value
+                          ? 'bg-blue-50/70 dark:bg-[#232325] border-blue-500 ring-1 ring-blue-500 shadow-xs dark:shadow-none'
+                          : 'bg-slate-50 dark:bg-[#2c2c2f]/40 border-gray-200/80 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.16]'"
+                      >
+                        <div class="flex items-center justify-between w-full mb-1">
+                          <span class="type-body-sm font-medium" :class="fontPreset === preset.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-[#ededed]'">{{ preset.label }}</span>
+                          <span v-if="preset.badge" class="px-1.5 py-0.5 rounded type-meta-micro bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">{{ preset.badge }}</span>
+                        </div>
+                        <span class="type-meta-base text-gray-500 dark:text-[#a1a1a6]">{{ preset.desc }}</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="pt-3 border-t border-gray-100 dark:border-white/[0.08] space-y-1.5">
+                    <div class="type-meta-base font-medium text-gray-600 dark:text-[#b4b4ba]">界面字体大小</div>
+                    <div class="grid grid-cols-3 gap-2.5">
+                      <button
+                        v-for="opt in fontScaleOptions"
+                        :key="opt.value"
+                        type="button"
+                        @click="handleSetFontScale(opt.value)"
+                        class="p-3 cursor-pointer transition-all flex flex-col items-start text-left rounded-[12px] border select-none"
+                        :class="fontScale === opt.value
+                          ? 'bg-blue-50/70 dark:bg-[#232325] border-blue-500 ring-1 ring-blue-500 shadow-xs dark:shadow-none'
+                          : 'bg-slate-50 dark:bg-[#2c2c2f]/40 border-gray-200/80 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.16]'"
+                      >
+                        <div class="flex items-center justify-between w-full mb-1">
+                          <span class="type-body-sm font-medium" :class="fontScale === opt.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-[#ededed]'">{{ opt.label }}</span>
+                          <span v-if="opt.badge" class="px-1.5 py-0.5 rounded type-meta-micro bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">{{ opt.badge }}</span>
+                        </div>
+                        <span class="type-meta-base text-gray-500 dark:text-[#a1a1a6]">{{ opt.desc }}</span>
+                      </button>
+                    </div>
                   </div>
                 </section>
 
@@ -486,7 +541,7 @@
                 >
                   <div class="flex items-center space-x-2 mb-1">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">关闭主窗口时</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">关闭主窗口时</h3>
                   </div>
                   <div class="space-y-1.5">
                     <label 
@@ -507,8 +562,8 @@
                           class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-white/[0.14]" 
                         />
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">{{ action.title }}</p>
-                          <p class="text-[11px] text-gray-400 dark:text-[#85858b]">{{ action.desc }}</p>
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">{{ action.title }}</p>
+                          <p class="type-meta-base text-gray-400 dark:text-[#85858b]">{{ action.desc }}</p>
                         </div>
                       </div>
                       <AppIcon v-if="closeBehavior === action.value" name="check" class="w-4 h-4 text-blue-600" />
@@ -524,9 +579,9 @@
                     <div>
                       <div class="flex items-center space-x-2">
                         <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">开机自动启动</p>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">开机自动启动</p>
                       </div>
-                      <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">登录系统时自动启动概念音乐并驻留后台</p>
+                      <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">登录系统时自动启动概念音乐并驻留后台</p>
                     </div>
                     <button 
                       @click="toggleAutoStart"
@@ -547,19 +602,19 @@
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">存储与缓存管理</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">存储与缓存管理</h3>
                   </div>
                   <div class="space-y-2">
                     <div 
                       class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">搜索历史记录</p>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">已保存 {{ searchHistoryCount }} 条搜索历史词</p>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">搜索历史记录</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5 tabular-nums">已保存 {{ searchHistoryCount }} 条搜索历史词</p>
                       </div>
                       <button 
                         @click="handleClearSearchHistory" 
-                        class="px-3 py-1.5 text-xs font-bold text-gray-600 dark:text-[#a1a1a6] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all rounded-lg border border-gray-200 dark:border-white/[0.08] cursor-pointer"
+                        class="px-3 py-1.5 type-meta-base font-medium text-gray-600 dark:text-[#a1a1a6] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all rounded-lg border border-gray-200 dark:border-white/[0.08] cursor-pointer"
                       >
                         清空历史
                       </button>
@@ -568,13 +623,13 @@
                       class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">临时网络与图片缓存</p>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">当前缓存占用: {{ formattedCacheSize }}</p>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">临时网络与图片缓存</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5 tabular-nums">当前缓存占用: {{ formattedCacheSize }}</p>
                       </div>
                       <button 
                         @click="handleClearAppCache" 
                         :disabled="isClearingCache"
-                        class="px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#2c2c2f] transition-all disabled:opacity-50 flex items-center rounded-lg border border-blue-200 dark:border-white/[0.08] cursor-pointer"
+                        class="px-3 py-1.5 type-meta-base font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#2c2c2f] transition-all disabled:opacity-50 flex items-center rounded-lg border border-blue-200 dark:border-white/[0.08] cursor-pointer"
                       >
                         <AppIcon v-if="isClearingCache" name="spinner" spin class="w-3.5 h-3.5 mr-1" />
                         清理缓存
@@ -594,10 +649,10 @@
                     <div>
                       <div class="flex items-center space-x-2">
                         <span class="w-1 h-3.5 bg-purple-600 dark:bg-blue-500 rounded-full"></span>
-                        <p class="text-xs font-semibold text-gray-800 dark:text-[#ededed]">音量增益增强 (Volume Boost)</p>
-                        <span class="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-600 dark:bg-[#232325] dark:text-blue-400 dark:border dark:border-white/[0.08] rounded-[5px]">WebAudio</span>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">音量增益增强 (Volume Boost)</p>
+                        <span class="px-1.5 py-0.5 type-meta-micro bg-purple-100 text-purple-600 dark:bg-[#232325] dark:text-blue-400 dark:border dark:border-white/[0.08] rounded-[5px]">WebAudio</span>
                       </div>
-                      <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3">突破系统 100% 音量上限，最高放大至 2.0 倍</p>
+                      <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-1 ml-3">突破系统 100% 音量上限，最高放大至 2.0 倍</p>
                     </div>
                     <button 
                       @click="toggleVolumeBoost"
@@ -612,13 +667,13 @@
                   </div>
 
                   <div v-if="playerStore.volumeBoostEnabled" class="pt-3 border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-between">
-                    <span class="text-xs font-medium text-gray-600 dark:text-[#a1a1a6]">增益倍率选择：</span>
+                    <span class="type-meta-base font-medium text-gray-600 dark:text-[#a1a1a6]">增益倍率选择：</span>
                     <div class="flex space-x-2">
                       <button
                         v-for="lvl in [1.25, 1.5, 2]"
                         :key="lvl"
                         @click="handleSetVolumeBoostLevel(lvl)"
-                        class="px-3 py-1 text-xs font-medium transition-colors rounded-lg border cursor-pointer"
+                        class="px-3 py-1 type-meta-base font-medium transition-colors rounded-lg border cursor-pointer"
                         :class="playerStore.volumeBoostLevel === lvl 
                           ? 'bg-purple-600 dark:bg-blue-600 text-white border-transparent shadow-sm dark:shadow-none' 
                           : 'bg-slate-50 dark:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] border-gray-200 dark:border-white/[0.08] hover:bg-purple-50 dark:hover:bg-[#2c2c2f]'"
@@ -635,15 +690,15 @@
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">播放控制偏好</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">播放控制偏好</h3>
                   </div>
                   <div class="space-y-2">
                     <div 
                       class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">故障自动跳过</p>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">当歌曲资源失效或播放失败时，自动播放下一首</p>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">故障自动跳过</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">当歌曲资源失效或播放失败时，自动播放下一首</p>
                       </div>
                       <button 
                         type="button"
@@ -662,8 +717,8 @@
                       class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">记忆播放列表与进度</p>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">启动软件时恢复上次的播放列表、歌曲与播放进度</p>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">记忆播放列表与进度</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">启动软件时恢复上次的播放列表、歌曲与播放进度</p>
                       </div>
                       <button 
                         type="button"
@@ -683,8 +738,8 @@
                     >
                       <div class="flex items-center justify-between">
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">锁屏界面显示播放控件</p>
-                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">在 Windows 锁屏和系统媒体浮窗中显示歌曲信息，并可切歌、暂停</p>
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">锁屏界面显示播放控件</p>
+                          <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">在 Windows 锁屏和系统媒体浮窗中显示歌曲信息，并可切歌、暂停</p>
                         </div>
                         <button 
                           type="button"
@@ -698,7 +753,7 @@
                           />
                         </button>
                       </div>
-                      <p class="flex items-start gap-1 text-[11px] text-gray-400 dark:text-[#85858b] mt-2 leading-relaxed">
+                      <p class="flex items-start gap-1 type-meta-base text-gray-400 dark:text-[#85858b] mt-2 leading-relaxed">
                         <AppIcon name="info" class="w-3.5 h-3.5 shrink-0 mt-px" />
                         <span>锁屏播放控件由 Windows 系统提供，部分系统版本（如早期的 Windows 11）可能不会在锁屏上显示。</span>
                       </p>
@@ -713,9 +768,9 @@
                   <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                       <span class="w-1 h-3.5 bg-indigo-600 dark:bg-blue-500 rounded-full"></span>
-                      <h3 class="text-xs font-semibold text-gray-800 dark:text-[#ededed]">播放列表与队列策略</h3>
+                      <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">播放列表与队列策略</h3>
                     </div>
-                    <span class="text-[11px] font-medium text-gray-400 dark:text-[#85858b] tabular-nums">
+                    <span class="type-numeric-sm text-gray-400 dark:text-[#85858b]">
                       {{ playerStore.isFmModePlaylist ? `私人FM窗口：${playerStore.playlist.length} / 50 首` : `当前队列：${playerStore.playlist.length} / ${playerStore.maxPlaylistSize} 首` }}
                     </span>
                   </div>
@@ -727,8 +782,8 @@
                     >
                       <div class="flex items-center justify-between gap-2">
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">点击「播放全部」时</p>
-                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">点击「播放全部」时</p>
+                          <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">
                             {{ playerStore.playAllBehavior === 'prepend'
                               ? '将新歌单插入当前队列最前面并开始播放，保留队列内原有歌曲'
                               : '替换当前播放列表并开始播放（覆盖非空列表时提供 5 秒一键撤销）' }}
@@ -739,14 +794,14 @@
                         <button
                           type="button"
                           @click="handleSelectPlayAllBehavior('replace')"
-                          class="px-3 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer rounded-lg border"
+                          class="px-3 py-2 type-meta-base font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer rounded-lg border"
                           :class="playerStore.playAllBehavior === 'replace'
                             ? 'bg-blue-600 text-white border-transparent shadow-sm shadow-blue-500/20'
                             : 'bg-white dark:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] border-gray-200 dark:border-white/[0.08] hover:border-blue-300 dark:hover:border-white/[0.16]'"
                         >
                           <span>替换当前播放列表</span>
                           <span
-                            class="px-1.5 py-0.5 text-[9px] font-extrabold leading-none rounded-[5px]"
+                            class="px-1.5 py-0.5 type-meta-micro rounded-[5px]"
                             :class="playerStore.playAllBehavior === 'replace'
                               ? 'bg-white/20 text-white'
                               : 'bg-gray-100 dark:bg-[#2c2c2f] text-gray-500 dark:text-[#a1a1a6]'"
@@ -755,7 +810,7 @@
                         <button
                           type="button"
                           @click="handleSelectPlayAllBehavior('prepend')"
-                          class="px-3 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer rounded-lg border"
+                          class="px-3 py-2 type-meta-base font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer rounded-lg border"
                           :class="playerStore.playAllBehavior === 'prepend'
                             ? 'bg-blue-600 text-white border-transparent shadow-sm shadow-blue-500/20'
                             : 'bg-white dark:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] border-gray-200 dark:border-white/[0.08] hover:border-blue-300 dark:hover:border-white/[0.16]'"
@@ -771,8 +826,8 @@
                     >
                       <div class="flex items-center justify-between gap-2">
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">播放列表容量上限</p>
-                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">控制单次播放队列最大歌曲数量，保障大歌单加载与切歌流畅度</p>
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">播放列表容量上限</p>
+                          <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">控制单次播放队列最大歌曲数量，保障大歌单加载与切歌流畅度</p>
                         </div>
                       </div>
                       <div class="grid grid-cols-3 gap-2 pt-0.5">
@@ -781,7 +836,7 @@
                           :key="cap"
                           type="button"
                           @click="handleSelectMaxPlaylistSize(cap)"
-                          class="px-3 py-2 text-xs font-bold transition-all flex items-center justify-center gap-1 tabular-nums cursor-pointer rounded-lg border"
+                          class="px-3 py-2 type-meta-base font-medium transition-all flex items-center justify-center gap-1 tabular-nums cursor-pointer rounded-lg border"
                           :class="playerStore.maxPlaylistSize === cap
                             ? 'bg-blue-600 text-white border-transparent shadow-sm shadow-blue-500/20'
                             : 'bg-white dark:bg-[#232325] text-gray-600 dark:text-[#a1a1a6] border-gray-200 dark:border-white/[0.08] hover:border-blue-300 dark:hover:border-white/[0.16]'"
@@ -789,7 +844,7 @@
                           <span>{{ cap }} 首</span>
                           <span
                             v-if="cap === 1500"
-                            class="px-1 py-0.5 text-[9px] font-extrabold leading-none rounded-[5px]"
+                            class="px-1 py-0.5 type-meta-micro rounded-[5px]"
                             :class="playerStore.maxPlaylistSize === cap
                               ? 'bg-white/20 text-white'
                               : 'bg-gray-100 dark:bg-[#2c2c2f] text-gray-500 dark:text-[#a1a1a6]'"
@@ -810,9 +865,9 @@
                   <div>
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">启用桌面歌词</p>
+                      <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">启用桌面歌词</p>
                     </div>
-                    <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">开启后可在桌面上置顶展示实时歌词</p>
+                    <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">开启后可在桌面上置顶展示实时歌词</p>
                   </div>
                   <button 
                     type="button"
@@ -833,7 +888,7 @@
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">排版显示方向</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">排版显示方向</h3>
                   </div>
                   <div 
                     class="grid grid-cols-2 gap-2 bg-slate-50/70 dark:bg-[#232325]/50 p-1.5 rounded-lg"
@@ -841,7 +896,7 @@
                     <button
                       type="button"
                       @click="setLyricLayout('horizontal')"
-                      class="flex items-center justify-center space-x-2 py-2 px-3 text-xs font-bold transition-all rounded-md cursor-pointer"
+                      class="flex items-center justify-center space-x-2 py-2 px-3 type-meta-base font-medium transition-all rounded-md cursor-pointer"
                       :class="lyricConfig.layoutDirection !== 'vertical'
                         ? 'bg-white dark:bg-[#2c2c2f] text-blue-600 dark:text-blue-400 shadow-xs'
                         : 'text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed]'"
@@ -855,7 +910,7 @@
                     <button
                       type="button"
                       @click="setLyricLayout('vertical')"
-                      class="flex items-center justify-center space-x-2 py-2 px-3 text-xs font-bold transition-all rounded-md cursor-pointer"
+                      class="flex items-center justify-center space-x-2 py-2 px-3 type-meta-base font-medium transition-all rounded-md cursor-pointer"
                       :class="lyricConfig.layoutDirection === 'vertical'
                         ? 'bg-white dark:bg-[#2c2c2f] text-blue-600 dark:text-blue-400 shadow-xs'
                         : 'text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed]'"
@@ -875,15 +930,15 @@
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">歌词字号大小</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">歌词字号大小</h3>
                   </div>
                   <div 
                     class="space-y-3 bg-slate-50/70 dark:bg-[#232325]/50 p-3.5 rounded-lg"
                   >
                     <div>
-                      <div class="flex justify-between text-xs font-bold mb-1.5">
+                      <div class="flex justify-between type-meta-base font-medium mb-1.5">
                         <span class="text-gray-700 dark:text-[#a1a1a6]">主歌词字号</span>
-                        <span class="text-blue-600 font-mono">{{ lyricConfig.fontSize }} px</span>
+                        <span class="type-numeric-sm font-medium text-blue-600">{{ lyricConfig.fontSize }} px</span>
                       </div>
                       <input 
                         type="range" 
@@ -894,9 +949,9 @@
                       />
                     </div>
                     <div>
-                      <div class="flex justify-between text-xs font-bold mb-1.5">
+                      <div class="flex justify-between type-meta-base font-medium mb-1.5">
                         <span class="text-gray-700 dark:text-[#a1a1a6]">副歌词字号</span>
-                        <span class="text-blue-600 font-mono">{{ lyricConfig.subFontSize }} px</span>
+                        <span class="type-numeric-sm font-medium text-blue-600">{{ lyricConfig.subFontSize }} px</span>
                       </div>
                       <input 
                         type="range" 
@@ -915,7 +970,7 @@
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">主题配色方案</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">主题配色方案</h3>
                   </div>
                   <div class="grid grid-cols-6 gap-2">
                     <button
@@ -928,7 +983,7 @@
                         : 'bg-slate-50 dark:bg-[#232325] border-gray-200/70 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-[#2c2c2f]/50'"
                     >
                       <div class="w-4 h-4 rounded-full mb-1 border border-black/10 shadow-xs" :style="{ backgroundColor: t.color }"></div>
-                      <span class="text-[11px] font-bold text-gray-600 dark:text-[#a1a1a6]">{{ t.label }}</span>
+                      <span class="type-meta-base font-medium text-gray-600 dark:text-[#a1a1a6]">{{ t.label }}</span>
                     </button>
 
                     <!-- 自定义调色盘按钮 -->
@@ -947,7 +1002,7 @@
                           alt="rainbow ring"
                         />
                       </div>
-                      <span class="text-[11px] font-bold text-gray-600 dark:text-[#a1a1a6]">自定义</span>
+                      <span class="type-meta-base font-medium text-gray-600 dark:text-[#a1a1a6]">自定义</span>
                     </button>
                   </div>
 
@@ -971,23 +1026,23 @@
                       </div>
                       <div>
                         <div class="flex items-center space-x-1.5">
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">无极调色盘</p>
-                          <span class="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-[#232325] text-blue-600 dark:text-blue-400 font-medium rounded-[5px]">拾色器</span>
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">无极调色盘</p>
+                          <span class="type-meta-micro px-1.5 py-0.5 bg-blue-100 dark:bg-[#232325] text-blue-600 dark:text-blue-400 rounded-[5px]">拾色器</span>
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">点击色块选取任意颜色，或在右侧输入 HEX 色值</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">点击色块选取任意颜色，或在右侧输入 HEX 色值</p>
                       </div>
                     </div>
 
                     <div class="flex items-center space-x-2">
                       <div 
-                        class="flex items-center bg-white dark:bg-[#19191b] px-2 py-1 text-xs font-mono font-bold text-gray-700 dark:text-[#ededed] rounded-lg border border-gray-200 dark:border-white/[0.08] focus-within:border-blue-500 shadow-xs"
+                        class="flex items-center bg-white dark:bg-[#19191b] px-2 py-1 type-numeric-sm font-medium text-gray-700 dark:text-[#ededed] rounded-lg border border-gray-200 dark:border-white/[0.08] focus-within:border-blue-500 shadow-xs"
                       >
                         <span class="text-gray-400 mr-1 select-none">#</span>
                         <input 
                           type="text" 
                           :value="lyricConfig.customColor ? lyricConfig.customColor.replace(/^#/, '') : '38bdf8'"
                           @input="handleCustomHexInput($event.target.value)"
-                          class="w-16 bg-transparent outline-none uppercase font-mono text-xs text-gray-800 dark:text-[#ededed]"
+                          class="w-16 bg-transparent outline-none type-numeric-sm text-gray-800 dark:text-[#ededed]"
                           maxlength="6"
                           placeholder="38bdf8"
                         />
@@ -1002,15 +1057,15 @@
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">动画与显示</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">动画与显示</h3>
                   </div>
                   <div class="space-y-2">
                     <div 
                       class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">逐字卡拉OK平滑过渡</p>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">主歌词跟随演唱节奏逐字精准染色高亮</p>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">逐字卡拉OK平滑过渡</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">主歌词跟随演唱节奏逐字精准染色高亮</p>
                       </div>
                       <button 
                         @click="lyricConfig.karaokeMode = !lyricConfig.karaokeMode"
@@ -1028,8 +1083,8 @@
                       class="flex items-center justify-between p-2.5 bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg"
                     >
                       <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">显示副歌词（翻译/下一句）</p>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">在主歌词下方展示双语翻译或下一句预告</p>
+                        <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">显示副歌词（翻译/下一句）</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">在主歌词下方展示双语翻译或下一句预告</p>
                       </div>
                       <button 
                         @click="lyricConfig.showSub = !lyricConfig.showSub"
@@ -1055,9 +1110,9 @@
                   <div>
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">启用全局快捷键</p>
+                      <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">启用全局快捷键</p>
                     </div>
-                    <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">在其他软件或桌面时也能通过热键控制播放</p>
+                    <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">在其他软件或桌面时也能通过热键控制播放</p>
                   </div>
                   <button 
                     @click="toggleGlobalShortcuts"
@@ -1077,7 +1132,7 @@
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">全局热键 (System Global)</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">全局热键 (System Global)</h3>
                   </div>
                   <div 
                     class="bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg border border-gray-200/60 dark:border-white/[0.08] overflow-hidden"
@@ -1085,7 +1140,7 @@
                     <div 
                       v-for="(item, idx) in globalShortcutList" 
                       :key="idx"
-                      class="flex items-center justify-between px-3.5 py-2 text-xs"
+                      class="flex items-center justify-between px-3.5 py-2 type-meta-base"
                       :class="idx !== 0 ? 'border-t border-gray-200/60 dark:border-white/[0.08]' : ''"
                     >
                       <span class="font-medium text-gray-700 dark:text-[#a1a1a6]">{{ item.name }}</span>
@@ -1093,7 +1148,7 @@
                         <kbd 
                           v-for="k in item.keys" 
                           :key="k" 
-                          class="px-2 py-0.5 bg-white dark:bg-[#2c2c2f] border border-gray-200 dark:border-white/[0.14] text-[11px] font-mono font-bold shadow-xs text-gray-700 dark:text-[#ededed] rounded-md"
+                          class="px-2 py-0.5 bg-white dark:bg-[#2c2c2f] border border-gray-200 dark:border-white/[0.14] type-meta-micro font-mono shadow-xs text-gray-700 dark:text-[#ededed] rounded-md"
                         >
                           {{ k }}
                         </kbd>
@@ -1108,7 +1163,7 @@
                 >
                   <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                    <h3 class="text-xs font-bold text-gray-800 dark:text-[#ededed]">软件内快捷键 (In-App)</h3>
+                    <h3 class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">软件内快捷键 (In-App)</h3>
                   </div>
                   <div 
                     class="bg-slate-50/70 dark:bg-[#232325]/50 rounded-lg border border-gray-200/60 dark:border-white/[0.08] overflow-hidden"
@@ -1116,7 +1171,7 @@
                     <div 
                       v-for="(item, idx) in localShortcutList" 
                       :key="idx"
-                      class="flex items-center justify-between px-3.5 py-2 text-xs"
+                      class="flex items-center justify-between px-3.5 py-2 type-meta-base"
                       :class="idx !== 0 ? 'border-t border-gray-200/60 dark:border-white/[0.08]' : ''"
                     >
                       <span class="font-medium text-gray-700 dark:text-[#a1a1a6]">{{ item.name }}</span>
@@ -1124,7 +1179,7 @@
                         <kbd 
                           v-for="k in item.keys" 
                           :key="k" 
-                          class="px-2 py-0.5 bg-white dark:bg-[#2c2c2f] border border-gray-200 dark:border-white/[0.14] text-[11px] font-mono font-bold shadow-xs text-gray-700 dark:text-[#ededed] rounded-md"
+                          class="px-2 py-0.5 bg-white dark:bg-[#2c2c2f] border border-gray-200 dark:border-white/[0.14] type-meta-micro font-mono shadow-xs text-gray-700 dark:text-[#ededed] rounded-md"
                         >
                           {{ k }}
                         </kbd>
@@ -1150,9 +1205,9 @@
                         </div>
                       </div>
                       <div>
-                        <h3 class="text-base font-semibold tracking-tight">概念音乐 Desktop</h3>
-                        <p class="text-xs text-white/80 dark:text-[#a1a1a6] font-mono mt-0.5">v{{ appVersion }}</p>
-                        <p class="text-[11px] text-white/70 dark:text-[#85858b] mt-1">回归音乐本身，听见好时光</p>
+                        <h3 class="type-heading-md font-semibold">概念音乐 Desktop</h3>
+                        <p class="type-numeric-sm text-white/80 dark:text-[#a1a1a6] mt-0.5">v{{ appVersion }}</p>
+                        <p class="type-meta-base text-white/70 dark:text-[#85858b] mt-1">回归音乐本身，听见好时光</p>
                       </div>
                     </div>
                   </div>
@@ -1167,14 +1222,14 @@
                       <div>
                         <div class="flex items-center space-x-2">
                           <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">在线更新检查</p>
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">在线更新检查</p>
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">检查 GitHub 官方发布的最新版本与功能更新</p>
+                        <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-1 ml-3.5">检查 GitHub 官方发布的最新版本与功能更新</p>
                       </div>
                       <button 
                         v-squircle="'md'"
                         @click="checkForUpdates" 
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer rounded-[10px]"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white type-meta-base font-medium shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer rounded-[10px]"
                       >
                         <AppIcon name="refresh" class="w-3.5 h-3.5" />
                         <span>检查更新</span>
@@ -1183,7 +1238,7 @@
                   </template>
 
                   <template v-else-if="updateStatus === 'checking'">
-                    <div class="flex items-center justify-center py-4 space-x-3 text-blue-600 dark:text-blue-400 text-xs font-bold">
+                    <div class="flex items-center justify-center py-4 space-x-3 text-blue-600 dark:text-blue-400 type-meta-base font-medium">
                       <AppIcon name="spinner" spin class="w-5 h-5" />
                       <span>{{ updateStore.channelFallbackNotice ? updateStore.channelFallbackNotice + '，正在检测...' : '正在检查最新版本，请稍候...' }}</span>
                     </div>
@@ -1196,15 +1251,15 @@
                           <AppIcon name="check" class="w-4 h-4" />
                         </div>
                         <div>
-                          <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">当前已是最新版本 (v{{ appVersion }})</p>
-                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">
+                          <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">当前已是最新版本 (v{{ appVersion }})</p>
+                          <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">
                             {{ updateStore.channelFallbackNotice ? '已通过高速加速通道完成检测，无需更新' : '无需更新，继续享受音乐吧' }}
                           </p>
                         </div>
                       </div>
                       <button 
                         @click="checkForUpdates" 
-                        class="px-3 py-1.5 text-xs font-bold text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#2c2c2f] transition-all rounded-lg border border-gray-200 dark:border-white/[0.08] cursor-pointer"
+                        class="px-3 py-1.5 type-meta-base font-medium text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-200 dark:hover:bg-[#2c2c2f] transition-all rounded-lg border border-gray-200 dark:border-white/[0.08] cursor-pointer"
                       >
                         重新检查
                       </button>
@@ -1218,15 +1273,15 @@
                           <AppIcon name="download" class="w-4 h-4" />
                         </div>
                         <div>
-                          <p class="text-xs font-bold text-gray-900 dark:text-white">发现新版本 v{{ updateInfo.version }}</p>
-                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">包含性能优化与全新功能升级</p>
+                          <p class="type-body-sm font-medium text-gray-900 dark:text-white">发现新版本 v{{ updateInfo.version }}</p>
+                          <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">包含性能优化与全新功能升级</p>
                         </div>
                       </div>
                       <div class="flex space-x-3">
                         <button 
                           v-squircle="'md'"
                           @click="startDownload" 
-                          class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer rounded-[10px]"
+                          class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white type-meta-base font-medium shadow-sm transition-all active:scale-95 cursor-pointer rounded-[10px]"
                         >
                           立即更新
                         </button>
@@ -1236,15 +1291,15 @@
 
                   <template v-else-if="updateStatus === 'downloading'">
                     <div class="space-y-3">
-                      <div class="flex justify-between items-center text-xs font-bold">
+                      <div class="flex justify-between items-center type-meta-base font-medium">
                         <span class="text-gray-800 dark:text-[#ededed]">正在下载更新安装包...</span>
-                        <span class="text-blue-600 font-mono">{{ progressPercent }}% ({{ progressSpeed }})</span>
+                        <span class="text-blue-600 type-numeric-sm font-medium">{{ progressPercent }}% ({{ progressSpeed }})</span>
                       </div>
                       <div class="w-full h-2 bg-gray-200 dark:bg-[#2c2c2f] rounded-full overflow-hidden relative">
                         <div class="h-full bg-blue-600 rounded-full transition-all duration-300" :style="{ width: progressPercent + '%' }"></div>
                       </div>
                       <div class="flex justify-end">
-                        <button @click="cancelDownload" class="text-xs text-gray-400 hover:text-red-500 transition-colors font-medium cursor-pointer">
+                        <button @click="cancelDownload" class="type-meta-base text-gray-400 hover:text-red-500 transition-colors font-medium cursor-pointer">
                           取消下载
                         </button>
                       </div>
@@ -1258,14 +1313,14 @@
                           <AppIcon name="check" class="w-4 h-4" />
                         </div>
                         <div>
-                          <p class="text-xs font-bold text-gray-900 dark:text-white">更新下载完成</p>
-                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">重启软件即可完成自动升级安装</p>
+                          <p class="type-body-sm font-medium text-gray-900 dark:text-white">更新下载完成</p>
+                          <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">重启软件即可完成自动升级安装</p>
                         </div>
                       </div>
                       <button 
                         v-squircle="'md'"
                         @click="installUpdate" 
-                        class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer rounded-[10px]"
+                        class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white type-meta-base font-medium shadow-sm transition-all active:scale-95 cursor-pointer rounded-[10px]"
                       >
                         立即重启安装
                       </button>
@@ -1279,21 +1334,21 @@
                           <AppIcon name="danger" class="w-4 h-4" />
                         </div>
                         <div>
-                          <p class="text-xs font-bold text-red-600 dark:text-red-400">{{ isDownloadError ? '下载更新失败' : '检查更新失败' }}</p>
-                          <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">{{ errorMsg || '网络连接异常，请稍后重试' }}</p>
+                          <p class="type-body-sm font-medium text-red-600 dark:text-red-400">{{ isDownloadError ? '下载更新失败' : '检查更新失败' }}</p>
+                          <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">{{ errorMsg || '网络连接异常，请稍后重试' }}</p>
                         </div>
                       </div>
                       <div class="flex space-x-2">
                         <button 
                           @click="resetToIdle" 
-                          class="px-3 py-1.5 text-xs font-bold bg-gray-100 dark:bg-[#2c2c2f] text-gray-700 dark:text-[#ededed] rounded-lg cursor-pointer"
+                          class="px-3 py-1.5 type-meta-base font-medium bg-gray-100 dark:bg-[#2c2c2f] text-gray-700 dark:text-[#ededed] rounded-lg cursor-pointer"
                         >
                           返回
                         </button>
                         <button 
                           v-if="updateInfo.version" 
                           @click="openExternalLink(portableReleaseUrl)" 
-                          class="px-3 py-1.5 text-xs font-bold bg-blue-50 text-blue-600 dark:bg-[#232325] dark:text-blue-400 hover:bg-blue-100 transition-colors rounded-lg cursor-pointer"
+                          class="px-3 py-1.5 type-meta-base font-medium bg-blue-50 text-blue-600 dark:bg-[#232325] dark:text-blue-400 hover:bg-blue-100 transition-colors rounded-lg cursor-pointer"
                         >
                           手动下载 Release
                         </button>
@@ -1303,8 +1358,8 @@
 
                   <template v-else-if="updateStatus === 'cancelled'">
                     <div class="flex items-center justify-between">
-                      <p class="text-xs text-gray-600 dark:text-[#a1a1a6]">下载已取消</p>
-                      <button @click="resetToIdle" class="text-xs text-blue-600 font-bold cursor-pointer">返回重试</button>
+                      <p class="type-meta-base text-gray-600 dark:text-[#a1a1a6]">下载已取消</p>
+                      <button @click="resetToIdle" class="type-meta-base text-blue-600 font-medium cursor-pointer">返回重试</button>
                     </div>
                   </template>
                 </section>
@@ -1316,16 +1371,16 @@
                   <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed]">更新下载线路</p>
+                      <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed]">更新下载线路</p>
                     </div>
                     <span 
                       v-if="updateStore.channelFallbackNotice" 
-                      class="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-[#232325] px-2 py-0.5 font-medium rounded-[5px]"
+                      class="type-meta-micro text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-[#232325] px-2 py-0.5 rounded-[5px]"
                     >
                       ⚡ {{ updateStore.channelFallbackNotice }}
                     </span>
                   </div>
-                  <p class="text-[11px] text-gray-400 dark:text-[#85858b] ml-3.5">
+                  <p class="type-meta-base text-gray-400 dark:text-[#85858b] ml-3.5">
                     国内直连 GitHub 容易受阻或限速，推荐保持“自动优选”以在网络异常时自动启用加速
                   </p>
                   <div class="grid grid-cols-2 gap-2 pt-1">
@@ -1340,12 +1395,12 @@
                     >
                       <div class="min-w-0 pr-2">
                         <p 
-                          class="text-xs font-bold truncate transition-colors"
+                          class="type-meta-base font-medium truncate transition-colors"
                           :class="updateStore.updateChannel === ch.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-[#a1a1a6]'"
                         >
                           {{ ch.name }}
                         </p>
-                        <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 truncate">{{ ch.desc }}</p>
+                        <p class="type-meta-micro text-gray-400 dark:text-[#85858b] mt-0.5 truncate">{{ ch.desc }}</p>
                       </div>
                       <span
                         class="w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
@@ -1364,8 +1419,8 @@
                     class="p-3 bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
                   >
                     <div class="min-w-0 pr-1">
-                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">官方网站</p>
-                      <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 font-mono truncate">concept.cc.cd</p>
+                      <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">官方网站</p>
+                      <p class="type-numeric-sm text-gray-400 dark:text-[#85858b] mt-0.5 truncate">concept.cc.cd</p>
                     </div>
                     <AppIcon name="share" class="w-3.5 h-3.5 text-gray-400 group-hover:scale-110 shrink-0 transition-transform" />
                   </div>
@@ -1375,8 +1430,8 @@
                     class="p-3 bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
                   >
                     <div class="min-w-0 pr-1">
-                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">GitHub 仓库</p>
-                      <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 truncate">参与贡献与反馈</p>
+                      <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">GitHub 仓库</p>
+                      <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5 truncate">参与贡献与反馈</p>
                     </div>
                     <AppIcon name="share" class="w-3.5 h-3.5 text-gray-400 group-hover:scale-110 shrink-0 transition-transform" />
                   </div>
@@ -1386,8 +1441,8 @@
                     class="p-3 bg-white dark:bg-[#232325]/90 rounded-[14px] border border-gray-200/70 dark:border-white/[0.08] shadow-xs text-left flex items-center justify-between transition-all group cursor-pointer"
                   >
                     <div class="min-w-0 pr-1">
-                      <p class="text-xs font-bold text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">免责声明与许可</p>
-                      <p class="text-[10px] text-gray-400 dark:text-[#85858b] mt-0.5 truncate">查看免责条款</p>
+                      <p class="type-body-sm font-medium text-gray-800 dark:text-[#ededed] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">免责声明与许可</p>
+                      <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5 truncate">查看免责条款</p>
                     </div>
                     <AppIcon name="chevron-right" class="w-3.5 h-3.5 text-gray-400 group-hover:translate-x-0.5 shrink-0 transition-transform" />
                   </button>
@@ -1406,6 +1461,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick, inject } from 'vue';
 import { useTheme } from '../composables/useTheme';
+import { useFontScale } from '../composables/useFontScale';
 import { usePlayerStore, PLAYLIST_MAX_SIZE_OPTIONS } from '../store/playerStore';
 import { useUserStore } from '../store/userStore';
 import { useUpdateStore } from '../store/updateStore';
@@ -1648,6 +1704,31 @@ const toggleAutoStart = async () => {
       playerStore.showToast('设置开机自启动失败');
     }
   }
+};
+
+const { fontScale, setFontScale, fontPreset, setFontPreset } = useFontScale();
+
+const fontPresetOptions = [
+  { value: 'modern', label: '现代黑体', badge: '推荐', desc: 'Inter + 思源黑体可变字重，清晰细腻' },
+  { value: 'system', label: '系统原生', desc: '跟随系统微软雅黑 / 苹方默认字体' }
+];
+
+const fontScaleOptions = [
+  { value: 'compact', label: '紧凑', desc: '正文 14px · 高密度显示' },
+  { value: 'standard', label: '舒适标准', badge: '推荐', desc: '正文 15px · 均衡清晰' },
+  { value: 'large', label: '护眼大号', desc: '正文 16px · 更省力易读' }
+];
+
+const handleSetFontPreset = (preset) => {
+  const valid = setFontPreset(preset);
+  const target = fontPresetOptions.find(o => o.value === valid);
+  playerStore.showToast(`界面字体风格已切换为「${target?.label || '现代黑体'}」`);
+};
+
+const handleSetFontScale = (scale) => {
+  const valid = setFontScale(scale);
+  const target = fontScaleOptions.find(o => o.value === valid);
+  playerStore.showToast(`界面字体已切换为「${target?.label || '舒适标准'}」`);
 };
 
 const handleSetTheme = (mode) => {

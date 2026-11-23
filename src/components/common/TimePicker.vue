@@ -14,7 +14,7 @@
       ]"
     >
       <!-- 左侧：高质感等宽时间显示 -->
-      <div class="flex items-center space-x-1 font-mono text-xs font-bold text-gray-800 dark:text-[#ededed]">
+      <div class="flex items-center space-x-1 type-numeric-sm font-medium text-gray-800 dark:text-[#ededed]">
         <span class="px-1 py-0.5 rounded-[5px] transition-colors" :class="isOpen ? 'text-blue-600 dark:text-blue-400' : ''">
           {{ displayHour }}
         </span>
@@ -61,7 +61,7 @@
           class="w-full rounded-[14px] bg-white/95 dark:bg-[#19191b]/95 backdrop-blur-xl border border-gray-200/90 dark:border-white/[0.08] p-2.5 space-y-2"
         >
         <!-- 顶部列标题 -->
-        <div class="grid grid-cols-2 gap-2 text-center text-[10px] font-bold text-gray-400 dark:text-[#85858b] uppercase tracking-wider pb-1 border-b border-gray-100 dark:border-white/[0.08]">
+        <div class="grid grid-cols-2 gap-2 text-center type-meta-micro text-gray-400 dark:text-[#85858b] pb-1 border-b border-gray-100 dark:border-white/[0.08]">
           <span>小时</span>
           <span>分钟</span>
         </div>
@@ -79,10 +79,10 @@
               type="button"
               :ref="el => setHourRef(el, h - 1)"
               @click.stop="selectHour(h - 1)"
-              class="w-full text-center py-1.5 rounded-md font-mono text-xs transition-all cursor-pointer"
+              class="w-full text-center py-1.5 rounded-md type-numeric-sm transition-all cursor-pointer"
               :class="draftHour === (h - 1)
-                ? 'bg-blue-600 text-white font-bold shadow-xs scale-[1.02]'
-                : 'text-gray-700 dark:text-[#a1a1a6] hover:bg-slate-100 dark:hover:bg-[#232325] hover:text-gray-900 dark:hover:text-white font-medium'"
+                ? 'bg-blue-600 text-white font-medium shadow-xs scale-[1.02]'
+                : 'text-gray-700 dark:text-[#a1a1a6] hover:bg-slate-100 dark:hover:bg-[#232325] hover:text-gray-900 dark:hover:text-white'"
             >
               {{ String(h - 1).padStart(2, '0') }}
             </button>
@@ -99,10 +99,10 @@
               type="button"
               :ref="el => setMinuteRef(el, m - 1)"
               @click.stop="selectMinute(m - 1)"
-              class="w-full text-center py-1.5 rounded-md font-mono text-xs transition-all cursor-pointer"
+              class="w-full text-center py-1.5 rounded-md type-numeric-sm transition-all cursor-pointer"
               :class="draftMinute === (m - 1)
-                ? 'bg-blue-600 text-white font-bold shadow-xs scale-[1.02]'
-                : 'text-gray-700 dark:text-[#a1a1a6] hover:bg-slate-100 dark:hover:bg-[#232325] hover:text-gray-900 dark:hover:text-white font-medium'"
+                ? 'bg-blue-600 text-white font-medium shadow-xs scale-[1.02]'
+                : 'text-gray-700 dark:text-[#a1a1a6] hover:bg-slate-100 dark:hover:bg-[#232325] hover:text-gray-900 dark:hover:text-white'"
             >
               {{ String(m - 1).padStart(2, '0') }}
             </button>
@@ -110,11 +110,11 @@
         </div>
 
         <!-- 底部操作栏：设为当前 + 取消 + 确定 -->
-        <div class="pt-2 border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-between text-[10px]">
+        <div class="pt-2 border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-between type-meta-micro">
           <button
             type="button"
             @click.stop="setNow"
-            class="text-gray-500 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-colors cursor-pointer"
+            class="text-gray-500 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors cursor-pointer"
           >
             当前时间
           </button>
@@ -129,7 +129,7 @@
             <button
               type="button"
               @click.stop="confirm"
-              class="px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-2xs transition-colors cursor-pointer"
+              class="px-2.5 py-1 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-2xs transition-colors cursor-pointer"
             >
               确定
             </button>

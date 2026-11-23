@@ -14,9 +14,9 @@
           <div class="w-24 h-24 bg-blue-50 dark:bg-[#232325] rounded-full flex items-center justify-center mb-6 shadow-inner dark:shadow-none border border-blue-100 dark:border-white/[0.08] transition-colors">
             <AppIcon name="my-playlists" class="w-10 h-10 text-blue-500 dark:text-blue-400" />
           </div>
-          <h2 class="text-3xl font-extrabold text-gray-900 dark:text-[#ededed] mb-3 tracking-tight">私人歌单</h2>
-          <p class="text-sm text-gray-500 dark:text-[#a1a1a6] mb-8 max-w-sm leading-relaxed">登录概念音乐，一键同步您精心收集的所有私人歌单，让好音乐随时陪伴。</p>
-          <button @click="userStore.openLoginModal()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] dark:shadow-none dark:hover:shadow-[0_4px_20px_rgba(37,99,235,0.4)] transition-all transform active:scale-95 no-drag flex items-center">
+          <h2 class="type-display-lg text-gray-900 dark:text-[#ededed] mb-3">私人歌单</h2>
+          <p class="type-body-base text-gray-500 dark:text-[#a1a1a6] mb-8 max-w-sm">登录概念音乐，一键同步您精心收集的所有私人歌单，让好音乐随时陪伴。</p>
+          <button @click="userStore.openLoginModal()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full type-body-md shadow-[0_8px_20px_rgba(37,99,235,0.3)] dark:shadow-none dark:hover:shadow-[0_4px_20px_rgba(37,99,235,0.4)] transition-all transform active:scale-95 no-drag flex items-center">
             立即安全登录
             <AppIcon name="chevron-right" class="w-4 h-4 ml-2" />
           </button>
@@ -27,15 +27,15 @@
         
         <div class="flex items-end justify-between mb-6 w-full gap-4">
           <div class="flex-1 min-w-0">
-            <h2 class="text-3xl font-extrabold text-gray-900 dark:text-[#ededed] tracking-tight truncate">
-              私人歌单 <span class="text-lg text-blue-500 dark:text-blue-400 font-bold ml-2">My Playlists</span>
+            <h2 class="type-heading-xl text-gray-900 dark:text-[#ededed] truncate">
+              私人歌单 <span class="type-heading-sub text-blue-600/80 dark:text-blue-400/90 ml-2">My Playlists</span>
             </h2>
-            <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-2 font-medium">您创建与收藏的所有音乐记忆</p>
+            <p class="type-meta-base text-gray-500 dark:text-[#a1a1a6] mt-2">您创建与收藏的所有音乐记忆</p>
           </div>
           <button
             v-if="activeTab !== 'collected'"
             @click="openCreateModal"
-            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-full text-xs font-bold shadow-md shadow-blue-200 dark:shadow-none transition-all flex items-center flex-shrink-0 no-drag"
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-full type-meta-base font-medium shadow-md shadow-blue-200 dark:shadow-none transition-all flex items-center flex-shrink-0 no-drag"
           >
             <AppIcon name="plus" class="w-3.5 h-3.5 mr-1.5" />
             新建歌单
@@ -43,9 +43,9 @@
         </div>
 
         <div class="flex items-center space-x-8 border-b border-gray-100 dark:border-white/[0.08] mb-8">
-          <button @click="activeTab = 'all'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'all' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">全部歌单</button>
-          <button @click="activeTab = 'created'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'created' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">我创建的</button>
-          <button @click="activeTab = 'collected'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'collected' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">我收藏的</button>
+          <button @click="activeTab = 'all'" class="pb-3 type-body-md border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'all' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">全部歌单</button>
+          <button @click="activeTab = 'created'" class="pb-3 type-body-md border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'created' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">我创建的</button>
+          <button @click="activeTab = 'collected'" class="pb-3 type-body-md border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'collected' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">我收藏的</button>
         </div>
 
         <div v-if="isLoading && page === 1" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
@@ -54,22 +54,22 @@
 
         <div v-else-if="isError" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100 mt-4">
           <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
-          <p class="text-base font-bold text-red-600 mb-2">获取歌单失败</p><p class="text-xs text-red-400 max-w-lg text-center">{{ errorMessage }}</p>
-          <button @click="fetchUserPlaylists" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
+          <p class="type-heading-md text-red-600 mb-2">获取歌单失败</p><p class="type-meta-base text-red-400 max-w-lg text-center">{{ errorMessage }}</p>
+          <button @click="fetchUserPlaylists" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-body-md shadow-md transition-all active:scale-95 no-drag">重新加载</button>
         </div>
 
         <div v-else-if="playlists.length === 0" class="flex-1 flex flex-col items-center justify-center py-32 text-gray-400 mt-4">
           <AppIcon name="my-playlists" class="w-20 h-20 mb-4 text-gray-200" />
-          <p class="text-sm font-medium tracking-widest">你还没有创建或收藏任何歌单</p>
-          <button @click="openCreateModal" class="mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold transition-all shadow-sm">
+          <p class="type-body-base">你还没有创建或收藏任何歌单</p>
+          <button @click="openCreateModal" class="mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full type-meta-base font-medium transition-all shadow-sm">
             立即创建第一个歌单
           </button>
         </div>
         
         <div v-else-if="filteredPlaylists.length === 0" class="flex-1 flex flex-col items-center justify-center py-32 text-gray-400 mt-4">
           <AppIcon name="search" class="w-16 h-16 mb-4 text-gray-200" />
-          <p class="text-sm font-medium tracking-widest">{{ activeTab === 'created' ? '您还没有创建过私人歌单' : '您还没有收藏过他人的歌单' }}</p>
-          <button v-if="activeTab === 'created'" @click="openCreateModal" class="mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold transition-all shadow-sm">
+          <p class="type-body-base">{{ activeTab === 'created' ? '您还没有创建过私人歌单' : '您还没有收藏过他人的歌单' }}</p>
+          <button v-if="activeTab === 'created'" @click="openCreateModal" class="mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full type-meta-base font-medium transition-all shadow-sm">
             立即创建歌单
           </button>
         </div>
@@ -91,13 +91,13 @@
                 </div>
 
                 <!-- 3. 右上角角标（独立浮层） -->
-                <div class="absolute top-2 right-2 bg-black/45 text-white px-2.5 py-1 rounded-full flex items-center shadow-sm pointer-events-none select-none z-20">
+                <div class="absolute top-2 right-2 bg-black/45 text-white px-2.5 py-0.5 rounded-full flex items-center shadow-sm pointer-events-none select-none z-20">
                   <AppIcon name="music" class="w-3 h-3 mr-1 flex-shrink-0" />
-                  <span class="text-[10px] font-bold tracking-wider leading-none">{{ playlist._trackCount }}首</span>
+                  <span class="type-meta-micro">{{ playlist._trackCount }}首</span>
                 </div>
 
                 <!-- 4. 隐私标识 -->
-                <div v-if="playlist.is_pri === 1" class="absolute bottom-2 left-2 bg-black/55 text-white px-2 py-0.5 rounded-md flex items-center text-[10px] font-medium z-20">
+                <div v-if="playlist.is_pri === 1" class="absolute bottom-2 left-2 bg-black/55 text-white px-2 py-0.5 rounded-md flex items-center type-meta-micro z-20">
                   <AppIcon name="lock" class="w-2.5 h-2.5 mr-1 flex-shrink-0" />
                   <span>私密</span>
                 </div>
@@ -113,13 +113,13 @@
                 </button>
               </div>
               <div class="mt-3 flex flex-col px-1">
-                <h4 class="text-sm font-bold text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 break-all group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.name">{{ playlist.name }}</h4>
-                <p class="text-xs text-gray-400 mt-1.5 font-medium truncate" v-tooltip="'By ' + (playlist.list_create_username || '未知用户')">By {{ playlist.list_create_username || '未知用户' }}</p>
+                <h4 class="type-body-md text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 break-all group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.name">{{ playlist.name }}</h4>
+                <p class="type-meta-base text-gray-400 mt-1.5 truncate" v-tooltip="'By ' + (playlist.list_create_username || '未知用户')">By {{ playlist.list_create_username || '未知用户' }}</p>
               </div>
             </div>
           </div>
 
-          <div ref="loadMoreTrigger" class="w-full h-24 flex items-center justify-center mt-6 pb-8 text-xs font-medium">
+          <div ref="loadMoreTrigger" class="w-full h-24 flex items-center justify-center mt-6 pb-8 type-meta-base font-medium">
             <div v-if="isLoadingMore" class="flex items-center text-blue-500">
               <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
               正在获取更多歌单...
@@ -145,7 +145,7 @@
               <div class="w-8 h-8 rounded-full bg-blue-50 dark:bg-[#232325] text-blue-600 dark:text-blue-400 dark:border dark:border-white/[0.08] flex items-center justify-center">
                 <AppIcon name="my-playlists" class="w-4 h-4" />
               </div>
-              <h3 class="text-base font-bold text-gray-800 dark:text-[#ededed]">新建歌单</h3>
+              <h3 class="type-heading-md text-gray-800 dark:text-[#ededed]">新建歌单</h3>
             </div>
             <button @click="closeCreateModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-[#ededed] p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors">
               <AppIcon name="close" class="w-4 h-4" />
@@ -164,8 +164,8 @@
 
             <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-[#232325]/60 border border-gray-100 dark:border-white/[0.08]">
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-gray-700 dark:text-[#ededed]">设为隐私歌单</span>
-                <span class="text-[11px] text-gray-400 dark:text-[#a1a1a6]">设为私密后，其他用户将无法在社区查看该歌单</span>
+                <span class="type-meta-base font-medium text-gray-700 dark:text-[#ededed]">设为隐私歌单</span>
+                <span class="type-meta-base text-gray-400 dark:text-[#a1a1a6]">设为私密后，其他用户将无法在社区查看该歌单</span>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" v-model="newPlaylistIsPrivate" class="sr-only peer" />
@@ -175,13 +175,13 @@
           </div>
 
           <div class="flex items-center justify-end space-x-3 mt-6">
-            <button @click="closeCreateModal" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
+            <button @click="closeCreateModal" class="px-4 py-2 type-meta-base font-medium text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
               取消
             </button>
             <button
               @click="handleCreatePlaylist"
               :disabled="isCreating || !newNameValidation.isValid"
-              class="px-5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
+              class="px-5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white type-meta-base font-medium rounded-lg shadow-sm transition-all flex items-center"
             >
               <AppIcon v-if="isCreating" name="spinner" spin class="w-3.5 h-3.5 mr-1.5" />
               <span>{{ isCreating ? '创建中...' : '立即创建' }}</span>
@@ -200,30 +200,30 @@
               <AppIcon name="trash" class="w-5 h-5" />
             </div>
             <div>
-              <h3 class="text-base font-bold text-gray-800 dark:text-[#ededed]">
+              <h3 class="type-heading-md text-gray-800 dark:text-[#ededed]">
                 {{ isCollectedPlaylist(playlistToDelete) ? '取消收藏歌单' : '删除歌单' }}
               </h3>
-              <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-0.5">此操作将从云端删除相关记录</p>
+              <p class="type-meta-base text-gray-500 dark:text-[#a1a1a6] mt-0.5">此操作将从云端删除相关记录</p>
             </div>
           </div>
 
-          <div class="text-xs text-gray-600 dark:text-[#a1a1a6] leading-relaxed bg-gray-50 dark:bg-[#232325]/60 p-3.5 rounded-xl border border-gray-100 dark:border-white/[0.08] mb-5 break-all overflow-hidden">
+          <div class="type-meta-base text-gray-600 dark:text-[#a1a1a6] leading-relaxed bg-gray-50 dark:bg-[#232325]/60 p-3.5 rounded-xl border border-gray-100 dark:border-white/[0.08] mb-5 break-all overflow-hidden">
             <p>
-              确定要{{ isCollectedPlaylist(playlistToDelete) ? '取消收藏' : '删除' }}歌单「<span class="font-bold text-gray-900 dark:text-[#ededed]">{{ playlistToDelete?.name }}</span>」吗？
+              确定要{{ isCollectedPlaylist(playlistToDelete) ? '取消收藏' : '删除' }}歌单「<span class="font-medium text-gray-900 dark:text-[#ededed]">{{ playlistToDelete?.name }}</span>」吗？
             </p>
-            <p class="mt-1 text-[11px] text-gray-400 dark:text-[#a1a1a6]">
+            <p class="mt-1 type-meta-base text-gray-400 dark:text-[#a1a1a6]">
               {{ isCollectedPlaylist(playlistToDelete) ? '取消后可随时在歌单广场重新收藏。' : '删除后将从云端彻底删除，无法恢复该歌单。' }}
             </p>
           </div>
 
           <div class="flex items-center justify-end space-x-3">
-            <button @click="closeDeleteModal" class="px-4 py-2 text-xs font-bold text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
+            <button @click="closeDeleteModal" class="px-4 py-2 type-meta-base font-medium text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] rounded-lg transition-colors">
               取消
             </button>
             <button
               @click="handleDeletePlaylist"
               :disabled="isDeleting"
-              class="px-5 py-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center"
+              class="px-5 py-2 bg-red-500 hover:bg-red-600 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white type-meta-base font-medium rounded-lg shadow-sm transition-all flex items-center"
             >
               <AppIcon v-if="isDeleting" name="spinner" spin class="w-3.5 h-3.5 mr-1.5" />
               <span>{{ isDeleting ? '正在删除...' : '确认删除' }}</span>

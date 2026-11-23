@@ -16,15 +16,15 @@
              <h3 class="text-base font-semibold text-gray-800 dark:text-[#ededed]">{{ store.dialogState.title }}</h3>
           </div>
           
-          <div class="flex-1 min-h-0 px-7 py-6 text-sm text-gray-600 dark:text-[#a1a1a6] leading-relaxed whitespace-pre-wrap font-normal max-h-[60vh] overflow-y-auto custom-scrollbar break-all text-left">
+          <div class="flex-1 min-h-0 px-7 py-6 type-body-base text-gray-600 dark:text-[#b4b4ba] whitespace-pre-wrap max-h-[60vh] overflow-y-auto custom-scrollbar break-all text-left">
             {{ store.dialogState.message }}
           </div>
           
           <div class="px-6 py-4 bg-gray-50/50 dark:bg-[#141415] border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-end space-x-3 shrink-0">
-            <button @click="store.closeDialog(false)" class="px-5 py-2 rounded-full text-xs font-medium text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/80 dark:hover:bg-[#232325] hover:text-gray-800 dark:hover:text-[#ededed] transition-colors no-drag focus:outline-none cursor-pointer">
+            <button @click="store.closeDialog(false)" class="px-5 py-2 rounded-full type-meta-base font-medium text-gray-600 dark:text-[#b4b4ba] hover:bg-gray-200/80 dark:hover:bg-[#232325] hover:text-gray-800 dark:hover:text-[#ededed] transition-colors no-drag focus:outline-none cursor-pointer">
               {{ store.dialogState.cancelText }}
             </button>
-            <button @click="store.closeDialog(true)" class="px-6 py-2 rounded-full text-xs font-medium text-white shadow-md dark:shadow-none transition-[transform,background-color] active:scale-[0.98] flex items-center justify-center min-w-[100px] no-drag focus:outline-none cursor-pointer" :class="dialogTone.confirmButton">
+            <button @click="store.closeDialog(true)" class="px-6 py-2 rounded-full type-meta-base font-medium text-white shadow-md dark:shadow-none transition-[transform,background-color] active:scale-[0.98] flex items-center justify-center min-w-[100px] no-drag focus:outline-none cursor-pointer" :class="dialogTone.confirmButton">
               {{ store.dialogState.confirmText }}
               <span v-if="store.dialogState.countdown > 0" class="ml-1 opacity-90 font-mono">({{ store.dialogState.countdown }}s后自动执行)</span>
             </button>

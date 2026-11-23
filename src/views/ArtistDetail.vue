@@ -6,7 +6,7 @@
     <div class="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-gray-50 to-white -z-10"></div>
 
     <div class="p-8 z-10 flex-1 flex flex-col min-w-0">
-      <button @click="$router.back()" class="mb-6 flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors no-drag w-fit">
+      <button @click="$router.back()" class="mb-6 flex items-center type-body-sm text-gray-600 dark:text-[#b4b4ba] hover:text-blue-600 transition-colors no-drag w-fit">
         <AppIcon name="chevron-left" class="w-4 h-4 mr-1" />
         返回
       </button>
@@ -20,41 +20,41 @@
 
         <div class="flex flex-col justify-center flex-1 min-w-0">
           <div v-if="isLoading" class="w-1/3 h-10 bg-gray-200 rounded animate-pulse mb-3"></div>
-          <h2 v-else class="text-4xl font-extrabold text-gray-900 tracking-tight line-clamp-1 mb-2">{{ artistInfo.name || '未知歌手' }}</h2>
+          <h2 v-else class="type-heading-xl text-gray-900 line-clamp-1 mb-2">{{ artistInfo.name || '未知歌手' }}</h2>
 
           <div v-if="isLoading" class="w-1/4 h-5 bg-gray-200 rounded animate-pulse mb-4"></div>
-          <div v-else class="flex items-center text-sm mb-4 space-x-6">
-            <span class="text-gray-500 font-medium">单曲：<span class="text-gray-800 font-bold ml-1">{{ artistInfo.song_count || 0 }}</span></span>
-            <span class="text-gray-500 font-medium">专辑：<span class="text-gray-800 font-bold ml-1">{{ artistInfo.album_count || 0 }}</span></span>
-            <span v-if="artistInfo.fans_count" class="text-gray-500 font-medium">粉丝：<span class="text-gray-800 font-bold ml-1">{{ formatCount(artistInfo.fans_count) }}</span></span>
+          <div v-else class="flex items-center type-body-base mb-4 space-x-6 tabular-nums">
+            <span class="text-gray-500">单曲：<span class="text-gray-800 font-medium ml-1">{{ artistInfo.song_count || 0 }}</span></span>
+            <span class="text-gray-500">专辑：<span class="text-gray-800 font-medium ml-1">{{ artistInfo.album_count || 0 }}</span></span>
+            <span v-if="artistInfo.fans_count" class="text-gray-500">粉丝：<span class="text-gray-800 font-medium ml-1">{{ formatCount(artistInfo.fans_count) }}</span></span>
           </div>
 
           <div v-if="isLoading" class="w-3/4 h-4 bg-gray-200 rounded animate-pulse"></div>
-          <p v-else class="text-xs text-gray-500 line-clamp-2 leading-relaxed cursor-default pr-10" v-tooltip="artistInfo.intro">{{ artistInfo.intro || '该歌手暂无简介...' }}</p>
+          <p v-else class="type-meta-base text-gray-500 line-clamp-2 leading-relaxed cursor-default pr-10" v-tooltip="artistInfo.intro">{{ artistInfo.intro || '该歌手暂无简介...' }}</p>
         </div>
       </div>
 
       <div class="flex items-center space-x-8 border-b border-gray-100 dark:border-white/[0.08] mb-6">
-        <button @click="activeTab = 'songs'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'songs' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">热门单曲</button>
-        <button @click="activeTab = 'albums'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'albums' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">全部专辑</button>
-        <button @click="activeTab = 'desc'" class="pb-3 text-sm font-bold border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'desc' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">歌手详情</button>
+        <button @click="activeTab = 'songs'" class="pb-3 type-body-md border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'songs' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">热门单曲</button>
+        <button @click="activeTab = 'albums'" class="pb-3 type-body-md border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'albums' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">全部专辑</button>
+        <button @click="activeTab = 'desc'" class="pb-3 type-body-md border-b-2 transition-all relative top-[1px] no-drag" :class="activeTab === 'desc' ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-[#a1a1a6] border-transparent hover:text-gray-800 dark:hover:text-[#ededed]'">歌手详情</button>
       </div>
 
       <div v-if="isError" class="w-full flex-1 flex flex-col items-center justify-center py-20 text-red-500 bg-red-50/50 rounded-3xl border border-red-100">
         <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
-        <p class="text-base font-bold text-red-600 mb-2">获取歌手信息失败</p>
-        <button @click="fetchArtistData" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
+        <p class="type-heading-md text-red-600 mb-2">获取歌手信息失败</p>
+        <button @click="fetchArtistData" class="mt-6 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-body-md shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="activeTab === 'songs'" class="w-full flex-1 flex flex-col min-w-0">
         <div class="mb-4 flex items-center justify-between">
-          <button @click="playAllSongs" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-bold shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag" :class="{'opacity-50 pointer-events-none': isLoading || songs.length === 0}">
+          <button @click="playAllSongs" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full type-meta-base font-medium shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag" :class="{'opacity-50 pointer-events-none': isLoading || songs.length === 0}">
             <AppIcon name="play" class="w-4 h-4 mr-1" />
             {{ songSort === 'hot' ? '播放全部热门单曲' : '播放全部最新单曲' }}
           </button>
           <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
-            <button @click="songSort = 'hot'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="songSort === 'hot' ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">最热</button>
-            <button @click="songSort = 'latest'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 text-xs font-bold transition-colors no-drag whitespace-nowrap" :class="songSort === 'latest' ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">最新</button>
+            <button @click="songSort = 'hot'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 type-meta-base font-medium transition-colors no-drag whitespace-nowrap" :class="songSort === 'hot' ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">最热</button>
+            <button @click="songSort = 'latest'" v-squircle="{ radius: 6, smoothing: 0.6 }" class="px-4 py-1.5 type-meta-base font-medium transition-colors no-drag whitespace-nowrap" :class="songSort === 'latest' ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'">最新</button>
           </div>
         </div>
 
@@ -63,33 +63,33 @@
         </div>
         <div v-else-if="songs.length === 0" class="flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
            <AppIcon name="rank" class="w-16 h-16 mb-4 text-gray-200" />
-           <p class="text-sm font-medium tracking-widest text-gray-400">该歌手暂无热歌数据</p>
+           <p class="type-body-base text-gray-400">该歌手暂无热歌数据</p>
         </div>
         <div v-else class="space-y-1 w-full">
-          <div class="flex items-center px-4 py-2 text-xs text-gray-400 border-b border-gray-100 mb-2 min-w-0">
+          <div class="flex items-center px-4 py-2 type-meta-base text-gray-400 border-b border-gray-100 mb-2 min-w-0">
             <div class="w-10 text-center flex-shrink-0">#</div><div class="flex-1 pl-2 min-w-0">音乐标题</div><div class="w-[28%] hidden md:block pr-4 min-w-0">专辑</div><div class="w-16 text-right pr-4 flex-shrink-0">时长</div>
           </div>
           <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" class="flex items-center px-4 py-3 rounded-xl hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
-            <div class="w-10 text-center text-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
+            <div class="w-10 text-center type-numeric-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
             
             <div class="flex-1 pl-2 pr-4 overflow-hidden min-w-0">
-              <div class="text-sm text-gray-800 font-medium flex items-center min-w-0" v-tooltip="song._title">
+              <div class="type-body-md text-gray-800 flex items-center min-w-0" v-tooltip="song._title">
                 <span class="truncate min-w-0">{{ song._title }}</span>
-                <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">付费</span>
-                <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase leading-none mt-0.5">VIP</span>
+                <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 rounded song-badge">付费</span>
+                <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 rounded song-badge">VIP</span>
               </div>
               <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" size="small" />
             </div>
             
-            <div class="w-[28%] hidden md:block text-xs text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
+            <div class="w-[28%] hidden md:block type-body-sm text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
               <span @click.stop="goToAlbum(song._album_id)" class="transition-colors" :class="song._album_id ? 'hover:text-blue-600 cursor-pointer' : ''">{{ song._album }}</span>
             </div>
-            <div class="w-16 text-xs text-gray-400 text-right pr-4 font-mono flex-shrink-0">{{ song._duration }}</div>
+            <div class="w-16 type-numeric-sm text-gray-400 text-right pr-4 flex-shrink-0">{{ song._duration }}</div>
           </div>
-          <div ref="loadMoreTrigger" class="w-full h-16 flex items-center justify-center mt-2 text-xs font-medium">
+          <div ref="loadMoreTrigger" class="w-full h-16 flex items-center justify-center mt-2 type-meta-base font-medium">
             <div v-if="isLoadingMore" class="flex items-center text-blue-500"><AppIcon name="spinner" spin class="h-4 w-4 mr-2" />加载中...</div>
             <div v-else-if="!hasMoreSongs" class="text-gray-300">没有更多歌曲了</div>
           </div>
@@ -102,7 +102,7 @@
         </div>
         <div v-else-if="albums.length === 0" class="flex-1 flex flex-col items-center justify-center py-24 text-gray-400">
            <AppIcon name="playlist-category" class="w-16 h-16 mb-4 text-gray-200" />
-           <p class="text-sm font-medium tracking-widest text-gray-400">该歌手暂无专辑数据</p>
+           <p class="type-body-base text-gray-400">该歌手暂无专辑数据</p>
         </div>
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-5 gap-y-8">
           <div v-for="album in albums" :key="album.albumid" @click="goToAlbum(album.albumid)" class="flex flex-col group cursor-pointer no-drag">
@@ -121,8 +121,8 @@
               </div>
             </div>
             <div class="mt-3 flex flex-col px-1 min-w-0">
-              <h4 class="text-sm font-bold text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="album.albumname">{{ album.albumname }}</h4>
-              <p class="text-xs text-gray-400 dark:text-[#a1a1a6] mt-1.5 font-medium truncate font-mono">{{ album.publishtime ? album.publishtime.split(' ')[0] : '' }}</p>
+              <h4 class="type-body-md text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="album.albumname">{{ album.albumname }}</h4>
+              <p class="type-numeric-sm text-gray-400 dark:text-[#a1a1a6] mt-1.5 truncate">{{ album.publishtime ? album.publishtime.split(' ')[0] : '' }}</p>
             </div>
           </div>
         </div>
@@ -130,8 +130,8 @@
 
       <div v-else-if="activeTab === 'desc'" class="w-full flex-1 flex flex-col min-w-0 pb-10">
         <div class="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
-          <h3 class="text-sm font-bold text-gray-800 mb-4">基本资料</h3>
-          <p class="text-sm text-gray-600 leading-loose whitespace-pre-wrap">{{ artistInfo.intro || '暂无详细介绍' }}</p>
+          <h3 class="type-body-md text-gray-800 mb-4">基本资料</h3>
+          <p class="type-body-base text-gray-600 leading-loose whitespace-pre-wrap max-w-[65ch]">{{ artistInfo.intro || '暂无详细介绍' }}</p>
         </div>
       </div>
 

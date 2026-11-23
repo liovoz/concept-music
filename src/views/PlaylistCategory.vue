@@ -6,10 +6,10 @@
 
       <div class="flex items-end justify-between mb-6 w-full gap-4">
         <div class="flex-1 min-w-0">
-          <h2 class="text-3xl font-extrabold text-gray-900 dark:text-[#ededed] tracking-tight truncate">
-            歌单广场 <span class="text-lg text-blue-500 font-bold ml-2">Explore</span>
+          <h2 class="type-heading-xl text-gray-900 dark:text-[#ededed] truncate">
+            歌单广场 <span class="type-heading-sub text-blue-600/80 dark:text-blue-400/90 ml-2">Explore</span>
           </h2>
-          <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-2 font-medium">按分类发现更多精选歌单</p>
+          <p class="type-meta-base text-gray-500 dark:text-[#a1a1a6] mt-2">按分类发现更多精选歌单</p>
         </div>
       </div>
 
@@ -30,10 +30,10 @@
               :key="category.id"
               @click="selectCategory(category)"
               v-squircle="{ radius: 6, smoothing: 0.6 }"
-              class="px-4 py-1.5 text-xs font-bold transition-colors whitespace-nowrap no-drag"
+              class="px-4 py-1.5 type-body-sm transition-colors whitespace-nowrap no-drag"
               :class="activeCategory.id === category.id
-                ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
-                : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'"
+                ? 'font-semibold bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
+                : 'font-medium text-gray-600 hover:text-gray-900 dark:text-[#b4b4ba] dark:hover:text-[#ededed]'"
             >
               {{ category.name }}
             </button>
@@ -46,7 +46,7 @@
             :key="tag.tagId"
             @click="selectTag(tag)"
             v-squircle="{ radius: 6, smoothing: 0.6 }"
-            class="px-3 py-1.5 text-xs font-semibold transition-colors no-drag whitespace-nowrap"
+            class="px-3 py-1.5 type-meta-base font-medium transition-colors no-drag whitespace-nowrap"
             :class="activeTag?.tagId === tag.tagId
               ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
               : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed] hover:bg-white/60 dark:hover:bg-[#232325]/60'"
@@ -57,14 +57,14 @@
       </div>
 
       <div class="flex items-center justify-between mb-5">
-        <h3 class="text-xl font-bold text-gray-800 dark:text-[#ededed] flex items-center">
-          <span class="text-2xl mr-2">{{ activeTag?.name || activeCategory?.name || '全部' }}</span>
+        <h3 class="type-heading-lg text-gray-800 dark:text-[#ededed] flex items-center">
+          <span class="mr-2">{{ activeTag?.name || activeCategory?.name || '全部' }}</span>
         </h3>
         <div v-squircle="{ radius: 10, smoothing: 0.6 }" class="flex items-center space-x-1 bg-gray-100/80 dark:!bg-[#19191b]/80 p-1 border border-gray-200/60 dark:!border-white/[0.08] transition-colors">
           <button
             @click="sortMode = 1"
             v-squircle="{ radius: 6, smoothing: 0.6 }"
-            class="px-3.5 py-1.5 text-xs font-bold transition-colors no-drag"
+            class="px-3.5 py-1.5 type-meta-base font-medium transition-colors no-drag"
             :class="sortMode === 1
               ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
               : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'"
@@ -72,7 +72,7 @@
           <button
             @click="sortMode = 2"
             v-squircle="{ radius: 6, smoothing: 0.6 }"
-            class="px-3.5 py-1.5 text-xs font-bold transition-colors no-drag"
+            class="px-3.5 py-1.5 type-meta-base font-medium transition-colors no-drag"
             :class="sortMode === 2
               ? 'bg-white text-blue-600 shadow-sm dark:!bg-[#232325] dark:text-blue-400 dark:shadow-black/40'
               : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'"
@@ -89,8 +89,8 @@
       </div>
 
       <div v-else-if="playlistsError && playlists.length === 0" v-squircle="'xl'" class="flex-1 flex flex-col items-center justify-center py-10 text-red-500 bg-red-50/50 rounded-[18px] border border-red-100">
-        <p class="text-sm font-bold text-red-600 mb-2">获取歌单失败</p>
-        <button @click="fetchPlaylists" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold shadow-md transition-all active:scale-95 no-drag">重新加载</button>
+        <p class="type-body-md text-red-600 mb-2">获取歌单失败</p>
+        <button @click="fetchPlaylists" class="mt-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-meta-base font-medium shadow-md transition-all active:scale-95 no-drag">重新加载</button>
       </div>
 
       <div v-else-if="playlists.length > 0">
@@ -112,19 +112,19 @@
               <!-- 3. 右上角角标（独立浮层） -->
               <div class="absolute top-2 right-2 bg-black/45 text-white px-2 py-0.5 rounded-full flex items-center shadow-sm pointer-events-none select-none z-20">
                 <AppIcon name="play" class="w-3 h-3 mr-1 flex-shrink-0" />
-                <span class="text-[10px] font-bold tracking-wider leading-none">{{ formatPlayCount(playlist.play_count) }}</span>
+                <span class="type-meta-micro">{{ formatPlayCount(playlist.play_count) }}</span>
               </div>
             </div>
             <div class="mt-3 flex flex-col px-1 min-w-0">
-              <h4 class="text-sm font-bold text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>
-              <p class="text-xs text-gray-400 dark:text-[#85858b] mt-1.5 font-medium truncate" v-tooltip="'By ' + (playlist.nickname || '未知用户')">By {{ playlist.nickname || '未知用户' }}</p>
+              <h4 class="type-body-md text-gray-800 dark:text-[#ededed] leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" v-tooltip="playlist.specialname">{{ playlist.specialname }}</h4>
+              <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-1.5 truncate" v-tooltip="'By ' + (playlist.nickname || '未知用户')">By {{ playlist.nickname || '未知用户' }}</p>
             </div>
           </div>
         </div>
 
         <div v-if="isLoadingMore" class="flex items-center justify-center py-6">
           <div class="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <span class="ml-3 text-xs text-gray-400 font-bold">加载中...</span>
+          <span class="ml-3 type-meta-base text-gray-400 font-medium">加载中...</span>
         </div>
 
         <div v-else-if="!hasMore" class="w-full flex flex-col items-center justify-center mt-2 mb-8">
@@ -134,7 +134,7 @@
             </div>
             <div class="flex items-center space-x-3">
               <span class="w-8 h-px bg-gray-200 dark:bg-[#2c2c2f]"></span>
-              <span class="text-[11px] font-bold tracking-[0.2em] text-gray-400 dark:text-[#a1a1a6] uppercase">已经到底了 · 换个分类看看</span>
+              <span class="type-meta-base text-gray-400 dark:text-[#a1a1a6]">已经到底了 · 换个分类看看</span>
               <span class="w-8 h-px bg-gray-200 dark:bg-[#2c2c2f]"></span>
             </div>
           </div>
@@ -145,8 +145,8 @@
 
       <div v-else class="flex-1 flex flex-col items-center justify-center py-20 text-gray-400 dark:text-[#85858b]">
         <AppIcon name="music" class="w-16 h-16 mb-4 text-gray-200 dark:text-[#636369]" />
-        <p class="text-sm font-bold">暂无歌单</p>
-        <p class="text-xs mt-1">换个分类试试</p>
+        <p class="type-body-md">暂无歌单</p>
+        <p class="type-meta-base mt-1">换个分类试试</p>
       </div>
     </div>
 

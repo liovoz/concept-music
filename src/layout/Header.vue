@@ -1,6 +1,6 @@
 <template>
   <header class="h-14 w-full flex items-center justify-between px-6 bg-white dark:bg-[#141415] drag-region z-40 border-b border-gray-50 dark:border-white/[0.08] transition-colors duration-200">
-    <div class="flex items-center w-48 text-blue-600 dark:text-[#ededed] font-semibold text-base tracking-tight select-none">
+    <div class="flex items-center w-48 text-blue-600 dark:text-[#ededed] type-heading-md font-semibold select-none">
       <svg class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
       概念音乐 Desktop
     </div>
@@ -22,7 +22,7 @@
           @click="syncFocusState"
           type="text" 
           :placeholder="defaultPlaceholder" 
-          class="w-full h-8 bg-gray-100 dark:bg-[#232325] shadow-inner dark:shadow-none hover:bg-gray-200 dark:hover:bg-[#2a2a2e] focus:bg-white dark:focus:bg-[#19191b] focus:shadow-none focus:ring-1 focus:ring-blue-300 dark:focus:ring-blue-500/70 border border-transparent dark:border-white/[0.06] focus:border-blue-300 dark:focus:border-blue-500/70 rounded-full pl-9 pr-8 text-xs text-gray-700 dark:text-[#ededed] outline-none transition-colors placeholder-gray-400 dark:placeholder-[#85858b] font-medium"
+          class="w-full h-9 bg-gray-100 dark:bg-[#232325] shadow-inner dark:shadow-none hover:bg-gray-200 dark:hover:bg-[#2a2a2e] focus:bg-white dark:focus:bg-[#19191b] focus:shadow-none focus:ring-1 focus:ring-blue-300 dark:focus:ring-blue-500/70 border border-transparent dark:border-white/[0.06] focus:border-blue-300 dark:focus:border-blue-500/70 rounded-full pl-9 pr-8 type-body-sm text-gray-800 dark:text-[#ededed] outline-none transition-colors placeholder-gray-500 dark:placeholder-[#8e8e95]"
         />
 
         <button 
@@ -41,11 +41,11 @@
             <template v-if="!searchKeyword.trim()">
               <div v-if="history.length > 0" class="pb-2 border-b border-gray-100">
                 <div class="px-4 py-2 flex items-center justify-between">
-                  <span class="text-xs text-gray-400 font-medium flex items-center">
+                  <span class="type-meta-base text-gray-500 font-medium flex items-center">
                     <AppIcon name="history" class="w-3.5 h-3.5 mr-1.5" />
                     搜索历史
                   </span>
-                  <button @mousedown.prevent="clearHistory" class="text-xs text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex items-center">
+                  <button @mousedown.prevent="clearHistory" class="type-meta-base text-gray-500 hover:text-red-500 cursor-pointer transition-colors flex items-center">
                     <AppIcon name="trash" class="w-3 h-3 mr-0.5" />
                     清空
                   </button>
@@ -55,7 +55,7 @@
                     v-for="(item, index) in history" 
                     :key="'h-'+index"
                     @mousedown.prevent="selectHistory(item)"
-                    class="px-3 py-1.5 bg-gray-100 hover:bg-blue-50 hover:text-blue-600 rounded-full text-xs text-gray-600 cursor-pointer transition-colors group relative pr-6 max-w-[120px] truncate"
+                    class="px-3 py-1.5 bg-gray-100 hover:bg-blue-50 hover:text-blue-600 rounded-full type-meta-base text-gray-600 cursor-pointer transition-colors group relative pr-6 max-w-[120px] truncate"
                   >
                     {{ item }}
                     <button 
@@ -71,10 +71,10 @@
               <div>
                 <div class="px-4 py-2 flex items-center">
                   <AppIcon name="flame" class="w-3.5 h-3.5 mr-1.5 text-orange-500" />
-                  <span class="text-xs text-gray-400 font-medium">热搜榜</span>
+                  <span class="type-meta-base text-gray-500 font-medium">热搜榜</span>
                 </div>
                 
-                <div v-if="isHotLoading" class="text-blue-500 text-xs py-4 flex items-center justify-center font-medium">
+                <div v-if="isHotLoading" class="text-blue-500 type-meta-base py-4 flex items-center justify-center font-medium">
                   <AppIcon name="spinner" spin class="w-4 h-4 mr-2" />
                   正在获取热搜...
                 </div>
@@ -89,23 +89,23 @@
                     :class="selectedIndex === index ? 'bg-gray-50 text-blue-600' : 'hover:bg-gray-50 hover:text-blue-600'"
                   >
                     <span 
-                      class="w-5 text-sm font-bold mr-3 text-center flex-shrink-0"
+                      class="w-6 type-numeric-sm font-medium mr-3 text-center flex-shrink-0"
                       :class="index < 3 ? 'text-blue-600' : 'text-gray-400'"
                     >{{ index + 1 }}</span>
-                    <span class="text-sm truncate flex-1" :class="index < 3 ? 'font-semibold' : ''">{{ item.word }}</span>
-                    <span v-if="item.score" class="text-xs text-gray-400 ml-2 flex-shrink-0">{{ formatScore(item.score) }}</span>
+                    <span class="type-body-base truncate flex-1" :class="index < 3 ? 'font-medium' : ''">{{ item.word }}</span>
+                    <span v-if="item.score" class="type-numeric-sm text-gray-400 ml-2 flex-shrink-0">{{ formatScore(item.score) }}</span>
                     <AppIcon v-if="index < 3" name="flame" class="w-3.5 h-3.5 ml-1 text-orange-500 flex-shrink-0" />
                   </div>
                 </div>
 
-                <div v-else class="text-gray-400 text-xs py-4 flex items-center justify-center">
+                <div v-else class="text-gray-500 type-meta-base py-4 flex items-center justify-center">
                   暂无热搜数据
                 </div>
               </div>
             </template>
 
             <template v-else>
-              <div v-if="isSuggestLoading" class="text-blue-500 text-xs py-4 flex items-center justify-center font-medium">
+              <div v-if="isSuggestLoading" class="text-blue-500 type-meta-base py-4 flex items-center justify-center font-medium">
                 <AppIcon name="spinner" spin class="w-4 h-4 mr-2" />
                 正在获取搜索建议...
               </div>
@@ -115,7 +115,7 @@
                 <div v-if="suggestGroups.songs.length">
                   <div class="px-4 py-1.5 flex items-center">
                     <AppIcon name="music" class="w-3.5 h-3.5 mr-1.5 text-blue-500" />
-                    <span class="text-xs text-gray-400 font-medium">歌曲</span>
+                    <span class="type-meta-base text-gray-500 font-medium">歌曲</span>
                   </div>
                   <div 
                     v-for="(item, i) in suggestGroups.songs" 
@@ -123,19 +123,19 @@
                     :data-flat-index="getSuggestFlatIndex('song', i)"
                     @mousedown.prevent="selectSuggestItem(item)" 
                     @mouseenter="selectedIndex = getSuggestFlatIndex('song', i)"
-                    class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center group/item"
+                    class="px-4 py-2.5 type-body-sm cursor-pointer transition-colors flex items-center group/item"
                     :class="selectedIndex === getSuggestFlatIndex('song', i) ? 'bg-gray-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'"
                   >
                     <AppIcon name="search" class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('song', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" />
                     <span class="truncate">{{ item.name }}</span>
-                    <span v-if="item.artist" class="text-xs text-gray-400 ml-2 truncate flex-shrink-0">- {{ item.artist }}</span>
+                    <span v-if="item.artist" class="type-meta-base text-gray-500 ml-2 truncate flex-shrink-0">- {{ item.artist }}</span>
                   </div>
                 </div>
 
                 <div v-if="suggestGroups.artists.length">
                   <div class="px-4 py-1.5 flex items-center border-t border-gray-50">
                     <AppIcon name="artists" class="w-3.5 h-3.5 mr-1.5 text-purple-500" />
-                    <span class="text-xs text-gray-400 font-medium">歌手</span>
+                    <span class="type-meta-base text-gray-500 font-medium">歌手</span>
                   </div>
                   <div 
                     v-for="(item, i) in suggestGroups.artists" 
@@ -143,7 +143,7 @@
                     :data-flat-index="getSuggestFlatIndex('artist', i)"
                     @mousedown.prevent="selectSuggestItem(item)" 
                     @mouseenter="selectedIndex = getSuggestFlatIndex('artist', i)"
-                    class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center group/item"
+                    class="px-4 py-2.5 type-body-sm cursor-pointer transition-colors flex items-center group/item"
                     :class="selectedIndex === getSuggestFlatIndex('artist', i) ? 'bg-gray-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'"
                   >
                     <AppIcon name="artists" class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('artist', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" />
@@ -154,7 +154,7 @@
                 <div v-if="suggestGroups.albums.length">
                   <div class="px-4 py-1.5 flex items-center border-t border-gray-50">
                     <AppIcon name="album" class="w-3.5 h-3.5 mr-1.5 text-green-500" />
-                    <span class="text-xs text-gray-400 font-medium">专辑</span>
+                    <span class="type-meta-base text-gray-500 font-medium">专辑</span>
                   </div>
                   <div 
                     v-for="(item, i) in suggestGroups.albums" 
@@ -162,17 +162,17 @@
                     :data-flat-index="getSuggestFlatIndex('album', i)"
                     @mousedown.prevent="selectSuggestItem(item)" 
                     @mouseenter="selectedIndex = getSuggestFlatIndex('album', i)"
-                    class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center group/item"
+                    class="px-4 py-2.5 type-body-sm cursor-pointer transition-colors flex items-center group/item"
                     :class="selectedIndex === getSuggestFlatIndex('album', i) ? 'bg-gray-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'"
                   >
                     <AppIcon name="album" class="w-4 h-4 mr-3 transition-colors" :class="selectedIndex === getSuggestFlatIndex('album', i) ? 'text-blue-500' : 'text-gray-400 group-hover/item:text-blue-500'" />
                     <span class="truncate">{{ item.name }}</span>
-                    <span v-if="item.artist" class="text-xs text-gray-400 ml-2 truncate flex-shrink-0">- {{ item.artist }}</span>
+                    <span v-if="item.artist" class="type-meta-base text-gray-500 ml-2 truncate flex-shrink-0">- {{ item.artist }}</span>
                   </div>
                 </div>
               </div>
 
-              <div v-else class="text-gray-400 text-xs py-4 flex items-center justify-center">
+              <div v-else class="text-gray-500 type-meta-base py-4 flex items-center justify-center">
                 暂无搜索建议
               </div>
             </template>
@@ -207,9 +207,9 @@
           <div v-squircle="'2xl'" class="w-full bg-white dark:bg-[#19191b] rounded-2xl p-6 flex flex-col border border-transparent dark:border-white/[0.08] text-gray-800 dark:text-[#ededed]">
             <div class="flex items-center space-x-2 mb-1">
               <span class="w-1 h-4 bg-blue-600 rounded-full"></span>
-              <h3 class="text-base font-semibold text-gray-900 dark:text-[#ededed]">关闭概念音乐</h3>
+              <h3 class="type-heading-md text-gray-900 dark:text-[#ededed]">关闭概念音乐</h3>
             </div>
-            <p class="text-xs text-gray-400 dark:text-[#85858b] mb-4 ml-3">请选择关闭主窗口时的操作</p>
+            <p class="type-meta-base text-gray-400 dark:text-[#85858b] mb-4 ml-3">请选择关闭主窗口时的操作</p>
 
             <div class="flex flex-col space-y-2.5 mb-4">
               <div 
@@ -228,8 +228,8 @@
                   <AppIcon name="minimize-tray" class="w-4 h-4" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-semibold" :class="closeChoice === 'minimize' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-[#ededed]'">最小化到系统托盘</p>
-                  <p class="text-[11px] mt-0.5" :class="closeChoice === 'minimize' ? 'text-blue-500/80 dark:text-[#a1a1a6]' : 'text-gray-400 dark:text-[#85858b]'">继续在系统后台播放音乐</p>
+                  <p class="type-body-sm font-medium" :class="closeChoice === 'minimize' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-[#ededed]'">最小化到系统托盘</p>
+                  <p class="type-meta-base mt-0.5" :class="closeChoice === 'minimize' ? 'text-blue-500/80 dark:text-[#a1a1a6]' : 'text-gray-400 dark:text-[#85858b]'">继续在系统后台播放音乐</p>
                 </div>
                 <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" :class="closeChoice === 'minimize' ? 'border-blue-500' : 'border-gray-300 dark:border-white/20'">
                   <div v-if="closeChoice === 'minimize'" class="w-2 h-2 rounded-full bg-blue-500"></div>
@@ -252,8 +252,8 @@
                   <AppIcon name="logout" class="w-4 h-4" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-semibold" :class="closeChoice === 'quit' ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-[#ededed]'">退出概念音乐</p>
-                  <p class="text-[11px] mt-0.5" :class="closeChoice === 'quit' ? 'text-red-500/80 dark:text-[#a1a1a6]' : 'text-gray-400 dark:text-[#85858b]'">完全关闭概念音乐程序</p>
+                  <p class="type-body-sm font-medium" :class="closeChoice === 'quit' ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-[#ededed]'">退出概念音乐</p>
+                  <p class="type-meta-base mt-0.5" :class="closeChoice === 'quit' ? 'text-red-500/80 dark:text-[#a1a1a6]' : 'text-gray-400 dark:text-[#85858b]'">完全关闭概念音乐程序</p>
                 </div>
                 <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" :class="closeChoice === 'quit' ? 'border-red-500' : 'border-gray-300 dark:border-white/20'">
                   <div v-if="closeChoice === 'quit'" class="w-2 h-2 rounded-full bg-red-500"></div>
@@ -262,16 +262,16 @@
             </div>
 
             <div class="mb-4">
-              <label class="flex items-center text-xs text-gray-600 dark:text-[#a1a1a6] cursor-pointer no-drag select-none">
+              <label class="flex items-center type-meta-base text-gray-600 dark:text-[#a1a1a6] cursor-pointer no-drag select-none">
                 <input type="checkbox" v-model="rememberCloseChoice" class="mr-2 rounded border-gray-300 dark:border-white/20 text-blue-600 focus:ring-blue-500" />
                 <span class="font-medium">记住我的选择，以后不再询问</span>
               </label>
-              <p class="text-[10px] text-gray-400 dark:text-[#85858b] ml-5 mt-0.5">(可在「设置」-「常规与外观」中随时更改)</p>
+              <p class="type-meta-base text-gray-400 dark:text-[#85858b] ml-5 mt-0.5">(可在「设置」-「常规与外观」中随时更改)</p>
             </div>
 
             <div class="flex space-x-3">
-              <button @click="showCloseDialog = false" v-squircle="'md'" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] text-gray-700 dark:text-[#ededed] rounded-xl text-sm font-medium transition-colors no-drag">取消</button>
-              <button @click="executeCloseAction" v-squircle="'md'" class="flex-1 py-2.5 rounded-xl text-sm font-medium shadow-md dark:shadow-none transition-[transform,background-color] active:scale-[0.98] no-drag" :class="closeChoice === 'quit' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
+              <button @click="showCloseDialog = false" v-squircle="'md'" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] text-gray-700 dark:text-[#ededed] rounded-xl type-body-sm font-medium transition-colors no-drag">取消</button>
+              <button @click="executeCloseAction" v-squircle="'md'" class="flex-1 py-2.5 rounded-xl type-body-sm font-medium shadow-md dark:shadow-none transition-[transform,background-color] active:scale-[0.98] no-drag" :class="closeChoice === 'quit' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
                 {{ closeChoice === 'quit' ? '退出软件' : '最小化' }}
               </button>
             </div>

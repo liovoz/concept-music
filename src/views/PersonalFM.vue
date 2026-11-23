@@ -11,13 +11,13 @@
           <div class="w-24 h-24 bg-purple-50 dark:bg-[#232325] rounded-full flex items-center justify-center mb-6 shadow-inner dark:shadow-none border border-purple-100 dark:border-white/[0.08] transition-colors">
             <AppIcon name="personal-fm" class="w-10 h-10 text-purple-600 dark:text-purple-400" />
           </div>
-          <h2 class="text-3xl font-extrabold text-gray-900 dark:text-[#ededed] mb-3 tracking-tight">私人FM</h2>
-          <p class="text-sm text-gray-500 dark:text-[#a1a1a6] mb-8 max-w-md leading-relaxed">
+          <h2 class="type-display-lg text-gray-900 dark:text-[#ededed] mb-3">私人FM</h2>
+          <p class="type-body-base text-gray-500 dark:text-[#a1a1a6] mb-8 max-w-md">
             安全登录后，即可开启专属私人波段。结合您的红心收藏与听歌足迹，提供「口味推荐」「新鲜发现」「深度探索」三种差异化电台模式，好歌随时加入任意歌单。
           </p>
           <button
             @click="userStore.openLoginModal()"
-            class="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(147,51,234,0.3)] dark:shadow-none dark:hover:shadow-[0_4px_20px_rgba(147,51,234,0.4)] transition-all transform active:scale-95 no-drag flex items-center"
+            class="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full type-body-md shadow-[0_8px_20px_rgba(147,51,234,0.3)] dark:shadow-none dark:hover:shadow-[0_4px_20px_rgba(147,51,234,0.4)] transition-all transform active:scale-95 no-drag flex items-center"
           >
             立即安全登录
             <AppIcon name="chevron-right" class="w-4 h-4 ml-2" />
@@ -29,10 +29,10 @@
       <template v-else>
         <div class="flex flex-wrap items-end justify-between mb-6 w-full gap-4">
           <div class="flex-1 min-w-0">
-            <h2 class="text-3xl font-semibold text-gray-900 dark:text-[#ededed] tracking-tight truncate">
-              私人FM <span class="text-lg text-purple-500 font-medium ml-2">Personal FM</span>
+            <h2 class="type-heading-xl text-gray-900 dark:text-[#ededed] truncate">
+              私人FM <span class="type-heading-sub text-purple-600/80 dark:text-purple-400/90 ml-2">Personal FM</span>
             </h2>
-            <p class="text-xs text-gray-500 dark:text-[#a1a1a6] mt-2 font-normal">多路推荐与分层排重，告别老歌循环，发现心仪新声</p>
+            <p class="type-meta-base text-gray-600 dark:text-[#b4b4ba] mt-2">多路推荐与分层排重，告别老歌循环，发现心仪新声</p>
           </div>
 
           <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
@@ -40,7 +40,7 @@
               v-if="fmStore.isInitialized"
               @click="handleForceRefresh"
               :disabled="fmStore.isLoading"
-              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-gray-100/80 hover:bg-purple-50 text-gray-600 hover:text-purple-600 border border-gray-200/70 dark:bg-[#19191b] dark:hover:bg-[#232325] dark:text-[#a1a1a6] dark:hover:text-[#ededed] dark:border-white/[0.08] transition-colors active:scale-[0.98] no-drag disabled:opacity-50"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full type-body-sm font-medium bg-gray-100/80 hover:bg-purple-50 text-gray-700 hover:text-purple-600 border border-gray-200/90 dark:bg-[#19191b] dark:hover:bg-[#232325] dark:text-[#c8c8ce] dark:hover:text-[#ededed] dark:border-white/[0.08] transition-colors active:scale-[0.98] no-drag disabled:opacity-50"
               v-tooltip="'推进游标，重新拉取一批推荐'"
             >
               <AppIcon name="refresh" class="w-3.5 h-3.5" :class="{ 'animate-spin': fmStore.isLoading }" />
@@ -49,14 +49,14 @@
 
             <button
               @click="isPreferencesOpen = true"
-              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-gray-100/80 hover:bg-purple-50 text-gray-600 hover:text-purple-600 border border-gray-200/70 dark:bg-[#19191b] dark:hover:bg-[#232325] dark:text-[#a1a1a6] dark:hover:text-[#ededed] dark:border-white/[0.08] transition-colors active:scale-[0.98] no-drag"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full type-body-sm font-medium bg-gray-100/80 hover:bg-purple-50 text-gray-700 hover:text-purple-600 border border-gray-200/90 dark:bg-[#19191b] dark:hover:bg-[#232325] dark:text-[#c8c8ce] dark:hover:text-[#ededed] dark:border-white/[0.08] transition-colors active:scale-[0.98] no-drag"
               v-tooltip="'管理已屏蔽歌手与过滤偏好'"
             >
               <AppIcon name="filter" class="w-3.5 h-3.5" />
               <span>电台偏好</span>
               <span
                 v-if="fmStore.suppressedArtists.length > 0"
-                class="px-1.5 py-0.2 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300 text-[10px] font-bold tabular-nums"
+                class="px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300 type-meta-micro"
               >
                 {{ fmStore.suppressedArtists.length }}
               </span>
@@ -65,7 +65,7 @@
             <button
               v-if="playerStore.isFmModePlaylist && playerStore.hasRegularPlaylistBackup"
               @click="handleRestoreRegularPlaylist"
-              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200/80 dark:bg-[#19191b] dark:hover:bg-[#232325] dark:text-[#ededed] dark:border-white/[0.08] transition-colors active:scale-[0.98] no-drag"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full type-body-sm font-medium bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200/80 dark:bg-[#19191b] dark:hover:bg-[#232325] dark:text-[#ededed] dark:border-white/[0.08] transition-colors active:scale-[0.98] no-drag"
               v-tooltip="'退出私人FM并恢复原播放列表'"
             >
               <AppIcon name="playlist" class="w-3.5 h-3.5" />
@@ -82,14 +82,14 @@
               :key="profile.id"
               @click="switchTasteMode(profile.id)"
               v-squircle="{ radius: 6, smoothing: 0.6 }"
-              class="px-4 py-1.5 rounded-md text-xs font-medium transition-colors no-drag whitespace-nowrap flex items-center justify-center gap-1"
-              :class="fmStore.activeMode === profile.id ? 'bg-white text-purple-600 shadow-sm dark:!bg-[#232325] dark:text-purple-300 dark:shadow-none' : 'text-gray-500 hover:text-gray-800 dark:text-[#a1a1a6] dark:hover:text-[#ededed]'"
+              class="px-4 py-1.5 rounded-md type-body-sm transition-colors no-drag whitespace-nowrap flex items-center justify-center gap-1"
+              :class="fmStore.activeMode === profile.id ? 'font-semibold bg-white text-purple-600 shadow-sm dark:!bg-[#232325] dark:text-purple-300 dark:shadow-none' : 'font-medium text-gray-600 hover:text-gray-900 dark:text-[#b4b4ba] dark:hover:text-[#ededed]'"
             >
               <span>{{ profile.label }}</span>
             </button>
           </div>
 
-          <div class="flex items-center text-[11px] text-gray-400 dark:text-[#85858b] font-normal min-w-0">
+          <div class="flex items-center type-meta-base text-gray-500 dark:text-[#a1a1a6] min-w-0">
             <AppIcon name="info" class="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
             <span class="truncate">{{ fmStore.activeProfile.description }}</span>
           </div>
@@ -106,19 +106,19 @@
                 <div class="absolute inset-4 rounded-full border border-dashed border-purple-200 dark:border-white/[0.12]"></div>
                 <div class="absolute inset-0 rounded-full border-4 border-transparent border-r-purple-500 border-b-purple-300 dark:border-r-blue-500 dark:border-b-blue-400/50 animate-spin"></div>
                 <div class="w-24 h-24 rounded-full bg-gray-950 dark:bg-[#0f0f10] text-white flex flex-col items-center justify-center border border-white/[0.06]">
-                  <span class="text-[11px] font-semibold tracking-[0.2em] ml-1">FM</span>
-                  <span class="mt-1 text-[10px] text-white/55 font-medium">TUNING</span>
+                  <span class="type-meta-micro font-medium">FM</span>
+                  <span class="mt-1 type-meta-micro text-white/55">Tuning</span>
                 </div>
               </div>
             </div>
 
             <div class="flex min-w-0 flex-col py-8 lg:h-full lg:min-h-[420px] lg:justify-between lg:py-12">
-              <div class="inline-flex self-start items-center px-3 py-1 rounded-full bg-purple-50 dark:bg-[#232325] text-purple-600 dark:text-blue-400 text-xs font-medium border border-purple-100 dark:border-white/[0.08] mb-4">
+              <div class="inline-flex self-start items-center px-3 py-1 rounded-full bg-purple-50 dark:bg-[#232325] text-purple-600 dark:text-blue-400 type-meta-base font-medium border border-purple-100 dark:border-white/[0.08] mb-4">
                 {{ fmStore.activeProfile.label }} · {{ fmStore.activeProfile.subtitle }}
               </div>
               <div class="lg:py-8">
-                <h3 class="text-3xl font-semibold text-gray-950 dark:text-[#ededed] tracking-tight mb-3">正在为你编排专属波段</h3>
-                <p class="text-sm text-gray-500 dark:text-[#a1a1a6] leading-7 max-w-xl">
+                <h3 class="type-display-lg text-gray-950 dark:text-[#ededed] mb-3">正在为你编排专属波段</h3>
+                <p class="type-body-base text-gray-500 dark:text-[#a1a1a6] leading-7 max-w-xl">
                   正在并发拉取多路曲库，并结合你的红心、歌单与 30 天已听记录进行去重与节奏排序。
                 </p>
               </div>
@@ -129,14 +129,14 @@
                   class="rounded-2xl bg-gray-50/90 dark:bg-[#19191b] border border-gray-200/70 dark:border-white/[0.08] px-4 py-3 flex flex-col justify-between"
                 >
                   <div class="flex items-center justify-between gap-2 mb-1.5">
-                    <span class="text-[10px] font-semibold tracking-wider text-purple-600/80 dark:text-purple-400/90 uppercase">{{ step.tag }}</span>
+                    <span class="type-meta-micro text-purple-600/80 dark:text-purple-400/90">{{ step.tag }}</span>
                     <span
                       class="w-1.5 h-1.5 rounded-full bg-purple-500/75 dark:bg-purple-400/80 animate-pulse"
                       :style="{ animationDelay: `${idx * 180}ms` }"
                     ></span>
                   </div>
-                  <div class="text-xs font-semibold text-gray-800 dark:text-[#ededed]">{{ step.title }}</div>
-                  <div class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5 truncate">{{ step.desc }}</div>
+                  <div class="type-meta-base font-medium text-gray-800 dark:text-[#ededed]">{{ step.title }}</div>
+                  <div class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5 truncate">{{ step.desc }}</div>
                 </div>
               </div>
             </div>
@@ -146,22 +146,22 @@
         <!-- 状态 2：错误状态 -->
         <div v-else-if="fmStore.isError && activeQueue.length === 0" class="flex-1 flex flex-col items-center justify-center py-20 text-red-500 dark:text-red-300 bg-red-50/50 dark:bg-red-950/20 rounded-3xl border border-red-100 dark:border-red-500/20">
           <AppIcon name="warning" class="w-16 h-16 mb-4 text-red-300" />
-          <p class="text-base font-bold text-red-600 dark:text-red-300 mb-2">{{ fmStore.activeSlice.degradedNotice || '调频失败，请检查网络' }}</p>
+          <p class="type-heading-md text-red-600 dark:text-red-300 mb-2">{{ fmStore.activeSlice.degradedNotice || '调频失败，请检查网络' }}</p>
           <div class="flex items-center gap-3 mt-4">
-            <button @click="handleStartFM" class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md transition-all active:scale-95 no-drag">重新调频</button>
-            <button v-if="fmStore.suppressedArtists.length > 0" @click="isPreferencesOpen = true" class="px-5 py-2 bg-white dark:bg-[#232325] text-gray-600 dark:text-[#ededed] rounded-full text-sm font-medium border border-gray-200 dark:border-white/[0.08] no-drag">管理已屏蔽歌手</button>
+            <button @click="handleStartFM" class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full type-body-md shadow-md transition-all active:scale-95 no-drag">重新调频</button>
+            <button v-if="fmStore.suppressedArtists.length > 0" @click="isPreferencesOpen = true" class="px-5 py-2 bg-white dark:bg-[#232325] text-gray-600 dark:text-[#ededed] rounded-full type-body-md border border-gray-200 dark:border-white/[0.08] no-drag">管理已屏蔽歌手</button>
           </div>
         </div>
 
         <!-- 状态 3：正常播放态 -->
         <template v-else-if="currentFMSong">
           <!-- 降级透明提示条 -->
-          <div v-if="fmStore.activeSlice.degradedNotice" class="mb-5 px-4 py-2 rounded-xl bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/70 dark:border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs flex items-center justify-between gap-2">
+          <div v-if="fmStore.activeSlice.degradedNotice" class="mb-5 px-4 py-2 rounded-xl bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/70 dark:border-amber-500/20 text-amber-700 dark:text-amber-300 type-meta-base flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
               <AppIcon name="info" class="w-3.5 h-3.5 shrink-0" />
               <span class="truncate">{{ fmStore.activeSlice.degradedNotice }}</span>
             </div>
-            <button @click="handleForceRefresh" class="text-[11px] font-semibold underline shrink-0 no-drag">换一批</button>
+            <button @click="handleForceRefresh" class="type-meta-base font-medium underline shrink-0 no-drag">换一批</button>
           </div>
 
           <div class="flex flex-col lg:flex-row items-center gap-8 mb-10">
@@ -175,33 +175,33 @@
             <!-- 歌曲元信息与操作栏 -->
             <div class="flex-1 min-w-0 flex flex-col items-center lg:items-start text-center lg:text-left">
               <div class="flex items-center gap-2 mb-2 max-w-full">
-                <span v-if="currentFMSong._fmMeta?.channelLabel" class="px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-100 dark:border-purple-400/25 text-[10px] font-semibold flex-shrink-0">
+                <span v-if="currentFMSong._fmMeta?.channelLabel" class="px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-100 dark:border-purple-400/25 type-meta-micro flex-shrink-0">
                   {{ currentFMSong._fmMeta.channelLabel }}
                 </span>
               </div>
 
-              <h3 class="text-2xl lg:text-3xl font-semibold text-gray-900 dark:text-[#ededed] mb-2 truncate w-full" v-tooltip="currentFMSong._title">{{ currentFMSong._title }}</h3>
+              <h3 class="type-display-lg text-gray-900 dark:text-[#ededed] mb-2 truncate w-full" v-tooltip="currentFMSong._title">{{ currentFMSong._title }}</h3>
 
-              <div class="flex items-center flex-wrap justify-center lg:justify-start gap-1 mb-3">
+              <div class="flex items-center flex-wrap justify-center lg:justify-start gap-1.5 mb-3">
                 <SingerLink :singers="currentFMSong._singers" :singer-name="currentFMSong._singer" :singer-id="currentFMSong._singer_id" />
-                <span v-if="currentFMSong._is_paid" class="ml-1 bg-orange-50 dark:bg-amber-500/15 text-orange-500 dark:text-amber-400 border border-orange-200 dark:border-amber-500/25 px-1.5 py-0.5 rounded text-[9px] font-medium">付费</span>
-                <span v-else-if="currentFMSong._is_vip" class="ml-1 bg-blue-50 dark:bg-blue-500/15 text-blue-500 dark:text-blue-400 border border-blue-200 dark:border-blue-500/25 px-1.5 py-0.5 rounded text-[9px] font-medium">VIP</span>
+                <span v-if="currentFMSong._is_paid" class="ml-1 bg-orange-50 dark:bg-amber-500/15 text-orange-500 dark:text-amber-400 border border-orange-200 dark:border-amber-500/25 rounded song-badge shrink-0">付费</span>
+                <span v-else-if="currentFMSong._is_vip" class="ml-1 bg-blue-50 dark:bg-blue-500/15 text-blue-500 dark:text-blue-400 border border-blue-200 dark:border-blue-500/25 rounded song-badge shrink-0">VIP</span>
               </div>
 
-              <p class="text-sm text-gray-400 dark:text-[#a1a1a6] mb-5 truncate w-full">
+              <p class="type-body-sm text-gray-500 dark:text-[#b4b4ba] mb-5 truncate w-full">
                 <span @click="goToAlbum(currentFMSong._album_id)" class="transition-colors" :class="currentFMSong._album_id ? 'hover:text-purple-600 dark:hover:text-blue-400 cursor-pointer' : ''">
                   ♪ {{ currentFMSong._album }}
                 </span>
               </p>
 
               <!-- 具象化推荐理由 -->
-              <div class="mb-4 px-3 py-2 inline-flex items-start rounded-xl text-xs font-medium bg-emerald-50/70 dark:bg-[#19191b] border border-emerald-100 dark:border-white/[0.08] text-emerald-700 dark:text-[#a1a1a6] max-w-full">
+              <div class="mb-4 px-3 py-2 inline-flex items-start rounded-xl type-meta-base font-medium bg-emerald-50/70 dark:bg-[#19191b] border border-emerald-100 dark:border-white/[0.08] text-emerald-700 dark:text-[#a1a1a6] max-w-full">
                 <AppIcon name="info" class="w-3.5 h-3.5 mr-1.5 mt-0.5 flex-shrink-0 dark:text-[#4cc38a]" />
                 <span class="leading-relaxed">{{ fmStore.recommendationReason }}</span>
               </div>
 
               <!-- 30s 高潮速听徽标 -->
-              <div v-if="fmStore.isPeakPreview" class="mb-4 px-3 py-1.5 inline-flex items-center rounded-full text-xs font-medium"
+              <div v-if="fmStore.isPeakPreview" class="mb-4 px-3 py-1.5 inline-flex items-center rounded-full type-meta-base font-medium"
                 :class="fmStore.climaxInfo ? 'bg-purple-50 border border-purple-200 text-purple-600 dark:bg-purple-500/15 dark:border-purple-400/25 dark:text-purple-300' : 'bg-yellow-50 border border-yellow-200 text-yellow-600 dark:bg-amber-500/15 dark:border-amber-500/25 dark:text-amber-400'">
                 <AppIcon v-if="fmStore.climaxInfo" name="check" class="w-3.5 h-3.5 mr-1.5" />
                 <AppIcon v-else name="spinner" spin class="w-3.5 h-3.5 mr-1.5" />
@@ -237,14 +237,14 @@
                       v-if="isFeedbackOpen"
                       class="absolute left-1/2 top-14 z-30 w-64 -translate-x-1/2 rounded-2xl bg-white/95 dark:bg-[#19191b]/95 backdrop-blur-xl text-gray-800 dark:text-[#ededed] shadow-[0_20px_50px_rgba(15,23,42,0.16)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.65)] border border-gray-200/80 dark:border-white/[0.08] p-3.5 text-left"
                     >
-                      <div class="text-sm font-bold text-gray-900 dark:text-[#ededed] mb-1">这首哪里不对？</div>
-                      <div class="text-[11px] text-gray-400 dark:text-[#85858b] mb-3 leading-relaxed">选择后会直接换歌，并即时调整队列与后续推荐。</div>
+                      <div class="type-body-md text-gray-900 dark:text-[#ededed] mb-1">这首哪里不对？</div>
+                      <div class="type-meta-base text-gray-400 dark:text-[#85858b] mb-3 leading-relaxed">选择后会直接换歌，并即时调整队列与后续推荐。</div>
                       <div class="flex flex-wrap gap-2">
                         <button
                           v-for="reason in feedbackReasons"
                           :key="reason"
                           @click="handleDislike(reason)"
-                          class="px-3 py-1.5 rounded-full bg-gray-100/90 hover:bg-purple-600 text-gray-700 hover:text-white border border-gray-200/60 dark:bg-[#232325] dark:hover:bg-purple-600 dark:text-[#ededed] dark:hover:text-white dark:border-white/[0.06] text-xs font-semibold transition-colors no-drag"
+                          class="px-3 py-1.5 rounded-full bg-gray-100/90 hover:bg-purple-600 text-gray-700 hover:text-white border border-gray-200/60 dark:bg-[#232325] dark:hover:bg-purple-600 dark:text-[#ededed] dark:hover:text-white dark:border-white/[0.06] type-meta-base font-medium transition-colors no-drag"
                         >
                           {{ reason }}
                         </button>
@@ -262,7 +262,7 @@
                 <!-- 添加到任意歌单显式按钮 -->
                 <button
                   @click="handleAddToPlaylist(currentFMSong)"
-                  class="h-11 px-4 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200/80 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] dark:text-purple-300 dark:border-white/[0.08] transition-all active:scale-95 no-drag flex items-center gap-1.5 text-xs font-medium"
+                  class="h-11 px-4 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200/80 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] dark:text-purple-300 dark:border-white/[0.08] transition-all active:scale-95 no-drag flex items-center gap-1.5 type-meta-base font-medium"
                   v-tooltip="'将此歌曲加入账号下任意歌单'"
                 >
                   <AppIcon name="add-playlist" class="w-[18px] h-[18px]" />
@@ -289,13 +289,13 @@
                   :class="queueTab === 'history' ? 'text-gray-900 dark:text-[#ededed] border-purple-500' : 'text-gray-400 dark:text-[#85858b] border-transparent hover:text-gray-600 dark:hover:text-[#a1a1a6]'"
                 >
                   <span>🕒 本次已播回顾</span>
-                  <span v-if="fmStore.playedHistoryList.length > 0" class="text-xs font-normal text-gray-400 dark:text-[#85858b] tabular-nums">({{ fmStore.playedHistoryList.length }})</span>
+                  <span v-if="fmStore.playedHistoryList.length > 0" class="type-meta-base font-normal text-gray-500 dark:text-[#98989f] tabular-nums">({{ fmStore.playedHistoryList.length }})</span>
                 </button>
-                <span class="px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-[#232325] text-purple-600 dark:text-[#a1a1a6] border border-transparent dark:border-white/[0.08] text-[10px] font-medium truncate max-w-[260px]">
+                <span class="px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-[#232325] text-purple-600 dark:text-[#a1a1a6] border border-transparent dark:border-white/[0.08] type-meta-micro truncate max-w-[260px]">
                   {{ fmStore.freshnessHint }}
                 </span>
               </div>
-              <span v-if="queueTab === 'upcoming'" class="text-xs text-gray-400 dark:text-[#85858b] font-medium tabular-nums">队列中 {{ fmStore.remainingCount }} 首</span>
+              <span v-if="queueTab === 'upcoming'" class="type-meta-base text-gray-500 dark:text-[#98989f] font-medium tabular-nums">队列中 {{ fmStore.remainingCount }} 首</span>
             </div>
 
             <!-- Tab A: 接下来播放 -->
@@ -307,8 +307,8 @@
                 </div>
               </div>
 
-              <div v-else-if="fmStore.upcomingSongs.length === 0" class="py-10 flex flex-col items-center text-gray-300 dark:text-[#85858b]">
-                <p class="text-xs font-medium">队列已空，点击下方加载更多</p>
+              <div v-else-if="fmStore.upcomingSongs.length === 0" class="py-10 flex flex-col items-center text-gray-400 dark:text-[#85858b]">
+                <p class="type-meta-base font-medium">队列已空，点击下方加载更多</p>
               </div>
 
               <div v-else class="space-y-1">
@@ -320,7 +320,7 @@
                   v-squircle="'lg'"
                   class="flex items-center px-4 py-3 rounded-[14px] hover:bg-purple-50/60 dark:hover:bg-[#19191b] group transition-colors cursor-pointer no-drag min-w-0"
                 >
-                  <div class="w-10 text-center text-sm font-medium tabular-nums text-gray-300 dark:text-[#85858b] group-hover:hidden flex-shrink-0">
+                  <div class="w-10 text-center type-numeric-sm font-medium text-gray-300 dark:text-[#85858b] group-hover:hidden flex-shrink-0">
                     {{ (idx + 1).toString().padStart(2, '0') }}
                   </div>
                   <div class="w-10 text-center hidden group-hover:flex justify-center text-purple-600 dark:text-purple-400 flex-shrink-0" @click.stop="fmStore.playFromQueue(idx)">
@@ -329,15 +329,15 @@
 
                   <div class="flex-1 flex items-center pl-2 pr-4 min-w-0">
                     <img :src="song._cover" :alt="song._title || '歌曲封面'" class="w-9 h-9 rounded-[8px] shadow-sm dark:shadow-none mr-3 object-cover flex-shrink-0 bg-gray-100 dark:bg-[#232325]" @error="e => e.target.src = defaultImg" />
-                    <span class="truncate text-sm text-gray-800 dark:text-[#ededed] font-medium min-w-0" v-tooltip="song._title">{{ song._title }}</span>
-                    <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 dark:bg-amber-500/15 text-orange-500 dark:text-amber-400 border border-orange-200 dark:border-amber-500/25 px-1 py-0.5 rounded-[5px] text-[8px] font-medium uppercase leading-none mt-0.5">付费</span>
-                    <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 dark:bg-blue-500/15 text-blue-500 dark:text-blue-400 border border-blue-200 dark:border-blue-500/25 px-1 py-0.5 rounded-[5px] text-[8px] font-medium uppercase leading-none mt-0.5">VIP</span>
+                    <span class="truncate type-body-md text-gray-800 dark:text-[#ededed] min-w-0" v-tooltip="song._title">{{ song._title }}</span>
+                    <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 dark:bg-amber-500/15 text-orange-500 dark:text-amber-400 border border-orange-200 dark:border-amber-500/25 rounded-[5px] song-badge">付费</span>
+                    <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 dark:bg-blue-500/15 text-blue-500 dark:text-blue-400 border border-blue-200 dark:border-blue-500/25 rounded-[5px] song-badge">VIP</span>
                   </div>
 
-                  <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">
+                  <div class="w-1/4 hidden sm:block type-body-sm truncate pr-4 min-w-0">
                     <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" />
                   </div>
-                  <div class="w-1/4 hidden md:block text-xs text-gray-500 dark:text-[#a1a1a6] truncate pr-4 min-w-0" v-tooltip="song._album">
+                  <div class="w-1/4 hidden md:block type-body-sm text-gray-500 dark:text-[#a1a1a6] truncate pr-4 min-w-0" v-tooltip="song._album">
                     <span @click.stop="goToAlbum(song._album_id || song.album_id)"
                       class="transition-colors"
                       :class="(song._album_id || song.album_id) ? 'hover:text-purple-600 dark:hover:text-blue-400 cursor-pointer' : ''">{{ song._album }}</span>
@@ -350,17 +350,17 @@
                     >
                       <AppIcon name="add-playlist" class="w-4 h-4" />
                     </button>
-                    <div class="w-12 text-xs text-gray-400 dark:text-[#85858b] text-right font-mono tabular-nums">{{ song._duration }}</div>
+                    <div class="w-14 shrink-0 whitespace-nowrap type-numeric-sm text-gray-400 dark:text-[#85858b] text-right">{{ song._duration }}</div>
                   </div>
                 </div>
 
-                <div v-if="hiddenUpcomingCount > 0" class="flex items-center justify-center pt-2 text-[11px] font-medium text-gray-400 dark:text-[#85858b]">
+                <div v-if="hiddenUpcomingCount > 0" class="flex items-center justify-center pt-2 type-meta-base font-medium text-gray-400 dark:text-[#85858b]">
                   <span class="px-3 py-1.5 rounded-full bg-gray-50 dark:bg-[#19191b] border border-gray-100 dark:border-white/[0.08]">还有 {{ hiddenUpcomingCount }} 首在队列中，将随播放自动接上</span>
                 </div>
               </div>
 
               <div v-if="activeQueue.length > 0 && fmStore.remainingCount <= 4 && !fmStore.isLoadingMore" class="w-full flex justify-center mt-6">
-                <button @click="handleLoadMore" class="px-6 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] text-purple-600 dark:text-[#ededed] border border-purple-200 dark:border-white/[0.08] rounded-full text-xs font-medium transition-colors no-drag flex items-center">
+                <button @click="handleLoadMore" class="px-6 py-2 bg-purple-50 hover:bg-purple-100 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] text-purple-600 dark:text-[#ededed] border border-purple-200 dark:border-white/[0.08] rounded-full type-meta-base font-medium transition-colors no-drag flex items-center">
                   <AppIcon name="refresh" class="w-4 h-4 mr-1.5" />
                   加载更多推荐
                 </button>
@@ -369,9 +369,9 @@
 
             <!-- Tab B: 本次已播回顾 -->
             <template v-else>
-              <div v-if="fmStore.playedHistoryList.length === 0" class="py-10 flex flex-col items-center text-gray-400 dark:text-[#85858b]">
+              <div v-if="fmStore.playedHistoryList.length === 0" class="py-10 flex flex-col items-center text-gray-500 dark:text-[#98989f]">
                 <AppIcon name="history" class="w-8 h-8 mb-2 opacity-50" />
-                <p class="text-xs">暂无本次会话已播记录</p>
+                <p class="type-meta-base">暂无本次会话已播记录</p>
               </div>
               <div v-else class="space-y-1">
                 <div
@@ -382,7 +382,7 @@
                   v-squircle="'lg'"
                   class="flex items-center px-4 py-3 rounded-[14px] hover:bg-purple-50/60 dark:hover:bg-[#19191b] group transition-colors cursor-pointer no-drag min-w-0"
                 >
-                  <div class="w-10 text-center text-xs font-medium tabular-nums text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">
+                  <div class="w-10 text-center type-numeric-sm font-medium text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">
                     {{ (idx + 1).toString().padStart(2, '0') }}
                   </div>
                   <div class="w-10 text-center hidden group-hover:flex justify-center text-purple-600 dark:text-purple-400 flex-shrink-0" @click.stop="playHistorySong(song)">
@@ -391,13 +391,13 @@
 
                   <div class="flex-1 flex items-center pl-2 pr-4 min-w-0">
                     <img :src="song._cover" :alt="song._title || '歌曲封面'" class="w-9 h-9 rounded-[8px] shadow-sm dark:shadow-none mr-3 object-cover flex-shrink-0 bg-gray-100 dark:bg-[#232325]" @error="e => e.target.src = defaultImg" />
-                    <span class="truncate text-sm text-gray-800 dark:text-[#ededed] font-medium min-w-0" v-tooltip="song._title">{{ song._title }}</span>
-                    <span v-if="song._fmMeta?.channelLabel" class="ml-2 flex-shrink-0 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-[#232325] text-gray-500 dark:text-[#85858b] text-[9px]">
+                    <span class="truncate type-body-md text-gray-800 dark:text-[#ededed] min-w-0" v-tooltip="song._title">{{ song._title }}</span>
+                    <span v-if="song._fmMeta?.channelLabel" class="ml-2 flex-shrink-0 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-[#232325] text-gray-500 dark:text-[#85858b] type-meta-micro">
                       {{ song._fmMeta.channelLabel }}
                     </span>
                   </div>
 
-                  <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">
+                  <div class="w-1/4 hidden sm:block type-body-sm truncate pr-4 min-w-0">
                     <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" />
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
@@ -408,7 +408,7 @@
                     >
                       <AppIcon name="add-playlist" class="w-4 h-4" />
                     </button>
-                    <div class="w-12 text-xs text-gray-400 dark:text-[#85858b] text-right font-mono tabular-nums">{{ song._duration }}</div>
+                    <div class="w-14 shrink-0 whitespace-nowrap type-numeric-sm text-gray-400 dark:text-[#85858b] text-right">{{ song._duration }}</div>
                   </div>
                 </div>
               </div>
@@ -423,9 +423,9 @@
           <div class="relative h-full min-h-[500px] px-8 lg:px-14">
             <div class="relative h-full grid lg:grid-cols-[minmax(300px,38%)_minmax(0,1fr)] items-stretch gap-10 lg:gap-14">
               <div class="relative flex min-h-[300px] items-center justify-center py-8 lg:h-full lg:min-h-[420px] lg:py-12">
-                <div class="absolute inset-x-8 top-10 flex items-center gap-2 text-[10px] font-medium tracking-[0.14em] text-gray-400 dark:text-[#85858b] uppercase">
+                <div class="absolute inset-x-8 top-10 flex items-center gap-2 type-meta-micro font-medium text-gray-500 dark:text-[#98989f]">
                   <span class="h-px flex-1 bg-gray-200 dark:bg-white/[0.08]"></span>
-                  <span>PRIVATE BAND</span>
+                  <span>Private band</span>
                   <span class="h-px flex-1 bg-gray-200 dark:bg-white/[0.08]"></span>
                 </div>
 
@@ -433,48 +433,48 @@
                   <div class="absolute inset-5 rounded-full border border-dashed border-purple-200 dark:border-white/[0.12]"></div>
                   <div class="absolute inset-12 rounded-full bg-[conic-gradient(from_120deg,#7c3aed,#22c55e,#f59e0b,#7c3aed)] opacity-20 dark:opacity-10"></div>
                   <div class="w-24 h-24 rounded-full bg-gray-950 dark:bg-[#0f0f10] text-white flex flex-col items-center justify-center shadow-xl dark:shadow-none border border-white/[0.06]">
-                    <span class="text-[11px] font-semibold tracking-[0.2em] ml-1">FM</span>
-                    <span class="mt-1 text-[10px] text-white/55 font-medium">TODAY</span>
+                    <span class="type-meta-micro font-medium">FM</span>
+                    <span class="mt-1 type-meta-micro text-white/55">Today</span>
                   </div>
                 </div>
               </div>
 
               <div class="flex min-w-0 flex-col py-8 lg:h-full lg:min-h-[420px] lg:justify-between lg:py-12">
-                <div class="inline-flex items-center self-start px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 text-xs font-medium border border-purple-100 dark:border-purple-400/25 mb-4">
+                <div class="inline-flex items-center self-start px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-300 type-meta-base font-medium border border-purple-100 dark:border-purple-400/25 mb-4">
                   {{ fmStore.activeProfile.label }} · {{ fmStore.activeProfile.subtitle }}
                 </div>
 
                 <div class="lg:py-8">
-                  <h3 class="text-3xl font-semibold text-gray-950 dark:text-[#ededed] tracking-tight mb-3">今日私人波段</h3>
-                  <p class="text-sm text-gray-500 dark:text-[#a1a1a6] leading-7 max-w-xl mb-6">
+                  <h3 class="type-display-lg text-gray-950 dark:text-[#ededed] mb-3">今日私人波段</h3>
+                  <p class="type-body-base text-gray-600 dark:text-[#b4b4ba] leading-7 max-w-xl mb-6">
                     已接入多路推荐引擎与 30 天账号级分层排重。选择任意模式立即开播，遇到的好歌可一键存入你的任意个人歌单。
                   </p>
 
                   <div class="grid sm:grid-cols-3 gap-3">
                     <div class="rounded-2xl border border-gray-100 dark:border-white/[0.08] bg-gray-50/70 dark:bg-[#19191b] px-4 py-3">
-                      <div class="text-[10px] font-medium tracking-wider text-gray-400 dark:text-[#85858b] mb-1">MEMORY</div>
-                      <div class="text-sm font-semibold text-gray-800 dark:text-[#ededed]">3000 首长效排重</div>
+                      <div class="type-meta-micro text-gray-500 dark:text-[#98989f] mb-1">Memory</div>
+                      <div class="type-body-md text-gray-800 dark:text-[#ededed]">3000 首长效排重</div>
                     </div>
                     <div class="rounded-2xl border border-gray-100 dark:border-white/[0.08] bg-gray-50/70 dark:bg-[#19191b] px-4 py-3">
-                      <div class="text-[10px] font-medium tracking-wider text-gray-400 dark:text-[#85858b] mb-1">CHANNELS</div>
-                      <div class="text-sm font-semibold text-gray-800 dark:text-[#ededed] truncate">{{ fmStore.activeProfile.label }}</div>
+                      <div class="type-meta-micro text-gray-500 dark:text-[#98989f] mb-1">Channels</div>
+                      <div class="type-body-md text-gray-800 dark:text-[#ededed] truncate">{{ fmStore.activeProfile.label }}</div>
                     </div>
                     <div class="rounded-2xl border border-gray-100 dark:border-white/[0.08] bg-gray-50/70 dark:bg-[#19191b] px-4 py-3">
-                      <div class="text-[10px] font-medium tracking-wider text-gray-400 dark:text-[#85858b] mb-1">PLAYLISTS</div>
-                      <div class="text-sm font-semibold text-gray-800 dark:text-[#ededed]">随心加入任意歌单</div>
+                      <div class="type-meta-micro text-gray-500 dark:text-[#98989f] mb-1">Playlists</div>
+                      <div class="type-body-md text-gray-800 dark:text-[#ededed]">随心加入任意歌单</div>
                     </div>
                   </div>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
-                  <button @click="handleStartFM" class="px-7 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm font-medium shadow-lg shadow-purple-200 dark:shadow-none transition-colors active:scale-[0.98] no-drag flex items-center">
+                  <button @click="handleStartFM" class="px-7 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full type-body-md shadow-lg shadow-purple-200 dark:shadow-none transition-colors active:scale-[0.98] no-drag flex items-center">
                     <AppIcon name="personal-fm" class="w-5 h-5 mr-2" />
                     开启私人电台
                   </button>
                   <button
                     @click="fmStore.togglePeakPreview"
-                    class="px-5 py-3 rounded-full text-sm font-medium border transition-colors active:scale-[0.98] no-drag flex items-center"
-                    :class="fmStore.isPeakPreview ? 'bg-purple-50 border-purple-200 text-purple-600 dark:bg-purple-500/15 dark:border-purple-400/30 dark:text-purple-300' : 'bg-white border-gray-200 text-gray-500 hover:text-purple-600 hover:border-purple-200 dark:bg-[#19191b] dark:border-white/[0.08] dark:text-[#a1a1a6] dark:hover:text-purple-300 dark:hover:border-purple-400/30'"
+                    class="px-5 py-3 rounded-full type-body-sm font-medium border transition-colors active:scale-[0.98] no-drag flex items-center"
+                    :class="fmStore.isPeakPreview ? 'bg-purple-50 border-purple-200 text-purple-600 dark:bg-purple-500/15 dark:border-purple-400/30 dark:text-purple-300' : 'bg-white border-gray-200 text-gray-700 hover:text-purple-600 hover:border-purple-200 dark:bg-[#19191b] dark:border-white/[0.08] dark:text-[#c8c8ce] dark:hover:text-purple-300 dark:hover:border-purple-400/30'"
                   >
                     <AppIcon name="timer-30s" class="w-[18px] h-[18px] mr-2" />
                     30s 速听
@@ -498,8 +498,8 @@
           <div v-squircle="'xl'" class="w-[460px] max-w-[92vw] max-h-[82vh] bg-white dark:bg-[#141415] rounded-[20px] border border-gray-200/80 dark:border-white/[0.08] shadow-2xl flex flex-col overflow-hidden text-gray-800 dark:text-[#ededed]">
             <div class="px-5 py-4 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between">
               <div>
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-[#ededed]">私人FM 偏好管理</h3>
-                <p class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">控制版本噪音过滤、波段游标与已屏蔽歌手</p>
+                <h3 class="type-body-md text-gray-900 dark:text-[#ededed]">私人FM 偏好管理</h3>
+                <p class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">控制版本噪音过滤、波段游标与已屏蔽歌手</p>
               </div>
               <button @click="isPreferencesOpen = false" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-[#232325]">
                 <AppIcon name="close" class="w-4 h-4" />
@@ -510,8 +510,8 @@
               <!-- 版本噪音过滤 -->
               <div class="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-gray-50 dark:bg-[#19191b] border border-gray-100 dark:border-white/[0.06]">
                 <div class="min-w-0">
-                  <div class="text-xs font-semibold text-gray-900 dark:text-[#ededed]">自动过滤伴奏 / KTV / 铃声版本</div>
-                  <div class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">屏蔽纯伴奏、消音与同曲 Live 变种穿透重复推荐</div>
+                  <div class="type-meta-base font-medium text-gray-900 dark:text-[#ededed]">自动过滤伴奏 / KTV / 铃声版本</div>
+                  <div class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">屏蔽纯伴奏、消音与同曲 Live 变种穿透重复推荐</div>
                 </div>
                 <button
                   @click="fmStore.setFilterVersionNoise(!fmStore.preferences.filterVersionNoise)"
@@ -528,12 +528,12 @@
               <!-- 重置当前波段游标 -->
               <div class="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-gray-50 dark:bg-[#19191b] border border-gray-100 dark:border-white/[0.06]">
                 <div class="min-w-0">
-                  <div class="text-xs font-semibold text-gray-900 dark:text-[#ededed]">重置「{{ fmStore.activeProfile.label }}」波段游标</div>
-                  <div class="text-[11px] text-gray-400 dark:text-[#85858b] mt-0.5">清空当前模式的通道分页游标与缓存队列，重新开启一轮推荐</div>
+                  <div class="type-meta-base font-medium text-gray-900 dark:text-[#ededed]">重置「{{ fmStore.activeProfile.label }}」波段游标</div>
+                  <div class="type-meta-base text-gray-400 dark:text-[#85858b] mt-0.5">清空当前模式的通道分页游标与缓存队列，重新开启一轮推荐</div>
                 </div>
                 <button
                   @click="handleResetBand"
-                  class="px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] text-purple-600 dark:text-purple-300 text-xs font-medium shrink-0 transition-colors"
+                  class="px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] text-purple-600 dark:text-purple-300 type-meta-base font-medium shrink-0 transition-colors"
                 >
                   立即重置
                 </button>
@@ -542,10 +542,10 @@
               <!-- 已屏蔽歌手列表 -->
               <div>
                 <div class="flex items-center justify-between mb-2.5">
-                  <span class="text-xs font-semibold text-gray-800 dark:text-[#ededed]">已屏蔽歌手（30 天内不推荐）</span>
-                  <span class="text-[11px] text-gray-400 dark:text-[#85858b] tabular-nums">{{ fmStore.suppressedArtists.length }} 位</span>
+                  <span class="type-meta-base font-medium text-gray-800 dark:text-[#ededed]">已屏蔽歌手（30 天内不推荐）</span>
+                  <span class="type-numeric-sm text-gray-400 dark:text-[#85858b]">{{ fmStore.suppressedArtists.length }} 位</span>
                 </div>
-                <div v-if="fmStore.suppressedArtists.length === 0" class="py-6 text-center rounded-xl border border-dashed border-gray-200 dark:border-white/[0.08] text-xs text-gray-400 dark:text-[#85858b]">
+                <div v-if="fmStore.suppressedArtists.length === 0" class="py-6 text-center rounded-xl border border-dashed border-gray-200 dark:border-white/[0.08] type-meta-base text-gray-400 dark:text-[#85858b]">
                   暂无屏蔽的歌手
                 </div>
                 <div v-else class="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
@@ -555,12 +555,12 @@
                     class="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-50 dark:bg-[#19191b] border border-gray-100 dark:border-white/[0.06]"
                   >
                     <div class="min-w-0">
-                      <div class="text-xs font-medium text-gray-800 dark:text-[#ededed] truncate">{{ artist.artistName }}</div>
-                      <div class="text-[10px] text-gray-400 dark:text-[#85858b]">因“{{ artist.reason || '不想听' }}”屏蔽</div>
+                      <div class="type-meta-base font-medium text-gray-800 dark:text-[#ededed] truncate">{{ artist.artistName }}</div>
+                      <div class="type-meta-base text-gray-400 dark:text-[#85858b]">因“{{ artist.reason || '不想听' }}”屏蔽</div>
                     </div>
                     <button
                       @click="fmStore.unblockArtist(artist.artistKey)"
-                      class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-purple-600 hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-[#232325] transition-colors shrink-0"
+                      class="px-2.5 py-1 rounded-lg type-meta-base font-medium text-purple-600 hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-[#232325] transition-colors shrink-0"
                     >
                       解除屏蔽
                     </button>

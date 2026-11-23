@@ -7,7 +7,7 @@
       <div
         v-if="store.toastMessage"
         :key="store.toastState?.id || store.toastMessage"
-        class="global-toast-container fixed bottom-28 left-1/2 transform -translate-x-1/2 backdrop-blur-xl border px-5 py-2.5 rounded-full text-xs font-bold z-[100010] flex items-center justify-center tracking-wide max-w-[86vw] sm:max-w-lg select-none no-drag transition-colors"
+        class="global-toast-container fixed bottom-28 left-1/2 transform -translate-x-1/2 backdrop-blur-xl border px-5 py-2.5 rounded-full type-meta-base font-medium z-[100010] flex items-center justify-center max-w-[86vw] sm:max-w-lg select-none no-drag transition-colors"
         :class="[
           toastThemeClasses,
           hasAction ? 'pointer-events-auto pr-2.5' : 'pointer-events-none'
@@ -19,7 +19,7 @@
           v-if="hasAction"
           type="button"
           @click.stop="store.triggerToastAction()"
-          class="ml-3 px-3 py-1 rounded-full text-[11px] font-extrabold transition-all active:scale-95 cursor-pointer flex-shrink-0"
+          class="ml-3 px-3 py-1 rounded-full type-meta-micro transition-all active:scale-95 cursor-pointer flex-shrink-0"
           :class="toastActionBtnClasses"
         >
           {{ store.toastState.actionText }}

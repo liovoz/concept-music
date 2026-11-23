@@ -9,13 +9,13 @@
       
       <div class="flex items-end justify-between mb-8 w-full gap-4">
         <div class="flex-1 min-w-0">
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight truncate">
-            搜索结果 <span v-if="currentKeyword" class="text-lg text-gray-400 font-normal ml-2">"{{ currentKeyword }}"</span>
+          <h2 class="type-heading-xl text-gray-900 truncate">
+            搜索结果 <span v-if="currentKeyword" class="type-heading-sub text-gray-500 dark:text-[#a1a1a6] ml-2">"{{ currentKeyword }}"</span>
           </h2>
-          <p v-if="!isLoading && !isError && songs.length > 0" class="text-xs text-gray-500 mt-2">已为您找到相关单曲</p>
+          <p v-if="!isLoading && !isError && songs.length > 0" class="type-meta-base text-gray-500 mt-2">已为您找到相关单曲</p>
         </div>
         
-        <button v-if="songs.length > 0" @click="playAll" class="flex-shrink-0 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag">
+        <button v-if="songs.length > 0" @click="playAll" class="flex-shrink-0 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full type-body-md shadow-md shadow-blue-200 transition-all transform active:scale-95 flex items-center no-drag">
           <AppIcon name="play" class="w-5 h-5 mr-1" />
           播放当前结果
         </button>
@@ -23,9 +23,9 @@
 
       <div v-if="isError" class="flex flex-col items-center justify-center py-20 text-red-500 bg-red-50 rounded-[18px] border border-red-100 shadow-inner">
         <AppIcon name="warning" class="w-12 h-12 mb-4" />
-        <p class="text-sm font-bold">{{ errorMessage }}</p>
-        <p class="text-xs text-red-400 mt-2 max-w-sm text-center">系统尝试了多种通道仍被服务端拦截，这通常是因为网络波动。</p>
-        <button @click="fetchSearch" class="mt-6 px-8 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-bold shadow-md shadow-red-200 transition-all active:scale-95 no-drag flex items-center">
+        <p class="type-body-md">{{ errorMessage }}</p>
+        <p class="type-meta-base text-red-400 mt-2 max-w-sm text-center">系统尝试了多种通道仍被服务端拦截，这通常是因为网络波动。</p>
+        <button @click="fetchSearch" class="mt-6 px-8 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full type-body-md shadow-md shadow-red-200 transition-all active:scale-95 no-drag flex items-center">
           重新尝试
         </button>
       </div>
@@ -34,17 +34,17 @@
         <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm mb-5">
            <AppIcon name="lock" class="w-10 h-10 text-blue-500 opacity-80" />
         </div>
-        <p class="text-base font-bold text-gray-800 tracking-wide">版权风控保护</p>
-        <p class="text-sm text-gray-500 mt-2 max-w-md text-center leading-relaxed">服务端已对匿名用户隐藏了“{{ currentKeyword }}”的搜索结果。<br>请安全登录后解锁完整曲库与版权资源。</p>
-        <button @click="userStore.openLoginModal()" class="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-bold shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag flex items-center">
+        <p class="type-heading-md text-gray-800">版权风控保护</p>
+        <p class="type-body-base text-gray-500 mt-2 max-w-md text-center">服务端已对匿名用户隐藏了“{{ currentKeyword }}”的搜索结果。<br>请安全登录后解锁完整曲库与版权资源。</p>
+        <button @click="userStore.openLoginModal()" class="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full type-body-md shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all transform active:scale-95 no-drag flex items-center">
           立即安全登录
         </button>
       </div>
 
       <div v-else-if="!isLoading && songs.length === 0 && page === 1" class="flex flex-col items-center justify-center py-32 text-gray-400">
         <AppIcon name="search" class="w-16 h-16 mb-4 text-gray-200" />
-        <p class="text-sm font-medium">很抱歉，全网均未找到与“{{ currentKeyword }}”相关的歌曲</p>
-        <p class="text-xs mt-2">请尝试更换搜索词，或检查输入是否有误</p>
+        <p class="type-body-md">很抱歉，全网均未找到与“{{ currentKeyword }}”相关的歌曲</p>
+        <p class="type-meta-base mt-2">请尝试更换搜索词，或检查输入是否有误</p>
       </div>
 
       <div v-else-if="isLoading && page === 1" class="space-y-4">
@@ -55,7 +55,7 @@
       </div>
 
       <div v-else class="w-full flex-1 flex flex-col min-w-0">
-        <div class="flex items-center px-4 py-2 text-xs text-gray-400 border-b border-gray-100 mb-2 min-w-0">
+        <div class="flex items-center px-4 py-2 type-meta-base text-gray-400 border-b border-gray-100 mb-2 min-w-0">
           <div class="w-10 text-center flex-shrink-0">#</div>
           <div class="flex-1 pl-2 min-w-0">音乐标题</div>
           <div class="w-1/4 hidden sm:block pr-4 min-w-0">歌手</div>
@@ -65,22 +65,22 @@
         
         <div class="space-y-1">
           <div v-for="(song, index) in songs" :key="song._hash || index" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-blue-50/60 dark:hover:bg-blue-500/10 group transition-colors cursor-pointer no-drag min-w-0">
-            <div class="w-10 text-center text-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
+            <div class="w-10 text-center type-numeric-sm text-gray-400 dark:text-[#85858b] group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
             <div class="w-10 text-center hidden group-hover:flex justify-center text-blue-600 dark:text-blue-400 flex-shrink-0" @click.stop="handlePlay(song)">
                <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
             </div>
             
             <div class="flex-1 flex items-center pl-2 pr-4 min-w-0" v-tooltip="song._title">
-              <span class="truncate text-sm text-gray-800 font-medium min-w-0">{{ song._title }}</span>
-              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none">付费</span>
-              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 px-1 py-0.5 rounded-[5px] text-[8px] font-bold tracking-wider uppercase leading-none">VIP</span>
+              <span class="truncate type-body-md text-gray-800 min-w-0">{{ song._title }}</span>
+              <span v-if="song._is_paid" class="ml-2 flex-shrink-0 bg-orange-50 text-orange-500 border border-orange-200 rounded-[5px] song-badge">付费</span>
+              <span v-else-if="song._is_vip" class="ml-2 flex-shrink-0 bg-blue-50 text-blue-500 border border-blue-200 rounded-[5px] song-badge">VIP</span>
             </div>
             
-            <div class="w-1/4 hidden sm:block text-xs truncate pr-4 min-w-0">
+            <div class="w-1/4 hidden sm:block type-body-sm truncate pr-4 min-w-0">
               <SingerLink :singers="song._singers" :singer-name="song._singer" :singer-id="song._singer_id || song.singer_id" />
             </div>
 
-            <div class="w-1/4 hidden md:block text-xs text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
+            <div class="w-1/4 hidden md:block type-body-sm text-gray-500 truncate pr-4 min-w-0" v-tooltip="song._album">
               <span
                 @click.stop="goToAlbum(song._album_id || song.album_id, song._album)"
                 class="transition-colors"
@@ -90,11 +90,11 @@
               </span>
             </div>
             
-            <div class="w-16 text-xs text-gray-400 text-right pr-4 font-mono flex-shrink-0">{{ song._duration }}</div>
+            <div class="w-16 type-numeric-sm text-gray-400 text-right pr-4 flex-shrink-0">{{ song._duration }}</div>
           </div>
         </div>
 
-        <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 text-xs font-medium">
+        <div ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center mt-4 type-meta-base font-medium">
           <div v-if="isLoadingMore" class="flex items-center text-blue-500">
             <AppIcon name="spinner" spin class="h-4 w-4 mr-2" />
             正在获取更多结果...
