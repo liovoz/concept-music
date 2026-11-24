@@ -417,7 +417,7 @@ const handleCreateAndAdd = async () => {
           addedIds.value = next;
         }
       } else {
-        playerStore.showToast('🎉 新建歌单成功', { type: 'success' });
+        playerStore.showToast('已新建歌单', { type: 'success' });
       }
       cancelCreateForm();
     }

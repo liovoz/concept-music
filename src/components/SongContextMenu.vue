@@ -382,7 +382,7 @@ const handleQuickCreateAndAdd = async () => {
           toastMessage: shortName ? `已创建「${shortName}」并加入歌曲` : '已创建歌单并加入歌曲'
         });
       } else {
-        playerStore.showToast('🎉 新建歌单成功', { type: 'success' });
+        playerStore.showToast('已新建歌单', { type: 'success' });
       }
       showQuickCreate.value = false;
       close();

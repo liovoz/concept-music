@@ -1612,14 +1612,14 @@ const handleRefreshAccountData = async () => {
 const handleManualClaimDayVip = async () => {
   const res = await userStore.claimOneDayVip();
   if (res?.msg) {
-    playerStore.showToast(res.msg);
+    playerStore.showToast(res.msg, { type: res.success ? 'success' : 'warning' });
   }
 };
 
 const handleManualClaim3HourVip = async () => {
   const res = await userStore.claimDailyVip();
   if (res?.msg) {
-    playerStore.showToast(res.msg);
+    playerStore.showToast(res.msg, { type: res.success ? 'success' : 'warning' });
   }
 };
 

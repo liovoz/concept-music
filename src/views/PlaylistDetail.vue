@@ -544,7 +544,7 @@ const toggleCollect = async () => {
         const newListId = infoObj.listid || infoObj.id;
         const newGlobalId = infoObj.global_collection_id || '';
 
-        store.showToast('🎉 收藏成功');
+        store.showToast('已收藏歌单', { type: 'success' });
         
         userStore.collectedMap[targetId] = String(newListId);
         if (newGlobalId) userStore.collectedMap[targetId + '_global'] = String(newGlobalId);

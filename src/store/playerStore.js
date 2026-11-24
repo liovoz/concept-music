@@ -117,8 +117,59 @@ let hydrationSeenSet = new Set();
 let undoPlaylistSnapshot = null;
 let regularPlaylistSavedState = null;
 let fmController = null;
-let currentToastAction = null;
+const MAX_VISIBLE_TOASTS = 3;
+const TOAST_DEFAULT_DURATION = 3000;
+const TOAST_ACTION_DURATION = 5000;
+const TOAST_RESUME_MIN_MS = 1200;
 let toastSeq = 0;
+const toastActionMap = new Map();
+const toastTimerMap = new Map();
+
+const clearToastTimer = (id) => {
+  const entry = toastTimerMap.get(id);
+  if (entry?.timerId) {
+    clearTimeout(entry.timerId);
+  }
+  toastTimerMap.delete(id);
+};
+
+const syncLegacyToastFields = (store) => {
+  const latest = store.toastList[store.toastList.length - 1] || null;
+  if (!latest) {
+    store.toastMessage = '';
+    store.toastState = {
+      visible: false,
+      message: '',
+      type: 'info',
+      actionText: '',
+      id: store.toastState?.id || 0
+    };
+    return;
+  }
+  store.toastMessage = latest.message;
+  store.toastState = {
+    visible: true,
+    message: latest.message,
+    type: latest.type,
+    actionText: latest.actionText,
+    id: latest.id
+  };
+};
+
+const scheduleToastDismiss = (store, id, durationMs) => {
+  clearToastTimer(id);
+  if (!(durationMs > 0)) return;
+  const timerId = setTimeout(() => {
+    toastTimerMap.delete(id);
+    store.dismissToast(id);
+  }, durationMs);
+  toastTimerMap.set(id, {
+    timerId,
+    startedAt: Date.now(),
+    remainingMs: durationMs,
+    paused: false
+  });
+};
 
 let persistQueueTimer = null;
 let persistQueueIdleId = null;
@@ -709,6 +760,7 @@ export const usePlayerStore = defineStore('player', {
     savedVolume: 1,
     currentQuality: 'standard',
     
+    toastList: [],
     toastMessage: '',
     toastState: {
       visible: false,
@@ -1378,49 +1430,134 @@ export const usePlayerStore = defineStore('player', {
       const opts = isObj ? messageOrOpts : (options || {});
       if (!message) {
         this.dismissToast();
-        return;
+        return null;
       }
       const validTypes = ['info', 'success', 'warning', 'error'];
       const type = validTypes.includes(opts.type) ? opts.type : 'info';
       const actionText = String(opts.actionText || '').trim();
-      currentToastAction = typeof opts.onAction === 'function' ? opts.onAction : null;
-      const duration = Number(opts.duration) > 0 ? Number(opts.duration) : (actionText ? 5000 : 3000);
+      const persistent = Boolean(opts.persistent);
+      const closable = opts.closable !== undefined ? Boolean(opts.closable) : (persistent || type === 'error');
+      const duration = persistent
+        ? 0
+        : (Number(opts.duration) > 0 ? Number(opts.duration) : (actionText ? TOAST_ACTION_DURATION : TOAST_DEFAULT_DURATION));
+      const dedupeKey = opts.key ? String(opts.key) : `${type}::${message}::${actionText}`;
 
-      this.toastMessage = message;
-      this.toastState = {
-        visible: true,
+      const existingIdx = this.toastList.findIndex((item) => item.key === dedupeKey);
+      if (existingIdx !== -1) {
+        const existing = this.toastList[existingIdx];
+        clearToastTimer(existing.id);
+        if (typeof opts.onAction === 'function') {
+          toastActionMap.set(existing.id, opts.onAction);
+        } else {
+          toastActionMap.delete(existing.id);
+        }
+        const updatedItem = {
+          id: existing.id,
+          key: dedupeKey,
+          message,
+          type,
+          actionText,
+          closable,
+          persistent,
+          duration
+        };
+        this.toastList = [
+          ...this.toastList.slice(0, existingIdx),
+          ...this.toastList.slice(existingIdx + 1),
+          updatedItem
+        ];
+        if (duration > 0) {
+          scheduleToastDismiss(this, existing.id, duration);
+        }
+        syncLegacyToastFields(this);
+        return existing.id;
+      }
+
+      const id = ++toastSeq;
+      if (typeof opts.onAction === 'function') {
+        toastActionMap.set(id, opts.onAction);
+      }
+
+      const nextItem = {
+        id,
+        key: dedupeKey,
         message,
         type,
         actionText,
-        id: ++toastSeq
+        closable,
+        persistent,
+        duration
       };
-      if (this.toastTimeout) clearTimeout(this.toastTimeout);
-      this.toastTimeout = setTimeout(() => {
-        this.dismissToast();
-      }, duration);
-    },
+      this.toastList = [...this.toastList, nextItem];
 
-    dismissToast() {
-      if (this.toastTimeout) {
-        clearTimeout(this.toastTimeout);
-        this.toastTimeout = null;
+      while (this.toastList.length > MAX_VISIBLE_TOASTS) {
+        const candidates = this.toastList.slice(0, -1);
+        let evictIdx = candidates.findIndex((item) => !item.persistent);
+        if (evictIdx === -1) evictIdx = 0;
+        const [evicted] = this.toastList.splice(evictIdx, 1);
+        if (evicted) {
+          clearToastTimer(evicted.id);
+          toastActionMap.delete(evicted.id);
+        }
       }
-      currentToastAction = null;
-      this.toastMessage = '';
-      this.toastState = {
-        ...this.toastState,
-        visible: false,
-        message: '',
-        actionText: ''
-      };
+
+      if (duration > 0) {
+        scheduleToastDismiss(this, id, duration);
+      }
+      syncLegacyToastFields(this);
+      return id;
     },
 
-    triggerToastAction() {
-      const fn = currentToastAction;
-      this.dismissToast();
+    dismissToast(id = null) {
+      if (id === null || id === undefined) {
+        for (const item of this.toastList) {
+          clearToastTimer(item.id);
+          toastActionMap.delete(item.id);
+        }
+        this.toastList = [];
+        syncLegacyToastFields(this);
+        return;
+      }
+      clearToastTimer(id);
+      toastActionMap.delete(id);
+      const nextList = this.toastList.filter((item) => item.id !== id);
+      if (nextList.length !== this.toastList.length) {
+        this.toastList = nextList;
+        syncLegacyToastFields(this);
+      }
+    },
+
+    triggerToastAction(id = null) {
+      const targetId = id ?? this.toastList[this.toastList.length - 1]?.id;
+      if (targetId == null) return;
+      const fn = toastActionMap.get(targetId);
+      this.dismissToast(targetId);
       if (typeof fn === 'function') {
         fn();
       }
+    },
+
+    pauseToastTimer(id) {
+      const entry = toastTimerMap.get(id);
+      if (!entry || entry.paused) return;
+      if (entry.timerId) {
+        clearTimeout(entry.timerId);
+        entry.timerId = null;
+      }
+      const elapsed = Date.now() - entry.startedAt;
+      entry.remainingMs = Math.max(TOAST_RESUME_MIN_MS, entry.remainingMs - elapsed);
+      entry.paused = true;
+    },
+
+    resumeToastTimer(id) {
+      const entry = toastTimerMap.get(id);
+      if (!entry || !entry.paused) return;
+      const exists = this.toastList.some((item) => item.id === id);
+      if (!exists) {
+        clearToastTimer(id);
+        return;
+      }
+      scheduleToastDismiss(this, id, Math.max(TOAST_RESUME_MIN_MS, entry.remainingMs));
     },
 
     setVolume(val) {
@@ -3409,7 +3546,7 @@ export const usePlayerStore = defineStore('player', {
       const isVipSong = this.currentSong.is_vip || this.currentSong.is_paid;
 
       if (isVipSong || isVipQuality) {
-        this.showToast('✨ 账号已登出，当前歌曲可继续播放，切换歌曲后将恢复试听限制');
+        this.showToast('账号已登出，当前歌曲可继续播放，切歌后将恢复试听限制');
       }
     },
 
@@ -3440,9 +3577,9 @@ export const usePlayerStore = defineStore('player', {
          resetPreloadAudio();
 
          if (this.isCurrentSongPreview) {
-           this.showToast('✨ VIP 身份确认，正在解除限制并为您自动匹配最高音质...');
+           this.showToast('VIP 身份已确认，正在匹配最高可用音质');
          } else {
-           this.showToast('✨ VIP 身份确认，正在为您升级至最高音质...');
+           this.showToast('VIP 身份已确认，正在切换至最高可用音质');
          }
 
          try {
@@ -3478,9 +3615,9 @@ export const usePlayerStore = defineStore('player', {
 
          const actualQName = QUALITY_CONFIG.find(q => q.key === this.currentQuality)?.name || '标准音质';
          if (this.isCurrentSongPreview) {
-           this.showToast(`✨ 已为您无缝解锁完整版音乐`);
+           this.showToast('已切换至完整版播放', { type: 'success' });
          } else if (this.currentQuality !== 'standard') {
-           this.showToast(`✨ 已成功升级至【${actualQName}】`);
+           this.showToast(`已切换至「${actualQName}」`, { type: 'success' });
          }
       }, 150);
     },

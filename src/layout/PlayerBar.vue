@@ -3,15 +3,6 @@
 // ====================
 <template>
   <footer class="h-20 shrink-0 w-full bg-white dark:bg-[#141415] border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-between px-4 sm:px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] dark:shadow-none relative min-w-0 transition-colors duration-200">
-    
-    <transition name="fade">
-      <div v-if="store.isError" class="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg shadow-md type-meta-base font-medium flex items-center z-[60]">
-        <AppIcon name="danger" class="w-4 h-4 mr-2" />
-        {{ store.errorMessage }}
-        <button @click="store.clearError" class="ml-3 text-red-400 hover:text-red-700 no-drag"><AppIcon name="close" class="w-3 h-3" /></button>
-      </div>
-    </transition>
-
     <div class="flex items-center w-[320px]">
       <div 
         @click="openLyricsPage" 
@@ -2956,8 +2947,6 @@ const openLyricsPage = () => {
   background-color: rgba(30, 41, 59, 0.5);
   color: rgb(100, 116, 139);
 }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translate(-50%, 10px); }
 .lyric-fade-enter-active, .lyric-fade-leave-active { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1); }
 .lyric-fade-enter-from, .lyric-fade-leave-to { opacity: 0; transform: scale(0.97); }
 .immersive-fade-enter-active, .immersive-fade-leave-active { transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }

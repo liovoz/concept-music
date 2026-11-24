@@ -3,29 +3,68 @@
 // ====================
 <template>
   <Teleport to="body">
-    <transition name="toast-fade">
-      <div
-        v-if="store.toastMessage"
-        :key="store.toastState?.id || store.toastMessage"
-        class="global-toast-container fixed bottom-28 left-1/2 transform -translate-x-1/2 backdrop-blur-xl border px-5 py-2.5 rounded-full type-meta-base font-medium z-[100010] flex items-center justify-center max-w-[86vw] sm:max-w-lg select-none no-drag transition-colors"
-        :class="[
-          toastThemeClasses,
-          hasAction ? 'pointer-events-auto pr-2.5' : 'pointer-events-none'
-        ]"
+    <div
+      class="fixed left-1/2 -translate-x-1/2 w-full px-4 flex flex-col items-center pointer-events-none select-none no-drag"
+      :style="{
+        bottom: 'var(--toast-bottom-offset)',
+        maxWidth: 'var(--toast-max-width)',
+        zIndex: 'var(--toast-z-index)'
+      }"
+    >
+      <TransitionGroup
+        name="toast-stack"
+        tag="div"
+        class="relative flex flex-col items-center w-full"
+        :style="{ gap: 'var(--toast-stack-gap)' }"
       >
-        <AppIcon :name="toastIconName" class="w-4 h-4 mr-2 flex-shrink-0" :class="toastIconColorClass" />
-        <span class="min-w-0 line-clamp-2 break-words">{{ store.toastMessage }}</span>
-        <button
-          v-if="hasAction"
-          type="button"
-          @click.stop="store.triggerToastAction()"
-          class="ml-3 px-3 py-1 rounded-full type-meta-micro transition-all active:scale-95 cursor-pointer flex-shrink-0"
-          :class="toastActionBtnClasses"
+        <div
+          v-for="item in displayToasts"
+          :key="item.id"
+          :role="item.type === 'error' ? 'alert' : 'status'"
+          aria-live="polite"
+          @mouseenter="onMouseEnter(item)"
+          @mouseleave="onMouseLeave(item)"
+          class="global-toast-container cm-toast-surface pointer-events-auto flex items-center w-fit max-w-full"
+          :class="hasControls(item) ? 'pl-4 pr-1 py-1' : 'px-4 py-2'"
         >
-          {{ store.toastState.actionText }}
-        </button>
-      </div>
-    </transition>
+          <AppIcon
+            :name="getIconName(item.type)"
+            :stroke-width="1.75"
+            class="w-4 h-4 shrink-0 mr-2"
+            :style="{ color: getIconColor(item.type) }"
+          />
+
+          <span
+            class="min-w-0 line-clamp-2 break-words type-meta-base font-medium"
+            :class="{ 'py-1': hasControls(item) }"
+          >{{ item.message }}</span>
+
+          <div
+            v-if="hasControls(item)"
+            class="flex items-center gap-1 ml-3 shrink-0"
+          >
+            <button
+              v-if="item.actionText"
+              type="button"
+              @click.stop="store.triggerToastAction(item.id)"
+              class="cm-toast-action-btn h-8 px-3 type-meta-micro font-medium shrink-0 cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 active:scale-[0.98]"
+            >
+              {{ item.actionText }}
+            </button>
+
+            <button
+              v-if="item.closable || item.persistent"
+              type="button"
+              aria-label="关闭提示"
+              @click.stop="handleClose(item)"
+              class="cm-toast-close-btn w-8 h-8 flex items-center justify-center shrink-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 active:scale-[0.98]"
+            >
+              <AppIcon name="close" :stroke-width="1.75" class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </TransitionGroup>
+    </div>
   </Teleport>
 </template>
 
@@ -35,56 +74,117 @@ import { usePlayerStore } from '../store/playerStore';
 
 const store = usePlayerStore();
 
-const toastType = computed(() => store.toastState?.type || 'info');
-const hasAction = computed(() => Boolean(store.toastState?.actionText));
+const displayToasts = computed(() => {
+  const ephemeral = Array.isArray(store.toastList) ? store.toastList : [];
+  if (store.isError && store.errorMessage) {
+    const playbackError = {
+      id: '__playback_error__',
+      key: '__playback_error__',
+      message: store.errorMessage,
+      type: 'error',
+      actionText: '',
+      closable: true,
+      persistent: true,
+      duration: 0,
+      isPlaybackError: true
+    };
+    return [...ephemeral.slice(-2), playbackError];
+  }
+  return ephemeral.slice(-3);
+});
 
-const toastIconName = computed(() => {
-  if (toastType.value === 'success') return 'check';
-  if (toastType.value === 'warning') return 'warning';
-  if (toastType.value === 'error') return 'danger';
+const hasControls = (item) => Boolean(item?.actionText || item?.closable || item?.persistent);
+
+const getIconName = (type) => {
+  if (type === 'success') return 'check';
+  if (type === 'warning') return 'warning';
+  if (type === 'error') return 'danger';
   return 'info';
-});
+};
 
-const toastIconColorClass = computed(() => {
-  if (toastType.value === 'success') return 'text-emerald-500 dark:text-emerald-400';
-  if (toastType.value === 'warning') return 'text-amber-500 dark:text-amber-400';
-  if (toastType.value === 'error') return 'text-red-500 dark:text-red-400';
-  return 'text-blue-500 dark:text-blue-400';
-});
+const getIconColor = (type) => {
+  if (type === 'success') return 'var(--toast-icon-success)';
+  if (type === 'warning') return 'var(--toast-icon-warning)';
+  if (type === 'error') return 'var(--toast-icon-error)';
+  return 'var(--toast-icon-info)';
+};
 
-const toastThemeClasses = computed(() => {
-  if (toastType.value === 'success') {
-    return 'bg-white/95 dark:bg-[#19191b]/95 border-emerald-200/90 dark:border-white/[0.08] text-gray-800 dark:text-[#ededed] shadow-[0_12px_40px_rgba(16,185,129,0.16)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.55)]';
+const handleClose = (item) => {
+  if (item?.isPlaybackError) {
+    store.clearError();
+    return;
   }
-  if (toastType.value === 'warning') {
-    return 'bg-white/95 dark:bg-[#19191b]/95 border-amber-200/90 dark:border-white/[0.08] text-gray-800 dark:text-[#ededed] shadow-[0_12px_40px_rgba(245,158,11,0.18)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.55)]';
-  }
-  if (toastType.value === 'error') {
-    return 'bg-white/95 dark:bg-[#19191b]/95 border-red-200/90 dark:border-white/[0.08] text-gray-800 dark:text-[#ededed] shadow-[0_12px_40px_rgba(239,68,68,0.18)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.55)]';
-  }
-  return 'bg-white/95 dark:bg-[#19191b]/95 border-blue-100 dark:border-white/[0.08] text-gray-700 dark:text-[#ededed] shadow-[0_12px_40px_rgba(37,99,235,0.14)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.55)]';
-});
+  store.dismissToast(item.id);
+};
 
-const toastActionBtnClasses = computed(() => {
-  if (toastType.value === 'success') {
-    return 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-950/70 dark:hover:bg-emerald-900/80 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/70';
-  }
-  if (toastType.value === 'warning') {
-    return 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:hover:bg-amber-900/80 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/70';
-  }
-  if (toastType.value === 'error') {
-    return 'bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/70 dark:hover:bg-red-900/80 dark:text-red-300 border border-red-200/80 dark:border-red-800/70';
-  }
-  return 'bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] dark:text-blue-400 border border-blue-200/80 dark:border-white/[0.08]';
-});
+const onMouseEnter = (item) => {
+  if (!item || item.isPlaybackError || item.persistent) return;
+  store.pauseToastTimer(item.id);
+};
+
+const onMouseLeave = (item) => {
+  if (!item || item.isPlaybackError || item.persistent) return;
+  store.resumeToastTimer(item.id);
+};
 </script>
 
 <style scoped>
-.toast-fade-enter-active, .toast-fade-leave-active {
-  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+.cm-toast-surface {
+  transition: background-color 150ms var(--toast-ease),
+              border-color 150ms var(--toast-ease),
+              color 150ms var(--toast-ease);
 }
-.toast-fade-enter-from, .toast-fade-leave-to {
+
+.cm-toast-action-btn {
+  border-radius: var(--toast-control-radius);
+  background-color: var(--toast-action-bg);
+  border: 1px solid var(--toast-action-border);
+  color: var(--toast-action-text);
+  transition: background-color 150ms var(--toast-ease),
+              border-color 150ms var(--toast-ease),
+              color 150ms var(--toast-ease),
+              transform 120ms var(--toast-ease);
+}
+
+.cm-toast-action-btn:hover {
+  background-color: var(--toast-action-bg-hover);
+}
+
+.cm-toast-close-btn {
+  border-radius: var(--toast-control-radius);
+  color: var(--toast-text-muted);
+  transition: background-color 150ms var(--toast-ease),
+              color 150ms var(--toast-ease),
+              transform 120ms var(--toast-ease);
+}
+
+.cm-toast-close-btn:hover {
+  background-color: var(--toast-close-hover-bg);
+  color: var(--toast-text);
+}
+
+.toast-stack-enter-active {
+  transition: opacity var(--toast-enter-duration) var(--toast-ease),
+              transform var(--toast-enter-duration) var(--toast-ease);
+}
+
+.toast-stack-leave-active {
+  pointer-events: none;
+  transition: opacity var(--toast-leave-duration) var(--toast-ease),
+              transform var(--toast-leave-duration) var(--toast-ease);
+}
+
+.toast-stack-move {
+  transition: transform var(--toast-move-duration) var(--toast-ease);
+}
+
+.toast-stack-enter-from {
   opacity: 0;
-  transform: translate(-50%, 16px) scale(0.95);
+  transform: translateY(var(--toast-rise-distance)) scale(0.98);
+}
+
+.toast-stack-leave-to {
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
 }
 </style>

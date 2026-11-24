@@ -824,7 +824,7 @@ export const useUserStore = defineStore('user', {
 
         if (!isRequestError && resDay && (resDay.status === 1 || resDay.error_code === 0)) {
            isSuccess = true;
-           msg = '🎉 1天 VIP 领取成功！';
+           msg = '已领取 1 天 VIP';
         } else {
            const errMsg = resDay?.error_msg || resDay?.message || resDay?.response?.data?.error_msg || '';
            const errCode = resDay?.error_code || resDay?.response?.data?.error_code;
@@ -835,7 +835,7 @@ export const useUserStore = defineStore('user', {
                || errMsg.includes('已领取') || errMsg.includes('今日已')) {
               isSuccess = true;
               isAlreadyClaimed = true;
-              msg = '云端显示今日额度已达上限，本地状态已自动同步修正！';
+              msg = '云端显示今日额度已达上限，本地状态已同步更新';
            } else if (errMsg.includes('502') || errMsg.includes('500') || errMsg.includes('504')) {
               msg = '酷狗服务器繁忙，系统稍后重试';
            } else if (errMsg) {
@@ -924,7 +924,7 @@ export const useUserStore = defineStore('user', {
           }
 
           const total = res.data?.total || 8;
-          return { success: true, becameVip: !wasVip && isVip, msg: `🎉 领取成功！VIP 已延期至：${displayTime} (${this.vipState.count}/${total})` };
+          return { success: true, becameVip: !wasVip && isVip, msg: `已领取 VIP，有效期至 ${displayTime} (${this.vipState.count}/${total})` };
         } else {
           const errMsg = res?.error_msg || res?.message || '';
           if (errMsg.includes('上限') || errMsg.includes('完成') || errMsg.includes('频繁')) {
@@ -1420,7 +1420,7 @@ export const useUserStore = defineStore('user', {
 
         if (res && (res.status === 1 || res.error_code === 0)) {
           if (!options.silentToast) {
-            playerStore.showToast('🎉 新建歌单成功', { type: 'success' });
+            playerStore.showToast('已新建歌单', { type: 'success' });
           }
 
           const rawListId = res?.data?.info?.listid || res?.data?.listid || '';

@@ -111,6 +111,35 @@
   --lyric-immersive-weight: var(--font-weight-semibold);
   --lyric-desktop-main-weight: var(--font-weight-semibold);
   --lyric-desktop-sub-weight: var(--font-weight-medium);
+
+  /* 统一底部消息通知系统 Design Tokens (unslop) */
+  --toast-radius: 9999px;
+  --toast-control-radius: 9999px;
+  --toast-min-height: 40px;
+  --toast-max-width: min(86vw, 480px);
+  --toast-stack-gap: 8px;
+  --toast-bottom-offset: 96px;          /* 80px PlayerBar + 16px 呼吸间距 */
+  --toast-z-index: 100010;
+  --toast-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --toast-enter-duration: 220ms;
+  --toast-leave-duration: 160ms;
+  --toast-move-duration: 220ms;
+  --toast-rise-distance: 8px;
+
+  --toast-bg: rgba(255, 255, 255, 0.96);
+  --toast-border: rgba(23, 23, 23, 0.08);
+  --toast-text: #171717;
+  --toast-text-muted: #737373;
+  --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --toast-action-bg: #f4f4f5;
+  --toast-action-bg-hover: #e4e4e7;
+  --toast-action-border: rgba(23, 23, 23, 0.08);
+  --toast-action-text: #171717;
+  --toast-close-hover-bg: rgba(23, 23, 23, 0.06);
+  --toast-icon-info: #2563eb;
+  --toast-icon-success: #16a34a;
+  --toast-icon-warning: #d97706;
+  --toast-icon-error: #dc2626;
 }
 
 /* 紧凑字阶模式 (Settings -> 界面字体大小: compact) */
@@ -213,6 +242,22 @@ html[data-font-preset="system"] {
   --text-primary: #ededed;
   --text-secondary: #b4b4ba;
   --text-muted: #98989f;
+
+  /* 统一底部消息通知系统暗色 Tokens */
+  --toast-bg: rgba(25, 25, 27, 0.96);
+  --toast-border: rgba(237, 237, 237, 0.10);
+  --toast-text: #ededed;
+  --toast-text-muted: #85858b;
+  --toast-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 32px rgba(0, 0, 0, 0.45);
+  --toast-action-bg: #232325;
+  --toast-action-bg-hover: #2c2c2f;
+  --toast-action-border: rgba(237, 237, 237, 0.10);
+  --toast-action-text: #ededed;
+  --toast-close-hover-bg: rgba(237, 237, 237, 0.08);
+  --toast-icon-info: #60a5fa;
+  --toast-icon-success: #4cc38a;
+  --toast-icon-warning: #e5a93c;
+  --toast-icon-error: #e5484d;
 }
 
 html, body, #app {
@@ -535,4 +580,26 @@ html.tray-menu-window.dark #app {
 .custom-scrollbar-thin::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar-thin::-webkit-scrollbar-thumb:active {
   border-width: 1px;
+}
+
+/* 统一底部消息通知系统 (unslop) */
+.cm-toast-surface {
+  background-color: var(--toast-bg);
+  border: 1px solid var(--toast-border);
+  border-radius: var(--toast-radius);
+  box-shadow: var(--toast-shadow);
+  color: var(--toast-text);
+  min-height: var(--toast-min-height);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-stack-enter-active,
+  .toast-stack-leave-active,
+  .toast-stack-move,
+  .toast-fade-enter-active,
+  .toast-fade-leave-active {
+    transition-duration: 1ms !important;
+  }
 }

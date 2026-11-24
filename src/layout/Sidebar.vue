@@ -240,7 +240,7 @@ const claimBtnText = computed(() => {
 
 const handleGatewayDown = (e) => {
    const msg = e.detail?.message || '网络或网关连接异常';
-   playerStore.showToast(`⚠️ ${msg}`);
+   playerStore.showToast(msg, { type: 'warning' });
 };
 
 const openSettings = (tab = 'account') => {
@@ -315,30 +315,40 @@ const formattedCooldown = computed(() => {
 
 const handleClaimOneDayVip = async () => {
   const res = await userStore.claimOneDayVip();
-  playerStore.showToast(res.msg);
+  if (res?.msg) {
+    playerStore.showToast(res.msg, { type: res.success ? 'success' : 'warning' });
+  }
 };
 
 const handleClaimDailyVip = async () => {
   const res = await userStore.claimDailyVip();
-  playerStore.showToast(res.msg);
+  if (res?.msg) {
+    playerStore.showToast(res.msg, { type: res.success ? 'success' : 'warning' });
+  }
 };
 
 const handleVipUpgradeClaim = async () => {
   userStore.closeVipUpgradeModal();
   if (!userStore.dayVipState.claimed) {
     const res = await userStore.claimOneDayVip();
-    playerStore.showToast(res.msg);
+    if (res?.msg) {
+      playerStore.showToast(res.msg, { type: res.success ? 'success' : 'warning' });
+    }
     if (res.success) {
       return;
     }
-    playerStore.showToast('1天VIP领取失败，请稍后重试');
+    if (!res?.msg) {
+      playerStore.showToast('1天 VIP 领取失败，请稍后重试', { type: 'warning' });
+    }
     return;
   }
   if (userStore.vipState.count < 8 && cooldownRemaining.value <= 0) {
     const res = await userStore.claimDailyVip();
-    playerStore.showToast(res.msg);
+    if (res?.msg) {
+      playerStore.showToast(res.msg, { type: res.success ? 'success' : 'warning' });
+    }
   } else {
-    playerStore.showToast('VIP 领取冷却中，请稍后再试');
+    playerStore.showToast('VIP 领取冷却中，请稍后再试', { type: 'warning' });
   }
 };
 

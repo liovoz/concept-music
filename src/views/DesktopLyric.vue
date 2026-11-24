@@ -338,8 +338,9 @@
     </transition>
 
     <transition name="toast-fade">
-      <div v-if="showLockToast" class="lock-toast">
-        已锁定鼠标穿透，悬停歌词 1 秒可解锁
+      <div v-if="showLockToast" class="lock-toast cm-toast-surface" role="status" aria-live="polite">
+        <AppIcon name="lock" :stroke-width="1.75" class="lock-toast-icon" />
+        <span>已锁定鼠标穿透，悬停歌词 1 秒可解锁</span>
       </div>
     </transition>
 
@@ -364,6 +365,7 @@ const isHovered = ref(false);
 const isLocked = ref(false);
 const showSettings = ref(false);
 const showLockToast = ref(false);
+let lockToastTimer = null;
 const currentText = ref('听见好时光');
 const nextText = ref('');
 const currentTranslation = ref('');
@@ -663,17 +665,35 @@ const lockLyric = () => {
   isLocked.value = true;
   isHovered.value = false;
   if (window.lyricAPI) window.lyricAPI.setIgnoreMouse(true);
+  if (lockToastTimer) clearTimeout(lockToastTimer);
   showLockToast.value = true;
-  setTimeout(() => { showLockToast.value = false; }, 4000);
+  lockToastTimer = setTimeout(() => {
+    showLockToast.value = false;
+    lockToastTimer = null;
+  }, 3000);
 };
 
 const unlockLyric = () => {
   hideTip();
+  if (lockToastTimer) {
+    clearTimeout(lockToastTimer);
+    lockToastTimer = null;
+  }
+  showLockToast.value = false;
   isLocked.value = false;
   if (window.lyricAPI) window.lyricAPI.unlockLyric();
 };
 
 const handleStorageChange = (e) => {
+  if (e.key === 'kg_desktop_theme') {
+    const val = e.newValue;
+    const isSystemDark = typeof window !== 'undefined' && window.matchMedia
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : false;
+    const isDarkEffective = val === 'dark' || (val === 'system' && isSystemDark);
+    document.documentElement.classList.toggle('dark', isDarkEffective);
+    return;
+  }
   if (e.key === 'kg_desktop_lyric_config' && e.newValue) {
     try {
       const parsed = JSON.parse(e.newValue);
@@ -764,6 +784,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopAnimation();
+  if (lockToastTimer) {
+    clearTimeout(lockToastTimer);
+    lockToastTimer = null;
+  }
   window.removeEventListener('storage', handleStorageChange);
   window.removeEventListener('keydown', handleKeyDown);
 });
@@ -1586,17 +1610,25 @@ watch(config, (v) => {
   left: 50%;
   transform: translateX(-50%);
   z-index: 150;
-  padding: 8px 20px;
-  background: rgba(255, 255, 255, 0.95);
-  color: rgba(0, 0, 0, 0.75);
-  font-size: var(--font-size-2xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  max-width: var(--toast-max-width);
+  font-size: var(--font-size-xs);
+  line-height: var(--type-meta-base-leading);
   font-weight: var(--font-weight-medium);
-  border-radius: 9999px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   white-space: nowrap;
   pointer-events: none;
+  user-select: none;
   -webkit-app-region: no-drag;
+}
+
+.lock-toast-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--toast-icon-info);
 }
 
 .panel-fade-enter-active,
@@ -1610,15 +1642,24 @@ watch(config, (v) => {
   opacity: 0;
 }
 
-.toast-fade-enter-active,
-.toast-fade-leave-active {
-  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+.toast-fade-enter-active {
+  transition: opacity var(--toast-enter-duration) var(--toast-ease),
+              transform var(--toast-enter-duration) var(--toast-ease);
 }
 
-.toast-fade-enter-from,
+.toast-fade-leave-active {
+  transition: opacity var(--toast-leave-duration) var(--toast-ease),
+              transform var(--toast-leave-duration) var(--toast-ease);
+}
+
+.toast-fade-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(var(--toast-rise-distance)) scale(0.98);
+}
+
 .toast-fade-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(10px);
+  transform: translateX(-50%) translateY(4px) scale(0.98);
 }
 
 /* ================= 统一软件全局风格 Tooltip 浮窗 ================= */
