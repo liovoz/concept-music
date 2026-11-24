@@ -769,10 +769,6 @@ onDeactivated(() => {
 </script>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.4); border-radius: 4px; }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.8); }
 .fade-scale-enter-active, .fade-scale-leave-active { transition: opacity 0.18s ease, transform 0.18s ease; }
 .fade-scale-enter-from, .fade-scale-leave-to { opacity: 0; transform: scale(0.97); }
 </style>

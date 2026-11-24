@@ -2151,18 +2151,4 @@ defineExpose({
   opacity: 0;
   transform: scale(0.97) translateY(6px);
 }
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 0;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(203, 213, 225, 0.4);
-  border-radius: 4px;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(203, 213, 225, 0.7);
-}
 </style>

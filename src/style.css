@@ -369,28 +369,6 @@ html.tray-menu-window.dark #app {
   -webkit-app-region: no-drag;
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: rgba(203, 213, 225, 0.1); 
-  border-radius: 4px;
-}
-
-:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(203, 213, 225, 0.8);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(148, 163, 184, 1);
-}
-
 .dark .bg-white { background-color: #19191b; }
 .dark .bg-white\/95 { background-color: rgb(25 25 27 / 0.95); }
 .dark .bg-white\/90 { background-color: rgb(25 25 27 / 0.9); }
@@ -441,17 +419,120 @@ html.tray-menu-window.dark #app {
   --tw-shadow-color: rgb(0 0 0 / 0.35);
   --tw-shadow: var(--tw-shadow-colored);
 }
-.dark .custom-scrollbar::-webkit-scrollbar-thumb,
-.dark::-webkit-scrollbar-thumb {
-  background-color: rgba(237, 237, 237, 0.14);
-}
-.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb,
-.dark:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(237, 237, 237, 0.28);
+
+@property --sb-thumb-alpha {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
 }
 
-.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.1); border-radius: 4px; }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.8); }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(148, 163, 184, 1); }
+/* 非 .custom-scrollbar 元素的兜底细滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.55);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(237, 237, 237, 0.16);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(237, 237, 237, 0.32);
+}
+
+/* 统一自动隐藏悬浮胶囊滚动条 */
+.custom-scrollbar {
+  --sb-thumb-rgb: 148, 163, 184;
+  --sb-thumb-alpha: 0;
+  transition: --sb-thumb-alpha 0.25s ease, color 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .custom-scrollbar {
+  --sb-thumb-rgb: 237, 237, 237;
+}
+
+.custom-scrollbar.is-scrolling {
+  --sb-thumb-alpha: 0.42;
+}
+
+.dark .custom-scrollbar.is-scrolling {
+  --sb-thumb-alpha: 0.22;
+}
+
+.custom-scrollbar.is-scrollbar-edge {
+  --sb-thumb-alpha: 0.52;
+}
+
+.dark .custom-scrollbar.is-scrollbar-edge {
+  --sb-thumb-alpha: 0.28;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--sb-thumb-rgb), var(--sb-thumb-alpha));
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  min-height: 36px;
+  min-width: 36px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--sb-thumb-rgb), 0.68);
+  border-width: 2px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--sb-thumb-rgb), 0.38);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background-color: rgba(var(--sb-thumb-rgb), 0.82);
+  border-width: 2px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background-color: rgba(var(--sb-thumb-rgb), 0.5);
+}
+
+/* 窄容器纤细变体 */
+.custom-scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb {
+  border-width: 1.5px;
+  min-height: 28px;
+  min-width: 28px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar-thin::-webkit-scrollbar-thumb:active {
+  border-width: 1px;
+}

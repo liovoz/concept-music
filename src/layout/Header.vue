@@ -79,7 +79,7 @@
                   正在获取热搜...
                 </div>
                 
-                <div v-else-if="hotList.length > 0" class="max-h-[300px] overflow-y-auto custom-scrollbar mr-1" ref="hotListRef">
+                <div v-else-if="hotList.length > 0" class="max-h-[300px] overflow-y-auto custom-scrollbar custom-scrollbar-thin mr-1" ref="hotListRef">
                   <div 
                     v-for="(item, index) in hotList" 
                     :key="'hot-'+index"
@@ -110,7 +110,7 @@
                 正在获取搜索建议...
               </div>
 
-              <div v-else-if="suggestGroups.songs.length || suggestGroups.artists.length || suggestGroups.albums.length" class="max-h-[360px] overflow-y-auto custom-scrollbar mr-1" ref="suggestListRef">
+              <div v-else-if="suggestGroups.songs.length || suggestGroups.artists.length || suggestGroups.albums.length" class="max-h-[360px] overflow-y-auto custom-scrollbar custom-scrollbar-thin mr-1" ref="suggestListRef">
                 
                 <div v-if="suggestGroups.songs.length">
                   <div class="px-4 py-1.5 flex items-center">
@@ -707,8 +707,4 @@ const onDialogLeave = (el, done) => {
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-5px); }
 .fade-scale-enter-active, .fade-scale-leave-active { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .fade-scale-enter-from, .fade-scale-leave-to { opacity: 0; transform: scale(0.92); }
-.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.3); border-radius: 4px; }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.6); }
 </style>

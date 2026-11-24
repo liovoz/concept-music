@@ -103,8 +103,14 @@
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
-      <nav class="flex flex-col space-y-1 px-3">
+    <div class="flex-1 min-h-0 relative flex flex-col">
+      <div
+        class="pointer-events-none absolute top-0 left-0 right-1.5 h-6 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent dark:from-[#0f0f10] dark:via-[#0f0f10]/80 dark:to-transparent z-10 transition-opacity duration-200"
+        :class="canScrollUp ? 'opacity-100' : 'opacity-0'"
+      ></div>
+
+      <div ref="navScrollRef" @scroll.passive="updateNavScrollHints" class="flex-1 overflow-y-auto custom-scrollbar custom-scrollbar-thin flex flex-col">
+        <nav ref="navContentRef" class="flex flex-col space-y-1 px-3">
         <div class="px-3 py-1.5 type-meta-base font-medium text-gray-500 dark:text-[#98989f] rounded cursor-default">在线音乐</div>
         <div @click="$router.push('/')" v-squircle="'md'" class="px-3 py-1.5 type-body-base rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/' ? 'font-semibold bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#b4b4ba] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="home" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />首页</div>
         <div @click="$router.push('/rank')" v-squircle="'md'" class="px-3 py-1.5 type-body-base rounded-lg cursor-pointer no-drag flex items-center transition-colors group" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'font-semibold bg-blue-100 text-blue-600 dark:bg-[#232325] dark:text-blue-400' : 'text-gray-600 dark:text-[#b4b4ba] hover:bg-gray-200 dark:hover:bg-[#19191b]'"><AppIcon name="rank" class="w-4 h-4 mr-3 transition-colors" :class="$route.path === '/rank' || $route.path.startsWith('/rank/') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-[#85858b] group-hover:text-gray-500 dark:group-hover:text-[#ededed]'" />排行榜</div>
@@ -141,6 +147,12 @@
           企鹅歌单
         </div>
       </nav>
+      </div>
+
+      <div
+        class="pointer-events-none absolute bottom-0 left-0 right-1.5 h-10 bg-gradient-to-t from-gray-50 via-gray-50/85 to-transparent dark:from-[#0f0f10] dark:via-[#0f0f10]/85 dark:to-transparent z-10 transition-opacity duration-200"
+        :class="canScrollDown ? 'opacity-100' : 'opacity-0'"
+      ></div>
     </div>
 
     <nav class="flex flex-col space-y-1 px-3 mt-4 border-t border-gray-100 dark:border-white/[0.08] pt-3">
@@ -201,9 +213,22 @@ const updateStore = useUpdateStore();
 const settingsModalRef = inject('settingsModalRef', null);
 
 const vipUpgradeModalRef = ref(null);
+const navScrollRef = ref(null);
+const navContentRef = ref(null);
+const canScrollUp = ref(false);
+const canScrollDown = ref(false);
 
 const now = ref(Date.now());
 let timer = null;
+let navResizeObserver = null;
+
+const updateNavScrollHints = () => {
+  const el = navScrollRef.value;
+  if (!el) return;
+  const threshold = 4;
+  canScrollUp.value = el.scrollTop > threshold;
+  canScrollDown.value = el.scrollTop + el.clientHeight < el.scrollHeight - threshold;
+};
 
 const claimBtnText = computed(() => {
   if (userStore.isVipProcessing) return '正在同步资产...';
@@ -233,9 +258,24 @@ const handleUserCardClick = () => {
   }
 };
 
+watch(
+  () => [userStore.isLoggedIn, userStore.dayVipState.claimed, userStore.vipState.count],
+  () => nextTick(updateNavScrollHints)
+);
+
 onMounted(() => {
   window.addEventListener('API_GATEWAY_DOWN', handleGatewayDown);
 
+  nextTick(() => {
+    updateNavScrollHints();
+    requestAnimationFrame(updateNavScrollHints);
+  });
+
+  if (typeof ResizeObserver !== 'undefined') {
+    navResizeObserver = new ResizeObserver(() => updateNavScrollHints());
+    if (navScrollRef.value) navResizeObserver.observe(navScrollRef.value);
+    if (navContentRef.value) navResizeObserver.observe(navContentRef.value);
+  }
 
   watch(() => userStore.showVipUpgradeModal, (v) => { if (v) nextTick(() => { vipUpgradeModalRef.value?.focus(); }); });
 
@@ -254,6 +294,10 @@ onMounted(() => {
 
 onUnmounted(() => { 
   if (timer) clearInterval(timer); 
+  if (navResizeObserver) {
+    navResizeObserver.disconnect();
+    navResizeObserver = null;
+  }
   window.removeEventListener('API_GATEWAY_DOWN', handleGatewayDown);
 });
 
@@ -328,10 +372,6 @@ const goToLikedMusic = () => {
 }
 .custom-scrollbar-hidden::-webkit-scrollbar { display: none; }
 .custom-scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.3); border-radius: 4px; }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.6); }
 
 nav > div > svg:first-child {
   width: 17px;

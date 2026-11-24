@@ -98,7 +98,7 @@
           </div>
 
           <!-- 歌单列表 -->
-          <div class="flex-1 overflow-y-auto custom-scrollbar px-3 pb-4 pt-1 space-y-1 min-h-[180px]">
+          <div class="flex-1 overflow-y-auto custom-scrollbar custom-scrollbar-thin px-3 pb-4 pt-1 space-y-1 min-h-[180px]">
             <!-- 1. 我喜欢的音乐（始终独立置顶） -->
             <button
               v-if="showLikedEntry"
@@ -445,7 +445,4 @@ onUnmounted(() => {
   opacity: 0;
   transform: scale(0.97);
 }
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.45); border-radius: 3px; }
 </style>

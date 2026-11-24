@@ -118,7 +118,7 @@
               </div>
 
               <!-- 结构化更新日志：优雅文档排版流 (方案 4) -->
-              <div class="bg-slate-50/70 dark:bg-[#232325]/40 border border-slate-200/80 dark:border-white/[0.08] rounded-2xl p-4 max-h-72 overflow-y-auto custom-scrollbar">
+              <div class="bg-slate-50/70 dark:bg-[#232325]/40 border border-slate-200/80 dark:border-white/[0.08] rounded-2xl p-4 max-h-72 overflow-y-auto custom-scrollbar custom-scrollbar-thin">
                 <!-- 导语描述 -->
                 <div 
                   v-if="parsedNotesData.lead" 
@@ -829,19 +829,5 @@ const openDetails = () => {
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(200%); }
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.3);
-  border-radius: 4px;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.6);
 }
 </style>

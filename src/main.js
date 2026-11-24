@@ -9,6 +9,7 @@ import './style.css'
 import App from './App.vue'
 import { initTheme } from './composables/useTheme.js'
 import { initFontScale } from './composables/useFontScale.js'
+import { initAutoHideScrollbars } from './utils/scrollbarAutoHide.js'
 import { tooltipDirective } from './utils/tooltip.js' // ✨ 引入指令
 import { squircleDirective } from './directives/squircle.js' // ✨ 引入 Apple 连续曲率指令
 import AppIcon from './components/common/AppIcon.vue' // ✨ 引入全局统一图标组件
@@ -26,6 +27,7 @@ if (typeof window !== 'undefined') {
 
 initTheme()
 initFontScale()
+initAutoHideScrollbars()
 const app = createApp(App)
 const pinia = createPinia()
 

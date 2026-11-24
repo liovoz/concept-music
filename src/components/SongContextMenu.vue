@@ -44,7 +44,7 @@
             :class="[submenuPlacement === 'left' ? 'right-full mr-1' : 'left-full ml-1', submenuVerticalPlacement === 'bottom' ? 'bottom-0' : 'top-0']"
           >
             <div
-              class="w-full h-full flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 type-body-sm text-gray-700 dark:text-[#ededed] backdrop-blur-xl"
+              class="w-full h-full flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar custom-scrollbar-thin rounded-xl border border-gray-100 dark:border-white/[0.08] bg-white/95 dark:bg-[#19191b]/95 p-1.5 type-body-sm text-gray-700 dark:text-[#ededed] backdrop-blur-xl"
             >
             <button
               class="menu-item text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 dark:text-blue-400 dark:hover:bg-blue-900/30"
@@ -552,9 +552,4 @@ onUnmounted(() => {
   flex-shrink: 0;
   color: currentColor;
 }
-
-.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 0; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.5); border-radius: 2px; }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.8); }
 </style>

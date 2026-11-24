@@ -2,7 +2,7 @@
 // 文件：src/layout/PlayerBar.vue
 // ====================
 <template>
-  <footer class="h-20 w-full bg-white dark:bg-[#141415] border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-between px-4 sm:px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] dark:shadow-none relative min-w-0 transition-colors duration-200">
+  <footer class="h-20 shrink-0 w-full bg-white dark:bg-[#141415] border-t border-gray-100 dark:border-white/[0.08] flex items-center justify-between px-4 sm:px-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] dark:shadow-none relative min-w-0 transition-colors duration-200">
     
     <transition name="fade">
       <div v-if="store.isError" class="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg shadow-md type-meta-base font-medium flex items-center z-[60]">
@@ -598,7 +598,7 @@
   <Teleport to="body">
     <!-- 普通窗口内歌词界面 (Normal in-window lyrics page) -->
     <transition name="lyric-fade">
-      <div v-if="store.isLyricsVisible && !store.isImmersiveLyrics" class="fixed top-0 left-0 w-full h-[calc(100vh-80px)] z-[45] flex flex-col no-drag overflow-hidden" :class="isDark ? 'text-[#ededed]' : 'text-gray-900'" tabindex="-1" @keydown.escape="store.toggleLyrics()">
+      <div v-if="store.isLyricsVisible && !store.isImmersiveLyrics" class="fixed inset-0 pb-20 z-[45] flex flex-col no-drag overflow-hidden" :class="isDark ? 'text-[#ededed]' : 'text-gray-900'" tabindex="-1" @keydown.escape="store.toggleLyrics()">
         <div class="absolute inset-0 -z-30" :class="isDark ? 'bg-[#141415]' : 'bg-[#f8f9fa]'"></div>
         <div class="absolute inset-0 bg-cover bg-center scale-125 transition-all duration-[2s] ease-out blur-[100px] saturate-150 -z-20" :class="isDark ? 'opacity-20' : 'opacity-40'" :style="{ backgroundImage: `url(${store.currentSong?.cover || defaultImg})` }"></div>
         <div class="absolute inset-0 backdrop-blur-3xl -z-10" :class="isDark ? 'bg-[#141415]/80' : 'bg-white/60'"></div>

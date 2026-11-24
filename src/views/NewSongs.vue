@@ -11,7 +11,7 @@
           </h2>
           <p class="type-meta-base text-gray-500 mt-2">发现最新上架的好音乐</p>
         </div>
-        <button v-if="songs.length > 0" @click="playAll" class="flex-shrink-0 px-5 py-1.5 bg-gray-50 hover:bg-emerald-50 text-gray-700 hover:text-emerald-600 border border-gray-200/80 rounded-full type-body-sm font-medium transition-colors no-drag flex items-center">
+        <button v-if="songs.length > 0" @click="playAll" class="flex-shrink-0 px-5 py-1.5 bg-gray-50 dark:bg-[#19191b] hover:bg-emerald-50 dark:hover:bg-emerald-500/15 text-gray-700 dark:text-[#b4b4ba] hover:text-emerald-600 dark:hover:text-emerald-400 border border-gray-200/80 dark:border-white/[0.08] rounded-full type-body-sm font-medium transition-colors no-drag flex items-center">
           <AppIcon name="play" class="w-4 h-4 mr-1" />
           播放全部
         </button>
@@ -329,10 +329,3 @@ onUnmounted(() => {
   clearTimeout(switchTimer);
 });
 </script>
-
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.4); border-radius: 4px; }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.8); }
-</style>
