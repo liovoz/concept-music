@@ -38,12 +38,12 @@
           </button>
         </div>
 
-        <div v-else-if="isDailyLoading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <div v-for="i in 10" :key="i" v-squircle="'lg'" class="flex items-center p-3 bg-gray-50/50 border border-gray-100 rounded-[14px]">
-            <div v-squircle="'sm'" class="w-12 h-12 bg-gray-200 rounded-[8px] animate-pulse flex-shrink-0"></div>
+        <div v-else-if="isDailyLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 lg:gap-4">
+          <div v-for="i in 10" :key="i" class="flex items-center p-2.5 rounded-[14px] bg-white dark:!bg-[#19191b] shadow-[0_2px_10px_rgba(15,23,42,0.055),0_1px_2px_rgba(15,23,42,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.28)]">
+            <div class="w-[54px] h-[54px] bg-gray-200 dark:bg-[#232325] rounded-[9px] animate-pulse flex-shrink-0"></div>
             <div class="flex-1 ml-3 flex flex-col space-y-2">
-              <div class="w-3/4 h-3 bg-gray-200 rounded animate-pulse"></div>
-              <div class="w-1/2 h-2.5 bg-gray-200 rounded animate-pulse"></div>
+              <div class="w-3/4 h-3 bg-gray-200 dark:bg-[#232325] rounded animate-pulse"></div>
+              <div class="w-1/2 h-2.5 bg-gray-200 dark:bg-[#232325] rounded animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -55,12 +55,18 @@
 
         <div v-else-if="dailySongs.length > 0" class="w-full flex flex-col">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 lg:gap-4">
-            <div v-for="song in dailySongs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="group flex items-center p-2.5 rounded-[14px] bg-white dark:bg-[#19191b] border border-gray-100 dark:border-white/[0.08] shadow-sm dark:shadow-none hover:shadow-md hover:border-blue-100 dark:hover:border-white/[0.16] dark:hover:bg-[#232325] transition-colors cursor-pointer no-drag min-w-0">
-              <div v-squircle="'sm'" class="relative w-[54px] h-[54px] rounded-[8px] flex-shrink-0 bg-gray-100 dark:bg-[#232325] mr-3 transform-gpu [transform:translateZ(0)]">
-                <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" @error="e => e.target.src = defaultImg" />
+            <div
+              v-for="song in dailySongs"
+              :key="song._hash"
+              @contextmenu="handleSongContextMenu($event, song)"
+              @dblclick="handlePlay(song)"
+              class="group flex items-center p-2.5 rounded-[14px] bg-white dark:!bg-[#19191b] dark:hover:!bg-[#222226] shadow-[0_2px_10px_rgba(15,23,42,0.055),0_1px_2px_rgba(15,23,42,0.03)] hover:shadow-[0_10px_24px_rgba(37,99,235,0.09),0_2px_6px_rgba(15,23,42,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.28)] dark:hover:shadow-[0_10px_26px_rgba(0,0,0,0.45)] transition-[box-shadow,background-color] duration-200 cursor-pointer no-drag min-w-0"
+            >
+              <div class="relative w-[54px] h-[54px] rounded-[9px] overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-[#232325] border border-black/[0.05] dark:border-white/[0.08] shadow-[0_2px_6px_rgba(0,0,0,0.08)] dark:shadow-none mr-3">
+                <img :src="song._cover" :alt="song._name || '歌曲封面'" class="w-full h-full object-cover" @error="e => e.target.src = defaultImg" />
                 
-                <div @click.stop="handlePlay(song)" class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                  <AppIcon name="play" class="w-6 h-6 text-white ml-0.5 drop-shadow-md transform scale-75 group-hover:scale-100 transition-transform duration-300" />
+                <div @click.stop="handlePlay(song)" class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer">
+                  <AppIcon name="play" class="w-6 h-6 text-white ml-0.5 drop-shadow-md" />
                 </div>
               </div>
               
