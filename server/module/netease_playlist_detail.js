@@ -8,7 +8,8 @@ module.exports = async (params, useAxios) => {
   if (!id) return fail(400, '缺少有效的网易云歌单链接或 ID');
 
   try {
-    const detail = await getPlaylistDetail(useAxios, id);
+    const forceRefresh = params?.forceRefresh === '1' || params?.forceRefresh === 'true';
+    const detail = await getPlaylistDetail(useAxios, id, { forceRefresh });
     if (detail?.code !== 200 || !detail?.playlist?.id || !detail?.playlist?.name?.trim()) {
       return fail(404, '未找到该网易云歌单，请检查链接或 ID 是否存在');
     }

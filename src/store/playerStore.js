@@ -20,15 +20,28 @@ let preloadState = {
   hash: null,
   quality: 'standard',
   isPreview: false,
-  url: null
+  url: null,
+  sourceInfo: null,
+  resolvedAt: 0,
 };
+
+const EXTERNAL_URL_CACHE_TTL_MS = 10 * 60 * 1000;
+const PRELOAD_EXTERNAL_TTL_MS = 8 * 60 * 1000;
+const PREFETCH_DEDUPE_TTL_MS = 3 * 60 * 1000;
+const MAX_PREFETCH_CONCURRENCY = 2;
+const PREFETCH_MIN_INTERVAL_MS = 550;
+
+let prefetchInFlightCount = 0;
+let lastPrefetchDispatchAt = 0;
+const prefetchHistoryMap = new Map();
 
 const urlCache = new Map(); 
 const getCachedUrl = (hash, quality) => {
   const key = `${hash}_${quality}`;
   if (urlCache.has(key)) {
     const item = urlCache.get(key);
-    if (Date.now() - item.time < 3600000) return item; 
+    const maxAge = Number(item.ttlMs || 3600000);
+    if (Date.now() - item.time < maxAge) return item; 
     urlCache.delete(key);
   }
   return null;
@@ -40,7 +53,8 @@ const setCachedUrl = (hash, quality, data) => {
     const now = Date.now();
     const expired = [];
     for (const [k, v] of urlCache) {
-      if (now - v.time >= 3600000) expired.push(k);
+      const maxAge = Number(v.ttlMs || 3600000);
+      if (now - v.time >= maxAge) expired.push(k);
     }
     if (expired.length > 0) {
       expired.forEach(k => urlCache.delete(k));
@@ -57,6 +71,8 @@ const setCachedUrl = (hash, quality, data) => {
 
 const pendingResolves = new Map();
 let playVersion = 0;
+let audioLoadToken = 0;
+const bumpAudioLoadToken = () => ++audioLoadToken;
 
 const VOLUME_BOOST_LEVELS = [1.25, 1.5, 2];
 const VOLUME_BOOST_ENABLED_KEY = 'kg_desktop_volume_boost_enabled';
@@ -276,9 +292,58 @@ const schedulePersistProgress = (store, delay = 300) => {
 let audioContext = null;
 let audioGraphInitialized = false;
 const audioOutputNodes = new Map();
-const MAX_WATCHDOG_RETRIES = 1;
+const MAX_WATCHDOG_RETRIES = 2;
 let watchdogRetrySongKey = '';
 let watchdogRetryCount = 0;
+
+const commitPendingUrlCache = (audio) => {
+  const entry = audio?._pendingCacheEntry;
+  if (!entry || !entry.hash || !entry.quality || !entry.data?.url) return;
+  setCachedUrl(entry.hash, entry.quality, entry.data);
+  audio._pendingCacheEntry = null;
+};
+
+const buildNextExternalRetryState = (audio, currentState = null) => {
+  const prev = currentState || audio?._externalRetryState || {};
+  const excludeSources = new Set(Array.isArray(prev.excludeSources) ? prev.excludeSources : []);
+  const excludeUrls = new Set(Array.isArray(prev.excludeUrls) ? prev.excludeUrls : []);
+  const sourceId = audio?._sourceInfo?.id || audio?._sourceInfo?.file || audio?._sourceInfo?.name;
+  if (sourceId) excludeSources.add(String(sourceId));
+  if (audio?._rawSourceUrl) excludeUrls.add(String(audio._rawSourceUrl));
+  return {
+    attempt: Number(prev.attempt || 0) + 1,
+    excludeSources: [...excludeSources],
+    excludeUrls: [...excludeUrls],
+  };
+};
+
+const handlePlayPromiseRejection = (store, error, capturedPlayVersion, capturedLoadToken, sourceAudio, contextLabel = '播放被中断') => {
+  if (!store) return;
+  if (capturedPlayVersion !== playVersion || capturedLoadToken !== audioLoadToken || sourceAudio !== activeAudio) {
+    return;
+  }
+  if (error?.name === 'AbortError' && sourceAudio?._isSwitchingTransport) {
+    return;
+  }
+
+  console.warn(contextLabel, error);
+  if (store._playbackProgressTimer) {
+    clearTimeout(store._playbackProgressTimer);
+    store._playbackProgressTimer = null;
+  }
+  store.isPlaying = false;
+  store.isLoading = false;
+  store.syncTrayState();
+
+  if (error?.name === 'NotAllowedError') {
+    store.showToast('音频播放被系统限制，请点击播放按钮继续', { type: 'warning' });
+    return;
+  }
+
+  if (error?.name !== 'AbortError') {
+    store.handleSongEnd(true);
+  }
+};
 
 const getStoredBoostLevel = () => {
   const saved = parseFloat(localStorage.getItem(VOLUME_BOOST_LEVEL_KEY));
@@ -322,6 +387,7 @@ const setAudioSource = (audio, url, useProxy, songHash = '') => {
   audio._proxyRestoreTime = 0;
   audio._proxyResumeOnLoad = false;
   audio._intendToPlay = false;
+  audio._isSwitchingTransport = false;
   if (songHash) audio._songHash = songHash;
   if (useProxy) {
     audio.crossOrigin = 'anonymous';
@@ -446,6 +512,11 @@ const resetAudioElementSource = (audio) => {
   if (!audio) return;
   audio._intendToPlay = false;
   audio._songHash = '';
+  audio._isSwitchingTransport = false;
+  audio._pendingCacheEntry = null;
+  audio._sourceInfo = null;
+  audio._externalRetryState = null;
+  audio._playStartTs = 0;
   try { audio.pause(); } catch (e) {}
   if (typeof audio.removeAttribute === 'function') {
     audio.removeAttribute('src');
@@ -481,12 +552,15 @@ const resetPreloadAudio = () => {
     hash: null,
     quality: 'standard',
     isPreview: false,
-    url: null
+    url: null,
+    sourceInfo: null,
+    resolvedAt: 0,
   };
 };
 
 const abortActivePlayback = (store, { resetPreload = false } = {}) => {
   playVersion++;
+  bumpAudioLoadToken();
   pendingResolves.clear();
   watchdogRetrySongKey = '';
   watchdogRetryCount = 0;
@@ -495,6 +569,7 @@ const abortActivePlayback = (store, { resetPreload = false } = {}) => {
     if (store._vipActionTimer) { clearTimeout(store._vipActionTimer); store._vipActionTimer = null; }
     if (store._playWatchdogTimer) { clearTimeout(store._playWatchdogTimer); store._playWatchdogTimer = null; }
     if (store._playbackProgressTimer) { clearTimeout(store._playbackProgressTimer); store._playbackProgressTimer = null; }
+    if (store._preloadTimer) { clearTimeout(store._preloadTimer); store._preloadTimer = null; }
     store._pendingRestoreSeekTime = 0;
     store.isLoading = false;
     store.isPlaying = false;
@@ -904,16 +979,21 @@ export const usePlayerStore = defineStore('player', {
           if (this.isFmModePlaylist && this.currentSong) {
             try { fmController?.onTrackError?.(this.currentSong); } catch (e) {}
           }
-          if (this.autoSkipOnError) {
+          const canSkipNext = (this.playlist && this.playlist.length > 1) || Boolean(this.isFmModePlaylist && fmController);
+          if (this.autoSkipOnError && canSkipNext) {
             this.consecutiveErrorCount = (this.consecutiveErrorCount || 0) + 1;
             const maxErrors = this.isFmModePlaylist ? 5 : Math.min(Math.max(3, this.playlist.length), 5);
             if (this.consecutiveErrorCount >= maxErrors) {
               this.consecutiveErrorCount = 0;
-              this.showToast('连续多首歌曲播放故障，已停止自动跳过');
+              this.isError = true;
+              this.failedSong = this.currentSong;
+              this.errorMessage = '连续多首歌曲播放故障，已停止自动跳过';
               this.isPlaying = false;
+              const errVer = playVersion;
+              setTimeout(() => { if (errVer === playVersion) this.clearError(); }, 6000);
               return;
             }
-            this.showToast('音频流发生异常中断，自动为您跳至下一首');
+            this.showToast('音频流发生异常中断，自动为您跳至下一首', { type: 'warning' });
             if (this._errorSkipTimer) clearTimeout(this._errorSkipTimer);
             this._errorSkipTimer = setTimeout(() => { 
               this._errorSkipTimer = null;
@@ -921,8 +1001,15 @@ export const usePlayerStore = defineStore('player', {
               this.playNext(true); 
             }, 1500);
           } else {
-            this.showToast('音频流发生异常中断，已暂停播放');
+            this.consecutiveErrorCount = 0;
+            this.isError = true;
+            this.failedSong = this.currentSong;
+            this.errorMessage = isExternalImportSong(this.currentSong)
+              ? '当前歌曲音频流异常或音源暂不可用，请切换音质或重试'
+              : '音频流发生异常中断，已暂停播放';
             this.isPlaying = false;
+            const errVer = playVersion;
+            setTimeout(() => { if (errVer === playVersion) this.clearError(); }, 6000);
           }
         } else {
           this.consecutiveErrorCount = 0;
@@ -1018,6 +1105,9 @@ export const usePlayerStore = defineStore('player', {
         let actualAudioDuration = activeAudio.duration;
         let expectedDuration = getExpectedDuration(this.currentSong);
         console.log('[Audio] loadedmetadata fired: actualAudioDuration=', actualAudioDuration, 'expectedDuration=', expectedDuration);
+        if (Number.isFinite(actualAudioDuration) && actualAudioDuration > 0) {
+          commitPendingUrlCache(activeAudio);
+        }
 
         if (!this.isCurrentSongPreview) {
           if (expectedDuration > 0 && actualAudioDuration > 0) {
@@ -1036,6 +1126,13 @@ export const usePlayerStore = defineStore('player', {
       
       audioInstance.addEventListener('playing', (e) => { 
         if (e.target !== activeAudio) return;
+        commitPendingUrlCache(activeAudio);
+        if (activeAudio._playStartTs > 0) {
+          const nowTs = typeof performance !== 'undefined' ? performance.now() : Date.now();
+          const elapsedMs = Math.round(nowTs - activeAudio._playStartTs);
+          console.log(`[Player Timing] click->playing: ${elapsedMs}ms (${this.currentSong?.name || ''})`);
+          activeAudio._playStartTs = 0;
+        }
         if (activeAudio.currentTime > 0) {
           watchdogRetrySongKey = '';
           watchdogRetryCount = 0;
@@ -1068,11 +1165,37 @@ export const usePlayerStore = defineStore('player', {
       
       audioInstance.addEventListener('error', (e) => {
         if (e.target !== activeAudio) {
-           preloadState.hash = null;
-           return;
+          if (e.target === preloadAudio) {
+            preloadState.hash = null;
+          }
+          return;
         }
         if (!hasLoadedAudioSource(activeAudio)) return;
         console.error('[Audio error event]', activeAudio.error?.code, activeAudio.error?.message, 'src:', activeAudio.src);
+
+        const failedHash = activeAudio._songHash || this.currentSong?.hash || '';
+        activeAudio._pendingCacheEntry = null;
+        clearSongUrlCache(failedHash);
+
+        // 外部导入歌曲优先使用排除坏源/坏链后的换源重拉，避免对已确认失效的上游直连做无意义切换
+        if (isExternalImportSong(this.currentSong)) {
+          const prevRetry = activeAudio._externalRetryState || {};
+          const currentAttempt = Number(prevRetry.attempt || 0);
+          if (currentAttempt < MAX_WATCHDOG_RETRIES) {
+            const savedTime = Number.isFinite(activeAudio.currentTime) && activeAudio.currentTime > 0
+              ? activeAudio.currentTime
+              : 0;
+            const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
+            const nextRetryState = buildNextExternalRetryState(activeAudio, prevRetry);
+            this.playSong(this.currentSong, null, savedTime, wasPlaying, {
+              silentQueueToast: true,
+              isFmTrack: this.isFmModePlaylist,
+              _isWatchdogRetry: true,
+              _externalRetryState: nextRetryState,
+            });
+            return;
+          }
+        }
 
         if (activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
           try {
@@ -1082,13 +1205,16 @@ export const usePlayerStore = defineStore('player', {
             const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
             const rawUrl = activeAudio._rawSourceUrl;
             const ownerHash = activeAudio._songHash || this.currentSong?.hash || '';
+
+            // 标记内部传输层切换，防止旧 playPromise AbortError 误将 isPlaying 置为 false
+            activeAudio._isSwitchingTransport = true;
+            const nextLoadToken = bumpAudioLoadToken();
             activeAudio._proxyFallbackAttempted = true;
             activeAudio._proxyRestoreTime = savedTime;
             activeAudio._proxyResumeOnLoad = wasPlaying;
 
+            // 单曲代理异常时仅临时重构 Audio 实例做直连降级，严禁永久关闭用户的全局音量增强偏好
             if (audioGraphInitialized) {
-              this.volumeBoostEnabled = false;
-              localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
               recreateAudioInstances(this);
             }
 
@@ -1098,18 +1224,17 @@ export const usePlayerStore = defineStore('player', {
             activeAudio._proxyResumeOnLoad = wasPlaying;
             activeAudio._intendToPlay = wasPlaying;
             this.applyAudioOutputSettings();
-            if (!isExternalImportSong(this.currentSong)) {
-              this.showToast('音量增强代理暂时不可用，已恢复普通播放');
-            }
             const fallbackAudio = activeAudio;
             const fallbackVersion = playVersion;
             fallbackAudio.load();
             fallbackAudio.addEventListener('loadedmetadata', () => {
-              if (fallbackVersion !== playVersion || fallbackAudio !== activeAudio) return;
+              if (fallbackVersion !== playVersion || nextLoadToken !== audioLoadToken || fallbackAudio !== activeAudio) return;
               if (savedTime > 0) fallbackAudio.currentTime = savedTime;
               if (wasPlaying) {
                 const p = safePlayAudio(fallbackAudio);
-                if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+                if (p !== undefined) {
+                  p.catch((err) => handlePlayPromiseRejection(this, err, fallbackVersion, nextLoadToken, fallbackAudio, '直连回退播放失败'));
+                }
                 this.isPlaying = true;
               } else {
                 this.isPlaying = false;
@@ -1134,6 +1259,9 @@ export const usePlayerStore = defineStore('player', {
             const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
             const rawUrl = activeAudio._rawSourceUrl;
             const ownerHash = activeAudio._songHash || this.currentSong?.hash || '';
+
+            activeAudio._isSwitchingTransport = true;
+            const nextLoadToken = bumpAudioLoadToken();
             setAudioSource(activeAudio, rawUrl, true, ownerHash);
             activeAudio._proxyFallbackAttempted = true;
             activeAudio._proxyRestoreTime = savedTime;
@@ -1143,11 +1271,13 @@ export const usePlayerStore = defineStore('player', {
             const fallbackVersion = playVersion;
             fallbackAudio.load();
             fallbackAudio.addEventListener('loadedmetadata', () => {
-              if (fallbackVersion !== playVersion || fallbackAudio !== activeAudio) return;
+              if (fallbackVersion !== playVersion || nextLoadToken !== audioLoadToken || fallbackAudio !== activeAudio) return;
               if (savedTime > 0) fallbackAudio.currentTime = savedTime;
               if (wasPlaying) {
                 const p = safePlayAudio(fallbackAudio);
-                if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+                if (p !== undefined) {
+                  p.catch((err) => handlePlayPromiseRejection(this, err, fallbackVersion, nextLoadToken, fallbackAudio, '代理回退播放失败'));
+                }
                 this.isPlaying = true;
               } else {
                 this.isPlaying = false;
@@ -2757,19 +2887,23 @@ export const usePlayerStore = defineStore('player', {
       this.syncTrayState();
     },
 
-    async resolveSongUrl(songInfo, targetQuality = null) {
+    async resolveSongUrl(songInfo, targetQuality = null, resolveOptions = {}) {
+      const excludeSources = Array.isArray(resolveOptions.excludeSources) ? resolveOptions.excludeSources : [];
+      const excludeUrls = Array.isArray(resolveOptions.excludeUrls) ? resolveOptions.excludeUrls : [];
+      const bypassCache = Boolean(resolveOptions.bypassCache || excludeSources.length > 0 || excludeUrls.length > 0);
+
       if (isNeteaseImportSong(songInfo)) {
         songInfo.qualities = extractQualities(songInfo);
         const cacheQ = targetQuality && songInfo.qualities?.[targetQuality]
           ? targetQuality
           : this.getBestAvailableQuality(songInfo);
-        const dedupeKey = `${songInfo.hash}_${cacheQ}_${NETEASE_IMPORT_SOURCE}`;
+        const dedupeKey = `${songInfo.hash}_${cacheQ}_${NETEASE_IMPORT_SOURCE}_${excludeSources.join(',')}_${excludeUrls.length}`;
 
-        if (pendingResolves.has(dedupeKey)) {
+        if (!bypassCache && pendingResolves.has(dedupeKey)) {
           return pendingResolves.get(dedupeKey);
         }
 
-        const promise = this._resolveNeteaseImportSongUrl(songInfo, cacheQ);
+        const promise = this._resolveNeteaseImportSongUrl(songInfo, cacheQ, { excludeSources, excludeUrls, bypassCache });
         pendingResolves.set(dedupeKey, promise);
         try {
           return await promise;
@@ -2783,13 +2917,13 @@ export const usePlayerStore = defineStore('player', {
         const cacheQ = targetQuality && songInfo.qualities?.[targetQuality]
           ? targetQuality
           : this.getBestAvailableQuality(songInfo);
-        const dedupeKey = `${songInfo.hash}_${cacheQ}_${QQ_IMPORT_SOURCE}`;
+        const dedupeKey = `${songInfo.hash}_${cacheQ}_${QQ_IMPORT_SOURCE}_${excludeSources.join(',')}_${excludeUrls.length}`;
 
-        if (pendingResolves.has(dedupeKey)) {
+        if (!bypassCache && pendingResolves.has(dedupeKey)) {
           return pendingResolves.get(dedupeKey);
         }
 
-        const promise = this._resolveQQImportSongUrl(songInfo, cacheQ);
+        const promise = this._resolveQQImportSongUrl(songInfo, cacheQ, { excludeSources, excludeUrls, bypassCache });
         pendingResolves.set(dedupeKey, promise);
         try {
           return await promise;
@@ -2821,64 +2955,78 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
-    async _resolveNeteaseImportSongUrl(songInfo, quality) {
-      const cached = getCachedUrl(songInfo.hash, quality);
-      if (cached) return cached;
+    async _resolveNeteaseImportSongUrl(songInfo, quality, options = {}) {
+      const excludeSources = Array.isArray(options.excludeSources) ? options.excludeSources : [];
+      const excludeUrls = Array.isArray(options.excludeUrls) ? options.excludeUrls : [];
+      const bypassCache = Boolean(options.bypassCache || excludeSources.length > 0 || excludeUrls.length > 0);
+      if (!bypassCache) {
+        const cached = getCachedUrl(songInfo.hash, quality);
+        if (cached) return cached;
+      }
 
       try {
         const res = await request.post('/source/resolve', {
           song: songInfo,
           quality,
           subDir: 'Netease',
-          platform: 'wy'
+          platform: 'wy',
+          ...(excludeSources.length > 0 ? { excludeSources } : {}),
+          ...(excludeUrls.length > 0 ? { excludeUrls } : {}),
         }, {
           silent: true,
-          timeout: 10000,
+          timeout: 9500,
           maxRetries: 0,
           headers: { 'x-apicache-bypass': '1' }
         });
 
         if (res?.url && typeof res.url === 'string' && res.url.startsWith('http')) {
-          const finalResult = {
+          return {
             url: res.url,
             quality: res.quality || quality,
             isPreview: false,
-            sourceInfo: res.source || null
+            sourceInfo: res.source || null,
+            ttlMs: EXTERNAL_URL_CACHE_TTL_MS,
+            _cacheMeta: { hash: songInfo.hash, quality },
           };
-          setCachedUrl(songInfo.hash, quality, finalResult);
-          return finalResult;
         }
       } catch (e) {}
 
       return { url: null, quality: 'standard', isPreview: false };
     },
 
-    async _resolveQQImportSongUrl(songInfo, quality) {
-      const cached = getCachedUrl(songInfo.hash, quality);
-      if (cached) return cached;
+    async _resolveQQImportSongUrl(songInfo, quality, options = {}) {
+      const excludeSources = Array.isArray(options.excludeSources) ? options.excludeSources : [];
+      const excludeUrls = Array.isArray(options.excludeUrls) ? options.excludeUrls : [];
+      const bypassCache = Boolean(options.bypassCache || excludeSources.length > 0 || excludeUrls.length > 0);
+      if (!bypassCache) {
+        const cached = getCachedUrl(songInfo.hash, quality);
+        if (cached) return cached;
+      }
 
       try {
         const res = await request.post('/source/resolve', {
           song: songInfo,
           quality,
           subDir: 'QQ',
-          platform: 'tx'
+          platform: 'tx',
+          ...(excludeSources.length > 0 ? { excludeSources } : {}),
+          ...(excludeUrls.length > 0 ? { excludeUrls } : {}),
         }, {
           silent: true,
-          timeout: 10000,
+          timeout: 9500,
           maxRetries: 0,
           headers: { 'x-apicache-bypass': '1' }
         });
 
         if (res?.url && typeof res.url === 'string' && res.url.startsWith('http')) {
-          const finalResult = {
+          return {
             url: res.url,
             quality: res.quality || quality,
             isPreview: false,
-            sourceInfo: res.source || null
+            sourceInfo: res.source || null,
+            ttlMs: EXTERNAL_URL_CACHE_TTL_MS,
+            _cacheMeta: { hash: songInfo.hash, quality },
           };
-          setCachedUrl(songInfo.hash, quality, finalResult);
-          return finalResult;
         }
       } catch (e) {}
 
@@ -3136,36 +3284,123 @@ export const usePlayerStore = defineStore('player', {
       return this.playlist[rand];
     },
 
+    async prefetchSongUrl(rawSongInfo) {
+      if (!rawSongInfo) return false;
+      const songInfo = prepareQueueSong(rawSongInfo) || rawSongInfo;
+      if (!songInfo?.hash || !isExternalImportSong(songInfo)) return false;
+      if (this.isLoading) return false;
+
+      if (this.currentSong && normalizeSongKey(this.currentSong) === normalizeSongKey(songInfo)) {
+        return false;
+      }
+      if (preloadState.hash === songInfo.hash && preloadState.url && (Date.now() - preloadState.resolvedAt < PRELOAD_EXTERNAL_TTL_MS)) {
+        return false;
+      }
+
+      songInfo.qualities = extractQualities(songInfo);
+      const targetQuality = this.getBestAvailableQuality(songInfo);
+      if (getCachedUrl(songInfo.hash, targetQuality)) {
+        return true;
+      }
+
+      const dedupeKey = `${songInfo.hash}_${targetQuality}`;
+      const now = Date.now();
+      const lastAttempt = prefetchHistoryMap.get(dedupeKey);
+      if (lastAttempt && now - lastAttempt < PREFETCH_DEDUPE_TTL_MS) {
+        return false;
+      }
+      if (prefetchInFlightCount >= MAX_PREFETCH_CONCURRENCY) {
+        return false;
+      }
+      if (now - lastPrefetchDispatchAt < PREFETCH_MIN_INTERVAL_MS) {
+        return false;
+      }
+
+      prefetchHistoryMap.set(dedupeKey, now);
+      if (prefetchHistoryMap.size > 150) {
+        for (const [k, ts] of prefetchHistoryMap) {
+          if (now - ts >= PREFETCH_DEDUPE_TTL_MS) prefetchHistoryMap.delete(k);
+        }
+      }
+
+      lastPrefetchDispatchAt = now;
+      prefetchInFlightCount += 1;
+      try {
+        const res = await this.resolveSongUrl(songInfo, targetQuality);
+        if (res?.url) {
+          setCachedUrl(songInfo.hash, targetQuality, {
+            url: res.url,
+            quality: res.quality || targetQuality,
+            isPreview: false,
+            sourceInfo: res.sourceInfo || null,
+            ttlMs: EXTERNAL_URL_CACHE_TTL_MS,
+          });
+          return true;
+        }
+      } catch (_) {
+      } finally {
+        prefetchInFlightCount = Math.max(0, prefetchInFlightCount - 1);
+      }
+      return false;
+    },
+
     async triggerPreload() {
+      if (this._preloadTimer) {
+        clearTimeout(this._preloadTimer);
+        this._preloadTimer = null;
+      }
+
       const nextSong = this.calculateNextSong();
-      if (!nextSong || preloadState.hash === nextSong.hash) return;
-      if (isExternalImportSong(nextSong)) {
-        resetPreloadAudio();
+      if (!nextSong) return;
+
+      const isExternal = isExternalImportSong(nextSong);
+      const isFreshPreload = preloadState.hash === nextSong.hash && (
+        !isExternal || (Date.now() - (preloadState.resolvedAt || 0) < PRELOAD_EXTERNAL_TTL_MS)
+      );
+      if (isFreshPreload) return;
+
+      const runPreloadTask = async () => {
+        const currentNext = this.calculateNextSong();
+        if (!currentNext || currentNext.hash !== nextSong.hash) return;
+        try {
+          if (!currentNext.qualities) currentNext.qualities = extractQualities(currentNext);
+          await this.prepareAutoQuality(currentNext, null);
+          const res = await this.resolveSongUrl(currentNext, null);
+          const verifyNext = this.calculateNextSong();
+          if (!verifyNext || verifyNext.hash !== currentNext.hash) return;
+          if (res && res.url) {
+            setAudioSource(preloadAudio, res.url, shouldUseAudioProxy(this), currentNext.hash);
+            preloadAudio._sourceInfo = res.sourceInfo || null;
+            preloadAudio.load();
+
+            preloadState = {
+              hash: currentNext.hash,
+              quality: res.quality,
+              isPreview: res.isPreview,
+              url: res.url,
+              sourceInfo: res.sourceInfo || null,
+              resolvedAt: Date.now(),
+            };
+          }
+        } catch (e) {
+          preloadState.hash = null;
+        }
+      };
+
+      if (isExternal) {
+        this._preloadTimer = setTimeout(() => {
+          this._preloadTimer = null;
+          runPreloadTask();
+        }, 600);
         return;
       }
 
-      try {
-        if (!nextSong.qualities) nextSong.qualities = extractQualities(nextSong);
-        await this.prepareAutoQuality(nextSong, null);
-        const res = await this.resolveSongUrl(nextSong, null);
-        if (res && res.url) {
-          setAudioSource(preloadAudio, res.url, shouldUseAudioProxy(this), nextSong.hash);
-          preloadAudio.load(); 
-          
-          preloadState = {
-             hash: nextSong.hash,
-             quality: res.quality,
-             isPreview: res.isPreview,
-             url: res.url
-          };
-        }
-      } catch (e) {
-        preloadState.hash = null;
-      }
+      await runPreloadTask();
     },
 
     async playSong(rawSongInfo, targetQuality = null, maintainTime = 0, autoPlay = true, options = {}) {
       if (!rawSongInfo) return;
+      const playStartTs = typeof performance !== 'undefined' ? performance.now() : Date.now();
       const isFmTrack = !!options.isFmTrack;
       const silentQueueToast = !!options.silentQueueToast;
       const songInfo = prepareQueueSong(rawSongInfo) || rawSongInfo;
@@ -3177,6 +3412,7 @@ export const usePlayerStore = defineStore('player', {
       if (this._vipActionTimer) { clearTimeout(this._vipActionTimer); this._vipActionTimer = null; }
       if (this._playWatchdogTimer) { clearTimeout(this._playWatchdogTimer); this._playWatchdogTimer = null; }
       if (this._playbackProgressTimer) { clearTimeout(this._playbackProgressTimer); this._playbackProgressTimer = null; }
+      if (this._preloadTimer) { clearTimeout(this._preloadTimer); this._preloadTimer = null; }
 
       const thisPlayVersion = ++playVersion;
       this.isLoading = true;
@@ -3253,8 +3489,10 @@ export const usePlayerStore = defineStore('player', {
       const userStore = useUserStore();
       const autoTargetQuality = targetQuality;
 
-      // 1. 优先命中预加载实例：0ms 瞬切音频流与歌曲元数据
-      if (!isExternalImportSong(songInfo) && songInfo.hash === preloadState.hash && hasLoadedAudioSource(preloadAudio) && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
+      // 1. 优先命中预加载实例：0ms 瞬切音频流与歌曲元数据（含外部导入歌曲新鲜度校验）
+      const isExternalSong = isExternalImportSong(songInfo);
+      const isPreloadFresh = !isExternalSong || (Date.now() - (preloadState.resolvedAt || 0) < PRELOAD_EXTERNAL_TTL_MS);
+      if (!options._isWatchdogRetry && isPreloadFresh && songInfo.hash === preloadState.hash && hasLoadedAudioSource(preloadAudio) && (!autoTargetQuality || preloadState.quality === autoTargetQuality) && maintainTime === 0) {
           safePauseAudio(activeAudio);
           activeAudio.currentTime = 0;
           
@@ -3262,6 +3500,21 @@ export const usePlayerStore = defineStore('player', {
           activeAudio = preloadAudio;
           preloadAudio = tempAudio;
           activeAudio._songHash = songInfo.hash;
+          activeAudio._sourceInfo = preloadState.sourceInfo || activeAudio._sourceInfo || null;
+          activeAudio._playStartTs = autoPlay ? playStartTs : 0;
+          if (isExternalSong && preloadState.url) {
+            activeAudio._pendingCacheEntry = {
+              hash: songInfo.hash,
+              quality: preloadState.quality || this.getBestAvailableQuality(songInfo),
+              data: {
+                url: preloadState.url,
+                quality: preloadState.quality,
+                isPreview: preloadState.isPreview,
+                sourceInfo: preloadState.sourceInfo || null,
+                ttlMs: EXTERNAL_URL_CACHE_TTL_MS,
+              },
+            };
+          }
 
           this.currentSong = reactiveSong;
           this.currentQuality = preloadState.quality;
@@ -3281,15 +3534,16 @@ export const usePlayerStore = defineStore('player', {
           if (this.isCurrentSongPreview) this.showToast(getPreviewToastMessage(userStore));
 
           if (autoPlay) {
-             const playPromise = safePlayAudio(activeAudio);
+             const capturedLoadToken = bumpAudioLoadToken();
+             const targetAudio = activeAudio;
+             const playPromise = safePlayAudio(targetAudio);
              if (playPromise !== undefined) {
-                 playPromise.catch(() => {
-                   if (thisPlayVersion !== playVersion) return;
-                   this.isPlaying = false;
-                   this.syncTrayState();
+                 playPromise.catch((err) => {
+                   handlePlayPromiseRejection(this, err, thisPlayVersion, capturedLoadToken, targetAudio, '预加载播放失败');
                  });
              }
              this.isPlaying = true;
+             this._startPlaybackProgressWatchdog(thisPlayVersion, songInfo);
           } else {
              this.isPlaying = false;
           }
@@ -3299,6 +3553,7 @@ export const usePlayerStore = defineStore('player', {
           this.consecutiveErrorCount = 0;
 
           preloadState.hash = null;
+          preloadState.resolvedAt = 0;
           this.triggerPreload();
           this.syncTrayState();
           if (this.rememberState) {
@@ -3331,10 +3586,14 @@ export const usePlayerStore = defineStore('player', {
         this.failedSong = reactiveSong;
         const isVipSong = songInfo.is_vip || songInfo.is_paid;
         const currentUserStore = useUserStore();
-        if (isVipSong && !currentUserStore.isLoggedIn) {
+        if (isVipSong && !currentUserStore.isLoggedIn && !isExternalImportSong(songInfo)) {
           this.errorMessage = 'VIP 歌曲需要登录后播放';
+        } else if (reasonText === '播放请求超时') {
+          this.errorMessage = '音频请求超时，请检查网络或重试';
+        } else if (isExternalImportSong(songInfo)) {
+          this.errorMessage = '当前歌曲所有可用音源均无法播放，请尝试其他歌曲或切换音质';
         } else {
-          this.errorMessage = reasonText === '播放请求超时' ? '音频请求超时，请检查网络或重试' : '音频获取失败，请尝试其他歌曲';
+          this.errorMessage = '音频获取失败，请尝试其他歌曲';
         }
 
         if (!isSongChange && previousSong && hasLoadedAudioSource(activeAudio) && activeAudio._songHash === previousSong.hash) {
@@ -3379,7 +3638,7 @@ export const usePlayerStore = defineStore('player', {
             this.showToast('连续多首歌曲资源失效，已停止自动跳过');
             return;
           }
-          this.showToast('当前歌曲资源失效，自动为您播放下一首');
+          this.showToast('当前歌曲资源失效，自动为您播放下一首', { type: 'warning' });
           if (this._errorSkipTimer) clearTimeout(this._errorSkipTimer);
           this._errorSkipTimer = setTimeout(() => {
             this._errorSkipTimer = null;
@@ -3397,13 +3656,18 @@ export const usePlayerStore = defineStore('player', {
         pendingResolves.clear();
         triggerFallback('播放请求超时');
         playVersion++;
-      }, 15000);
+      }, 12000);
 
       try {
         await this.prepareAutoQuality(songInfo, targetQuality);
         if (thisPlayVersion !== playVersion) return;
 
-        const res = await this.resolveSongUrl(songInfo, targetQuality);
+        const externalRetryState = options._externalRetryState || null;
+        const res = await this.resolveSongUrl(songInfo, targetQuality, {
+          excludeSources: externalRetryState?.excludeSources || [],
+          excludeUrls: externalRetryState?.excludeUrls || [],
+          bypassCache: Boolean(options._isWatchdogRetry || externalRetryState),
+        });
         if (thisPlayVersion !== playVersion) return;
 
         if (res?.url) {
@@ -3412,8 +3676,28 @@ export const usePlayerStore = defineStore('player', {
           reactiveSong.qualities = { ...(songInfo.qualities || {}) };
           this.currentSong = reactiveSong;
           this.currentQuality = res.quality;
-          this.isCurrentSongPreview = res.isPreview; 
+          this.isCurrentSongPreview = res.isPreview;
+          if (this.volumeBoostEnabled && !audioGraphInitialized) {
+            ensureAudioOutputGraph();
+            this.applyAudioOutputSettings();
+          }
           setAudioSource(activeAudio, res.url, shouldUseAudioProxy(this), songInfo.hash);
+          activeAudio._playStartTs = autoPlay ? playStartTs : 0;
+          activeAudio._sourceInfo = res.sourceInfo || null;
+          activeAudio._externalRetryState = externalRetryState;
+          activeAudio._pendingCacheEntry = res._cacheMeta
+            ? {
+                hash: res._cacheMeta.hash,
+                quality: res._cacheMeta.quality,
+                data: {
+                  url: res.url,
+                  quality: res.quality,
+                  isPreview: res.isPreview,
+                  sourceInfo: res.sourceInfo || null,
+                  ttlMs: res.ttlMs || EXTERNAL_URL_CACHE_TTL_MS,
+                },
+              }
+            : null;
           console.log('[Player playSong] res:', JSON.stringify(res), 'activeAudio.src:', activeAudio.src);
           if (maintainTime === 0) this.currentTime = 0;
           if (res.isPreview && autoPlay) this.showToast(getPreviewToastMessage(userStore));
@@ -3463,14 +3747,12 @@ export const usePlayerStore = defineStore('player', {
         }
 
         if (autoPlay) {
-          const playPromise = safePlayAudio(activeAudio);
+          const capturedLoadToken = bumpAudioLoadToken();
+          const targetAudio = activeAudio;
+          const playPromise = safePlayAudio(targetAudio);
           if (playPromise !== undefined) {
             playPromise.catch(error => {
-              if (thisPlayVersion !== playVersion) return;
-              console.warn("播放被浏览器打断", error);
-              this.isPlaying = false;
-              this.isLoading = false;
-              this.syncTrayState();
+              handlePlayPromiseRejection(this, error, thisPlayVersion, capturedLoadToken, targetAudio, '播放被浏览器打断');
             });
           }
           this.isPlaying = true;
@@ -3699,6 +3981,35 @@ export const usePlayerStore = defineStore('player', {
         if (version !== playVersion || !this.isPlaying) return;
         if (activeAudio.currentTime === 0 && activeAudio.readyState <= 1 && hasLoadedAudioSource(activeAudio)) {
           console.warn('[Player Watchdog] Audio stalled at 00:00, attempting auto recovery...', activeAudio.src);
+          activeAudio._pendingCacheEntry = null;
+          if (songInfo) {
+            clearSongUrlCache(songInfo.hash);
+          }
+
+          if (songInfo && isExternalImportSong(songInfo)) {
+            const retryKey = normalizeSongKey(songInfo) || songInfo.hash || '';
+            if (retryKey && watchdogRetrySongKey === retryKey && watchdogRetryCount >= MAX_WATCHDOG_RETRIES) {
+              console.warn('[Player Watchdog] Max auto-recovery retries reached, stopping stalled playback:', retryKey);
+              watchdogRetrySongKey = '';
+              watchdogRetryCount = 0;
+              this.isLoading = false;
+              this.isPlaying = false;
+              this.syncTrayState();
+              this.handleSongEnd(true);
+              return;
+            }
+            watchdogRetryCount = (retryKey && watchdogRetrySongKey === retryKey) ? watchdogRetryCount + 1 : 1;
+            watchdogRetrySongKey = retryKey;
+            const nextRetryState = buildNextExternalRetryState(activeAudio, activeAudio._externalRetryState);
+            this.playSong(songInfo, null, 0, true, {
+              silentQueueToast: true,
+              isFmTrack: this.isFmModePlaylist,
+              _isWatchdogRetry: true,
+              _externalRetryState: nextRetryState,
+            });
+            return;
+          }
+
           if (activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
             activeAudio.dispatchEvent(new Event('error'));
           } else if (songInfo) {
@@ -3715,11 +4026,10 @@ export const usePlayerStore = defineStore('player', {
             }
             watchdogRetryCount = (retryKey && watchdogRetrySongKey === retryKey) ? watchdogRetryCount + 1 : 1;
             watchdogRetrySongKey = retryKey;
-            clearSongUrlCache(songInfo.hash);
             this.playSong(songInfo, null, 0, true, { silentQueueToast: true, isFmTrack: this.isFmModePlaylist, _isWatchdogRetry: true });
           }
         }
-      }, 6000);
+      }, 7500);
     },
 
     mediaPlay() {
@@ -3732,26 +4042,34 @@ export const usePlayerStore = defineStore('player', {
         const retrySong = this.failedSong || this.currentSong;
         this.clearError();
         if (retrySong) {
+          clearSongUrlCache(retrySong.hash);
           this.playSong(retrySong, null, 0, true, {
             silentQueueToast: true,
-            isFmTrack: this.isFmModePlaylist
+            isFmTrack: this.isFmModePlaylist,
+            _isWatchdogRetry: true,
           });
         }
         return;
       }
       const isSourceDeadOrStalled = activeAudio.currentTime === 0 && activeAudio.readyState <= 1;
       if (!hasLoadedAudioSource(activeAudio) || (activeAudio._songHash && activeAudio._songHash !== this.currentSong.hash) || isSourceDeadOrStalled) {
+        if (isSourceDeadOrStalled) {
+          clearSongUrlCache(this.currentSong.hash);
+        }
         this.playSong(this.currentSong, null, this.currentTime, true, {
           silentQueueToast: true,
-          isFmTrack: this.isFmModePlaylist
+          isFmTrack: this.isFmModePlaylist,
+          _isWatchdogRetry: isSourceDeadOrStalled,
         });
         return;
       }
-      const playPromise = safePlayAudio(activeAudio);
+      const capturedLoadToken = bumpAudioLoadToken();
+      const targetAudio = activeAudio;
+      const capturedPlayVersion = playVersion;
+      const playPromise = safePlayAudio(targetAudio);
       if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          this.isPlaying = false;
-          this.syncTrayState();
+        playPromise.catch((err) => {
+          handlePlayPromiseRejection(this, err, capturedPlayVersion, capturedLoadToken, targetAudio, '恢复播放失败');
         });
       }
       this.isPlaying = true;

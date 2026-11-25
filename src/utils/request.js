@@ -72,7 +72,7 @@ const request = axios.create({
 
 request.interceptors.request.use(
   (config) => {
-    if ((config.method || 'get').toLowerCase() === 'get') {
+    if ((config.method || 'get').toLowerCase() === 'get' && !config.cacheable) {
       if (!config.params || !Object.prototype.hasOwnProperty.call(config.params, 'timestamp')) {
         config.params = { ...config.params, timestamp: Date.now() };
       }

@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, protocol, net, screen, nativeTheme
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { fork } from 'child_process';
+import { StringDecoder } from 'string_decoder';
 import fs from 'fs';
 import http from 'http'; 
 import pkg from 'electron-updater';
@@ -211,13 +212,16 @@ async function startLocalServer() {
       serverCwd = path.join(__dirname, '../server'); 
     }
     let serverErrorLog = '';
+    const stdoutDecoder = new StringDecoder('utf8');
+    const stderrDecoder = new StringDecoder('utf8');
     serverProcess = fork(serverPath, [], {
       cwd: serverCwd, 
       env: { ...process.env, PORT: 10420, HOST: '127.0.0.1', platform: 'lite', ELECTRON_RUN_AS_NODE: '1' },
       silent: true 
     });
     serverProcess.stderr.on('data', (data) => {
-      const msg = data.toString();
+      const msg = stderrDecoder.write(data);
+      if (!msg) return;
       serverErrorLog += msg;
       if (msg.includes('EADDRINUSE')) {
         isLocalServerReady().then((ready) => {
@@ -228,7 +232,17 @@ async function startLocalServer() {
       console.error('[Server]', msg);
     });
     serverProcess.stdout.on('data', (data) => {
-      console.log('[Server]', data.toString());
+      const msg = stdoutDecoder.write(data);
+      if (msg) console.log('[Server]', msg);
+    });
+    serverProcess.on('close', () => {
+      const tailOut = stdoutDecoder.end();
+      if (tailOut) console.log('[Server]', tailOut);
+      const tailErr = stderrDecoder.end();
+      if (tailErr) {
+        serverErrorLog += tailErr;
+        console.error('[Server]', tailErr);
+      }
     });
     serverProcess.on('exit', (code) => {
       if (!isQuitting && app.isPackaged && code !== 0 && code !== null) {

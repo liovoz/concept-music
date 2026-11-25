@@ -1,8 +1,14 @@
-import { spawn } from 'child_process';
+import { execFileSync, spawn } from 'child_process';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { verifySetup } from './check-setup.mjs';
+
+if (process.platform === 'win32') {
+  try {
+    execFileSync('cmd.exe', ['/d', '/c', 'chcp 65001 >nul'], { stdio: 'inherit' });
+  } catch (_) {}
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

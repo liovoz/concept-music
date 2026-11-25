@@ -98,14 +98,43 @@ const neteaseGet = (useAxios, url, params = {}) => useAxios({
   notSignature: true,
 });
 
-const getPlaylistDetail = async (useAxios, id) => {
+const PLAYLIST_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
+const MAX_PLAYLIST_DETAIL_CACHE = 30;
+const playlistDetailCache = new Map();
+
+const getPlaylistDetail = async (useAxios, id, options = {}) => {
+  const key = String(id || '').trim();
+  const forceRefresh = Boolean(options.forceRefresh);
+  if (key && !forceRefresh) {
+    const cached = playlistDetailCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      playlistDetailCache.delete(key);
+      playlistDetailCache.set(key, cached);
+      return cached.data;
+    }
+    if (cached) playlistDetailCache.delete(key);
+  }
+
   const res = await neteaseGet(useAxios, '/api/v6/playlist/detail', {
     id,
     n: 100000,
     s: 8,
     timestamp: Date.now(),
   });
-  return res.body || res.data;
+  const data = res.body || res.data;
+  if (key && data?.code === 200 && data?.playlist?.id) {
+    playlistDetailCache.delete(key);
+    playlistDetailCache.set(key, {
+      expiresAt: Date.now() + PLAYLIST_DETAIL_CACHE_TTL_MS,
+      data,
+    });
+    while (playlistDetailCache.size > MAX_PLAYLIST_DETAIL_CACHE) {
+      const oldest = playlistDetailCache.keys().next().value;
+      if (oldest === undefined) break;
+      playlistDetailCache.delete(oldest);
+    }
+  }
+  return data;
 };
 
 const getSongDetail = async (useAxios, ids = []) => {

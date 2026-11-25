@@ -159,7 +159,7 @@
               </div>
 
               <div class="space-y-1 w-full">
-                <div v-for="(song, index) in songs" :key="song._hash" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 group transition-colors cursor-pointer no-drag min-w-0">
+                <div v-for="(song, index) in songs" :key="song._hash" @mouseenter="handleSongHover(song)" @mouseleave="cancelSongHover" @contextmenu="handleSongContextMenu($event, song)" @dblclick="handlePlay(song)" v-squircle="'lg'" class="flex items-center px-4 py-3 rounded-[14px] hover:bg-emerald-50/60 dark:hover:bg-emerald-500/10 group transition-colors cursor-pointer no-drag min-w-0">
                   <div class="w-10 text-center type-numeric-sm text-gray-400 group-hover:hidden flex-shrink-0">{{ (index + 1).toString().padStart(2, '0') }}</div>
                   <div class="w-10 text-center hidden group-hover:flex justify-center text-emerald-600 dark:text-emerald-400 flex-shrink-0" @click.stop="handlePlay(song)">
                     <AppIcon name="play" class="w-5 h-5 ml-[2px]" />
@@ -432,6 +432,40 @@ const refreshSavedPlaylists = () => {
 
 const getPlaylistCacheId = (id) => String(id || '').trim();
 
+let hoverPrefetchTimer = null;
+let firstTrackPrefetchTimer = null;
+
+const cancelSongHover = () => {
+  if (hoverPrefetchTimer) {
+    clearTimeout(hoverPrefetchTimer);
+    hoverPrefetchTimer = null;
+  }
+};
+
+const handleSongHover = (song) => {
+  cancelSongHover();
+  if (!song) return;
+  hoverPrefetchTimer = setTimeout(() => {
+    hoverPrefetchTimer = null;
+    store.prefetchSongUrl(buildQQPlayPayload(song, playlistInfo.value.cover || defaultImg));
+  }, 180);
+};
+
+const scheduleFirstTrackPrefetch = () => {
+  if (firstTrackPrefetchTimer) {
+    clearTimeout(firstTrackPrefetchTimer);
+    firstTrackPrefetchTimer = null;
+  }
+  const firstSong = songs.value?.[0];
+  if (!firstSong) return;
+  firstTrackPrefetchTimer = setTimeout(() => {
+    firstTrackPrefetchTimer = null;
+    if (songs.value?.[0]) {
+      store.prefetchSongUrl(buildQQPlayPayload(songs.value[0], playlistInfo.value.cover || defaultImg));
+    }
+  }, 500);
+};
+
 const rememberCurrentPlaylist = () => {
   const id = getPlaylistCacheId(currentId.value);
   if (!id || !playlistInfo.value?.id) return;
@@ -464,6 +498,7 @@ const restoreCachedPlaylist = (id) => {
   cancelPlayAllHydration();
   store.cancelPlayAllHydration();
   nextTick(() => setupObserver());
+  scheduleFirstTrackPrefetch();
   return true;
 };
 
@@ -568,14 +603,14 @@ const getImportErrorMessage = (error, target) => {
   return '导入失败，未找到该企鹅歌单或网络暂时异常';
 };
 
-const fetchTracks = async (targetPage = 1, targetId = currentId.value) => {
+const fetchTracks = async (targetPage = 1, targetId = currentId.value, options = {}) => {
   const res = await request.get('/qq/playlist/track/all', {
     params: {
       id: targetId,
       page: targetPage,
       limit: pageSize,
-      timestamp: Date.now(),
     },
+    cacheable: !options.forceRefresh,
   });
   const nextSongs = normalizeQQSongs(res?.songs || []);
   hasMore.value = !!res?.hasMore;
@@ -624,13 +659,19 @@ const fetchPlaylist = async (target, options = {}) => {
   songs.value = [];
 
   try {
-    const params = { timestamp: Date.now() };
+    const params = {
+      page: 1,
+      limit: pageSize,
+    };
     if (targetId) params.id = targetId;
     if (targetUrl) params.url = targetUrl;
 
-    const detail = await request.get('/qq/playlist/detail', { params });
+    const trackRes = await request.get('/qq/playlist/track/all', {
+      params,
+      cacheable: !forceRefresh,
+    });
     if (requestSeq !== playlistRequestSeq) return;
-    const nextPlaylistInfo = normalizeQQPlaylistInfo(detail?.playlist || {});
+    const nextPlaylistInfo = normalizeQQPlaylistInfo(trackRes?.playlist || {});
     if (!nextPlaylistInfo.id) {
       const notFoundError = new Error('未找到该企鹅歌单');
       notFoundError.code = 'QQ_PLAYLIST_NOT_FOUND';
@@ -641,8 +682,8 @@ const fetchPlaylist = async (target, options = {}) => {
     currentId.value = realId;
     syncPlaylistScrollPositions(realId);
 
-    const nextSongs = await fetchTracks(1, realId);
-    if (requestSeq !== playlistRequestSeq) return;
+    const nextSongs = normalizeQQSongs(trackRes?.songs || []);
+    hasMore.value = !!trackRes?.hasMore;
     playlistInfo.value = nextPlaylistInfo;
     songs.value = nextSongs;
     if (saveSummary) savedPlaylists.value = saveQQPlaylistSummary(nextPlaylistInfo);
@@ -650,6 +691,7 @@ const fetchPlaylist = async (target, options = {}) => {
     rememberCurrentPlaylist();
     if (isManualImport) inputValue.value = '';
     nextTick(() => setupObserver());
+    scheduleFirstTrackPrefetch();
     router.replace({ name: 'QQImportDetail', params: { id: realId } });
     if (notifySuccess) {
       const count = nextPlaylistInfo.trackCount || nextSongs.length;
@@ -767,7 +809,8 @@ const playAll = () => {
     pageSize,
     loadPage: async (nextPage) => {
       const res = await request.get('/qq/playlist/track/all', {
-        params: { id: routeId, page: nextPage, limit: pageSize, timestamp: Date.now() },
+        params: { id: routeId, page: nextPage, limit: pageSize },
+        cacheable: true,
         silent: true,
       });
       const normalized = normalizeQQSongs(res?.songs || []);
@@ -917,6 +960,11 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  cancelSongHover();
+  if (firstTrackPrefetchTimer) {
+    clearTimeout(firstTrackPrefetchTimer);
+    firstTrackPrefetchTimer = null;
+  }
   scrollContainerRef.value?.removeEventListener('scroll', queueSavedPlaylistListHeightUpdate);
   window.removeEventListener('resize', queueSavedPlaylistListHeightUpdate);
   if (observer) observer.disconnect();

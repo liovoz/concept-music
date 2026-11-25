@@ -12,7 +12,8 @@ module.exports = async (params, useAxios) => {
   const offset = Number.isFinite(Number(params?.offset)) ? Math.max(0, Number(params.offset)) : (page - 1) * limit;
 
   try {
-    const detail = await getPlaylistDetail(useAxios, id);
+    const forceRefresh = params?.forceRefresh === '1' || params?.forceRefresh === 'true';
+    const detail = await getPlaylistDetail(useAxios, id, { forceRefresh });
     const playlist = detail?.playlist || {};
     if (detail?.code !== 200 || !playlist?.id || !playlist?.name?.trim()) {
       return fail(404, '未找到该网易云歌单，请检查链接或 ID 是否存在');

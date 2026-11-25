@@ -506,8 +506,8 @@
                 @click="isPlaylistBatchMode ? toggleSelectSongKey(item.normKey) : undefined"
                 @dblclick="!isPlaylistBatchMode && handleRowDblClick(item.song)"
                 @contextmenu="handlePlaylistContextMenu($event, item.song, item.realIndex)"
-                @mouseenter="playlistHoverIndex = item.realIndex"
-                @mouseleave="playlistHoverIndex = -1"
+                @mouseenter="handleRowMouseEnter(item.song, item.realIndex)"
+                @mouseleave="handleRowMouseLeave"
                 class="group w-full py-[3px] flex items-center"
                 :style="{ height: `${PLAYLIST_ROW_HEIGHT}px` }"
                 :class="isPlaylistBatchMode ? 'cursor-pointer' : 'cursor-default'"
@@ -1667,6 +1667,30 @@ const scrollToCurrentSong = async (withFlash = false) => {
   }
 };
 
+let rowHoverPrefetchTimer = null;
+
+const cancelRowHoverPrefetch = () => {
+  if (rowHoverPrefetchTimer) {
+    clearTimeout(rowHoverPrefetchTimer);
+    rowHoverPrefetchTimer = null;
+  }
+};
+
+const handleRowMouseEnter = (song, realIndex) => {
+  playlistHoverIndex.value = realIndex;
+  cancelRowHoverPrefetch();
+  if (isPlaylistBatchMode.value || !song) return;
+  rowHoverPrefetchTimer = setTimeout(() => {
+    rowHoverPrefetchTimer = null;
+    store.prefetchSongUrl(song);
+  }, 180);
+};
+
+const handleRowMouseLeave = () => {
+  playlistHoverIndex.value = -1;
+  cancelRowHoverPrefetch();
+};
+
 const handleRowPlayClick = (song) => {
   if (isCurrentRowSong(song)) {
     store.togglePlay();
@@ -2085,6 +2109,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  cancelRowHoverPrefetch();
   resetClearConfirm();
   if (locatedFlashTimer) clearTimeout(locatedFlashTimer);
   if (discAnimFrame) cancelAnimationFrame(discAnimFrame);

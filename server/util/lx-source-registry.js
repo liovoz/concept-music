@@ -2,8 +2,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const BUILTIN_SOURCE_NAMES = [
-  '星海音乐源 v2.3.18.js',
-  '墨澜音乐源v2.3.6.js',
+  '星海音乐源 v2.3.20.js',
+  '墨澜音乐源v2.3.8.js',
   'stellarwave-v0.0.14.js',
 ];
 

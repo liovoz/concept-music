@@ -2,13 +2,21 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const https = require('node:https');
-const dns = require('node:dns').promises;
-const net = require('node:net');
 const express = require('express');
 const decode = require('safe-decode-uri-component');
 const { cookieToJson, randomString, getGuid, calculateMid } = require('./util/util');
 const { cryptoMd5 } = require('./util/crypto');
 const { createRequest } = require('./util/request');
+const {
+  sharedHttpAgent,
+  sharedHttpsAgent,
+  isPrivateAddress,
+  getUpstreamReferer,
+  validateProxyAudioUrl,
+  isDisallowedMediaResponse,
+} = require('./util/audio-url-guard');
+const { listSources } = require('./util/lx-source-registry');
+const { warmupSource } = require('./util/lx-source-runner');
 const dotenv = require('dotenv');
 const cache = require('./util/apicache').middleware;
 
@@ -30,26 +38,6 @@ const guid = cryptoMd5(getGuid());
 const serverDev = randomString(10).toUpperCase();
 let globalDfid = '';
 
-const isPrivateAddress = (address) => {
-  if (!address) return true;
-  if (net.isIPv4(address)) {
-    const parts = address.split('.').map(Number);
-    return (
-      parts[0] === 10 ||
-      parts[0] === 127 ||
-      (parts[0] === 169 && parts[1] === 254) ||
-      (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
-      (parts[0] === 192 && parts[1] === 168) ||
-      parts[0] === 0
-    );
-  }
-  if (net.isIPv6(address)) {
-    const normalized = address.toLowerCase();
-    return normalized === '::1' || normalized.startsWith('fc') || normalized.startsWith('fd') || normalized.startsWith('fe80:');
-  }
-  return true;
-};
-
 const setCorsHeaders = (res) => {
   res.set({
     'Access-Control-Allow-Origin': '*',
@@ -57,63 +45,6 @@ const setCorsHeaders = (res) => {
     'Access-Control-Allow-Headers': 'Range,Content-Type,Accept-Ranges,Origin,User-Agent',
     'Access-Control-Expose-Headers': 'Content-Length,Content-Range,Accept-Ranges',
   });
-};
-
-const getUpstreamReferer = (hostname) => {
-  const host = (hostname || '').toLowerCase();
-  if (host.endsWith('qq.com') || host.endsWith('qpic.cn') || host.includes('qqmusic')) {
-    return 'https://y.qq.com/';
-  }
-  if (host.endsWith('kuwo.cn')) {
-    return 'https://www.kuwo.cn/';
-  }
-  if (host.endsWith('126.net') || host.endsWith('163.com')) {
-    return 'https://music.163.com/';
-  }
-  if (host.endsWith('kugou.com')) {
-    return 'https://www.kugou.com/';
-  }
-  if (host.endsWith('migu.cn')) {
-    return 'https://music.migu.cn/';
-  }
-  return undefined;
-};
-
-const validateProxyAudioUrl = async (rawUrl) => {
-  let target;
-  try {
-    target = new URL(rawUrl);
-  } catch (e) {
-    throw Object.assign(new Error('Invalid audio url'), { statusCode: 400 });
-  }
-
-  if (!['http:', 'https:'].includes(target.protocol)) {
-    throw Object.assign(new Error('Unsupported audio url protocol'), { statusCode: 400 });
-  }
-
-  const hostname = target.hostname.toLowerCase();
-  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
-    throw Object.assign(new Error('Local audio proxy targets are not allowed'), { statusCode: 403 });
-  }
-
-  if (net.isIP(hostname)) {
-    if (isPrivateAddress(hostname)) {
-      throw Object.assign(new Error('Private audio proxy targets are not allowed'), { statusCode: 403 });
-    }
-    return target;
-  }
-
-  try {
-    const resolved = await dns.lookup(hostname, { all: true });
-    if (!resolved.length || resolved.some(item => isPrivateAddress(item.address))) {
-      throw Object.assign(new Error('Private audio proxy targets are not allowed'), { statusCode: 403 });
-    }
-  } catch (err) {
-    if (err.statusCode) throw err;
-    // Transient DNS lookup error - let the upstream request attempt proceed
-  }
-
-  return target;
 };
 
 const proxyAudioRequest = async (rawUrl, req, res, redirects = 0, retryCount = 0) => {
@@ -154,9 +85,9 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0, retryCount = 0
   let headerTimeout = setTimeout(() => {
     headerTimeout = null;
     if (!upstreamReq.destroyed) {
-      upstreamReq.destroy(new Error('Audio proxy upstream header timeout (10000ms)'));
+      upstreamReq.destroy(new Error('Audio proxy upstream header timeout (5000ms)'));
     }
-  }, 10000);
+  }, 5000);
 
   const clearHeaderTimeout = () => {
     if (headerTimeout) {
@@ -180,7 +111,9 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0, retryCount = 0
   const requestOptions = {
     method: 'GET',
     headers: upstreamHeaders,
-    ...(retryCount > 0 ? { agent: false } : {}),
+    agent: retryCount > 0
+      ? false
+      : (target.protocol === 'https:' ? sharedHttpsAgent : sharedHttpAgent),
   };
 
   upstreamReq = client.request(target, requestOptions, (upstreamRes) => {
@@ -211,10 +144,16 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0, retryCount = 0
     }
 
     const contentType = (upstreamRes.headers['content-type'] || 'application/octet-stream').toLowerCase();
-    const isHtmlOrText = contentType.includes('text/html') || contentType.includes('text/plain') || contentType.includes('application/json');
-    const hasMediaClues = upstreamRes.headers['content-range'] || upstreamRes.headers['accept-ranges'] === 'bytes' || Number(upstreamRes.headers['content-length']) > 10000;
 
-    if (isHtmlOrText && !hasMediaClues) {
+    if (statusCode >= 400) {
+      res.off('close', onClientClose);
+      upstreamRes.resume();
+      setCorsHeaders(res);
+      res.status(statusCode).send({ code: statusCode, msg: `Audio proxy upstream returned ${statusCode}` });
+      return;
+    }
+
+    if (isDisallowedMediaResponse(statusCode, upstreamRes.headers)) {
       res.off('close', onClientClose);
       upstreamRes.resume();
       setCorsHeaders(res);
@@ -552,6 +491,12 @@ async function consturctServer(moduleDefs) {
       if (dfid && typeof dfid === 'string' && dfid.length >= 16 && dfid !== '-' && dfid !== 'deleted') {
         globalDfid = dfid.trim();
         console.log('[Server] Device registered on startup, dfid:', globalDfid);
+      }
+    } catch (_) {}
+    try {
+      const warmupTargets = [...listSources('Netease'), ...listSources('QQ')];
+      for (const src of warmupTargets) {
+        warmupSource(src);
       }
     } catch (_) {}
   });
