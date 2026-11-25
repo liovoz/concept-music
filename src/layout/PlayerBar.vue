@@ -153,8 +153,22 @@
            </div>
          </div>
        </div>
-       <button ref="playlistBtnRef" @click="store.togglePlaylist" class="no-drag transition-colors relative hover:text-blue-600 flex-shrink-0" v-tooltip="'播放列表'">
-         <AppIcon name="queue" class="w-5 h-5" />
+       <button
+         ref="playlistBtnRef"
+         type="button"
+         @click="store.togglePlaylist"
+         v-squircle="'sm'"
+         class="no-drag cursor-pointer transition-colors relative w-8 h-7 flex items-center justify-center rounded-md border flex-shrink-0 focus:outline-none"
+         :class="store.isPlaylistVisible && store.isFmModePlaylist
+           ? 'border-purple-200 bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:border-purple-500/35 dark:text-purple-400'
+           : store.isPlaylistVisible
+             ? 'border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:border-blue-500/30 dark:text-blue-400'
+             : 'border-transparent hover:border-gray-200 hover:bg-gray-50 dark:hover:border-white/[0.08] dark:hover:bg-[#232325] text-gray-600 hover:text-blue-600 dark:text-[#b4b4ba] dark:hover:text-[#ededed]'"
+         v-tooltip="store.isFmModePlaylist ? '私人FM电台' : '播放列表'"
+         :aria-label="store.isFmModePlaylist ? '私人FM电台面板' : '播放列表'"
+         :aria-expanded="store.isPlaylistVisible"
+       >
+         <AppIcon name="queue" class="w-[18px] h-[18px]" />
        </button>
 
        <div class="flex items-center space-x-2 group w-32 flex-shrink-0">
@@ -172,72 +186,78 @@
        </div>
     </div>
 
-    <transition name="slide-up">
+    <transition name="playlist-pop">
       <div
         v-show="store.isPlaylistVisible"
         ref="playlistPanelRef"
-        v-squircle="'xl'"
-        class="absolute bottom-24 right-6 w-[420px] min-h-[390px] max-h-[68vh] bg-white/95 dark:bg-[#19191b]/95 backdrop-blur-2xl border border-gray-100 dark:border-white/[0.08] rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_18px_56px_rgba(0,0,0,0.65)] flex flex-col z-[90] overflow-hidden text-gray-800 dark:text-[#ededed]"
+        class="absolute bottom-[92px] right-6 w-[380px] max-h-[min(500px,58vh)] rounded-[18px] z-[90] origin-bottom-right outline-none shadow-[0_2px_6px_rgba(15,23,42,0.06),0_14px_32px_-4px_rgba(15,23,42,0.14),0_30px_64px_-12px_rgba(15,23,42,0.18)] dark:shadow-[0_4px_14px_rgba(0,0,0,0.5),0_22px_58px_-8px_rgba(0,0,0,0.8)]"
         tabindex="-1"
         @keydown.escape="handlePlaylistEscape"
       >
+        <div
+          v-squircle="'xl'"
+          class="w-full max-h-[min(500px,58vh)] rounded-[18px] flex flex-col overflow-hidden bg-[#f8fafc]/[0.98] dark:bg-[#1b1b1e]/[0.98] backdrop-blur-xl backdrop-saturate-150 border text-slate-800 dark:text-[#ededed] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+          :class="store.isFmModePlaylist ? 'border-purple-200/90 dark:border-purple-400/20' : 'min-h-[340px] border-slate-300/80 dark:border-white/[0.14]'"
+        >
         <!-- 私人FM电台独立播放面板 -->
         <template v-if="store.isFmModePlaylist">
-          <div class="px-5 py-3.5 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-purple-50/60 dark:bg-purple-950/25 gap-2 flex-shrink-0">
-            <div class="flex items-center min-w-0 gap-2">
-              <span class="text-base">📻</span>
-              <h3 class="type-body-md text-gray-800 dark:text-[#ededed] truncate">私人FM电台</h3>
-              <span class="px-2 py-0.5 rounded-full type-meta-micro bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-700/50 shrink-0">
+          <div class="px-5 py-3.5 border-b border-purple-200/60 dark:border-white/[0.09] flex items-center justify-between bg-gradient-to-r from-purple-50/90 via-white/95 to-white/95 dark:from-purple-950/35 dark:via-[#222226]/95 dark:to-[#222226]/95 gap-3 flex-shrink-0">
+            <div class="flex items-center min-w-0 gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-purple-100/90 dark:bg-purple-500/20 border border-purple-200/80 dark:border-purple-400/30 text-purple-600 dark:text-purple-300 flex items-center justify-center flex-shrink-0">
+                <AppIcon name="personal-fm" class="w-4 h-4" />
+              </span>
+              <h3 class="type-heading-md text-slate-900 dark:text-[#ededed] leading-tight truncate">私人FM电台</h3>
+              <span class="px-2 py-0.5 rounded-full type-meta-micro bg-purple-100/90 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border border-purple-200/90 dark:border-purple-400/30 shrink-0">
                 独立播放中
               </span>
             </div>
             <button
               type="button"
               @click.stop="store.isPlaylistVisible = false"
-              class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-[#85858b] dark:hover:text-[#ededed] hover:bg-gray-100 dark:hover:bg-[#232325] transition-colors cursor-pointer no-drag"
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-[#98989f] dark:hover:text-[#ededed] hover:bg-slate-200/60 dark:hover:bg-white/[0.08] transition-colors cursor-pointer no-drag active:scale-95 flex-shrink-0"
               v-tooltip="'收起面板'"
             >
-              <AppIcon name="close" class="w-3.5 h-3.5" />
+              <AppIcon name="close" class="w-4 h-4" />
             </button>
           </div>
 
-          <div class="p-6 flex-1 flex flex-col justify-between overflow-y-auto custom-scrollbar gap-5">
-            <div v-if="store.currentSong" class="p-4 rounded-xl bg-purple-50/40 dark:bg-[#232325] border border-purple-100/70 dark:border-white/[0.08] flex items-center gap-3.5">
+          <div class="p-4 flex flex-col overflow-y-auto custom-scrollbar gap-3.5">
+            <div v-if="store.currentSong" class="p-3.5 rounded-xl bg-white dark:bg-[#232326] border border-purple-200/75 dark:border-purple-500/25 shadow-[0_1px_3px_rgba(15,23,42,0.05)] dark:shadow-none flex items-center gap-3.5">
               <img
                 :src="store.currentSong.cover || defaultImg"
                 :alt="store.currentSong.name"
-                class="w-14 h-14 rounded-lg object-cover shadow-sm bg-gray-100 dark:bg-[#19191b] flex-shrink-0"
+                class="w-14 h-14 rounded-lg object-cover shadow-sm ring-1 ring-black/5 dark:ring-white/10 bg-slate-100 dark:bg-[#19191b] flex-shrink-0"
               />
               <div class="flex-1 min-w-0">
-                <div class="type-body-md text-gray-900 dark:text-[#ededed] truncate" v-tooltip="store.currentSong.name">
+                <div class="type-body-md text-slate-900 dark:text-[#ededed] truncate" v-tooltip="store.currentSong.name">
                   {{ store.currentSong.name }}
                 </div>
-                <div class="type-meta-base text-gray-500 dark:text-[#a1a1a6] truncate mt-1">
+                <div class="type-meta-base text-slate-500 dark:text-[#a1a1a6] truncate mt-1">
                   {{ store.currentSong.singer || '未知歌手' }}
                 </div>
               </div>
               <button
                 type="button"
                 @click.stop="store.togglePlay()"
-                class="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shadow-md transition-transform active:scale-95 flex-shrink-0 cursor-pointer no-drag"
+                class="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 text-white flex items-center justify-center shadow-md shadow-purple-500/25 dark:shadow-none transition-[transform,background-color] active:scale-95 flex-shrink-0 cursor-pointer no-drag"
               >
                 <AppIcon :name="store.isPlaying ? 'pause' : 'play'" class="w-4 h-4" :class="store.isPlaying ? '' : 'ml-0.5'" />
               </button>
             </div>
 
-            <div class="p-4 rounded-xl bg-gray-50/80 dark:bg-[#141415] border border-gray-100 dark:border-white/[0.08] type-meta-base text-gray-600 dark:text-[#b4b4ba] space-y-2">
+            <div class="p-3.5 rounded-xl bg-slate-100/80 dark:bg-[#141415]/90 border border-slate-200/80 dark:border-white/[0.07] type-meta-base text-slate-600 dark:text-[#b4b4ba] space-y-2">
               <div class="flex items-start gap-2">
-                <AppIcon name="info" class="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                <AppIcon name="info" class="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
                 <span class="leading-relaxed">
                   私人FM根据算法智能实时推荐歌曲，后续推荐随播放自动生成，不占用常规播放队列。
                 </span>
               </div>
-              <div v-if="store.playlist.length > 0" class="pt-2 border-t border-gray-100 dark:border-white/[0.08] type-meta-base text-gray-600 dark:text-[#b4b4ba]">
+              <div v-if="store.playlist.length > 0" class="pt-2 border-t border-slate-200/80 dark:border-white/[0.08] type-meta-base text-slate-600 dark:text-[#b4b4ba]">
                 常规播放列表（{{ store.playlist.length }}首）已安全保留，退出电台后即可随时恢复。
               </div>
             </div>
 
-            <div class="flex flex-col gap-2.5 pt-2">
+            <div v-if="hasFmDrawerActions" class="flex flex-col gap-2 pt-0.5">
               <button
                 v-if="route.path !== '/fm'"
                 type="button"
@@ -252,9 +272,9 @@
                 v-if="store.hasRegularPlaylistBackup || store.playlist.length > 0"
                 type="button"
                 @click.stop="handleRestoreFromFmDrawer"
-                class="w-full py-2.5 px-4 rounded-xl type-body-sm font-medium bg-white hover:bg-gray-50 text-gray-700 dark:bg-[#232325] dark:hover:bg-[#2c2c2f] dark:text-[#ededed] border border-gray-200 dark:border-white/[0.08] transition-colors flex items-center justify-center gap-2 cursor-pointer no-drag active:scale-[0.98]"
+                class="w-full py-2.5 px-4 rounded-xl type-body-sm font-medium bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 dark:bg-[#232326] dark:hover:bg-[#2c2c30] dark:text-[#ededed] border border-slate-300/80 dark:border-white/[0.12] shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none transition-colors flex items-center justify-center gap-2 cursor-pointer no-drag active:scale-[0.98]"
               >
-                <AppIcon name="playlist" class="w-4 h-4 text-purple-500" />
+                <AppIcon name="playlist" class="w-4 h-4 text-purple-500 dark:text-purple-400" />
                 <span>恢复常规播放列表 ({{ store.playlist.length }}首)</span>
               </button>
             </div>
@@ -263,87 +283,111 @@
 
         <!-- 常规播放队列面板 -->
         <template v-else>
-        <!-- 顶栏：标题 + 容量状态 + 快捷管理按钮 -->
-        <div class="px-5 py-3.5 border-b border-gray-100 dark:border-white/[0.08] flex items-center justify-between bg-gray-50/50 dark:bg-[#232325]/60 gap-2 flex-shrink-0">
-          <div class="flex items-center min-w-0 gap-1.5">
-            <h3 class="type-body-md text-gray-800 dark:text-[#ededed] truncate">
-              当前播放队列
-            </h3>
-            <span
-              class="type-numeric-sm flex-shrink-0"
-              :class="isPlaylistNearCap ? 'text-amber-500 dark:text-amber-400' : 'text-gray-400 dark:text-[#a1a1a6]'"
-              v-tooltip="`当前队列容量上限：${store.maxPlaylistSize} 首（可在设置中调整）`"
+        <!-- 顶栏与吸顶辅助工具栏容器（滚动时统一投影分离） -->
+        <div
+          class="relative z-[2] flex-shrink-0 transition-shadow duration-200"
+          :class="isPlaylistScrolled ? 'shadow-[0_6px_16px_-4px_rgba(15,23,42,0.10)] dark:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.55)]' : ''"
+        >
+        <!-- 双层舒展头部：上层标题+容量+收起 / 下层独立工具操作栏 -->
+        <div class="border-b border-slate-200/85 dark:border-white/[0.09] bg-white/95 dark:bg-[#222226]/95">
+          <!-- 第一层：主标题 + 容量胶囊 + 收起按钮 -->
+          <div class="px-5 pt-4 pb-2.5 flex items-center justify-between gap-2">
+            <div class="flex items-center min-w-0 gap-2">
+              <h3 class="type-heading-md text-slate-900 dark:text-[#ededed] leading-tight truncate">
+                当前播放队列
+              </h3>
+              <span
+                class="px-2 py-0.5 rounded-full type-numeric-sm flex-shrink-0 border"
+                :class="isPlaylistNearCap
+                  ? 'bg-amber-50 border-amber-200/80 text-amber-700 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-300'
+                  : 'bg-slate-100/90 border-slate-200/75 text-slate-500 dark:bg-white/[0.06] dark:border-white/[0.08] dark:text-[#a1a1a6]'"
+                v-tooltip="`当前队列容量上限：${store.maxPlaylistSize} 首（可在设置中调整）`"
+              >
+                {{ store.playlist.length }}/{{ store.maxPlaylistSize }}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              @click.stop="store.isPlaylistVisible = false"
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-[#98989f] dark:hover:text-[#ededed] hover:bg-slate-200/60 dark:hover:bg-white/[0.08] transition-colors cursor-pointer no-drag active:scale-95 flex-shrink-0"
+              v-tooltip="'收起面板'"
             >
-              ({{ store.playlist.length }}/{{ store.maxPlaylistSize }})
-            </span>
+              <AppIcon name="close" class="w-4 h-4" />
+            </button>
           </div>
 
-          <div class="flex items-center space-x-1 flex-shrink-0 no-drag">
-            <!-- 搜索过滤 -->
-            <button
-              type="button"
-              @click.stop="togglePlaylistSearch"
-              :disabled="store.playlist.length === 0"
-              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
-              :class="isPlaylistSearchOpen
-                ? 'bg-blue-100/80 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#2c2c2f]/70 hover:text-blue-600 dark:hover:text-blue-400'"
-              v-tooltip="store.playlist.length === 0 ? '' : '搜索队列歌曲'"
-            >
-              <AppIcon name="search" class="w-3.5 h-3.5" />
-            </button>
+          <!-- 第二层：独立快捷管理操作栏 -->
+          <div class="px-4 pb-3 flex items-center justify-between gap-1.5 no-drag">
+            <div class="flex items-center gap-0.5 min-w-0">
+              <!-- 搜索过滤 -->
+              <button
+                type="button"
+                @click.stop="togglePlaylistSearch"
+                :disabled="store.playlist.length === 0"
+                class="h-8 px-2 rounded-lg inline-flex items-center gap-1 type-meta-base font-medium whitespace-nowrap border transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                :class="isPlaylistSearchOpen
+                  ? 'bg-blue-50 border-blue-200/80 text-blue-600 dark:bg-blue-500/20 dark:border-blue-500/30 dark:text-blue-400'
+                  : 'border-transparent text-slate-600 dark:text-[#b4b4ba] hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-blue-600 dark:hover:text-blue-400'"
+                v-tooltip="store.playlist.length === 0 ? '' : '搜索队列歌曲'"
+              >
+                <AppIcon name="search" class="w-3.5 h-3.5 flex-shrink-0" />
+                <span>搜索</span>
+              </button>
 
-            <!-- 定位当前播放歌曲 -->
-            <button
-              type="button"
-              @click.stop="scrollToCurrentSong(true)"
-              :disabled="currentSongIndexInQueue < 0"
-              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#2c2c2f]/70 hover:text-blue-600 dark:hover:text-blue-400"
-              v-tooltip="currentSongIndexInQueue < 0 ? '' : '定位到当前播放歌曲'"
-            >
-              <AppIcon name="locate" class="w-3.5 h-3.5" />
-            </button>
+              <!-- 定位当前播放歌曲 -->
+              <button
+                type="button"
+                @click.stop="scrollToCurrentSong(true)"
+                :disabled="currentSongIndexInQueue < 0"
+                class="h-8 px-2 rounded-lg inline-flex items-center gap-1 type-meta-base font-medium whitespace-nowrap border border-transparent transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-[#b4b4ba] hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-blue-600 dark:hover:text-blue-400 active:scale-95"
+                v-tooltip="currentSongIndexInQueue < 0 ? '' : '定位到当前播放歌曲'"
+              >
+                <AppIcon name="locate" class="w-3.5 h-3.5 flex-shrink-0" />
+                <span>定位</span>
+              </button>
 
-            <!-- 清理已播歌曲 -->
-            <button
-              v-if="!store.isFmModePlaylist"
-              type="button"
-              @click.stop="handleCleanPlayedSongs"
-              :disabled="currentSongIndexInQueue <= 0"
-              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#2c2c2f]/70 hover:text-blue-600 dark:hover:text-blue-400"
-              v-tooltip="currentSongIndexInQueue <= 0 ? '当前歌曲前暂无已播歌曲' : `清理当前歌曲之前的 ${currentSongIndexInQueue} 首已播歌曲`"
-            >
-              <AppIcon name="broom" class="w-3.5 h-3.5" />
-            </button>
+              <!-- 清理已播歌曲 -->
+              <button
+                v-if="!store.isFmModePlaylist"
+                type="button"
+                @click.stop="handleCleanPlayedSongs"
+                :disabled="currentSongIndexInQueue <= 0"
+                class="h-8 px-2 rounded-lg inline-flex items-center gap-1 type-meta-base font-medium whitespace-nowrap border border-transparent transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-[#b4b4ba] hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-blue-600 dark:hover:text-blue-400 active:scale-95"
+                v-tooltip="currentSongIndexInQueue <= 0 ? '当前歌曲前暂无已播歌曲' : `清理当前歌曲之前的 ${currentSongIndexInQueue} 首已播歌曲`"
+              >
+                <AppIcon name="broom" class="w-3.5 h-3.5 flex-shrink-0" />
+                <span>清理</span>
+              </button>
 
-            <!-- 批量选择管理 -->
-            <button
-              type="button"
-              @click.stop="togglePlaylistBatchMode"
-              :disabled="store.playlist.length === 0"
-              class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed"
-              :class="isPlaylistBatchMode
-                ? 'bg-blue-100/80 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 dark:text-[#a1a1a6] hover:bg-gray-200/60 dark:hover:bg-[#2c2c2f]/70 hover:text-blue-600 dark:hover:text-blue-400'"
-              v-tooltip="store.playlist.length === 0 ? '' : (isPlaylistBatchMode ? '退出批量管理' : '批量选择管理')"
-            >
-              <AppIcon name="list-check" class="w-3.5 h-3.5" />
-            </button>
-
-            <div class="w-px h-3.5 bg-gray-200 dark:bg-[#2c2c2f] mx-0.5"></div>
+              <!-- 批量选择管理 -->
+              <button
+                type="button"
+                @click.stop="togglePlaylistBatchMode"
+                :disabled="store.playlist.length === 0"
+                class="h-8 px-2 rounded-lg inline-flex items-center gap-1 type-meta-base font-medium whitespace-nowrap border transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                :class="isPlaylistBatchMode
+                  ? 'bg-blue-50 border-blue-200/80 text-blue-600 dark:bg-blue-500/20 dark:border-blue-500/30 dark:text-blue-400'
+                  : 'border-transparent text-slate-600 dark:text-[#b4b4ba] hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-blue-600 dark:hover:text-blue-400'"
+                v-tooltip="store.playlist.length === 0 ? '' : (isPlaylistBatchMode ? '退出批量管理' : '批量选择管理')"
+              >
+                <AppIcon name="list-check" class="w-3.5 h-3.5 flex-shrink-0" />
+                <span>管理</span>
+              </button>
+            </div>
 
             <!-- 清空列表 -->
             <button
               type="button"
               @click="handleClearPlaylistClick"
               :disabled="!store.playlist || store.playlist.length === 0"
-              class="px-1.5 py-1 rounded-md type-meta-base transition-colors no-drag font-medium cursor-pointer"
+              class="h-8 px-2 rounded-lg inline-flex items-center justify-center type-meta-base font-medium whitespace-nowrap border transition-colors no-drag cursor-pointer flex-shrink-0"
               :class="[
                 !store.playlist || store.playlist.length === 0
-                  ? 'opacity-40 cursor-not-allowed text-gray-400 dark:text-[#85858b]'
+                  ? 'border-transparent opacity-40 cursor-not-allowed text-slate-400 dark:text-[#787880]'
                   : isClearingPlaylist
-                    ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950/40 font-medium'
-                    : 'text-gray-500 dark:text-[#a1a1a6] hover:text-red-500 dark:hover:text-red-400'
+                    ? 'text-red-600 hover:text-red-700 bg-red-50 border-red-200/80 dark:bg-red-500/20 dark:border-red-500/30 dark:text-red-300'
+                    : 'border-transparent text-slate-600 dark:text-[#b4b4ba] hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/15'
               ]"
               v-tooltip="!store.playlist || store.playlist.length === 0 ? '' : (isClearingPlaylist ? '再次点击立即清空（支持5秒内撤销）' : '清空播放队列')"
             >
@@ -355,27 +399,27 @@
         <!-- 搜索过滤栏 -->
         <div
           v-if="isPlaylistSearchOpen && store.playlist.length > 0"
-          class="px-4 py-2 border-b border-gray-100 dark:border-white/[0.08] bg-white/80 dark:bg-[#19191b]/80 flex items-center gap-2 flex-shrink-0 no-drag"
+          class="px-4 py-2 border-b border-slate-200/85 dark:border-white/[0.09] bg-white/90 dark:bg-[#1e1e22]/95 flex items-center gap-2 no-drag"
         >
           <div class="flex-1 relative flex items-center">
-            <AppIcon name="search" class="w-3.5 h-3.5 text-gray-400 dark:text-[#85858b] absolute left-2.5 pointer-events-none" />
+            <AppIcon name="search" class="w-3.5 h-3.5 text-slate-400 dark:text-[#85858b] absolute left-2.5 pointer-events-none" />
             <input
               ref="playlistSearchInputRef"
               v-model="playlistSearchKeyword"
               type="text"
               placeholder="搜索队列中的歌名 / 歌手..."
               @keydown.stop="handleSearchInputKeydown"
-              class="w-full pl-8 pr-16 py-1.5 rounded-lg type-body-sm bg-gray-100/80 dark:bg-[#232325]/90 text-gray-800 dark:text-[#ededed] placeholder-gray-500 dark:placeholder-[#8e8e95] border border-transparent focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-[#232325] outline-none transition-all"
+              class="w-full pl-8 pr-16 py-1.5 rounded-lg type-body-sm bg-slate-100/90 dark:bg-[#26262a] text-slate-800 dark:text-[#ededed] placeholder-slate-500 dark:placeholder-[#8e8e95] border border-slate-200/70 dark:border-white/[0.08] focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-[#232326] outline-none transition-all"
             />
             <div class="absolute right-2 flex items-center space-x-1">
-              <span v-if="playlistSearchKeyword.trim()" class="type-numeric-sm text-gray-400 dark:text-[#85858b]">
+              <span v-if="playlistSearchKeyword.trim()" class="type-numeric-sm text-slate-500 dark:text-[#98989f]">
                 {{ filteredPlaylist.length }}首
               </span>
               <button
                 v-if="playlistSearchKeyword"
                 type="button"
                 @click.stop="playlistSearchKeyword = ''"
-                class="p-0.5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-[#a1a1a6] cursor-pointer"
+                class="p-0.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-[#ededed] cursor-pointer"
                 v-tooltip="'清空搜索词'"
               >
                 <AppIcon name="close" class="w-3 h-3" />
@@ -387,7 +431,7 @@
         <!-- 批量操作控制栏 -->
         <div
           v-if="isPlaylistBatchMode && store.playlist.length > 0"
-          class="px-4 py-2 border-b border-blue-100/80 dark:border-white/[0.08] bg-blue-50/60 dark:bg-[#232325]/80 flex items-center justify-between type-meta-base flex-shrink-0 no-drag select-none"
+          class="px-4 py-2 border-b border-blue-200/75 dark:border-blue-500/20 bg-blue-50/85 dark:bg-blue-950/35 flex items-center justify-between type-meta-base no-drag select-none"
         >
           <span class="font-medium text-blue-600 dark:text-blue-400 tabular-nums">
             已选 {{ selectedPlaylistKeys.size }} 首
@@ -396,14 +440,14 @@
             <button
               type="button"
               @click.stop="toggleSelectAllFiltered"
-              class="px-2 py-0.5 rounded type-meta-base font-medium text-gray-600 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-[#2c2c2f]/70 transition-colors cursor-pointer"
+              class="px-2 py-0.5 rounded type-meta-base font-medium text-slate-600 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
             >
               {{ isAllFilteredSelected ? '取消全选' : '全选' }}
             </button>
             <button
               type="button"
               @click.stop="invertSelectFiltered"
-              class="px-2 py-0.5 rounded type-meta-base font-medium text-gray-600 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-[#2c2c2f]/70 transition-colors cursor-pointer"
+              class="px-2 py-0.5 rounded type-meta-base font-medium text-slate-600 dark:text-[#a1a1a6] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/80 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
             >
               反选
             </button>
@@ -418,17 +462,18 @@
             <button
               type="button"
               @click.stop="exitPlaylistBatchMode"
-              class="px-1.5 py-0.5 rounded type-meta-base font-medium text-gray-500 dark:text-[#a1a1a6] hover:text-gray-800 dark:hover:text-[#ededed] cursor-pointer"
+              class="px-1.5 py-0.5 rounded type-meta-base font-medium text-slate-500 dark:text-[#a1a1a6] hover:text-slate-800 dark:hover:text-[#ededed] cursor-pointer"
             >
               完成
             </button>
           </div>
         </div>
+        </div>
 
         <!-- 虚拟滚动列表视口 -->
         <div
           ref="playlistScrollRef"
-          class="flex-1 overflow-y-auto custom-scrollbar px-2 py-1.5 flex flex-col relative"
+          class="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 py-1.5 flex flex-col relative bg-white/95 dark:bg-[#19191b]/95"
           @scroll.passive="handlePlaylistScroll"
         >
           <div v-if="store.playlist.length === 0" class="flex-1 flex flex-col items-center justify-center text-gray-500 py-12">
@@ -582,6 +627,7 @@
           </div>
         </div>
         </template>
+        </div>
       </div>
     </transition>
   </footer>
@@ -1383,6 +1429,8 @@ const PLAYLIST_ROW_HEIGHT = 58;
 const PLAYLIST_OVERSCAN = 6;
 const playlistScrollTop = ref(0);
 const playlistViewportHeight = ref(360);
+const isPlaylistScrolled = computed(() => playlistScrollTop.value > 4);
+const hasFmDrawerActions = computed(() => route.path !== '/fm' || store.hasRegularPlaylistBackup || store.playlist.length > 0);
 const isPlaylistSearchOpen = ref(false);
 const playlistSearchKeyword = ref('');
 const isPlaylistBatchMode = ref(false);
@@ -2946,6 +2994,23 @@ const openLyricsPage = () => {
   border-color: rgba(51, 65, 85, 0.5);
   background-color: rgba(30, 41, 59, 0.5);
   color: rgb(100, 116, 139);
+}
+.playlist-pop-enter-active {
+  transition: opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1), transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.playlist-pop-leave-active {
+  transition: opacity 0.14s cubic-bezier(0.4, 0, 1, 1), transform 0.14s cubic-bezier(0.4, 0, 1, 1);
+}
+.playlist-pop-enter-from,
+.playlist-pop-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  .playlist-pop-enter-active,
+  .playlist-pop-leave-active {
+    transition-duration: 1ms;
+  }
 }
 .lyric-fade-enter-active, .lyric-fade-leave-active { transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1); }
 .lyric-fade-enter-from, .lyric-fade-leave-to { opacity: 0; transform: scale(0.97); }
