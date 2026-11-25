@@ -116,8 +116,9 @@ const validateProxyAudioUrl = async (rawUrl) => {
   return target;
 };
 
-const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
+const proxyAudioRequest = async (rawUrl, req, res, redirects = 0, retryCount = 0) => {
   setCorsHeaders(res);
+  if (res.destroyed || res.writableEnded) return;
 
   if (redirects > 4) {
     res.status(508).send({ code: 508, msg: 'Too many redirects' });
@@ -134,8 +135,9 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
   }
 
   const client = target.protocol === 'https:' ? https : http;
-  const userAgent = req.headers['user-agent'] && !req.headers['user-agent'].includes('AudioProxy')
-    ? req.headers['user-agent']
+  const rawUa = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : '';
+  const userAgent = rawUa && !rawUa.includes('AudioProxy') && !rawUa.includes('Electron')
+    ? rawUa
     : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
   const upstreamHeaders = {
@@ -163,12 +165,31 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
     }
   };
 
-  const upstreamReq = client.request(target, {
+  let clientClosed = false;
+  let upstreamReq = null;
+  const onClientClose = () => {
+    clearHeaderTimeout();
+    if (!res.writableEnded) {
+      clientClosed = true;
+      if (upstreamReq && !upstreamReq.destroyed) {
+        upstreamReq.destroy();
+      }
+    }
+  };
+
+  const requestOptions = {
     method: 'GET',
     headers: upstreamHeaders,
-  }, (upstreamRes) => {
+    ...(retryCount > 0 ? { agent: false } : {}),
+  };
+
+  upstreamReq = client.request(target, requestOptions, (upstreamRes) => {
     clearHeaderTimeout();
+    upstreamRes.on('end', () => {
+      res.off('close', onClientClose);
+    });
     upstreamRes.on('error', (err) => {
+      res.off('close', onClientClose);
       console.error('[AudioProxy upstreamRes error]', err?.message);
       if (!res.headersSent) {
         setCorsHeaders(res);
@@ -182,9 +203,10 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
     const location = upstreamRes.headers.location;
 
     if ([301, 302, 303, 307, 308].includes(statusCode) && location) {
+      res.off('close', onClientClose);
       upstreamRes.resume();
       const nextUrl = new URL(location, target).toString();
-      proxyAudioRequest(nextUrl, req, res, redirects + 1);
+      proxyAudioRequest(nextUrl, req, res, redirects + 1, 0);
       return;
     }
 
@@ -193,6 +215,7 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
     const hasMediaClues = upstreamRes.headers['content-range'] || upstreamRes.headers['accept-ranges'] === 'bytes' || Number(upstreamRes.headers['content-length']) > 10000;
 
     if (isHtmlOrText && !hasMediaClues) {
+      res.off('close', onClientClose);
       upstreamRes.resume();
       setCorsHeaders(res);
       res.status(415).send({ code: 415, msg: 'Unsupported proxied media type' });
@@ -214,25 +237,36 @@ const proxyAudioRequest = async (rawUrl, req, res, redirects = 0) => {
     upstreamRes.pipe(res);
   });
 
+  res.on('close', onClientClose);
+
   upstreamReq.on('error', (err) => {
     clearHeaderTimeout();
-    console.error('[AudioProxy upstreamReq error]', err?.message);
+    res.off('close', onClientClose);
+    if (clientClosed || res.destroyed || res.writableEnded) return;
+
+    const errMsg = String(err?.message || '');
+    const isTimeout = errMsg.includes('header timeout');
+    const isRetryableSocketError = !res.headersSent && !isTimeout && retryCount < 1 && (
+      err?.code === 'ECONNRESET' ||
+      err?.code === 'EPIPE' ||
+      err?.code === 'ETIMEDOUT' ||
+      /socket hang up/i.test(errMsg)
+    );
+    if (isRetryableSocketError) {
+      console.warn('[AudioProxy upstreamReq retry]', err?.code || '', errMsg, 'host:', target.hostname);
+      proxyAudioRequest(rawUrl, req, res, redirects, retryCount + 1);
+      return;
+    }
+
+    console.error('[AudioProxy upstreamReq error]', err?.code || '', errMsg, 'host:', target.hostname, 'headersSent:', res.headersSent);
     if (!res.headersSent) {
       setCorsHeaders(res);
-      const isTimeout = String(err?.message || '').includes('header timeout');
       res.status(isTimeout ? 504 : 502).send({
         code: isTimeout ? 504 : 502,
         msg: isTimeout ? 'Audio proxy upstream timeout' : 'Audio proxy upstream failed'
       });
     } else {
       res.end();
-    }
-  });
-
-  res.on('close', () => {
-    clearHeaderTimeout();
-    if (!upstreamReq.destroyed) {
-      upstreamReq.destroy();
     }
   });
 

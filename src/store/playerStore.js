@@ -275,7 +275,10 @@ const schedulePersistProgress = (store, delay = 300) => {
 
 let audioContext = null;
 let audioGraphInitialized = false;
-const audioOutputNodes = new WeakMap();
+const audioOutputNodes = new Map();
+const MAX_WATCHDOG_RETRIES = 1;
+let watchdogRetrySongKey = '';
+let watchdogRetryCount = 0;
 
 const getStoredBoostLevel = () => {
   const saved = parseFloat(localStorage.getItem(VOLUME_BOOST_LEVEL_KEY));
@@ -381,18 +384,21 @@ const ensureAudioOutputGraph = () => {
 };
 
 const recreateAudioInstances = (store) => {
-  if (audioGraphInitialized) {
-    audioOutputNodes.forEach((nodes) => {
-      try { nodes.source?.disconnect(); } catch (e) {}
-      try { nodes.gain?.disconnect(); } catch (e) {}
-      try { nodes.compressor?.disconnect(); } catch (e) {}
-    });
-    audioOutputNodes.clear();
-    audioGraphInitialized = false;
+  if (audioGraphInitialized || audioOutputNodes.size > 0) {
+    try {
+      audioOutputNodes.forEach((nodes) => {
+        try { nodes.source?.disconnect(); } catch (e) {}
+        try { nodes.gain?.disconnect(); } catch (e) {}
+        try { nodes.compressor?.disconnect(); } catch (e) {}
+      });
+    } finally {
+      audioOutputNodes.clear();
+      audioGraphInitialized = false;
+    }
   }
 
-  try { audioA.pause(); audioA.removeAttribute('src'); audioA.load(); } catch (e) {}
-  try { audioB.pause(); audioB.removeAttribute('src'); audioB.load(); } catch (e) {}
+  const oldAudioA = audioA;
+  const oldAudioB = audioB;
 
   audioA = new Audio();
   audioB = new Audio();
@@ -403,6 +409,12 @@ const recreateAudioInstances = (store) => {
 
   activeAudio = audioA;
   preloadAudio = audioB;
+  preloadState = {
+    hash: null,
+    quality: 'standard',
+    isPreview: false,
+    url: null
+  };
 
   if (store) {
     store.bindAudioEvents(audioA);
@@ -410,6 +422,9 @@ const recreateAudioInstances = (store) => {
     audioA.volume = store.volume;
     audioB.volume = store.volume;
   }
+
+  try { resetAudioElementSource(oldAudioA); } catch (e) {}
+  try { resetAudioElementSource(oldAudioB); } catch (e) {}
 };
 
 const hasLoadedAudioSource = (audio) => {
@@ -473,6 +488,8 @@ const resetPreloadAudio = () => {
 const abortActivePlayback = (store, { resetPreload = false } = {}) => {
   playVersion++;
   pendingResolves.clear();
+  watchdogRetrySongKey = '';
+  watchdogRetryCount = 0;
   if (store) {
     if (store._errorSkipTimer) { clearTimeout(store._errorSkipTimer); store._errorSkipTimer = null; }
     if (store._vipActionTimer) { clearTimeout(store._vipActionTimer); store._vipActionTimer = null; }
@@ -919,9 +936,13 @@ export const usePlayerStore = defineStore('player', {
       audioInstance.addEventListener('timeupdate', (e) => { 
         if (e.target !== activeAudio) return;
 
-        if (this._playbackProgressTimer && activeAudio.currentTime > 0) {
-          clearTimeout(this._playbackProgressTimer);
-          this._playbackProgressTimer = null;
+        if (activeAudio.currentTime > 0) {
+          watchdogRetrySongKey = '';
+          watchdogRetryCount = 0;
+          if (this._playbackProgressTimer) {
+            clearTimeout(this._playbackProgressTimer);
+            this._playbackProgressTimer = null;
+          }
         }
 
         if (this.isCurrentSongPreview && activeAudio.currentTime >= 60) {
@@ -1015,9 +1036,13 @@ export const usePlayerStore = defineStore('player', {
       
       audioInstance.addEventListener('playing', (e) => { 
         if (e.target !== activeAudio) return;
-        if (this._playbackProgressTimer && activeAudio.currentTime > 0) {
-          clearTimeout(this._playbackProgressTimer);
-          this._playbackProgressTimer = null;
+        if (activeAudio.currentTime > 0) {
+          watchdogRetrySongKey = '';
+          watchdogRetryCount = 0;
+          if (this._playbackProgressTimer) {
+            clearTimeout(this._playbackProgressTimer);
+            this._playbackProgressTimer = null;
+          }
         }
         this.isLoading = false; 
         this.isPlaying = true; 
@@ -1050,77 +1075,102 @@ export const usePlayerStore = defineStore('player', {
         console.error('[Audio error event]', activeAudio.error?.code, activeAudio.error?.message, 'src:', activeAudio.src);
 
         if (activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
-          const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
-            ? activeAudio._proxyRestoreTime
-            : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
-          const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
-          const rawUrl = activeAudio._rawSourceUrl;
-          const ownerHash = activeAudio._songHash || this.currentSong?.hash || '';
-          activeAudio._proxyFallbackAttempted = true;
-          activeAudio._proxyRestoreTime = savedTime;
-          activeAudio._proxyResumeOnLoad = wasPlaying;
+          try {
+            const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
+              ? activeAudio._proxyRestoreTime
+              : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
+            const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
+            const rawUrl = activeAudio._rawSourceUrl;
+            const ownerHash = activeAudio._songHash || this.currentSong?.hash || '';
+            activeAudio._proxyFallbackAttempted = true;
+            activeAudio._proxyRestoreTime = savedTime;
+            activeAudio._proxyResumeOnLoad = wasPlaying;
 
-          if (audioGraphInitialized) {
-            this.volumeBoostEnabled = false;
-            localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
-            recreateAudioInstances(this);
-          }
-
-          setAudioSource(activeAudio, rawUrl, false, ownerHash);
-          activeAudio._proxyFallbackAttempted = true;
-          activeAudio._proxyRestoreTime = savedTime;
-          activeAudio._proxyResumeOnLoad = wasPlaying;
-          activeAudio._intendToPlay = wasPlaying;
-          this.applyAudioOutputSettings();
-          if (!isExternalImportSong(this.currentSong)) {
-            this.showToast('音量增强代理暂时不可用，已恢复普通播放');
-          }
-          activeAudio.load();
-          activeAudio.addEventListener('loadedmetadata', () => {
-            if (savedTime > 0) activeAudio.currentTime = savedTime;
-            if (wasPlaying) {
-              const p = safePlayAudio(activeAudio);
-              if (p !== undefined) p.catch(() => { this.isPlaying = false; });
-              this.isPlaying = true;
-            } else {
-              this.isPlaying = false;
+            if (audioGraphInitialized) {
+              this.volumeBoostEnabled = false;
+              localStorage.setItem(VOLUME_BOOST_ENABLED_KEY, 'false');
+              recreateAudioInstances(this);
             }
-            activeAudio._proxyRestoreTime = 0;
-            activeAudio._proxyResumeOnLoad = false;
-          }, { once: true });
-          return;
+
+            setAudioSource(activeAudio, rawUrl, false, ownerHash);
+            activeAudio._proxyFallbackAttempted = true;
+            activeAudio._proxyRestoreTime = savedTime;
+            activeAudio._proxyResumeOnLoad = wasPlaying;
+            activeAudio._intendToPlay = wasPlaying;
+            this.applyAudioOutputSettings();
+            if (!isExternalImportSong(this.currentSong)) {
+              this.showToast('音量增强代理暂时不可用，已恢复普通播放');
+            }
+            const fallbackAudio = activeAudio;
+            const fallbackVersion = playVersion;
+            fallbackAudio.load();
+            fallbackAudio.addEventListener('loadedmetadata', () => {
+              if (fallbackVersion !== playVersion || fallbackAudio !== activeAudio) return;
+              if (savedTime > 0) fallbackAudio.currentTime = savedTime;
+              if (wasPlaying) {
+                const p = safePlayAudio(fallbackAudio);
+                if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+                this.isPlaying = true;
+              } else {
+                this.isPlaying = false;
+              }
+              fallbackAudio._proxyRestoreTime = 0;
+              fallbackAudio._proxyResumeOnLoad = false;
+            }, { once: true });
+            if (wasPlaying) {
+              this._startPlaybackProgressWatchdog(fallbackVersion, this.currentSong);
+            }
+            return;
+          } catch (fallbackErr) {
+            console.error('[Audio error fallback failed]', fallbackErr);
+          }
         }
 
         if (!activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
-          const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
-            ? activeAudio._proxyRestoreTime
-            : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
-          const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
-          const rawUrl = activeAudio._rawSourceUrl;
-          const ownerHash = activeAudio._songHash || this.currentSong?.hash || '';
-          setAudioSource(activeAudio, rawUrl, true, ownerHash);
-          activeAudio._proxyFallbackAttempted = true;
-          activeAudio._proxyRestoreTime = savedTime;
-          activeAudio._proxyResumeOnLoad = wasPlaying;
-          activeAudio._intendToPlay = wasPlaying;
-          activeAudio.load();
-          activeAudio.addEventListener('loadedmetadata', () => {
-            if (savedTime > 0) activeAudio.currentTime = savedTime;
+          try {
+            const savedTime = Number.isFinite(activeAudio._proxyRestoreTime)
+              ? activeAudio._proxyRestoreTime
+              : (Number.isFinite(activeAudio.currentTime) ? activeAudio.currentTime : this.currentTime);
+            const wasPlaying = Boolean(activeAudio._intendToPlay || activeAudio._proxyResumeOnLoad || this.isPlaying);
+            const rawUrl = activeAudio._rawSourceUrl;
+            const ownerHash = activeAudio._songHash || this.currentSong?.hash || '';
+            setAudioSource(activeAudio, rawUrl, true, ownerHash);
+            activeAudio._proxyFallbackAttempted = true;
+            activeAudio._proxyRestoreTime = savedTime;
+            activeAudio._proxyResumeOnLoad = wasPlaying;
+            activeAudio._intendToPlay = wasPlaying;
+            const fallbackAudio = activeAudio;
+            const fallbackVersion = playVersion;
+            fallbackAudio.load();
+            fallbackAudio.addEventListener('loadedmetadata', () => {
+              if (fallbackVersion !== playVersion || fallbackAudio !== activeAudio) return;
+              if (savedTime > 0) fallbackAudio.currentTime = savedTime;
+              if (wasPlaying) {
+                const p = safePlayAudio(fallbackAudio);
+                if (p !== undefined) p.catch(() => { this.isPlaying = false; });
+                this.isPlaying = true;
+              } else {
+                this.isPlaying = false;
+              }
+              fallbackAudio._proxyRestoreTime = 0;
+              fallbackAudio._proxyResumeOnLoad = false;
+            }, { once: true });
             if (wasPlaying) {
-              const p = safePlayAudio(activeAudio);
-              if (p !== undefined) p.catch(() => { this.isPlaying = false; });
-              this.isPlaying = true;
-            } else {
-              this.isPlaying = false;
+              this._startPlaybackProgressWatchdog(fallbackVersion, this.currentSong);
             }
-            activeAudio._proxyRestoreTime = 0;
-            activeAudio._proxyResumeOnLoad = false;
-          }, { once: true });
-          return;
+            return;
+          } catch (fallbackErr) {
+            console.error('[Audio error fallback failed]', fallbackErr);
+          }
         }
 
+        if (this._playbackProgressTimer) {
+          clearTimeout(this._playbackProgressTimer);
+          this._playbackProgressTimer = null;
+        }
         this.isLoading = false;
         this.isPlaying = false;
+        this.syncTrayState();
         
         const isNearRealEnd = this.duration > 0 && this.currentTime > 0 && (this.duration - this.currentTime < 5);
         const isPreviewNearEnd = this.isCurrentSongPreview && this.currentTime > 25; 
@@ -3119,6 +3169,10 @@ export const usePlayerStore = defineStore('player', {
       const isFmTrack = !!options.isFmTrack;
       const silentQueueToast = !!options.silentQueueToast;
       const songInfo = prepareQueueSong(rawSongInfo) || rawSongInfo;
+      if (!options._isWatchdogRetry) {
+        watchdogRetrySongKey = '';
+        watchdogRetryCount = 0;
+      }
       if (this._errorSkipTimer) { clearTimeout(this._errorSkipTimer); this._errorSkipTimer = null; }
       if (this._vipActionTimer) { clearTimeout(this._vipActionTimer); this._vipActionTimer = null; }
       if (this._playWatchdogTimer) { clearTimeout(this._playWatchdogTimer); this._playWatchdogTimer = null; }
@@ -3648,7 +3702,21 @@ export const usePlayerStore = defineStore('player', {
           if (activeAudio._usingProxy && !activeAudio._proxyFallbackAttempted && activeAudio._rawSourceUrl) {
             activeAudio.dispatchEvent(new Event('error'));
           } else if (songInfo) {
-            this.playSong(songInfo, null, 0, true, { silentQueueToast: true, isFmTrack: this.isFmModePlaylist });
+            const retryKey = normalizeSongKey(songInfo) || songInfo.hash || '';
+            if (retryKey && watchdogRetrySongKey === retryKey && watchdogRetryCount >= MAX_WATCHDOG_RETRIES) {
+              console.warn('[Player Watchdog] Max auto-recovery retries reached, stopping stalled playback:', retryKey);
+              watchdogRetrySongKey = '';
+              watchdogRetryCount = 0;
+              this.isLoading = false;
+              this.isPlaying = false;
+              this.syncTrayState();
+              this.handleSongEnd(true);
+              return;
+            }
+            watchdogRetryCount = (retryKey && watchdogRetrySongKey === retryKey) ? watchdogRetryCount + 1 : 1;
+            watchdogRetrySongKey = retryKey;
+            clearSongUrlCache(songInfo.hash);
+            this.playSong(songInfo, null, 0, true, { silentQueueToast: true, isFmTrack: this.isFmModePlaylist, _isWatchdogRetry: true });
           }
         }
       }, 6000);
